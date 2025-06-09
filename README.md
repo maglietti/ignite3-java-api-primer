@@ -15,6 +15,7 @@
 11. [Integration Patterns](11-integration-patterns.md)
 12. [Best Practices & Common Patterns](12-best-practices-common-patterns.md)
 13. [Troubleshooting Guide](13-troubleshooting-guide.md)
+14. [Caching Patterns](14-caching-patterns.md)
 
 ---
 
@@ -45,6 +46,7 @@ The detailed content for each section has been moved to individual files. Please
 - **Transactions**: ACID transactions with configurable isolation
 - **Streaming**: High-performance data ingestion
 - **Catalog Management**: Dynamic schema operations
+- **Caching**: Distributed caching with multiple patterns
 - **Security**: Authentication and SSL/TLS support
 
 ---
