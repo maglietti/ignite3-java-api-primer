@@ -2,20 +2,20 @@
 
 ## Table of Contents
 
-1. [Introduction & Overview](01-introduction-overview.md)
-2. [Getting Started](02-getting-started.md)
-3. [Schema-as-Code with Annotations](03-schema-as-code-with-annotations.md)
-4. [Table API - Object-Oriented Data Access](04-table-api-object-oriented-data-access.md)
-5. [SQL API - Relational Data Access](05-sql-api-relational-data-access.md)
-6. [Transactions](06-transactions.md)
-7. [Compute API - Distributed Processing](07-compute-api-distributed-processing.md)
-8. [Data Streaming](08-data-streaming.md)
-9. [Schema and Catalog Management](09-schema-and-catalog-management.md)
-10. [Advanced Topics](10-advanced-topics.md)
-11. [Integration Patterns](11-integration-patterns.md)
-12. [Best Practices & Common Patterns](12-best-practices-common-patterns.md)
-13. [Troubleshooting Guide](13-troubleshooting-guide.md)
-14. [Caching Patterns](14-caching-patterns.md)
+1. [Introduction & Overview](./docs/01-introduction-overview.md)
+2. [Getting Started](./docs/02-getting-started.md)
+3. [Schema-as-Code with Annotations](./docs/03-schema-as-code-with-annotations.md)
+4. [Table API - Object-Oriented Data Access](./docs/04-table-api-object-oriented-data-access.md)
+5. [SQL API - Relational Data Access](./docs/05-sql-api-relational-data-access.md)
+6. [Transactions](./docs/06-transactions.md)
+7. [Compute API - Distributed Processing](./docs/07-compute-api-distributed-processing.md)
+8. [Data Streaming](./docs/08-data-streaming.md)
+9. [Schema and Catalog Management](./docs/09-schema-and-catalog-management.md)
+10. [Advanced Topics](./docs/10-advanced-topics.md)
+11. [Integration Patterns](./docs/11-integration-patterns.md)
+12. [Best Practices & Common Patterns](./docs/12-best-practices-common-patterns.md)
+13. [Troubleshooting Guide](./docs/13-troubleshooting-guide.md)
+14. [Caching Patterns](./docs/14-caching-patterns.md)
 
 ---
 
