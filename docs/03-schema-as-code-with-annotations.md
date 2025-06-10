@@ -69,15 +69,19 @@ flowchart TD
 ### @Table Annotation Fundamentals
 
 ```java
-@Table("my_table")
-public class MyRecord {
+@Table(
+    value = "Artist",
+    zone = @Zone(value = "Chinook", storageProfiles = "default")
+)
+public class Artist {
     @Id
-    private Integer id;
+    @Column(value = "ArtistId", nullable = false)
+    private Integer ArtistId;
     
-    @Column(value = "name", nullable = false, length = 50)
-    private String name;
+    @Column(value = "Name", nullable = false, length = 120)
+    private String Name;
     
-    private String description; // Auto-mapped column
+    // Constructors, getters, setters...
 }
 ```
 
@@ -99,16 +103,23 @@ public class MyRecord {
 ### Composite Primary Keys
 
 ```java
-@Table("complex_table")
-public class ComplexEntity {
+@Table(
+    zone = @Zone(value = "Chinook", storageProfiles = "default"),
+    colocateBy = @ColumnRef("ArtistId")
+)
+public class Album {
     @Id
-    private Long id;
+    @Column(value = "AlbumId", nullable = false)
+    private Integer AlbumId;
     
     @Id
-    @Column("region")
-    private String region;
+    @Column(value = "ArtistId", nullable = false)
+    private Integer ArtistId;
     
-    // Other fields...
+    @Column(value = "Title", nullable = false, length = 160)
+    private String Title;
+    
+    // Constructors, getters, setters...
 }
 ```
 
@@ -116,16 +127,28 @@ public class ComplexEntity {
 
 ```java
 @Table(
-    value = "distributed_table",
+    value = "Track",
     zone = @Zone(
-        value = "my_zone",
+        value = "Chinook",
         partitions = 16,
         replicas = 3,
         storageProfiles = "default"
-    )
+    ),
+    colocateBy = @ColumnRef("AlbumId")
 )
-public class DistributedEntity {
-    // Fields...
+public class Track {
+    @Id
+    @Column(value = "TrackId", nullable = false)
+    private Integer TrackId;
+    
+    @Id
+    @Column(value = "AlbumId", nullable = true)
+    private Integer AlbumId;
+    
+    @Column(value = "Name", nullable = false, length = 200)
+    private String Name;
+    
+    // Additional fields...
 }
 ```
 
@@ -133,17 +156,43 @@ public class DistributedEntity {
 
 ```java
 @Table(
-    value = "indexed_table",
-    indexes = @Index(
-        value = "name_idx",
-        columns = {
-            @ColumnRef("name"),
-            @ColumnRef(value = "created_date", sort = SortOrder.DESC)
-        }
-    )
+    zone = @Zone(value = "Chinook", storageProfiles = "default"),
+    indexes = {
+        @Index(
+            value = "IFK_CustomerSupportRepId",
+            columns = { @ColumnRef("SupportRepId") }
+        ),
+        @Index(
+            value = "idx_customer_email",
+            columns = { @ColumnRef("Email") }
+        ),
+        @Index(
+            value = "idx_customer_country_city",
+            columns = {
+                @ColumnRef("Country"),
+                @ColumnRef(value = "City", sort = SortOrder.DESC)
+            }
+        )
+    }
 )
-public class IndexedEntity {
-    // Fields...
+public class Customer {
+    @Id
+    @Column(value = "CustomerId", nullable = false)
+    private Integer CustomerId;
+    
+    @Column(value = "Email", nullable = false, length = 60)
+    private String Email;
+    
+    @Column(value = "Country", nullable = true, length = 40)
+    private String Country;
+    
+    @Column(value = "City", nullable = true, length = 40)
+    private String City;
+    
+    @Column(value = "SupportRepId", nullable = true)
+    private Integer SupportRepId;
+    
+    // Additional fields...
 }
 ```
 
@@ -159,10 +208,10 @@ Colocation is a performance optimization technique that stores related data on t
 public class Artist {
     @Id
     @Column(value = "ArtistId", nullable = false)
-    private Integer artistId;
+    private Integer ArtistId;
     
-    @Column(value = "Name", nullable = true)
-    private String name;
+    @Column(value = "Name", nullable = true, length = 120)
+    private String Name;
     
     // Constructors, getters, setters...
 }
@@ -175,14 +224,14 @@ public class Artist {
 public class Album {
     @Id
     @Column(value = "AlbumId", nullable = false)
-    private Integer albumId;
+    private Integer AlbumId;
     
-    @Column(value = "Title", nullable = false)
-    private String title;
+    @Column(value = "Title", nullable = false, length = 160)
+    private String Title;
     
     @Id  // Must be part of primary key for colocation
     @Column(value = "ArtistId", nullable = false)
-    private Integer artistId;
+    private Integer ArtistId;
     
     // Constructors, getters, setters...
 }
@@ -199,32 +248,32 @@ public class Album {
 public class Track {
     @Id
     @Column(value = "TrackId", nullable = false)
-    private Integer trackId;
+    private Integer TrackId;
     
-    @Column(value = "Name", nullable = false)
-    private String name;
+    @Column(value = "Name", nullable = false, length = 200)
+    private String Name;
     
     @Id  // Required for colocation
     @Column(value = "AlbumId", nullable = true)
-    private Integer albumId;
+    private Integer AlbumId;
     
     @Column(value = "MediaTypeId", nullable = false)
-    private Integer mediaTypeId;
+    private Integer MediaTypeId;
     
     @Column(value = "GenreId", nullable = true)
-    private Integer genreId;
+    private Integer GenreId;
     
-    @Column(value = "Composer", nullable = true)
-    private String composer;
+    @Column(value = "Composer", nullable = true, length = 220)
+    private String Composer;
     
     @Column(value = "Milliseconds", nullable = false)
-    private Integer milliseconds;
+    private Integer Milliseconds;
     
     @Column(value = "Bytes", nullable = true)
-    private Integer bytes;
+    private Integer Bytes;
     
-    @Column(value = "UnitPrice", nullable = false)
-    private BigDecimal unitPrice;
+    @Column(value = "UnitPrice", nullable = false, precision = 10, scale = 2)
+    private BigDecimal UnitPrice;
     
     // Constructors, getters, setters...
 }
@@ -246,7 +295,7 @@ client.sql().execute(null,
     "FROM Artist a " +
     "JOIN Album al ON a.ArtistId = al.ArtistId " +
     "JOIN Track t ON al.AlbumId = t.AlbumId " +
-    "WHERE a.ArtistId = ?", artistId);
+    "WHERE a.ArtistId = ?", 1);  // Get all tracks for The Beatles
 ```
 
 ## 3.4 Key-Value vs Record Mapping
@@ -336,43 +385,43 @@ Single record classes are better when:
 public class Customer {
     @Id
     @Column(value = "CustomerId", nullable = false)
-    private Integer customerId;
+    private Integer CustomerId;
     
     @Column(value = "FirstName", nullable = false, length = 40)
-    private String firstName;
+    private String FirstName;
     
     @Column(value = "LastName", nullable = false, length = 20)
-    private String lastName;
+    private String LastName;
     
     @Column(value = "Company", nullable = true, length = 80)
-    private String company;
+    private String Company;
     
     @Column(value = "Address", nullable = true, length = 70)
-    private String address;
+    private String Address;
     
     @Column(value = "City", nullable = true, length = 40)
-    private String city;
+    private String City;
     
     @Column(value = "State", nullable = true, length = 40)
-    private String state;
+    private String State;
     
     @Column(value = "Country", nullable = true, length = 40)
-    private String country;
+    private String Country;
     
     @Column(value = "PostalCode", nullable = true, length = 10)
-    private String postalCode;
+    private String PostalCode;
     
     @Column(value = "Phone", nullable = true, length = 24)
-    private String phone;
+    private String Phone;
     
     @Column(value = "Fax", nullable = true, length = 24)
-    private String fax;
+    private String Fax;
     
     @Column(value = "Email", nullable = false, length = 60)
-    private String email;
+    private String Email;
     
     @Column(value = "SupportRepId", nullable = true)
-    private Integer supportRepId;
+    private Integer SupportRepId;
     
     // Constructors, getters, setters...
 }
@@ -426,10 +475,12 @@ Customer retrievedCustomer = customerView.get(null, key);
 
 ```java
 // Create table from annotations
-Table table = ignite.catalog().createTable(MyRecord.class);
+Table artistTable = client.catalog().createTable(Artist.class);
+Table albumTable = client.catalog().createTable(Album.class);
+Table trackTable = client.catalog().createTable(Track.class);
 
-// Create table from key-value classes
-Table table = ignite.catalog().createTable(PersonKey.class, PersonValue.class);
+// Create table from key-value classes (for complex composite keys)
+Table invoiceLineTable = client.catalog().createTable(InvoiceLineKey.class, InvoiceLineValue.class);
 ```
 
 ## 3.6 POJO Mapping Deep Dive

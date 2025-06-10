@@ -185,7 +185,7 @@ IgniteClient client = IgniteClient.builder()
 
 ### Hello World Example
 
-Here's a complete "Hello World" example that demonstrates connecting to Ignite, creating a simple table, and performing basic operations:
+Here's a complete "Hello World" example that demonstrates connecting to Ignite, creating a simple table, and performing basic operations using the Chinook music dataset:
 
 ```java
 package com.example;
@@ -201,42 +201,36 @@ import java.util.ArrayList;
 
 public class IgniteHelloWorld {
     
-    // Define a simple POJO for our example
+    // Define a simple POJO for our music store example
     @Table(
-        zone = @Zone(value = "hello_zone", storageProfiles = "default")
+        zone = @Zone(value = "Chinook", storageProfiles = "default")
     )
-    public static class Person {
+    public static class Artist {
         @Id
-        @Column(value = "id", nullable = false)
-        private Integer id;
+        @Column(value = "ArtistId", nullable = false)
+        private Integer ArtistId;
         
-        @Column(value = "name", nullable = false, length = 50)
-        private String name;
-        
-        @Column(value = "email", nullable = true, length = 100)
-        private String email;
+        @Column(value = "Name", nullable = false, length = 120)
+        private String Name;
         
         // Default constructor
-        public Person() {}
+        public Artist() {}
         
         // Constructor with parameters
-        public Person(Integer id, String name, String email) {
-            this.id = id;
-            this.name = name;
-            this.email = email;
+        public Artist(Integer artistId, String name) {
+            this.ArtistId = artistId;
+            this.Name = name;
         }
         
         // Getters and setters
-        public Integer getId() { return id; }
-        public void setId(Integer id) { this.id = id; }
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
-        public String getEmail() { return email; }
-        public void setEmail(String email) { this.email = email; }
+        public Integer getArtistId() { return ArtistId; }
+        public void setArtistId(Integer artistId) { this.ArtistId = artistId; }
+        public String getName() { return Name; }
+        public void setName(String name) { this.Name = name; }
         
         @Override
         public String toString() {
-            return "Person{id=" + id + ", name='" + name + "', email='" + email + "'}";
+            return "Artist{ArtistId=" + ArtistId + ", Name='" + Name + "'}";
         }
     }
     
@@ -270,15 +264,15 @@ public class IgniteHelloWorld {
     
     private static void createDistributionZone(IgniteClient client) {
         try {
-            ZoneDefinition zone = ZoneDefinition.builder("hello_zone")
+            ZoneDefinition zone = ZoneDefinition.builder("Chinook")
                 .ifNotExists()
                 .partitions(4)
-                .replicas(1)
+                .replicas(2)
                 .storageProfiles("default")
                 .build();
                 
             client.catalog().createZone(zone);
-            System.out.println("Created distribution zone: hello_zone");
+            System.out.println("Created distribution zone: Chinook");
         } catch (Exception e) {
             System.out.println("Zone already exists or error: " + e.getMessage());
         }
@@ -286,8 +280,8 @@ public class IgniteHelloWorld {
     
     private static void createTable(IgniteClient client) {
         try {
-            client.catalog().createTable(Person.class);
-            System.out.println("Created table: Person");
+            client.catalog().createTable(Artist.class);
+            System.out.println("Created table: Artist");
         } catch (Exception e) {
             System.out.println("Table already exists or error: " + e.getMessage());
         }
@@ -295,52 +289,51 @@ public class IgniteHelloWorld {
     
     private static void performCrudOperations(IgniteClient client) {
         // Get table and create record view
-        Table table = client.tables().table("Person");
-        RecordView<Person> recordView = table.recordView(Person.class);
+        Table table = client.tables().table("Artist");
+        RecordView<Artist> recordView = table.recordView(Artist.class);
         
-        // INSERT: Add some people
-        List<Person> people = new ArrayList<>();
-        people.add(new Person(1, "Alice Johnson", "alice@example.com"));
-        people.add(new Person(2, "Bob Smith", "bob@example.com"));
-        people.add(new Person(3, "Charlie Brown", "charlie@example.com"));
+        // INSERT: Add some artists
+        List<Artist> artists = new ArrayList<>();
+        artists.add(new Artist(1, "The Beatles"));
+        artists.add(new Artist(2, "Led Zeppelin"));
+        artists.add(new Artist(3, "Pink Floyd"));
         
-        recordView.upsertAll(null, people);
-        System.out.println("Inserted " + people.size() + " people");
+        recordView.upsertAll(null, artists);
+        System.out.println("Inserted " + artists.size() + " artists");
         
-        // READ: Get a specific person
-        Person key = new Person();
-        key.setId(1);
-        Person alice = recordView.get(null, key);
-        System.out.println("Retrieved: " + alice);
+        // READ: Get a specific artist
+        Artist key = new Artist();
+        key.setArtistId(1);
+        Artist beatles = recordView.get(null, key);
+        System.out.println("Retrieved: " + beatles);
         
-        // UPDATE: Modify Alice's email
-        alice.setEmail("alice.johnson@newcompany.com");
-        recordView.upsert(null, alice);
-        System.out.println("Updated Alice's email");
+        // UPDATE: Modify the artist name (just for demonstration)
+        beatles.setName("The Beatles (Remastered)");
+        recordView.upsert(null, beatles);
+        System.out.println("Updated Beatles entry");
         
         // Verify the update
-        Person updatedAlice = recordView.get(null, key);
-        System.out.println("After update: " + updatedAlice);
+        Artist updatedBeatles = recordView.get(null, key);
+        System.out.println("After update: " + updatedBeatles);
     }
     
     private static void queryWithSQL(IgniteClient client) {
         System.out.println("\n--- Querying with SQL ---");
         
-        // Query all people
-        var result = client.sql().execute(null, "SELECT * FROM Person ORDER BY id");
+        // Query all artists
+        var result = client.sql().execute(null, "SELECT * FROM Artist ORDER BY ArtistId");
         
         while (result.hasNext()) {
             var row = result.next();
-            System.out.println("Person: ID=" + row.intValue("id") + 
-                             ", Name=" + row.stringValue("name") + 
-                             ", Email=" + row.stringValue("email"));
+            System.out.println("Artist: ID=" + row.intValue("ArtistId") + 
+                             ", Name=" + row.stringValue("Name"));
         }
         
-        // Count people
-        var countResult = client.sql().execute(null, "SELECT COUNT(*) as total FROM Person");
+        // Count artists
+        var countResult = client.sql().execute(null, "SELECT COUNT(*) as total FROM Artist");
         if (countResult.hasNext()) {
             var row = countResult.next();
-            System.out.println("Total people in database: " + row.longValue("total"));
+            System.out.println("Total artists in database: " + row.longValue("total"));
         }
     }
 }
@@ -385,18 +378,18 @@ public class IgniteHelloWorld {
 
 ```
 Connected to Ignite cluster: [localhost:10800]
-Created distribution zone: hello_zone
-Created table: Person
-Inserted 3 people
-Retrieved: Person{id=1, name='Alice Johnson', email='alice@example.com'}
-Updated Alice's email
-After update: Person{id=1, name='Alice Johnson', email='alice.johnson@newcompany.com'}
+Created distribution zone: Chinook
+Created table: Artist
+Inserted 3 artists
+Retrieved: Artist{ArtistId=1, Name='The Beatles'}
+Updated Beatles entry
+After update: Artist{ArtistId=1, Name='The Beatles (Remastered)'}
 
 --- Querying with SQL ---
-Person: ID=1, Name=Alice Johnson, Email=alice.johnson@newcompany.com
-Person: ID=2, Name=Bob Smith, Email=bob@example.com
-Person: ID=3, Name=Charlie Brown, Email=charlie@example.com
-Total people in database: 3
+Artist: ID=1, Name=The Beatles (Remastered)
+Artist: ID=2, Name=Led Zeppelin
+Artist: ID=3, Name=Pink Floyd
+Total artists in database: 3
 Hello World example completed successfully!
 ```
 
@@ -413,8 +406,8 @@ Hello World example completed successfully!
 
 After running this example successfully, you can:
 
-- Explore more complex data models with relationships
-- Learn about co-location for performance optimization
-- Implement transaction patterns
-- Try bulk data loading techniques
-- Experiment with different distribution strategies
+- Explore the full Chinook music dataset with Albums and Tracks
+- Learn about co-location for performance optimization (Album colocated with Artist)
+- Implement transaction patterns for related data operations
+- Try bulk data loading techniques with the complete Chinook dataset
+- Experiment with different distribution strategies for music and business data

@@ -12,7 +12,7 @@ Apache Ignite 3 provides full ACID compliance for transactions:
 - **Durability**: Committed changes are permanently stored
 
 ```java
-// Example demonstrating ACID properties
+// Example demonstrating ACID properties with Chinook music data
 client.transactions().runInTransaction(tx -> {
     Table artistTable = client.tables().table("Artist");
     Table albumTable = client.tables().table("Album");
@@ -22,13 +22,13 @@ client.transactions().runInTransaction(tx -> {
     
     try {
         // Atomicity: Both operations succeed or both fail
-        Artist artist = new Artist(100, "New Artist");
+        Artist artist = new Artist(100, "Radiohead");
         artistView.upsert(tx, artist);
         
-        Album album = new Album(200, "New Album", 100);
+        Album album = new Album(200, "OK Computer", 100);
         albumView.upsert(tx, album);
         
-        // Consistency: Foreign key relationship maintained
+        // Consistency: Foreign key relationship maintained (Album.ArtistId -> Artist.ArtistId)
         // Isolation: Other transactions don't see partial state
         // Durability: Changes are persisted after commit
         
@@ -73,18 +73,18 @@ Transaction readOnlyTx = client.transactions().begin(readOnlyOptions);
 | SERIALIZABLE | No | No | No |
 
 ```java
-// Example showing isolation level effects
+// Example showing isolation level effects with Chinook data
 public static void demonstrateIsolation(IgniteClient client) {
-    // Transaction 1: Updates artist name
+    // Transaction 1: Updates AC/DC's name
     CompletableFuture<Void> tx1 = CompletableFuture.runAsync(() -> {
         client.transactions().runInTransaction(tx -> {
             RecordView<Artist> view = client.tables().table("Artist").recordView(Artist.class);
             
-            Artist artist = view.get(tx, createArtistKey(1));
-            artist.setName("Updated Name");
+            Artist artist = view.get(tx, createArtistKey(1));  // AC/DC
+            artist.setName("AC/DC (Remastered Collection)");
             view.upsert(tx, artist);
             
-            // Simulate long-running transaction
+            // Simulate long-running transaction (e.g., updating related albums)
             try { Thread.sleep(2000); } catch (InterruptedException e) {}
             
             return true;
@@ -93,13 +93,13 @@ public static void demonstrateIsolation(IgniteClient client) {
     
     // Transaction 2: Reads artist concurrently
     CompletableFuture<Void> tx2 = CompletableFuture.runAsync(() -> {
-        Thread.sleep(1000); // Start after tx1
+        try { Thread.sleep(1000); } catch (InterruptedException e) {} // Start after tx1
         
         client.transactions().runInTransaction(tx -> {
             RecordView<Artist> view = client.tables().table("Artist").recordView(Artist.class);
             
             Artist artist = view.get(tx, createArtistKey(1));
-            System.out.println("TX2 sees: " + artist.getName());
+            System.out.println("TX2 sees: " + artist.getName()); // May see old or new value depending on isolation
             
             return true;
         });
@@ -121,13 +121,24 @@ private static Artist createArtistKey(Integer id) {
 ### Explicit Transaction Management
 
 ```java
+// Explicit transaction for updating artist information
 Transaction tx = client.transactions().begin(new TransactionOptions().readOnly(false));
 try {
-    // Perform operations
-    client.sql().execute(tx, stmt, 1, "Forest Hill");
+    // Update artist name using SQL
+    client.sql().execute(tx, 
+        "UPDATE Artist SET Name = ? WHERE ArtistId = ?", 
+        "Pink Floyd (50th Anniversary)", 3);
+    
+    // Update related album information
+    client.sql().execute(tx,
+        "UPDATE Album SET Title = Title || ' (Remastered)' WHERE ArtistId = ?", 
+        3);
+    
     tx.commit();
+    System.out.println("Artist and albums updated successfully");
 } catch (Exception e) {
     tx.rollback();
+    System.err.println("Transaction failed: " + e.getMessage());
     throw e;
 }
 ```
@@ -135,11 +146,29 @@ try {
 ### `runInTransaction()` Pattern
 
 ```java
+// Functional transaction pattern for updating track prices
 client.transactions().runInTransaction(tx -> {
-    Account account = accounts.get(tx, key);
-    account.balance += 200.0d;
-    accounts.put(tx, key, account);
+    RecordView<Track> trackView = client.tables().table("Track").recordView(Track.class);
+    
+    // Get track by ID
+    Track track = trackView.get(tx, createTrackKey(1));
+    if (track != null) {
+        // Increase price by 10%
+        BigDecimal newPrice = track.getUnitPrice().multiply(new BigDecimal("1.10"));
+        track.setUnitPrice(newPrice);
+        trackView.upsert(tx, track);
+        
+        System.out.println("Updated track price to: $" + newPrice);
+    }
+    
+    return true;
 });
+
+private static Track createTrackKey(Integer id) {
+    Track key = new Track();
+    key.setTrackId(id);
+    return key;
+}
 ```
 
 ## Asynchronous Transactions
@@ -147,15 +176,30 @@ client.transactions().runInTransaction(tx -> {
 ### Async Transaction Handling
 
 ```java
-CompletableFuture<Void> fut = client.transactions().beginAsync().thenCompose(tx ->
-    accounts.getAsync(tx, key)
-        .thenCompose(account -> {
-            account.balance += 300.0d;
-            return accounts.putAsync(tx, key, account);
+// Async transaction for updating artist popularity score
+CompletableFuture<Void> fut = client.transactions().beginAsync().thenCompose(tx -> {
+    RecordView<Artist> artistView = client.tables().table("Artist").recordView(Artist.class);
+    Artist key = createArtistKey(10); // The Beatles
+    
+    return artistView.getAsync(tx, key)
+        .thenCompose(artist -> {
+            if (artist != null) {
+                // Update artist name to include popularity indicator
+                artist.setName(artist.getName() + " ⭐");
+                return artistView.upsertAsync(tx, artist);
+            } else {
+                throw new RuntimeException("Artist not found");
+            }
         })
-        .thenCompose(ignored -> tx.commitAsync())
-);
-fut.join();
+        .thenCompose(ignored -> tx.commitAsync());
+});
+
+fut.thenRun(() -> System.out.println("Artist updated asynchronously"))
+   .exceptionally(throwable -> {
+       System.err.println("Async transaction failed: " + throwable.getMessage());
+       return null;
+   })
+   .join();
 ```
 
 ### Combining with Async Operations
@@ -173,12 +217,12 @@ CompletableFuture<Void> complexAsyncTransaction = client.transactions().beginAsy
         RecordView<Album> albumView = albumTable.recordView(Album.class);
         
         // Create artist first
-        Artist artist = new Artist(300, "Async Artist");
+        Artist artist = new Artist(300, "Muse");
         
         return artistView.upsertAsync(tx, artist)
             .thenCompose(ignored -> {
                 // Create album after artist
-                Album album = new Album(300, "Async Album", 300);
+                Album album = new Album(300, "Origin of Symmetry", 300);
                 return albumView.upsertAsync(tx, album);
             })
             .thenCompose(ignored -> {
@@ -216,8 +260,13 @@ CompletableFuture<Void> parallelTransaction = client.transactions().beginAsync()
         // Create multiple artists in parallel
         List<CompletableFuture<Void>> operations = new ArrayList<>();
         
-        for (int i = 400; i < 410; i++) {
-            Artist artist = new Artist(i, "Parallel Artist " + i);
+        // Insert famous rock bands in parallel
+        String[] bandNames = {"Coldplay", "Linkin Park", "Green Day", "Foo Fighters", 
+                              "Red Hot Chili Peppers", "Nirvana", "Pearl Jam", 
+                              "Soundgarden", "Alice in Chains", "Stone Temple Pilots"};
+        
+        for (int i = 0; i < bandNames.length; i++) {
+            Artist artist = new Artist(400 + i, bandNames[i]);
             operations.add(artistView.upsertAsync(tx, artist));
         }
         
@@ -250,7 +299,7 @@ private static CompletableFuture<Void> executeAsyncTransactionWithRetry(
             RecordView<Artist> view = client.tables().table("Artist").recordView(Artist.class);
             
             // Simulate business logic that might fail
-            Artist artist = new Artist(500 + attempt, "Retry Artist " + attempt);
+            Artist artist = new Artist(500 + attempt, "System Of A Down " + attempt);
             
             return view.upsertAsync(tx, artist)
                 .thenCompose(ignored -> {
@@ -299,7 +348,7 @@ CompletableFuture<Void> timedTransaction = client.transactions().beginAsync(
     .thenCompose(tx -> {
         RecordView<Artist> view = client.tables().table("Artist").recordView(Artist.class);
         
-        Artist artist = new Artist(600, "Timed Artist");
+        Artist artist = new Artist(600, "Tool");
         
         return view.upsertAsync(tx, artist)
             .orTimeout(3, TimeUnit.SECONDS)
@@ -429,16 +478,16 @@ public static void explicitErrorHandling(IgniteClient client) {
         RecordView<Album> albumView = client.tables().table("Album").recordView(Album.class);
         
         // Business operation 1
-        Artist artist = new Artist(700, "Error Test Artist");
+        Artist artist = new Artist(700, "Nickelback");
         artistView.upsert(tx, artist);
         
         // Simulate business validation
-        if (artist.getName().contains("Test")) {
-            throw new BusinessValidationException("Test artists not allowed");
+        if (artist.getName().contains("Nickelback")) {
+            throw new BusinessValidationException("Artist not allowed in our catalog");
         }
         
         // Business operation 2
-        Album album = new Album(700, "Error Test Album", 700);
+        Album album = new Album(700, "Silver Side Up", 700);
         albumView.upsert(tx, album);
         
         // Commit if all operations succeed
@@ -536,7 +585,7 @@ public class TransactionMonitor {
             // Perform operations while monitoring state
             RecordView<Artist> view = client.tables().table("Artist").recordView(Artist.class);
             
-            Artist artist = new Artist(800, "Monitored Artist");
+            Artist artist = new Artist(800, "Radiohead");
             view.upsert(tx, artist);
             
             System.out.println("After upsert - transaction active");

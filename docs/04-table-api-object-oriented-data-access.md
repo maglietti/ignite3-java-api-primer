@@ -120,14 +120,15 @@ Tuple value = Tuple.create().set("Name", "The Beatles");
 kvView.put(null, key, value);
 System.out.println("Added artist with Tuple");
 
-// Using POJOs for type safety
-KeyValueView<Integer, String> typedKvView = artistTable.keyValueView(
-    Mapper.of(Integer.class), 
-    Mapper.of(String.class)
-);
+// Add more artists for demonstration
+Tuple key2 = Tuple.create().set("ArtistId", 101);
+Tuple value2 = Tuple.create().set("Name", "Led Zeppelin");
+kvView.put(null, key2, value2);
 
-// This requires the table to have compatible structure
-// typedKvView.put(null, 101, "Led Zeppelin");
+Tuple key3 = Tuple.create().set("ArtistId", 102);
+Tuple value3 = Tuple.create().set("Name", "Pink Floyd");
+kvView.put(null, key3, value3);
+System.out.println("Added multiple artists with Tuples");
 ```
 
 #### Advanced Put Operations with POJOs
@@ -136,34 +137,38 @@ KeyValueView<Integer, String> typedKvView = artistTable.keyValueView(
 // Define key and value classes for complex tables
 public static class AlbumKey {
     @Id
-    private Integer albumId;
+    @Column(value = "AlbumId", nullable = false)
+    private Integer AlbumId;
+    
     @Id
-    private Integer artistId;
+    @Column(value = "ArtistId", nullable = false)
+    private Integer ArtistId;
     
     public AlbumKey() {}
     public AlbumKey(Integer albumId, Integer artistId) {
-        this.albumId = albumId;
-        this.artistId = artistId;
+        this.AlbumId = albumId;
+        this.ArtistId = artistId;
     }
     
     // Getters and setters
-    public Integer getAlbumId() { return albumId; }
-    public void setAlbumId(Integer albumId) { this.albumId = albumId; }
-    public Integer getArtistId() { return artistId; }
-    public void setArtistId(Integer artistId) { this.artistId = artistId; }
+    public Integer getAlbumId() { return AlbumId; }
+    public void setAlbumId(Integer albumId) { this.AlbumId = albumId; }
+    public Integer getArtistId() { return ArtistId; }
+    public void setArtistId(Integer artistId) { this.ArtistId = artistId; }
 }
 
 public static class AlbumValue {
-    private String title;
+    @Column(value = "Title", nullable = false, length = 160)
+    private String Title;
     
     public AlbumValue() {}
     public AlbumValue(String title) {
-        this.title = title;
+        this.Title = title;
     }
     
     // Getters and setters
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
+    public String getTitle() { return Title; }
+    public void setTitle(String title) { this.Title = title; }
 }
 
 // Use strongly-typed KeyValueView
@@ -172,10 +177,14 @@ KeyValueView<AlbumKey, AlbumValue> albumKvView =
     albumTable.keyValueView(AlbumKey.class, AlbumValue.class);
 
 // Put album with proper key and value
-AlbumKey albumKey = new AlbumKey(200, 100);
+AlbumKey albumKey = new AlbumKey(200, 100);  // Album ID 200, Artist ID 100 (The Beatles)
 AlbumValue albumValue = new AlbumValue("Abbey Road");
 albumKvView.put(null, albumKey, albumValue);
 System.out.println("Added album: " + albumValue.getTitle());
+
+// Add more albums for The Beatles
+albumKvView.put(null, new AlbumKey(201, 100), new AlbumValue("Sgt. Pepper's Lonely Hearts Club Band"));
+albumKvView.put(null, new AlbumKey(202, 100), new AlbumValue("Revolver"));
 ```
 
 #### Get Operations
@@ -195,6 +204,8 @@ AlbumKey searchKey = new AlbumKey(200, 100);
 AlbumValue foundAlbum = albumKvView.get(null, searchKey);
 if (foundAlbum != null) {
     System.out.println("Found album: " + foundAlbum.getTitle());
+} else {
+    System.out.println("Album not found");
 }
 ```
 
@@ -290,30 +301,30 @@ accounts.insert(null, newAccountTuple);
 
 ```java
 // Using RecordView for bulk inserts with POJOs
-@Table(zone = @Zone(value = "demo_zone", storageProfiles = "default"))
+@Table(zone = @Zone(value = "Chinook", storageProfiles = "default"))
 public static class Artist {
     @Id
     @Column(value = "ArtistId", nullable = false)
-    private Integer artistId;
+    private Integer ArtistId;
     
-    @Column(value = "Name", nullable = true)
-    private String name;
+    @Column(value = "Name", nullable = true, length = 120)
+    private String Name;
     
     public Artist() {}
     public Artist(Integer artistId, String name) {
-        this.artistId = artistId;
-        this.name = name;
+        this.ArtistId = artistId;
+        this.Name = name;
     }
     
     // Getters and setters
-    public Integer getArtistId() { return artistId; }
-    public void setArtistId(Integer artistId) { this.artistId = artistId; }
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    public Integer getArtistId() { return ArtistId; }
+    public void setArtistId(Integer artistId) { this.ArtistId = artistId; }
+    public String getName() { return Name; }
+    public void setName(String name) { this.Name = name; }
     
     @Override
     public String toString() {
-        return "Artist{artistId=" + artistId + ", name='" + name + "'}";
+        return "Artist{ArtistId=" + ArtistId + ", Name='" + Name + "'}";
     }
 }
 
@@ -321,18 +332,23 @@ public static class Artist {
 Table artistTable = client.tables().table("Artist");
 RecordView<Artist> artistView = artistTable.recordView(Artist.class);
 
-// Create multiple artists
+// Create multiple artists from Chinook dataset
 List<Artist> artists = Arrays.asList(
     new Artist(1, "AC/DC"),
     new Artist(2, "Accept"),
     new Artist(3, "Aerosmith"),
     new Artist(4, "Alanis Morissette"),
-    new Artist(5, "Alice In Chains")
+    new Artist(5, "Alice In Chains"),
+    new Artist(6, "Antônio Carlos Jobim"),
+    new Artist(7, "Apocalyptica"),
+    new Artist(8, "Audioslave"),
+    new Artist(9, "BackBeat"),
+    new Artist(10, "The Beatles")
 );
 
-// Bulk insert
+// Bulk insert using upsertAll
 artistView.upsertAll(null, artists);
-System.out.println("Inserted " + artists.size() + " artists");
+System.out.println("Upserted " + artists.size() + " artists from Chinook dataset");
 ```
 
 #### Bulk Update Operations
@@ -340,14 +356,14 @@ System.out.println("Inserted " + artists.size() + " artists");
 ```java
 // Bulk update existing records
 List<Artist> updatedArtists = Arrays.asList(
-    new Artist(1, "AC/DC (Updated)"),
-    new Artist(2, "Accept (Updated)"),
-    new Artist(3, "Aerosmith (Updated)")
+    new Artist(1, "AC/DC (Remastered)"),
+    new Artist(2, "Accept (Special Edition)"),
+    new Artist(3, "Aerosmith (Greatest Hits)")
 );
 
 // Upsert will update existing records
 artistView.upsertAll(null, updatedArtists);
-System.out.println("Updated " + updatedArtists.size() + " artists");
+System.out.println("Updated " + updatedArtists.size() + " artist names");
 ```
 
 #### Bulk Delete Operations
@@ -441,7 +457,7 @@ System.out.println("Removed " + removedKeys.size() + " artists");
 Table artistTable = client.tables().table("Artist");
 RecordView<Artist> artistView = artistTable.recordView(Artist.class);
 
-Artist newArtist = new Artist(200, "Async Artist");
+Artist newArtist = new Artist(200, "Dream Theater");
 
 // Non-blocking insert
 CompletableFuture<Void> insertFuture = artistView.upsertAsync(null, newArtist);
@@ -479,7 +495,7 @@ CompletableFuture<Void> chainedOperations = artistView
             return artistView.upsertAsync(null, artist);
         } else {
             // Insert new artist if not found
-            Artist newArtist = new Artist(200, "New Async Artist");
+            Artist newArtist = new Artist(200, "Tool");
             return artistView.upsertAsync(null, newArtist);
         }
     })
@@ -501,8 +517,13 @@ chainedOperations.join();
 // Execute multiple operations in parallel
 List<CompletableFuture<Void>> futures = new ArrayList<>();
 
-for (int i = 300; i < 310; i++) {
-    Artist artist = new Artist(i, "Parallel Artist " + i);
+// Insert more Chinook artists in parallel
+String[] artistNames = {"Billy Cobham", "Buddy Guy", "Chico Buarque", "Cidade Negra", 
+                       "Cláudio Zoli", "Various Artists", "Led Zeppelin", "Frank Zappa", 
+                       "Foo Fighters", "Metallica"};
+
+for (int i = 0; i < artistNames.length; i++) {
+    Artist artist = new Artist(300 + i, artistNames[i]);
     CompletableFuture<Void> future = artistView.upsertAsync(null, artist);
     futures.add(future);
 }
@@ -520,11 +541,11 @@ allFutures.thenRun(() -> {
 #### Async Bulk Operations
 
 ```java
-// Async bulk operations
+// Async bulk operations with more Chinook artists
 List<Artist> bulkArtists = Arrays.asList(
-    new Artist(400, "Async Bulk 1"),
-    new Artist(401, "Async Bulk 2"),
-    new Artist(402, "Async Bulk 3")
+    new Artist(400, "Iron Maiden"),
+    new Artist(401, "Pearl Jam"),
+    new Artist(402, "Red Hot Chili Peppers")
 );
 
 CompletableFuture<Void> bulkInsert = artistView.upsertAllAsync(null, bulkArtists);
@@ -569,7 +590,7 @@ public static CompletableFuture<Void> insertWithRetry(
 }
 
 // Usage
-Artist retryArtist = new Artist(500, "Retry Artist");
+Artist retryArtist = new Artist(500, "System Of A Down");
 insertWithRetry(artistView, retryArtist, 3)
     .thenRun(() -> System.out.println("Insert succeeded with retry"))
     .exceptionally(throwable -> {
@@ -593,7 +614,7 @@ public static void hybridOperations(IgniteClient client) {
     
     if (existing == null) {
         // Async insert if doesn't exist
-        Artist newArtist = new Artist(600, "Hybrid Artist");
+        Artist newArtist = new Artist(600, "Rage Against The Machine");
         view.upsertAsync(null, newArtist)
             .thenRun(() -> System.out.println("Hybrid: Artist created"))
             .join(); // Wait for completion
@@ -613,7 +634,7 @@ public static void hybridOperations(IgniteClient client) {
 
 ```java
 // Handle exceptions in async operations
-Artist testArtist = new Artist(700, "Error Test Artist");
+Artist testArtist = new Artist(700, "Nirvana");
 
 artistView.upsertAsync(null, testArtist)
     .thenRun(() -> {
@@ -747,7 +768,7 @@ public static class AsyncTableOperations {
 }
 
 // Usage examples
-Artist testArtist = new Artist(900, "Error Handling Test");
+Artist testArtist = new Artist(900, "Soundgarden");
 
 // With error handling
 AsyncTableOperations.withErrorHandling(

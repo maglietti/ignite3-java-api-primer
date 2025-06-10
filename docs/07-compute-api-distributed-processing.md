@@ -33,8 +33,8 @@ Set<ClusterNode> specificNodes = client.clusterNodes().stream()
 JobTarget specificTarget = JobTarget.nodes(specificNodes);
 
 // Execute on nodes colocated with data
-JobTarget colocatedTarget = JobTarget.colocated("TableName", 
-    Tuple.create().set("key", "value"));
+JobTarget colocatedTarget = JobTarget.colocated("Artist", 
+    Tuple.create().set("ArtistId", 1));
 client.compute().execute(colocatedTarget, job, "input");
 
 // Execute on nodes matching criteria
@@ -75,9 +75,9 @@ public class ComputeTargeting {
     }
     
     // Data-aware targeting for optimal performance
-    public JobTarget dataAwareTarget(IgniteClient client, String tableName, Object key) {
-        // Execute where the data is located
-        return JobTarget.colocated(tableName, key);
+    public JobTarget dataAwareTarget(IgniteClient client, Integer artistId) {
+        // Execute where the Artist data is located for optimal performance
+        return JobTarget.colocated("Artist", Tuple.create().set("ArtistId", artistId));
     }
     
     private boolean isNodeHealthy(ClusterNode node) {
@@ -92,10 +92,11 @@ public class ComputeTargeting {
 ### `ComputeJob` Interface
 
 ```java
-private static class WordLengthJob implements ComputeJob<String, Integer> {
+// Simple job that calculates artist name length
+private static class ArtistNameLengthJob implements ComputeJob<String, Integer> {
     @Override
-    public CompletableFuture<Integer> executeAsync(JobExecutionContext context, String arg) {
-        return CompletableFuture.completedFuture(arg.length());
+    public CompletableFuture<Integer> executeAsync(JobExecutionContext context, String artistName) {
+        return CompletableFuture.completedFuture(artistName.length());
     }
 }
 ```
@@ -105,16 +106,16 @@ private static class WordLengthJob implements ComputeJob<String, Integer> {
 #### Basic Input/Output Patterns
 
 ```java
-// Job with simple input/output
-public static class DataProcessingJob implements ComputeJob<String, ProcessingResult> {
+// Job that processes artist data
+public static class ArtistDataProcessingJob implements ComputeJob<String, ProcessingResult> {
     @Override
     public CompletableFuture<ProcessingResult> executeAsync(
-            JobExecutionContext context, String inputData) {
+            JobExecutionContext context, String artistName) {
         
         return CompletableFuture.supplyAsync(() -> {
             try {
-                // Process the input data
-                String processed = processData(inputData);
+                // Process the artist name data
+                String processed = processArtistName(artistName);
                 
                 // Return structured result
                 return new ProcessingResult(
@@ -124,14 +125,14 @@ public static class DataProcessingJob implements ComputeJob<String, ProcessingRe
                 );
                 
             } catch (Exception e) {
-                throw new RuntimeException("Processing failed", e);
+                throw new RuntimeException("Artist processing failed", e);
             }
         });
     }
     
-    private String processData(String input) {
-        // Simulate data processing
-        return input.toUpperCase() + "_PROCESSED";
+    private String processArtistName(String artistName) {
+        // Simulate artist name processing
+        return artistName.toUpperCase() + " (VERIFIED)";
     }
 }
 
@@ -162,18 +163,18 @@ public static class ProcessingResult {
 #### Complex Input/Output with Collections
 
 ```java
-// Job that processes collections
-public static class BatchProcessingJob implements ComputeJob<List<String>, Map<String, Integer>> {
+// Job that processes collections of artist names
+public static class ArtistBatchProcessingJob implements ComputeJob<List<String>, Map<String, Integer>> {
     @Override
     public CompletableFuture<Map<String, Integer>> executeAsync(
-            JobExecutionContext context, List<String> inputList) {
+            JobExecutionContext context, List<String> artistNames) {
         
         return CompletableFuture.supplyAsync(() -> {
             Map<String, Integer> results = new HashMap<>();
             
-            for (String item : inputList) {
-                // Process each item
-                results.put(item, item.length());
+            for (String artistName : artistNames) {
+                // Calculate name length for each artist
+                results.put(artistName, artistName.length());
             }
             
             return results;
@@ -183,40 +184,46 @@ public static class BatchProcessingJob implements ComputeJob<List<String>, Map<S
 
 // Usage
 JobDescriptor<List<String>, Map<String, Integer>> batchJob = 
-    JobDescriptor.builder(BatchProcessingJob.class).build();
+    JobDescriptor.builder(ArtistBatchProcessingJob.class).build();
 
-List<String> inputData = Arrays.asList("apple", "banana", "cherry");
+List<String> artistNames = Arrays.asList("AC/DC", "The Beatles", "Led Zeppelin");
 Map<String, Integer> result = client.compute().execute(
-    JobTarget.anyNode(client.clusterNodes()), batchJob, inputData);
+    JobTarget.anyNode(client.clusterNodes()), batchJob, artistNames);
 
-result.forEach((key, value) -> 
-    System.out.println(key + " has length: " + value));
+result.forEach((artist, nameLength) -> 
+    System.out.println(artist + " has name length: " + nameLength));
 ```
 
 #### Database Access in Compute Jobs
 
 ```java
-// Job that accesses database during execution
-public static class DatabaseJob implements ComputeJob<Integer, String> {
+// Job that accesses Chinook database during execution
+public static class ArtistLookupJob implements ComputeJob<Integer, String> {
     @Override
     public CompletableFuture<String> executeAsync(
             JobExecutionContext context, Integer artistId) {
         
         return CompletableFuture.supplyAsync(() -> {
             try {
-                // Access the database from within the job
+                // Access the Artist table from within the job
                 // Note: In real scenarios, you'd inject the client or use service lookup
                 return queryArtistName(artistId);
                 
             } catch (Exception e) {
-                throw new RuntimeException("Database access failed", e);
+                throw new RuntimeException("Artist lookup failed", e);
             }
         });
     }
     
     private String queryArtistName(Integer artistId) {
-        // Simulate database access
-        return "Artist " + artistId;
+        // Simulate Artist database lookup
+        switch (artistId) {
+            case 1: return "AC/DC";
+            case 2: return "Accept";
+            case 3: return "Aerosmith";
+            case 10: return "The Beatles";
+            default: return "Unknown Artist " + artistId;
+        }
     }
 }
 ```
@@ -266,42 +273,42 @@ public static class SerializableOutput implements Serializable {
 #### Basic Error Handling
 
 ```java
-public static class RobustComputeJob implements ComputeJob<String, String> {
+public static class RobustArtistProcessingJob implements ComputeJob<String, String> {
     @Override
     public CompletableFuture<String> executeAsync(
-            JobExecutionContext context, String input) {
+            JobExecutionContext context, String artistName) {
         
         return CompletableFuture.supplyAsync(() -> {
             try {
-                // Validate input
-                if (input == null || input.trim().isEmpty()) {
-                    throw new IllegalArgumentException("Invalid input data");
+                // Validate artist name input
+                if (artistName == null || artistName.trim().isEmpty()) {
+                    throw new IllegalArgumentException("Invalid artist name");
                 }
                 
-                // Process data with potential failures
-                return processWithErrorHandling(input);
+                // Process artist name with potential failures
+                return processArtistWithErrorHandling(artistName);
                 
             } catch (IllegalArgumentException e) {
-                throw new ComputeException("Input validation failed: " + e.getMessage());
+                throw new ComputeException("Artist validation failed: " + e.getMessage());
             } catch (Exception e) {
-                throw new ComputeException("Processing failed: " + e.getMessage(), e);
+                throw new ComputeException("Artist processing failed: " + e.getMessage(), e);
             }
         });
     }
     
-    private String processWithErrorHandling(String input) {
+    private String processArtistWithErrorHandling(String artistName) {
         try {
-            // Simulate operation that might fail
-            if (input.contains("error")) {
-                throw new RuntimeException("Simulated processing error");
+            // Simulate operation that might fail for certain artists
+            if (artistName.toLowerCase().contains("error")) {
+                throw new RuntimeException("Simulated artist processing error");
             }
             
-            return "Processed: " + input;
+            return "Processed artist: " + artistName + " ✓";
             
         } catch (RuntimeException e) {
             // Log error and provide fallback
-            System.err.println("Processing error: " + e.getMessage());
-            return "Error processing: " + input;
+            System.err.println("Artist processing error: " + e.getMessage());
+            return "Error processing artist: " + artistName;
         }
     }
 }
@@ -321,24 +328,24 @@ public static class ComputeException extends RuntimeException {
 #### Error Handling with Retry Logic
 
 ```java
-public static class RetryableComputeJob implements ComputeJob<String, String> {
+public static class RetryableArtistProcessingJob implements ComputeJob<String, String> {
     private static final int MAX_RETRIES = 3;
     
     @Override
     public CompletableFuture<String> executeAsync(
-            JobExecutionContext context, String input) {
+            JobExecutionContext context, String artistName) {
         
-        return executeWithRetry(input, 0);
+        return executeWithRetry(artistName, 0);
     }
     
-    private CompletableFuture<String> executeWithRetry(String input, int attempt) {
+    private CompletableFuture<String> executeWithRetry(String artistName, int attempt) {
         return CompletableFuture.supplyAsync(() -> {
             try {
-                return processData(input);
+                return processArtistData(artistName);
                 
             } catch (TransientException e) {
                 if (attempt < MAX_RETRIES) {
-                    System.out.println("Retry attempt " + (attempt + 1) + " for: " + input);
+                    System.out.println("Retry attempt " + (attempt + 1) + " for artist: " + artistName);
                     // Exponential backoff
                     try {
                         Thread.sleep(1000 * (1L << attempt));
@@ -346,20 +353,20 @@ public static class RetryableComputeJob implements ComputeJob<String, String> {
                         Thread.currentThread().interrupt();
                         throw new RuntimeException("Interrupted during retry", ie);
                     }
-                    return executeWithRetry(input, attempt + 1).join();
+                    return executeWithRetry(artistName, attempt + 1).join();
                 } else {
-                    throw new RuntimeException("Max retries exceeded", e);
+                    throw new RuntimeException("Max retries exceeded for artist: " + artistName, e);
                 }
             }
         });
     }
     
-    private String processData(String input) throws TransientException {
-        // Simulate transient failure
+    private String processArtistData(String artistName) throws TransientException {
+        // Simulate transient failure for artist processing
         if (Math.random() < 0.3) {
-            throw new TransientException("Temporary failure");
+            throw new TransientException("Temporary artist processing failure");
         }
-        return "Processed: " + input;
+        return "Processed artist: " + artistName + " ✓";
     }
     
     public static class TransientException extends Exception {
@@ -373,43 +380,43 @@ public static class RetryableComputeJob implements ComputeJob<String, String> {
 #### Graceful Degradation
 
 ```java
-public static class FaultTolerantJob implements ComputeJob<String, ProcessingResult> {
+public static class FaultTolerantAlbumProcessingJob implements ComputeJob<String, ProcessingResult> {
     @Override
     public CompletableFuture<ProcessingResult> executeAsync(
-            JobExecutionContext context, String input) {
+            JobExecutionContext context, String albumTitle) {
         
         return CompletableFuture.supplyAsync(() -> {
             try {
-                // Primary processing path
-                String result = primaryProcessing(input);
+                // Primary album processing path
+                String result = primaryAlbumProcessing(albumTitle);
                 return new ProcessingResult(result, true, null);
                 
             } catch (Exception primaryError) {
-                System.err.println("Primary processing failed: " + primaryError.getMessage());
+                System.err.println("Primary album processing failed: " + primaryError.getMessage());
                 
                 try {
-                    // Fallback processing
-                    String fallbackResult = fallbackProcessing(input);
+                    // Fallback album processing
+                    String fallbackResult = fallbackAlbumProcessing(albumTitle);
                     return new ProcessingResult(fallbackResult, false, 
                         "Used fallback: " + primaryError.getMessage());
                     
                 } catch (Exception fallbackError) {
                     // Final fallback - return error state
                     return new ProcessingResult(null, false, 
-                        "Both primary and fallback failed: " + fallbackError.getMessage());
+                        "Both primary and fallback failed for album: " + fallbackError.getMessage());
                 }
             }
         });
     }
     
-    private String primaryProcessing(String input) {
-        // Main processing logic
-        return "Primary: " + input.toUpperCase();
+    private String primaryAlbumProcessing(String albumTitle) {
+        // Main album processing logic
+        return "Processed album: " + albumTitle.toUpperCase() + " [FULL ANALYSIS]";
     }
     
-    private String fallbackProcessing(String input) {
-        // Simplified fallback processing
-        return "Fallback: " + input.toLowerCase();
+    private String fallbackAlbumProcessing(String albumTitle) {
+        // Simplified fallback album processing
+        return "Basic processing: " + albumTitle + " [BASIC ANALYSIS]";
     }
     
     public static class ProcessingResult {
@@ -450,17 +457,21 @@ List<Integer> results = jobFutures.stream()
 ```java
 public class MapReduceExample {
     
-    // Map phase job - processes individual chunks
-    public static class MapJob implements ComputeJob<List<String>, Map<String, Integer>> {
+    // Map phase job - processes chunks of track names
+    public static class TrackAnalysisMapJob implements ComputeJob<List<String>, Map<String, Integer>> {
         @Override
         public CompletableFuture<Map<String, Integer>> executeAsync(
-                JobExecutionContext context, List<String> words) {
+                JobExecutionContext context, List<String> trackNames) {
             
             return CompletableFuture.supplyAsync(() -> {
                 Map<String, Integer> wordCounts = new HashMap<>();
                 
-                for (String word : words) {
-                    wordCounts.merge(word.toLowerCase(), 1, Integer::sum);
+                for (String trackName : trackNames) {
+                    // Count words in track names
+                    String[] words = trackName.toLowerCase().split("\\s+");
+                    for (String word : words) {
+                        wordCounts.merge(word, 1, Integer::sum);
+                    }
                 }
                 
                 return wordCounts;
@@ -469,14 +480,14 @@ public class MapReduceExample {
     }
     
     // Reduce phase - aggregate results from multiple map jobs
-    public static Map<String, Integer> performMapReduce(
-            IgniteClient client, List<List<String>> chunks) {
+    public static Map<String, Integer> performTrackWordAnalysis(
+            IgniteClient client, List<List<String>> trackNameChunks) {
         
         JobDescriptor<List<String>, Map<String, Integer>> mapJob = 
-            JobDescriptor.builder(MapJob.class).build();
+            JobDescriptor.builder(TrackAnalysisMapJob.class).build();
         
         // Execute map phase in parallel
-        List<CompletableFuture<Map<String, Integer>>> mapFutures = chunks.stream()
+        List<CompletableFuture<Map<String, Integer>>> mapFutures = trackNameChunks.stream()
             .map(chunk -> client.compute().executeAsync(
                 JobTarget.anyNode(client.clusterNodes()), mapJob, chunk))
             .collect(Collectors.toList());
@@ -501,16 +512,16 @@ public class MapReduceExample {
     }
 }
 
-// Usage
-List<List<String>> wordChunks = Arrays.asList(
-    Arrays.asList("hello", "world", "hello"),
-    Arrays.asList("world", "ignite", "compute"),
-    Arrays.asList("hello", "compute", "distributed")
+// Usage with Chinook track names
+List<List<String>> trackChunks = Arrays.asList(
+    Arrays.asList("For Those About To Rock", "Put The Finger On You", "Let's Get It Up"),
+    Arrays.asList("Inject The Venom", "Snowballed", "Evil Walks"),
+    Arrays.asList("Breaking The Rules", "Night Of The Long Knives", "Spellbound")
 );
 
-Map<String, Integer> wordCounts = MapReduceExample.performMapReduce(client, wordChunks);
+Map<String, Integer> wordCounts = MapReduceExample.performTrackWordAnalysis(client, trackChunks);
 wordCounts.forEach((word, count) -> 
-    System.out.println(word + ": " + count));
+    System.out.println("Word '" + word + "' appears " + count + " times in track names"));
 ```
 
 #### Streaming Aggregation
@@ -518,34 +529,37 @@ wordCounts.forEach((word, count) ->
 ```java
 public class StreamingAggregation {
     
-    // Job that produces streaming results
-    public static class DataGeneratorJob implements ComputeJob<Integer, Stream<String>> {
+    // Job that generates streaming playlist data
+    public static class PlaylistGeneratorJob implements ComputeJob<Integer, Stream<String>> {
         @Override
         public CompletableFuture<Stream<String>> executeAsync(
-                JobExecutionContext context, Integer count) {
+                JobExecutionContext context, Integer trackCount) {
             
             return CompletableFuture.supplyAsync(() -> {
-                return IntStream.range(0, count)
-                    .mapToObj(i -> "data-" + i)
-                    .peek(data -> {
-                        // Simulate processing time
+                String[] sampleTracks = {"Bohemian Rhapsody", "Stairway to Heaven", "Hotel California", 
+                                       "Sweet Child O' Mine", "Smoke on the Water", "Imagine"};
+                
+                return IntStream.range(0, trackCount)
+                    .mapToObj(i -> sampleTracks[i % sampleTracks.length] + " (" + i + ")")
+                    .peek(track -> {
+                        // Simulate track processing time
                         try { Thread.sleep(10); } catch (InterruptedException e) {}
                     });
             });
         }
     }
     
-    // Aggregate streaming results
-    public static List<String> aggregateStreamingResults(
-            IgniteClient client, int jobCount, int itemsPerJob) {
+    // Aggregate streaming playlist results
+    public static List<String> aggregateStreamingPlaylists(
+            IgniteClient client, int playlistCount, int tracksPerPlaylist) {
         
         JobDescriptor<Integer, Stream<String>> job = 
-            JobDescriptor.builder(DataGeneratorJob.class).build();
+            JobDescriptor.builder(PlaylistGeneratorJob.class).build();
         
-        // Submit multiple streaming jobs
-        List<CompletableFuture<Stream<String>>> futures = IntStream.range(0, jobCount)
+        // Submit multiple streaming playlist jobs
+        List<CompletableFuture<Stream<String>>> futures = IntStream.range(0, playlistCount)
             .mapToObj(i -> client.compute().executeAsync(
-                JobTarget.anyNode(client.clusterNodes()), job, itemsPerJob))
+                JobTarget.anyNode(client.clusterNodes()), job, tracksPerPlaylist))
             .collect(Collectors.toList());
         
         // Collect and merge all streams
@@ -562,24 +576,24 @@ public class StreamingAggregation {
 ```java
 public class StatisticalAggregation {
     
-    // Job that calculates statistics for a data chunk
-    public static class StatsJob implements ComputeJob<List<Double>, Statistics> {
+    // Job that calculates statistics for track duration data
+    public static class TrackDurationStatsJob implements ComputeJob<List<Double>, Statistics> {
         @Override
         public CompletableFuture<Statistics> executeAsync(
-                JobExecutionContext context, List<Double> numbers) {
+                JobExecutionContext context, List<Double> trackDurations) {
             
             return CompletableFuture.supplyAsync(() -> {
-                if (numbers.isEmpty()) {
+                if (trackDurations.isEmpty()) {
                     return new Statistics(0, 0.0, 0.0, 0.0, 0.0);
                 }
                 
-                int count = numbers.size();
-                double sum = numbers.stream().mapToDouble(Double::doubleValue).sum();
-                double mean = sum / count;
-                double min = numbers.stream().mapToDouble(Double::doubleValue).min().orElse(0.0);
-                double max = numbers.stream().mapToDouble(Double::doubleValue).max().orElse(0.0);
+                int count = trackDurations.size();
+                double totalDuration = trackDurations.stream().mapToDouble(Double::doubleValue).sum();
+                double avgDuration = totalDuration / count;
+                double minDuration = trackDurations.stream().mapToDouble(Double::doubleValue).min().orElse(0.0);
+                double maxDuration = trackDurations.stream().mapToDouble(Double::doubleValue).max().orElse(0.0);
                 
-                return new Statistics(count, sum, mean, min, max);
+                return new Statistics(count, totalDuration, avgDuration, minDuration, maxDuration);
             });
         }
     }
@@ -625,15 +639,15 @@ public class StatisticalAggregation {
         }
     }
     
-    // Aggregate statistics across multiple data chunks
-    public static Statistics calculateDistributedStatistics(
-            IgniteClient client, List<List<Double>> dataChunks) {
+    // Aggregate statistics across multiple track duration chunks
+    public static Statistics calculateTrackDurationStatistics(
+            IgniteClient client, List<List<Double>> durationChunks) {
         
         JobDescriptor<List<Double>, Statistics> statsJob = 
-            JobDescriptor.builder(StatsJob.class).build();
+            JobDescriptor.builder(TrackDurationStatsJob.class).build();
         
-        // Calculate statistics for each chunk in parallel
-        List<CompletableFuture<Statistics>> futures = dataChunks.stream()
+        // Calculate statistics for each duration chunk in parallel
+        List<CompletableFuture<Statistics>> futures = durationChunks.stream()
             .map(chunk -> client.compute().executeAsync(
                 JobTarget.anyNode(client.clusterNodes()), statsJob, chunk))
             .collect(Collectors.toList());
@@ -646,15 +660,15 @@ public class StatisticalAggregation {
     }
 }
 
-// Usage
-List<List<Double>> dataChunks = Arrays.asList(
-    Arrays.asList(1.0, 2.0, 3.0, 4.0, 5.0),
-    Arrays.asList(6.0, 7.0, 8.0, 9.0, 10.0),
-    Arrays.asList(11.0, 12.0, 13.0, 14.0, 15.0)
+// Usage with track durations (in minutes)
+List<List<Double>> durationChunks = Arrays.asList(
+    Arrays.asList(3.2, 4.1, 2.8, 5.0, 3.7),    // AC/DC tracks
+    Arrays.asList(4.2, 6.3, 3.9, 4.8, 5.1),    // Led Zeppelin tracks
+    Arrays.asList(2.9, 3.4, 4.7, 3.1, 5.8)     // Beatles tracks
 );
 
-Statistics result = StatisticalAggregation.calculateDistributedStatistics(client, dataChunks);
-System.out.println("Distributed statistics: " + result);
+Statistics result = StatisticalAggregation.calculateTrackDurationStatistics(client, durationChunks);
+System.out.println("Track duration statistics: " + result);
 ```
 
 ## Advanced Topics
@@ -736,38 +750,38 @@ public class DeploymentManager {
 ```java
 public class JobCancellation {
     
-    // Long-running job that supports cancellation
-    public static class CancellableJob implements ComputeJob<Integer, String> {
+    // Long-running track analysis job that supports cancellation
+    public static class CancellableTrackAnalysisJob implements ComputeJob<Integer, String> {
         @Override
         public CompletableFuture<String> executeAsync(
-                JobExecutionContext context, Integer iterations) {
+                JobExecutionContext context, Integer trackCount) {
             
             return CompletableFuture.supplyAsync(() -> {
-                for (int i = 0; i < iterations; i++) {
+                for (int i = 0; i < trackCount; i++) {
                     // Check for cancellation
                     if (context.isCancelled()) {
-                        return "Job cancelled at iteration " + i;
+                        return "Track analysis cancelled after processing " + i + " tracks";
                     }
                     
-                    // Simulate work
+                    // Simulate track analysis work
                     try {
                         Thread.sleep(100);
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
-                        return "Job interrupted at iteration " + i;
+                        return "Track analysis interrupted after " + i + " tracks";
                     }
                 }
                 
-                return "Job completed after " + iterations + " iterations";
+                return "Track analysis completed for " + trackCount + " tracks";
             });
         }
     }
     
-    // Demonstrate job cancellation
+    // Demonstrate track analysis job cancellation
     public static void demonstrateJobCancellation(IgniteClient client) {
-        JobDescriptor<Integer, String> job = JobDescriptor.builder(CancellableJob.class).build();
+        JobDescriptor<Integer, String> job = JobDescriptor.builder(CancellableTrackAnalysisJob.class).build();
         
-        // Submit long-running job
+        // Submit long-running track analysis job
         CompletableFuture<String> jobFuture = client.compute().executeAsync(
             JobTarget.anyNode(client.clusterNodes()), job, 100);
         
@@ -797,22 +811,22 @@ public class JobCancellation {
 #### Graceful Job Termination
 
 ```java
-public static class GracefulJob implements ComputeJob<String, String> {
+public static class GracefulPlaylistAnalysisJob implements ComputeJob<String, String> {
     @Override
     public CompletableFuture<String> executeAsync(
-            JobExecutionContext context, String input) {
+            JobExecutionContext context, String playlistName) {
         
         return CompletableFuture.supplyAsync(() -> {
             try {
-                return performWork(context, input);
+                return performPlaylistAnalysis(context, playlistName);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                return "Job gracefully terminated";
+                return "Playlist analysis gracefully terminated";
             }
         });
     }
     
-    private String performWork(JobExecutionContext context, String input) 
+    private String performPlaylistAnalysis(JobExecutionContext context, String playlistName) 
             throws InterruptedException {
         
         StringBuilder result = new StringBuilder();
@@ -821,21 +835,21 @@ public static class GracefulJob implements ComputeJob<String, String> {
             // Check for cancellation frequently
             if (context.isCancelled()) {
                 // Perform cleanup
-                cleanup(result);
-                return "Job cancelled after " + i + " steps, cleanup completed";
+                cleanupPlaylistAnalysis(result);
+                return "Playlist analysis cancelled after " + i + " steps, cleanup completed";
             }
             
-            // Do work
-            result.append("Step ").append(i).append(": ").append(input).append("\n");
-            Thread.sleep(500); // Simulate work
+            // Analyze playlist tracks
+            result.append("Analyzing track ").append(i).append(" in playlist: ").append(playlistName).append("\n");
+            Thread.sleep(500); // Simulate track analysis
         }
         
-        return "Job completed: \n" + result.toString();
+        return "Playlist analysis completed: \n" + result.toString();
     }
     
-    private void cleanup(StringBuilder partialResult) {
-        // Perform necessary cleanup operations
-        partialResult.append("[CLEANUP PERFORMED]\n");
+    private void cleanupPlaylistAnalysis(StringBuilder partialResult) {
+        // Perform necessary cleanup operations for playlist analysis
+        partialResult.append("[PLAYLIST ANALYSIS CLEANUP PERFORMED]\n");
     }
 }
 ```

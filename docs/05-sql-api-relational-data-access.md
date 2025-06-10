@@ -5,10 +5,26 @@
 ### DDL Operations (CREATE, ALTER, DROP)
 
 ```java
+// Create tables using SQL DDL (alternative to annotation-based creation)
 client.sql().executeScript(
-    "CREATE TABLE CITIES ("
-    + "ID   INT PRIMARY KEY,"
-    + "NAME VARCHAR);"
+    "CREATE TABLE Artist ("
+    + "ArtistId INT PRIMARY KEY,"
+    + "Name VARCHAR(120));"
+);
+
+// Create related tables with foreign keys
+client.sql().executeScript(
+    "CREATE TABLE Album ("
+    + "AlbumId INT,"
+    + "Title VARCHAR(160) NOT NULL,"
+    + "ArtistId INT NOT NULL,"
+    + "PRIMARY KEY (AlbumId, ArtistId)) "
+    + "COLOCATE BY (ArtistId);"
+);
+
+// Add indexes for performance
+client.sql().executeScript(
+    "CREATE INDEX idx_artist_name ON Artist (Name);"
 );
 ```
 
@@ -94,13 +110,38 @@ client.sql().execute(null,
 
 ### Query Operations (SELECT)
 
+#### Basic Queries
+
 ```java
+// Simple SELECT with WHERE clause
 try (ResultSet<SqlRow> rs = client.sql().execute(null,
-        "SELECT a.FIRST_NAME, a.LAST_NAME, c.NAME FROM ACCOUNTS a "
-        + "INNER JOIN CITIES c on c.ID = a.CITY_ID ORDER BY a.ACCOUNT_ID")) {
+        "SELECT ArtistId, Name FROM Artist WHERE Name LIKE ? ORDER BY Name", "A%")) {
     while (rs.hasNext()) {
         SqlRow row = rs.next();
-        System.out.println(row.stringValue(0) + ", " + row.stringValue(1));
+        System.out.printf("ID: %d, Artist: %s%n", 
+            row.intValue("ArtistId"), row.stringValue("Name"));
+    }
+}
+```
+
+#### Complex Joins
+
+```java
+// Join artists with their albums and tracks
+try (ResultSet<SqlRow> rs = client.sql().execute(null,
+        "SELECT ar.Name as ArtistName, al.Title as AlbumTitle, t.Name as TrackName " +
+        "FROM Artist ar " +
+        "JOIN Album al ON ar.ArtistId = al.ArtistId " +
+        "JOIN Track t ON al.AlbumId = t.AlbumId " +
+        "WHERE ar.ArtistId = ? " +
+        "ORDER BY al.Title, t.TrackId", 1)) {
+    
+    while (rs.hasNext()) {
+        SqlRow row = rs.next();
+        System.out.printf("%s - %s - %s%n",
+            row.stringValue("ArtistName"),
+            row.stringValue("AlbumTitle"), 
+            row.stringValue("TrackName"));
     }
 }
 ```
@@ -530,15 +571,86 @@ try (ResultSet<SqlRow> result = client.sql().execute(null, "SELECT * FROM Artist
 
 ### POJO Mapping with `Mapper<T>`
 
+#### Auto-Mapping to POJOs
+
 ```java
-Statement statement = client.sql().statementBuilder()
-    .query("SELECT a.FIRST_NAME as firstName, a.LAST_NAME as lastName, a.BALANCE FROM ACCOUNTS a")
+// Define a POJO for query results
+public static class ArtistInfo {
+    private Integer artistId;
+    private String name;
+    private Integer albumCount;
+    
+    // Default constructor
+    public ArtistInfo() {}
+    
+    // Getters and setters
+    public Integer getArtistId() { return artistId; }
+    public void setArtistId(Integer artistId) { this.artistId = artistId; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public Integer getAlbumCount() { return albumCount; }
+    public void setAlbumCount(Integer albumCount) { this.albumCount = albumCount; }
+    
+    @Override
+    public String toString() {
+        return "ArtistInfo{artistId=" + artistId + ", name='" + name + 
+               "', albumCount=" + albumCount + "}";
+    }
+}
+
+// Use auto-mapping with complex queries
+String sql = "SELECT ar.ArtistId, ar.Name, COUNT(al.AlbumId) as albumCount " +
+            "FROM Artist ar " +
+            "LEFT JOIN Album al ON ar.ArtistId = al.ArtistId " +
+            "GROUP BY ar.ArtistId, ar.Name " +
+            "ORDER BY albumCount DESC, ar.Name";
+
+try (ResultSet<ArtistInfo> rs = client.sql().execute(null, Mapper.of(ArtistInfo.class), sql)) {
+    while (rs.hasNext()) {
+        ArtistInfo artist = rs.next();
+        System.out.println(artist);
+    }
+}
+```
+
+#### Custom Field Mapping
+
+```java
+// POJO with different field names
+public static class TrackSummary {
+    private String trackTitle;      // Maps to "Name" column
+    private String artistName;      // Maps to computed field
+    private String albumTitle;      // Maps to "Title" column
+    private Double priceInDollars;  // Maps to "UnitPrice" column
+    
+    // Constructors, getters, setters...
+}
+
+// Custom mapper for different field names
+Mapper<TrackSummary> customMapper = Mapper.<TrackSummary>builder()
+    .map("trackTitle", "TrackName")
+    .map("artistName", "ArtistName")
+    .map("albumTitle", "AlbumTitle")
+    .map("priceInDollars", "UnitPrice")
     .build();
 
-try (ResultSet<AccountInfo> rs = client.sql().execute(null, Mapper.of(AccountInfo.class), statement)) {
+String complexSql = "SELECT " +
+    "t.Name as TrackName, " +
+    "ar.Name as ArtistName, " +
+    "al.Title as AlbumTitle, " +
+    "t.UnitPrice " +
+    "FROM Track t " +
+    "JOIN Album al ON t.AlbumId = al.AlbumId " +
+    "JOIN Artist ar ON al.ArtistId = ar.ArtistId " +
+    "WHERE t.UnitPrice > ? " +
+    "ORDER BY t.UnitPrice DESC";
+
+try (ResultSet<TrackSummary> rs = client.sql().execute(
+        null, customMapper, complexSql, new BigDecimal("1.00"))) {
+    
     while (rs.hasNext()) {
-        AccountInfo row = rs.next();
-        System.out.println(row.firstName + ", " + row.lastName);
+        TrackSummary track = rs.next();
+        System.out.println(track);
     }
 }
 ```
@@ -749,13 +861,54 @@ private static void processArtistRow(SqlRow row) {
 
 ### Batch Inserts/Updates
 
+#### Basic Batch Operations
+
 ```java
-long rowsAdded = Arrays.stream(client.sql().executeBatch(tx,
-    "INSERT INTO ACCOUNTS (ACCOUNT_ID, CITY_ID, FIRST_NAME, LAST_NAME, BALANCE) values (?, ?, ?, ?, ?)",
-    BatchedArguments.of(1, 1, "John", "Doe", 1000.0d)
-        .add(2, 1, "Jane", "Roe", 2000.0d)
-        .add(3, 2, "Mary", "Major", 1500.0d)))
+// Batch insert artists
+long rowsAdded = Arrays.stream(client.sql().executeBatch(null,
+    "INSERT INTO Artist (ArtistId, Name) VALUES (?, ?)",
+    BatchedArguments.of(1, "AC/DC")
+        .add(2, "Accept")
+        .add(3, "Aerosmith")
+        .add(4, "Alanis Morissette")
+        .add(5, "Alice In Chains")))
     .sum();
+
+System.out.println("Inserted " + rowsAdded + " artists");
+```
+
+#### Batch Updates with Related Data
+
+```java
+// Batch insert albums for multiple artists
+BatchedArguments albumArgs = BatchedArguments
+    .of(1, "For Those About To Rock We Salute You", 1)  // AC/DC
+    .add(2, "Balls to the Wall", 2)                     // Accept
+    .add(3, "Restless and Wild", 2)                     // Accept
+    .add(4, "Let There Be Rock", 1)                     // AC/DC
+    .add(5, "Big Ones", 3);                             // Aerosmith
+
+long albumsAdded = Arrays.stream(client.sql().executeBatch(null,
+    "INSERT INTO Album (AlbumId, Title, ArtistId) VALUES (?, ?, ?)",
+    albumArgs)).sum();
+
+System.out.println("Inserted " + albumsAdded + " albums");
+```
+
+#### Batch Updates
+
+```java
+// Batch update artist names
+BatchedArguments updateArgs = BatchedArguments
+    .of("AC/DC (Remastered)", 1)
+    .add("Accept (Special Edition)", 2)
+    .add("Aerosmith (Greatest Hits)", 3);
+
+long rowsUpdated = Arrays.stream(client.sql().executeBatch(null,
+    "UPDATE Artist SET Name = ? WHERE ArtistId = ?",
+    updateArgs)).sum();
+
+System.out.println("Updated " + rowsUpdated + " artist names");
 ```
 
 ### Performance Considerations
@@ -996,8 +1149,101 @@ public class QueryPerformanceMonitor {
 
 ## Async SQL Operations
 
+#### Basic Async Queries
+
 ```java
-client.sql().executeAsync(null, stmt)
-    .thenCompose(this::fetchAllRowsInto)
-    .get();
+// Async query execution
+CompletableFuture<ResultSet<SqlRow>> futureResult = 
+    client.sql().executeAsync(null, "SELECT * FROM Artist ORDER BY Name");
+
+futureResult.thenAccept(resultSet -> {
+    System.out.println("Query completed asynchronously");
+    try (ResultSet<SqlRow> rs = resultSet) {
+        while (rs.hasNext()) {
+            SqlRow row = rs.next();
+            System.out.println("Artist: " + row.stringValue("Name"));
+        }
+    }
+}).exceptionally(throwable -> {
+    System.err.println("Query failed: " + throwable.getMessage());
+    return null;
+});
+```
+
+#### Async with POJO Mapping
+
+```java
+// Async query with auto-mapping
+CompletableFuture<ResultSet<ArtistInfo>> asyncMappedResult = 
+    client.sql().executeAsync(null, Mapper.of(ArtistInfo.class),
+        "SELECT ArtistId, Name, 0 as albumCount FROM Artist WHERE ArtistId BETWEEN ? AND ?", 
+        1, 10);
+
+asyncMappedResult.thenAccept(resultSet -> {
+    try (ResultSet<ArtistInfo> rs = resultSet) {
+        rs.forEachRemaining(artist -> {
+            System.out.println("Async result: " + artist);
+        });
+    }
+});
+```
+
+#### Chaining Async Operations
+
+```java
+// Chain multiple async SQL operations
+CompletableFuture<Void> chainedOperations = client.sql()
+    .executeAsync(null, "SELECT ArtistId FROM Artist WHERE Name = ?", "AC/DC")
+    .thenCompose(artistResult -> {
+        try (ResultSet<SqlRow> rs = artistResult) {
+            if (rs.hasNext()) {
+                Integer artistId = rs.next().intValue("ArtistId");
+                // Chain with albums query
+                return client.sql().executeAsync(null, 
+                    "SELECT * FROM Album WHERE ArtistId = ?", artistId);
+            } else {
+                return CompletableFuture.completedFuture(null);
+            }
+        }
+    })
+    .thenAccept(albumResult -> {
+        if (albumResult != null) {
+            try (ResultSet<SqlRow> rs = albumResult) {
+                while (rs.hasNext()) {
+                    SqlRow row = rs.next();
+                    System.out.println("Album: " + row.stringValue("Title"));
+                }
+            }
+        }
+    });
+
+// Wait for completion or handle async
+chainedOperations.join();
+```
+
+#### Parallel Async Queries
+
+```java
+// Execute multiple queries in parallel
+List<CompletableFuture<Integer>> parallelCounts = Arrays.asList(
+    client.sql().executeAsync(null, "SELECT COUNT(*) as count FROM Artist")
+        .thenApply(rs -> { try (ResultSet<SqlRow> r = rs) { 
+            return r.hasNext() ? r.next().intValue("count") : 0; } }),
+    
+    client.sql().executeAsync(null, "SELECT COUNT(*) as count FROM Album")
+        .thenApply(rs -> { try (ResultSet<SqlRow> r = rs) { 
+            return r.hasNext() ? r.next().intValue("count") : 0; } }),
+    
+    client.sql().executeAsync(null, "SELECT COUNT(*) as count FROM Track")
+        .thenApply(rs -> { try (ResultSet<SqlRow> r = rs) { 
+            return r.hasNext() ? r.next().intValue("count") : 0; } })
+);
+
+// Wait for all to complete
+CompletableFuture.allOf(parallelCounts.toArray(new CompletableFuture[0]))
+    .thenRun(() -> {
+        System.out.println("Artists: " + parallelCounts.get(0).join());
+        System.out.println("Albums: " + parallelCounts.get(1).join());
+        System.out.println("Tracks: " + parallelCounts.get(2).join());
+    });
 ```
