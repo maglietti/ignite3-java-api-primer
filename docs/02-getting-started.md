@@ -202,7 +202,7 @@ import java.util.ArrayList;
 public class IgniteHelloWorld {
     
     // Define a simple POJO for our music store example
-    @Table(
+    @org.apache.ignite.catalog.annotations.Table(
         zone = @Zone(value = "Chinook", storageProfiles = "default")
     )
     public static class Artist {
