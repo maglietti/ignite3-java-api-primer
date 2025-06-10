@@ -231,7 +231,7 @@ public class StreamingErrorHandling {
         public int getRetryCount() { return retryCount.get(); }
     }
     
-    // Streaming with comprehensive error handling
+    // Streaming with error handling
     public static void robustStreaming(IgniteClient client, List<Entry<Tuple, Tuple>> data) {
         KeyValueView<Tuple, Tuple> view = client.tables().table("robust_test").keyValueView();
         StreamingErrorHandler errorHandler = new StreamingErrorHandler();
@@ -753,9 +753,9 @@ public class FlowControlStrategies {
 
 ```java
 // Complete example combining all backpressure strategies
-public static void comprehensiveBackpressureHandling(IgniteClient client, 
+public static void backpressureHandling(IgniteClient client, 
                                                    Iterator<Entry<Tuple, Tuple>> dataIterator) {
-    KeyValueView<Tuple, Tuple> view = client.tables().table("comprehensive").keyValueView();
+    KeyValueView<Tuple, Tuple> view = client.tables().table("streaming_test").keyValueView();
     
     SimpleRateLimiter rateLimiter = new SimpleRateLimiter(5000); // 5000 records/sec
     int adaptiveBatchSize = 1000;

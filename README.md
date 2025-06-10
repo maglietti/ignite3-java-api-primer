@@ -51,4 +51,4 @@ The detailed content for each section has been moved to individual files. Please
 
 ---
 
-*This primer provides a comprehensive guide to working with the Apache Ignite 3 Java API. Each section can be expanded with detailed examples, code samples, and practical guidance based on specific use cases and requirements.*
+*This primer provides a guide to working with the Apache Ignite 3 Java API. Each section can be expanded with detailed examples, code samples, and practical guidance based on specific use cases and requirements.*

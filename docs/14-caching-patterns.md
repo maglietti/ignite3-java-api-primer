@@ -1,6 +1,6 @@
 # 14. Caching Patterns
 
-This section provides comprehensive guidance on implementing caching patterns with Apache Ignite 3, including migration strategies from Ignite 2 and integration with popular caching frameworks.
+This section provides guidance on implementing caching patterns with Apache Ignite 3, including migration strategies from Ignite 2 and integration with popular caching frameworks.
 
 ## 14.1 Caching Fundamentals in Ignite 3
 

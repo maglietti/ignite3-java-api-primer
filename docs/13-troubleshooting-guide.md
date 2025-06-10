@@ -1,6 +1,6 @@
 # 13. Troubleshooting Guide
 
-This comprehensive troubleshooting guide covers common issues, configuration problems, performance bottlenecks, and debugging techniques for Apache Ignite 3 Java applications.
+This troubleshooting guide covers common issues, configuration problems, performance bottlenecks, and debugging techniques for Apache Ignite 3 Java applications.
 
 ## Common Issues
 
