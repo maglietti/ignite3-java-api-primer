@@ -275,43 +275,46 @@ public abstract class AbstractIgniteRepository<T, ID> implements IgniteRepositor
     }
 }
 
-// Concrete repository implementation
+// Concrete repository implementation for Artist
 @Repository
-public class CustomerRepository extends AbstractIgniteRepository<Customer, Long> {
+public class ArtistRepository extends AbstractIgniteRepository<Artist, Integer> {
     
-    public CustomerRepository(IgniteTemplate igniteTemplate) {
-        super(igniteTemplate, Customer.class);
+    public ArtistRepository(IgniteTemplate igniteTemplate) {
+        super(igniteTemplate, Artist.class);
     }
     
     @Override
-    protected Long extractId(Customer entity) {
-        return entity.getId();
+    protected Integer extractId(Artist entity) {
+        return entity.getArtistId();
     }
     
-    // Custom query methods
-    public List<Customer> findByCountry(String country) {
+    // Custom query methods for music domain
+    public List<Artist> findByNameContaining(String namePart) {
         return igniteTemplate.findByQuery(
-            "SELECT * FROM Customer WHERE country = ?", 
-            Customer.class, 
-            country
+            "SELECT * FROM Artist WHERE Name LIKE ?", 
+            Artist.class, 
+            "%" + namePart + "%"
         );
     }
     
-    public List<Customer> findByEmailContaining(String emailPart) {
+    public Artist findByName(String name) {
+        List<Artist> artists = igniteTemplate.findByQuery(
+            "SELECT * FROM Artist WHERE Name = ?", 
+            Artist.class, 
+            name
+        );
+        return artists.isEmpty() ? null : artists.get(0);
+    }
+    
+    public List<Artist> findPopularArtists(int limit) {
         return igniteTemplate.findByQuery(
-            "SELECT * FROM Customer WHERE email LIKE ?", 
-            Customer.class, 
-            "%" + emailPart + "%"
+            "SELECT a.* FROM Artist a " +
+            "JOIN Album al ON a.ArtistId = al.ArtistId " +
+            "GROUP BY a.ArtistId, a.Name " +
+            "ORDER BY COUNT(al.AlbumId) DESC LIMIT ?", 
+            Artist.class, 
+            limit
         );
-    }
-    
-    public Customer findByEmail(String email) {
-        List<Customer> customers = igniteTemplate.findByQuery(
-            "SELECT * FROM Customer WHERE email = ?", 
-            Customer.class, 
-            email
-        );
-        return customers.isEmpty() ? null : customers.get(0);
     }
 }
 ```
@@ -321,58 +324,65 @@ public class CustomerRepository extends AbstractIgniteRepository<Customer, Long>
 ```java
 @Service
 @Transactional
-public class CustomerService {
-    private final CustomerRepository customerRepository;
+public class ArtistService {
+    private final ArtistRepository artistRepository;
     private final IgniteTemplate igniteTemplate;
     
-    public CustomerService(CustomerRepository customerRepository, IgniteTemplate igniteTemplate) {
-        this.customerRepository = customerRepository;
+    public ArtistService(ArtistRepository artistRepository, IgniteTemplate igniteTemplate) {
+        this.artistRepository = artistRepository;
         this.igniteTemplate = igniteTemplate;
     }
     
-    public Customer createCustomer(Customer customer) {
-        // Validate email uniqueness
-        if (customerRepository.findByEmail(customer.getEmail()) != null) {
-            throw new IllegalArgumentException("Email already exists: " + customer.getEmail());
+    public Artist createArtist(Artist artist) {
+        // Validate name uniqueness
+        if (artistRepository.findByName(artist.getName()) != null) {
+            throw new IllegalArgumentException("Artist name already exists: " + artist.getName());
         }
         
-        customer.setCreatedAt(LocalDateTime.now());
-        customerRepository.save(customer);
-        return customer;
+        artistRepository.save(artist);
+        return artist;
     }
     
-    public Optional<Customer> getCustomer(Long id) {
-        return customerRepository.findById(id);
+    public Optional<Artist> getArtist(Integer artistId) {
+        return artistRepository.findById(artistId);
     }
     
-    public List<Customer> getCustomersByCountry(String country) {
-        return customerRepository.findByCountry(country);
+    public List<Artist> searchArtists(String namePart) {
+        return artistRepository.findByNameContaining(namePart);
     }
     
-    public Customer updateCustomer(Long id, Customer updatedCustomer) {
-        return customerRepository.findById(id)
+    public Artist updateArtist(Integer artistId, Artist updatedArtist) {
+        return artistRepository.findById(artistId)
             .map(existing -> {
-                existing.setFirstName(updatedCustomer.getFirstName());
-                existing.setLastName(updatedCustomer.getLastName());
-                existing.setEmail(updatedCustomer.getEmail());
-                existing.setPhoneNumber(updatedCustomer.getPhoneNumber());
-                customerRepository.save(existing);
+                existing.setName(updatedArtist.getName());
+                artistRepository.save(existing);
                 return existing;
             })
-            .orElseThrow(() -> new EntityNotFoundException("Customer not found: " + id));
+            .orElseThrow(() -> new EntityNotFoundException("Artist not found: " + artistId));
     }
     
-    public void deleteCustomer(Long id) {
-        if (!customerRepository.existsById(id)) {
-            throw new EntityNotFoundException("Customer not found: " + id);
+    public void deleteArtist(Integer artistId) {
+        if (!artistRepository.existsById(artistId)) {
+            throw new EntityNotFoundException("Artist not found: " + artistId);
         }
-        customerRepository.deleteById(id);
+        artistRepository.deleteById(artistId);
     }
     
-    // Batch operations
-    public void importCustomers(List<Customer> customers) {
-        customers.forEach(customer -> customer.setCreatedAt(LocalDateTime.now()));
-        igniteTemplate.saveAll(customers);
+    public List<Artist> getPopularArtists(int limit) {
+        return artistRepository.findPopularArtists(limit);
+    }
+    
+    // Batch operations for music catalog import
+    public void importArtists(List<Artist> artists) {
+        igniteTemplate.saveAll(artists);
+    }
+    
+    public List<Album> getArtistAlbums(Integer artistId) {
+        return igniteTemplate.findByQuery(
+            "SELECT * FROM Album WHERE ArtistId = ? ORDER BY Title", 
+            Album.class, 
+            artistId
+        );
     }
 }
 ```
@@ -457,46 +467,61 @@ public class JDBCPoolConfiguration {
 #### MyBatis Integration
 
 ```java
-// Customer mapper interface
+// Artist mapper interface for MyBatis integration
 @Mapper
-public interface CustomerMapper {
+public interface ArtistMapper {
     
-    @Select("SELECT * FROM Customer WHERE id = #{id}")
-    Customer findById(Long id);
+    @Select("SELECT * FROM Artist WHERE ArtistId = #{artistId}")
+    Artist findById(Integer artistId);
     
-    @Select("SELECT * FROM Customer WHERE country = #{country}")
-    List<Customer> findByCountry(String country);
+    @Select("SELECT * FROM Artist WHERE Name LIKE CONCAT('%', #{namePart}, '%')")
+    List<Artist> findByNameContaining(String namePart);
     
-    @Insert("INSERT INTO Customer (firstName, lastName, email, phoneNumber, createdAt) " +
-            "VALUES (#{firstName}, #{lastName}, #{email}, #{phoneNumber}, #{createdAt})")
-    @Options(useGeneratedKeys = true, keyProperty = "id")
-    int insert(Customer customer);
+    @Insert("INSERT INTO Artist (ArtistId, Name) " +
+            "VALUES (#{artistId}, #{name})")
+    int insert(Artist artist);
     
-    @Update("UPDATE Customer SET firstName = #{firstName}, lastName = #{lastName}, " +
-            "email = #{email}, phoneNumber = #{phoneNumber} WHERE id = #{id}")
-    int update(Customer customer);
+    @Update("UPDATE Artist SET Name = #{name} WHERE ArtistId = #{artistId}")
+    int update(Artist artist);
     
-    @Delete("DELETE FROM Customer WHERE id = #{id}")
-    int deleteById(Long id);
+    @Delete("DELETE FROM Artist WHERE ArtistId = #{artistId}")
+    int deleteById(Integer artistId);
     
-    // Complex query with join
+    // Complex query with join to get artist album statistics
     @Select("""
-        SELECT c.*, COUNT(o.id) as orderCount 
-        FROM Customer c 
-        LEFT JOIN Orders o ON c.id = o.customerId 
-        WHERE c.country = #{country} 
-        GROUP BY c.id, c.firstName, c.lastName, c.email, c.phoneNumber, c.createdAt
+        SELECT a.*, COUNT(al.AlbumId) as albumCount, COUNT(t.TrackId) as trackCount
+        FROM Artist a 
+        LEFT JOIN Album al ON a.ArtistId = al.ArtistId 
+        LEFT JOIN Track t ON al.AlbumId = t.AlbumId
+        WHERE a.Name LIKE CONCAT('%', #{namePart}, '%')
+        GROUP BY a.ArtistId, a.Name
+        ORDER BY albumCount DESC
         """)
     @Results({
-        @Result(property = "id", column = "id"),
-        @Result(property = "firstName", column = "firstName"),
-        @Result(property = "lastName", column = "lastName"),
-        @Result(property = "email", column = "email"),
-        @Result(property = "phoneNumber", column = "phoneNumber"),
-        @Result(property = "createdAt", column = "createdAt"),
-        @Result(property = "orderCount", column = "orderCount")
+        @Result(property = "artistId", column = "ArtistId"),
+        @Result(property = "name", column = "Name"),
+        @Result(property = "albumCount", column = "albumCount"),
+        @Result(property = "trackCount", column = "trackCount")
     })
-    List<CustomerWithOrderCount> findCustomersWithOrderCount(String country);
+    List<ArtistWithStats> findArtistsWithStats(String namePart);
+    
+    // Get top artists by album sales
+    @Select("""
+        SELECT a.*, SUM(il.Quantity * il.UnitPrice) as totalSales
+        FROM Artist a
+        JOIN Album al ON a.ArtistId = al.ArtistId
+        JOIN Track t ON al.AlbumId = t.AlbumId
+        JOIN InvoiceLine il ON t.TrackId = il.TrackId
+        GROUP BY a.ArtistId, a.Name
+        ORDER BY totalSales DESC
+        LIMIT #{limit}
+        """)
+    @Results({
+        @Result(property = "artistId", column = "ArtistId"),
+        @Result(property = "name", column = "Name"),
+        @Result(property = "totalSales", column = "totalSales")
+    })
+    List<ArtistWithSales> findTopSellingArtists(int limit);
 }
 
 // Service using MyBatis

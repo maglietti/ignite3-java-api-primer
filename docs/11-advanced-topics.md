@@ -72,9 +72,11 @@ public class IgniteExceptionHandling {
     }
     
     private static void performRiskyOperation(IgniteClient client) {
-        // Example operation that might fail
-        var table = client.tables().table("NonExistentTable");
-        table.recordView().get(null, new Object());
+        // Example operation that might fail - trying to access non-existent Artist
+        var artistTable = client.tables().table("Artist");
+        Artist key = new Artist();
+        key.setArtistId(99999); // Non-existent artist ID
+        artistTable.recordView(Artist.class).get(null, key);
     }
 }
 ```
@@ -150,20 +152,20 @@ public class RetryStrategies {
         // Synchronous retry
         String result = executeWithRetry(
             () -> {
-                // Potentially failing operation
-                return client.sql().execute(null, "SELECT 'Hello' as greeting").next().stringValue("greeting");
+                // Potentially failing operation - get random artist name
+                return client.sql().execute(null, "SELECT Name FROM Artist LIMIT 1").next().stringValue("Name");
             },
             IgniteException.class,
             3
         );
         
-        System.out.println("Result with retry: " + result);
+        System.out.println("Artist result with retry: " + result);
         
-        // Asynchronous retry
-        CompletableFuture<String> asyncResult = executeWithRetryAsync(
+        // Asynchronous retry for album count
+        CompletableFuture<Integer> asyncResult = executeWithRetryAsync(
             () -> {
-                return client.sql().executeAsync(null, "SELECT 'Hello Async' as greeting")
-                    .thenApply(resultSet -> resultSet.next().stringValue("greeting"));
+                return client.sql().executeAsync(null, "SELECT COUNT(*) as album_count FROM Album")
+                    .thenApply(resultSet -> resultSet.next().intValue("album_count"));
             },
             3
         );
@@ -271,11 +273,12 @@ public class CircuitBreakerPattern {
         for (int i = 0; i < 10; i++) {
             try {
                 String result = circuitBreaker.execute(() -> {
-                    // Potentially failing operation
+                    // Potentially failing operation - get artist by ID
                     if (Math.random() > 0.7) {
-                        throw new RuntimeException("Simulated failure");
+                        throw new RuntimeException("Simulated artist lookup failure");
                     }
-                    return client.sql().execute(null, "SELECT " + i + " as value").next().stringValue("value");
+                    return client.sql().execute(null, "SELECT Name FROM Artist WHERE ArtistId = " + (i + 1))
+                        .next().stringValue("Name");
                 });
                 
                 System.out.println("Success: " + result + ", Circuit state: " + circuitBreaker.getState());
@@ -398,9 +401,9 @@ public class ConnectionPoolManagement {
             IgniteClient client = pool.borrowConnection();
             
             try {
-                // Perform operations
-                var result = client.sql().execute(null, "SELECT 'Hello' as greeting");
-                System.out.println("Result: " + result.next().stringValue("greeting"));
+                // Perform operations - get random artist
+                var result = client.sql().execute(null, "SELECT Name FROM Artist ORDER BY RANDOM() LIMIT 1");
+                System.out.println("Random Artist: " + result.next().stringValue("Name"));
                 
             } finally {
                 // Always return connection to pool
@@ -423,82 +426,82 @@ public class ConnectionPoolManagement {
 ```java
 public class BatchOptimization {
     
-    // Optimized batch insertion
-    public static void optimizedBatchInsert(IgniteClient client, List<Customer> customers) {
-        RecordView<Customer> customerView = client.tables().table("Customer").recordView(Customer.class);
+    // Optimized batch insertion for Artists
+    public static void optimizedBatchInsert(IgniteClient client, List<Artist> artists) {
+        RecordView<Artist> artistView = client.tables().table("Artist").recordView(Artist.class);
         
         // Process in optimal batch sizes
         int batchSize = 1000;
-        int totalBatches = (customers.size() + batchSize - 1) / batchSize;
+        int totalBatches = (artists.size() + batchSize - 1) / batchSize;
         
-        System.out.println("Processing " + customers.size() + " customers in " + totalBatches + " batches");
+        System.out.println("Processing " + artists.size() + " artists in " + totalBatches + " batches");
         
-        for (int i = 0; i < customers.size(); i += batchSize) {
-            int endIndex = Math.min(i + batchSize, customers.size());
-            List<Customer> batch = customers.subList(i, endIndex);
+        for (int i = 0; i < artists.size(); i += batchSize) {
+            int endIndex = Math.min(i + batchSize, artists.size());
+            List<Artist> batch = artists.subList(i, endIndex);
             
             long startTime = System.currentTimeMillis();
             
             try {
                 // Use upsertAll for best performance
-                customerView.upsertAll(null, batch);
+                artistView.upsertAll(null, batch);
                 
                 long duration = System.currentTimeMillis() - startTime;
                 double rate = (double) batch.size() / duration * 1000;
                 
-                System.out.printf("Batch %d/%d: %d records in %d ms (%.2f records/sec)%n", 
+                System.out.printf("Batch %d/%d: %d artists in %d ms (%.2f artists/sec)%n", 
                     (i / batchSize) + 1, totalBatches, batch.size(), duration, rate);
                 
             } catch (Exception e) {
-                System.err.println("Batch failed: " + e.getMessage());
+                System.err.println("Artist batch failed: " + e.getMessage());
                 // Could implement individual record fallback
-                fallbackIndividualInserts(customerView, batch);
+                fallbackIndividualInserts(artistView, batch);
             }
         }
     }
     
     // Fallback for failed batches
-    private static void fallbackIndividualInserts(RecordView<Customer> view, List<Customer> batch) {
-        System.out.println("Falling back to individual inserts for " + batch.size() + " records");
+    private static void fallbackIndividualInserts(RecordView<Artist> view, List<Artist> batch) {
+        System.out.println("Falling back to individual inserts for " + batch.size() + " artists");
         
-        for (Customer customer : batch) {
+        for (Artist artist : batch) {
             try {
-                view.upsert(null, customer);
+                view.upsert(null, artist);
             } catch (Exception e) {
-                System.err.println("Failed to insert customer " + customer.getId() + ": " + e.getMessage());
+                System.err.println("Failed to insert artist " + artist.getArtistId() + ": " + e.getMessage());
             }
         }
     }
     
-    // Parallel batch processing
-    public static void parallelBatchProcessing(IgniteClient client, List<Customer> customers) {
-        RecordView<Customer> customerView = client.tables().table("Customer").recordView(Customer.class);
+    // Parallel batch processing for Albums
+    public static void parallelBatchProcessing(IgniteClient client, List<Album> albums) {
+        RecordView<Album> albumView = client.tables().table("Album").recordView(Album.class);
         
         int batchSize = 500;
         int numThreads = Runtime.getRuntime().availableProcessors();
         ExecutorService executor = Executors.newFixedThreadPool(numThreads);
         
-        System.out.println("Processing with " + numThreads + " threads");
+        System.out.println("Processing " + albums.size() + " albums with " + numThreads + " threads");
         
         List<CompletableFuture<Void>> futures = new ArrayList<>();
         
-        for (int i = 0; i < customers.size(); i += batchSize) {
+        for (int i = 0; i < albums.size(); i += batchSize) {
             final int startIndex = i;
-            final int endIndex = Math.min(i + batchSize, customers.size());
+            final int endIndex = Math.min(i + batchSize, albums.size());
             
             CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
-                List<Customer> batch = customers.subList(startIndex, endIndex);
+                List<Album> batch = albums.subList(startIndex, endIndex);
                 
                 try {
                     long startTime = System.currentTimeMillis();
-                    customerView.upsertAll(null, batch);
+                    albumView.upsertAll(null, batch);
                     long duration = System.currentTimeMillis() - startTime;
                     
-                    System.out.printf("Thread %s processed %d records in %d ms%n", 
+                    System.out.printf("Thread %s processed %d albums in %d ms%n", 
                         Thread.currentThread().getName(), batch.size(), duration);
                         
                 } catch (Exception e) {
-                    System.err.println("Parallel batch failed: " + e.getMessage());
+                    System.err.println("Parallel album batch failed: " + e.getMessage());
                 }
             }, executor);
             
@@ -527,60 +530,63 @@ public class BatchOptimization {
 ```java
 public class AsyncPatterns {
     
-    // Reactive-style async processing
-    public static CompletableFuture<List<String>> processCustomersAsync(IgniteClient client, List<Integer> customerIds) {
-        RecordView<Customer> customerView = client.tables().table("Customer").recordView(Customer.class);
+    // Reactive-style async processing for Artists
+    public static CompletableFuture<List<String>> processArtistsAsync(IgniteClient client, List<Integer> artistIds) {
+        RecordView<Artist> artistView = client.tables().table("Artist").recordView(Artist.class);
         
-        // Create async operations for each customer
-        List<CompletableFuture<String>> customerFutures = customerIds.stream()
+        // Create async operations for each artist
+        List<CompletableFuture<String>> artistFutures = artistIds.stream()
             .map(id -> {
-                Customer key = new Customer();
-                key.setId(id);
+                Artist key = new Artist();
+                key.setArtistId(id);
                 
-                return customerView.getAsync(null, key)
-                    .thenApply(customer -> {
-                        if (customer != null) {
-                            return customer.getFirstName() + " " + customer.getLastName();
+                return artistView.getAsync(null, key)
+                    .thenApply(artist -> {
+                        if (artist != null) {
+                            return artist.getName();
                         } else {
-                            return "Customer " + id + " not found";
+                            return "Artist " + id + " not found";
                         }
                     })
                     .exceptionally(throwable -> {
-                        System.err.println("Failed to get customer " + id + ": " + throwable.getMessage());
+                        System.err.println("Failed to get artist " + id + ": " + throwable.getMessage());
                         return "Error: " + id;
                     });
             })
             .collect(Collectors.toList());
         
         // Combine all results
-        return CompletableFuture.allOf(customerFutures.toArray(new CompletableFuture[0]))
-            .thenApply(v -> customerFutures.stream()
+        return CompletableFuture.allOf(artistFutures.toArray(new CompletableFuture[0]))
+            .thenApply(v -> artistFutures.stream()
                 .map(CompletableFuture::join)
                 .collect(Collectors.toList()));
     }
     
-    // Async pipeline with transformation
-    public static CompletableFuture<Map<String, Integer>> analyzeCustomerDataAsync(IgniteClient client) {
-        return client.sql().executeAsync(null, "SELECT country, COUNT(*) as count FROM Customer GROUP BY country")
+    // Async pipeline with transformation for music analytics
+    public static CompletableFuture<Map<String, Integer>> analyzeMusicDataAsync(IgniteClient client) {
+        return client.sql().executeAsync(null, 
+                "SELECT g.Name as genre, COUNT(*) as track_count " +
+                "FROM Track t JOIN Genre g ON t.GenreId = g.GenreId " +
+                "GROUP BY g.Name ORDER BY track_count DESC")
             .thenApply(resultSet -> {
-                Map<String, Integer> countryStats = new HashMap<>();
+                Map<String, Integer> genreStats = new HashMap<>();
                 
                 while (resultSet.hasNext()) {
                     var row = resultSet.next();
-                    String country = row.stringValue("country");
-                    Integer count = row.intValue("count");
-                    countryStats.put(country, count);
+                    String genre = row.stringValue("genre");
+                    Integer count = row.intValue("track_count");
+                    genreStats.put(genre, count);
                 }
                 
-                return countryStats;
+                return genreStats;
             })
             .thenApply(stats -> {
                 // Additional processing
-                System.out.println("Processed customer statistics for " + stats.size() + " countries");
+                System.out.println("Processed music statistics for " + stats.size() + " genres");
                 return stats;
             })
             .exceptionally(throwable -> {
-                System.err.println("Failed to analyze customer data: " + throwable.getMessage());
+                System.err.println("Failed to analyze music data: " + throwable.getMessage());
                 return Collections.emptyMap();
             });
     }
@@ -600,36 +606,36 @@ public class AsyncPatterns {
     
     // Example usage
     public static void demonstrateAsyncPatterns(IgniteClient client) {
-        // Async customer processing with timeout
-        List<Integer> customerIds = Arrays.asList(1, 2, 3, 4, 5);
+        // Async artist processing with timeout
+        List<Integer> artistIds = Arrays.asList(1, 2, 3, 4, 5);
         
-        CompletableFuture<List<String>> customerFuture = withTimeout(
-            processCustomersAsync(client, customerIds), 
+        CompletableFuture<List<String>> artistFuture = withTimeout(
+            processArtistsAsync(client, artistIds), 
             5000  // 5 second timeout
         );
         
-        customerFuture.whenComplete((customers, throwable) -> {
+        artistFuture.whenComplete((artists, throwable) -> {
             if (throwable != null) {
-                System.err.println("Customer processing failed: " + throwable.getMessage());
+                System.err.println("Artist processing failed: " + throwable.getMessage());
             } else {
-                System.out.println("Processed customers: " + customers);
+                System.out.println("Processed artists: " + artists);
             }
         });
         
-        // Async data analysis
-        CompletableFuture<Map<String, Integer>> analysisFuture = analyzeCustomerDataAsync(client);
+        // Async music data analysis
+        CompletableFuture<Map<String, Integer>> analysisFuture = analyzeMusicDataAsync(client);
         
         analysisFuture.whenComplete((stats, throwable) -> {
             if (throwable != null) {
-                System.err.println("Analysis failed: " + throwable.getMessage());
+                System.err.println("Music analysis failed: " + throwable.getMessage());
             } else {
-                stats.forEach((country, count) -> 
-                    System.out.println(country + ": " + count + " customers"));
+                stats.forEach((genre, count) -> 
+                    System.out.println(genre + ": " + count + " tracks"));
             }
         });
         
         // Wait for both to complete
-        CompletableFuture.allOf(customerFuture, analysisFuture).join();
+        CompletableFuture.allOf(artistFuture, analysisFuture).join();
     }
 }
 ```
@@ -739,9 +745,9 @@ public class ConnectionMonitoring {
         
         private void performHealthCheck() {
             try {
-                // Simple health check query
+                // Simple health check query using Artist table
                 long startTime = System.currentTimeMillis();
-                client.sql().execute(null, "SELECT 1 as health_check").next();
+                client.sql().execute(null, "SELECT COUNT(*) as artist_count FROM Artist").next();
                 long duration = System.currentTimeMillis() - startTime;
                 
                 isHealthy = true;
@@ -781,6 +787,319 @@ public class ConnectionMonitoring {
         }
         
         healthChecker.shutdown();
+    }
+}
+```
+
+## Chinook Music Store Advanced Operations
+
+### High-Performance Music Analytics
+
+```java
+public class ChinookAdvancedOperations {
+    
+    // Advanced music recommendation engine with async processing
+    public static CompletableFuture<List<TrackRecommendation>> generateRecommendationsAsync(
+            IgniteClient client, Integer customerId, int limit) {
+        
+        return CompletableFuture.supplyAsync(() -> {
+            // Get customer's purchase history
+            String customerHistoryQuery = """
+                SELECT DISTINCT t.GenreId, g.Name as genre_name, COUNT(*) as purchase_count
+                FROM InvoiceLine il
+                JOIN Invoice i ON il.InvoiceId = i.InvoiceId
+                JOIN Track t ON il.TrackId = t.TrackId
+                JOIN Genre g ON t.GenreId = g.GenreId
+                WHERE i.CustomerId = ?
+                GROUP BY t.GenreId, g.Name
+                ORDER BY purchase_count DESC
+                LIMIT 3
+                """;
+            
+            List<Integer> preferredGenres = new ArrayList<>();
+            
+            try (var resultSet = client.sql().execute(null, customerHistoryQuery, customerId)) {
+                while (resultSet.hasNext()) {
+                    var row = resultSet.next();
+                    preferredGenres.add(row.intValue("GenreId"));
+                }
+            }
+            
+            if (preferredGenres.isEmpty()) {
+                // Fallback to popular tracks
+                return getPopularTracks(client, limit);
+            }
+            
+            // Find similar tracks in preferred genres
+            String recommendationQuery = """
+                SELECT t.TrackId, t.Name, a.Name as artist_name, al.Title as album_title,
+                       t.UnitPrice, AVG(il.Quantity) as popularity_score
+                FROM Track t
+                JOIN Album al ON t.AlbumId = al.AlbumId
+                JOIN Artist a ON al.ArtistId = a.ArtistId
+                LEFT JOIN InvoiceLine il ON t.TrackId = il.TrackId
+                WHERE t.GenreId IN (""" + 
+                preferredGenres.stream().map(String::valueOf).collect(Collectors.joining(",")) + """)
+                AND t.TrackId NOT IN (
+                    SELECT DISTINCT il2.TrackId 
+                    FROM InvoiceLine il2 
+                    JOIN Invoice i2 ON il2.InvoiceId = i2.InvoiceId 
+                    WHERE i2.CustomerId = ?
+                )
+                GROUP BY t.TrackId, t.Name, a.Name, al.Title, t.UnitPrice
+                ORDER BY popularity_score DESC NULLS LAST, t.UnitPrice ASC
+                LIMIT ?
+                """;
+            
+            List<TrackRecommendation> recommendations = new ArrayList<>();
+            
+            try (var resultSet = client.sql().execute(null, recommendationQuery, customerId, limit)) {
+                while (resultSet.hasNext()) {
+                    var row = resultSet.next();
+                    recommendations.add(new TrackRecommendation(
+                        row.intValue("TrackId"),
+                        row.stringValue("Name"),
+                        row.stringValue("artist_name"),
+                        row.stringValue("album_title"),
+                        row.decimalValue("UnitPrice"),
+                        row.doubleValue("popularity_score")
+                    ));
+                }
+            }
+            
+            return recommendations;
+        })
+        .exceptionally(throwable -> {
+            System.err.println("Failed to generate recommendations: " + throwable.getMessage());
+            return Collections.emptyList();
+        });
+    }
+    
+    private static List<TrackRecommendation> getPopularTracks(IgniteClient client, int limit) {
+        String popularTracksQuery = """
+            SELECT t.TrackId, t.Name, a.Name as artist_name, al.Title as album_title,
+                   t.UnitPrice, COUNT(il.TrackId) as sales_count
+            FROM Track t
+            JOIN Album al ON t.AlbumId = al.AlbumId
+            JOIN Artist a ON al.ArtistId = a.ArtistId
+            JOIN InvoiceLine il ON t.TrackId = il.TrackId
+            GROUP BY t.TrackId, t.Name, a.Name, al.Title, t.UnitPrice
+            ORDER BY sales_count DESC
+            LIMIT ?
+            """;
+        
+        List<TrackRecommendation> popular = new ArrayList<>();
+        
+        try (var resultSet = client.sql().execute(null, popularTracksQuery, limit)) {
+            while (resultSet.hasNext()) {
+                var row = resultSet.next();
+                popular.add(new TrackRecommendation(
+                    row.intValue("TrackId"),
+                    row.stringValue("Name"),
+                    row.stringValue("artist_name"),
+                    row.stringValue("album_title"),
+                    row.decimalValue("UnitPrice"),
+                    row.doubleValue("sales_count")
+                ));
+            }
+        }
+        
+        return popular;
+    }
+    
+    // Advanced analytics with circuit breaker pattern
+    public static class MusicAnalyticsService {
+        private final IgniteClient client;
+        private final CircuitBreakerPattern.CircuitBreaker circuitBreaker;
+        
+        public MusicAnalyticsService(IgniteClient client) {
+            this.client = client;
+            this.circuitBreaker = new CircuitBreakerPattern.CircuitBreaker(3, 30000, 60000);
+        }
+        
+        public CompletableFuture<SalesReport> generateSalesReportAsync(LocalDate startDate, LocalDate endDate) {
+            return CompletableFuture.supplyAsync(() -> {
+                try {
+                    return circuitBreaker.execute(() -> generateSalesReport(startDate, endDate));
+                } catch (Exception e) {
+                    throw new RuntimeException("Sales report generation failed", e);
+                }
+            });
+        }
+        
+        private SalesReport generateSalesReport(LocalDate startDate, LocalDate endDate) {
+            String salesQuery = """
+                SELECT 
+                    COUNT(DISTINCT i.InvoiceId) as total_orders,
+                    SUM(i.Total) as total_revenue,
+                    COUNT(DISTINCT i.CustomerId) as unique_customers,
+                    AVG(i.Total) as avg_order_value,
+                    COUNT(il.InvoiceLineId) as total_items_sold
+                FROM Invoice i
+                JOIN InvoiceLine il ON i.InvoiceId = il.InvoiceId
+                WHERE i.InvoiceDate BETWEEN ? AND ?
+                """;
+            
+            try (var resultSet = client.sql().execute(null, salesQuery, startDate, endDate)) {
+                if (resultSet.hasNext()) {
+                    var row = resultSet.next();
+                    return new SalesReport(
+                        row.intValue("total_orders"),
+                        row.decimalValue("total_revenue"),
+                        row.intValue("unique_customers"),
+                        row.decimalValue("avg_order_value"),
+                        row.intValue("total_items_sold"),
+                        getTopSellingTracks(startDate, endDate),
+                        getTopSpendingCustomers(startDate, endDate)
+                    );
+                }
+            }
+            
+            return new SalesReport();
+        }
+        
+        private List<TopTrack> getTopSellingTracks(LocalDate startDate, LocalDate endDate) {
+            String topTracksQuery = """
+                SELECT t.Name, a.Name as artist_name, SUM(il.Quantity) as total_sold,
+                       SUM(il.UnitPrice * il.Quantity) as revenue
+                FROM InvoiceLine il
+                JOIN Invoice i ON il.InvoiceId = i.InvoiceId
+                JOIN Track t ON il.TrackId = t.TrackId
+                JOIN Album al ON t.AlbumId = al.AlbumId
+                JOIN Artist a ON al.ArtistId = a.ArtistId
+                WHERE i.InvoiceDate BETWEEN ? AND ?
+                GROUP BY t.TrackId, t.Name, a.Name
+                ORDER BY total_sold DESC
+                LIMIT 10
+                """;
+            
+            List<TopTrack> topTracks = new ArrayList<>();
+            
+            try (var resultSet = client.sql().execute(null, topTracksQuery, startDate, endDate)) {
+                while (resultSet.hasNext()) {
+                    var row = resultSet.next();
+                    topTracks.add(new TopTrack(
+                        row.stringValue("Name"),
+                        row.stringValue("artist_name"),
+                        row.intValue("total_sold"),
+                        row.decimalValue("revenue")
+                    ));
+                }
+            }
+            
+            return topTracks;
+        }
+        
+        private List<TopCustomer> getTopSpendingCustomers(LocalDate startDate, LocalDate endDate) {
+            String topCustomersQuery = """
+                SELECT c.FirstName, c.LastName, c.Email, SUM(i.Total) as total_spent,
+                       COUNT(i.InvoiceId) as order_count
+                FROM Customer c
+                JOIN Invoice i ON c.CustomerId = i.CustomerId
+                WHERE i.InvoiceDate BETWEEN ? AND ?
+                GROUP BY c.CustomerId, c.FirstName, c.LastName, c.Email
+                ORDER BY total_spent DESC
+                LIMIT 10
+                """;
+            
+            List<TopCustomer> topCustomers = new ArrayList<>();
+            
+            try (var resultSet = client.sql().execute(null, topCustomersQuery, startDate, endDate)) {
+                while (resultSet.hasNext()) {
+                    var row = resultSet.next();
+                    topCustomers.add(new TopCustomer(
+                        row.stringValue("FirstName") + " " + row.stringValue("LastName"),
+                        row.stringValue("Email"),
+                        row.decimalValue("total_spent"),
+                        row.intValue("order_count")
+                    ));
+                }
+            }
+            
+            return topCustomers;
+        }
+    }
+    
+    // Data transfer objects
+    public static class TrackRecommendation {
+        private final Integer trackId;
+        private final String name;
+        private final String artistName;
+        private final String albumTitle;
+        private final BigDecimal unitPrice;
+        private final Double popularityScore;
+        
+        public TrackRecommendation(Integer trackId, String name, String artistName, 
+                                 String albumTitle, BigDecimal unitPrice, Double popularityScore) {
+            this.trackId = trackId;
+            this.name = name;
+            this.artistName = artistName;
+            this.albumTitle = albumTitle;
+            this.unitPrice = unitPrice;
+            this.popularityScore = popularityScore;
+        }
+        
+        // Getters...
+    }
+    
+    public static class SalesReport {
+        private final Integer totalOrders;
+        private final BigDecimal totalRevenue;
+        private final Integer uniqueCustomers;
+        private final BigDecimal avgOrderValue;
+        private final Integer totalItemsSold;
+        private final List<TopTrack> topTracks;
+        private final List<TopCustomer> topCustomers;
+        
+        public SalesReport() {
+            this(0, BigDecimal.ZERO, 0, BigDecimal.ZERO, 0, new ArrayList<>(), new ArrayList<>());
+        }
+        
+        public SalesReport(Integer totalOrders, BigDecimal totalRevenue, Integer uniqueCustomers,
+                          BigDecimal avgOrderValue, Integer totalItemsSold, List<TopTrack> topTracks,
+                          List<TopCustomer> topCustomers) {
+            this.totalOrders = totalOrders;
+            this.totalRevenue = totalRevenue;
+            this.uniqueCustomers = uniqueCustomers;
+            this.avgOrderValue = avgOrderValue;
+            this.totalItemsSold = totalItemsSold;
+            this.topTracks = topTracks;
+            this.topCustomers = topCustomers;
+        }
+        
+        // Getters...
+    }
+    
+    public static class TopTrack {
+        private final String name;
+        private final String artistName;
+        private final Integer totalSold;
+        private final BigDecimal revenue;
+        
+        public TopTrack(String name, String artistName, Integer totalSold, BigDecimal revenue) {
+            this.name = name;
+            this.artistName = artistName;
+            this.totalSold = totalSold;
+            this.revenue = revenue;
+        }
+        
+        // Getters...
+    }
+    
+    public static class TopCustomer {
+        private final String name;
+        private final String email;
+        private final BigDecimal totalSpent;
+        private final Integer orderCount;
+        
+        public TopCustomer(String name, String email, BigDecimal totalSpent, Integer orderCount) {
+            this.name = name;
+            this.email = email;
+            this.totalSpent = totalSpent;
+            this.orderCount = orderCount;
+        }
+        
+        // Getters...
     }
 }
 ```

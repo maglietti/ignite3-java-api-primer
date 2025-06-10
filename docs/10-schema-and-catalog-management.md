@@ -41,55 +41,52 @@ public class CatalogBasics {
 ```java
 public class TableCreation {
     
-    // Define table with annotations
+    // Define Artist table with annotations for Chinook music store
     @Table(
-        zone = @Zone(value = "enterprise_zone", storageProfiles = "default"),
+        zone = @Zone(value = "chinook_zone", storageProfiles = "default"),
         indexes = {
-            @Index(value = "idx_customer_email", columns = { @ColumnRef("email") }),
-            @Index(value = "idx_customer_name", columns = { 
-                @ColumnRef("lastName"), 
-                @ColumnRef("firstName") 
-            })
+            @Index(value = "idx_artist_name", columns = { @ColumnRef("Name") }),
+            @Index(value = "idx_artist_genre", columns = { @ColumnRef("primaryGenre") })
         }
     )
-    public static class Customer {
+    public static class Artist {
         @Id
-        @Column(value = "id", nullable = false)
-        private Long id;
+        @Column(value = "ArtistId", nullable = false)
+        private Integer artistId;
         
-        @Column(value = "firstName", nullable = false, length = 50)
-        private String firstName;
+        @Column(value = "Name", nullable = false, length = 120)
+        private String name;
         
-        @Column(value = "lastName", nullable = false, length = 50)
-        private String lastName;
+        @Column(value = "primary_genre", nullable = true, length = 50)
+        private String primaryGenre;
         
-        @Column(value = "email", nullable = false, length = 100)
-        private String email;
+        @Column(value = "formed_year", nullable = true)
+        private Integer formedYear;
         
-        @Column(value = "phoneNumber", nullable = true, length = 20)
-        private String phoneNumber;
+        @Column(value = "country", nullable = true, length = 50)
+        private String country;
         
-        @Column(value = "createdAt", nullable = false)
+        @Column(value = "created_at", nullable = false)
         private LocalDateTime createdAt;
         
         // Constructors, getters, setters...
     }
     
-    // Create table with error handling
-    public static void createCustomerTable(IgniteClient client) {
+    // Create Artist table with error handling
+    public static void createArtistTable(IgniteClient client) {
         try {
             // Async table creation
-            CompletableFuture<Void> future = client.catalog().createTableAsync(Customer.class);
+            CompletableFuture<Void> future = client.catalog().createTableAsync(Artist.class);
             
             future.whenComplete((result, throwable) -> {
                 if (throwable != null) {
                     if (throwable.getCause() instanceof TableAlreadyExistsException) {
-                        System.out.println("Table already exists - skipping creation");
+                        System.out.println("Artist table already exists - skipping creation");
                     } else {
-                        System.err.println("Table creation failed: " + throwable.getMessage());
+                        System.err.println("Artist table creation failed: " + throwable.getMessage());
                     }
                 } else {
-                    System.out.println("Table 'Customer' created successfully");
+                    System.out.println("Artist table created successfully");
                 }
             });
             
@@ -97,7 +94,7 @@ public class TableCreation {
             future.join();
             
         } catch (Exception e) {
-            System.err.println("Error creating table: " + e.getMessage());
+            System.err.println("Error creating Artist table: " + e.getMessage());
         }
     }
 }
@@ -108,27 +105,28 @@ public class TableCreation {
 ```java
 public class ManualTableDefinition {
     
-    // Create table using TableDefinition API
-    public static void createOrdersTable(IgniteClient client) {
-        TableDefinition tableDefinition = TableDefinition.builder("Orders")
+    // Create Album table using TableDefinition API with colocation by ArtistId
+    public static void createAlbumTable(IgniteClient client) {
+        TableDefinition tableDefinition = TableDefinition.builder("Album")
             .ifNotExists()
             .columns(
-                ColumnDefinition.builder("orderId", ColumnType.INT64).asNonNull().build(),
-                ColumnDefinition.builder("customerId", ColumnType.INT64).asNonNull().build(),
-                ColumnDefinition.builder("orderDate", ColumnType.TIMESTAMP).asNonNull().build(),
-                ColumnDefinition.builder("status", ColumnType.STRING).length(20).asNonNull().build(),
-                ColumnDefinition.builder("totalAmount", ColumnType.DECIMAL).precision(10).scale(2).build()
+                ColumnDefinition.builder("AlbumId", ColumnType.INT32).asNonNull().build(),
+                ColumnDefinition.builder("Title", ColumnType.STRING).length(160).asNonNull().build(),
+                ColumnDefinition.builder("ArtistId", ColumnType.INT32).asNonNull().build(),
+                ColumnDefinition.builder("ReleaseDate", ColumnType.DATE).build(),
+                ColumnDefinition.builder("Genre", ColumnType.STRING).length(50).build(),
+                ColumnDefinition.builder("Label", ColumnType.STRING).length(100).build()
             )
-            .primaryKey("orderId", "customerId")
-            .colocation("customerId")
-            .zone("enterprise_zone")
+            .primaryKey("AlbumId")
+            .colocation("ArtistId")  // Colocate albums with their artists
+            .zone("chinook_zone")
             .build();
         
         try {
             client.catalog().createTable(tableDefinition);
-            System.out.println("Orders table created with manual definition");
+            System.out.println("Album table created with manual definition and colocation");
         } catch (Exception e) {
-            System.err.println("Failed to create Orders table: " + e.getMessage());
+            System.err.println("Failed to create Album table: " + e.getMessage());
         }
     }
 }
@@ -326,24 +324,33 @@ public class IndexManagement {
     // Create index dynamically
     public static void createPerformanceIndexes(IgniteClient client) {
         try {
-            // Create index for frequently queried columns
+            // Create index for frequently queried album searches
             String createIndexSql = """
-                CREATE INDEX IF NOT EXISTS idx_customer_search 
-                ON Customer (lastName, firstName, email)
+                CREATE INDEX IF NOT EXISTS idx_album_search 
+                ON Album (Title, ArtistId, Genre)
                 """;
             
             client.sql().execute(null, createIndexSql);
-            System.out.println("Performance index created");
+            System.out.println("Album search index created");
             
-            // Create partial index for active customers
+            // Create index for track searches by album
+            String trackIndexSql = """
+                CREATE INDEX IF NOT EXISTS idx_track_album 
+                ON Track (AlbumId, Name)
+                """;
+            
+            client.sql().execute(null, trackIndexSql);
+            System.out.println("Track-Album index created");
+            
+            // Create partial index for rock genre albums
             String partialIndexSql = """
-                CREATE INDEX IF NOT EXISTS idx_active_customers 
-                ON Customer (email) 
-                WHERE status = 'ACTIVE'
+                CREATE INDEX IF NOT EXISTS idx_rock_albums 
+                ON Album (Title, ArtistId) 
+                WHERE Genre LIKE '%Rock%'
                 """;
             
             client.sql().execute(null, partialIndexSql);
-            System.out.println("Partial index for active customers created");
+            System.out.println("Partial index for rock albums created");
             
         } catch (Exception e) {
             System.err.println("Failed to create indexes: " + e.getMessage());
@@ -353,10 +360,10 @@ public class IndexManagement {
     // Analyze index usage and performance
     public static void analyzeIndexPerformance(IgniteClient client, String tableName) {
         try {
-            // Query to analyze index statistics (if available)
+            // Query to analyze index statistics for music searches
             String analyzeQuery = """
                 EXPLAIN ANALYZE SELECT * FROM " + tableName + " 
-                WHERE lastName = 'Smith' AND email LIKE '%@gmail.com'
+                WHERE Title LIKE '%Rock%' AND ArtistId IN (1, 2, 3)
                 """;
             
             var result = client.sql().execute(null, analyzeQuery);
@@ -396,24 +403,36 @@ public class IndexManagement {
 ```java
 public class ZoneManagement {
     
-    // Create distribution zone with specific configuration
-    public static void createEnterpriseZone(IgniteClient client) {
+    // Create Chinook distribution zone with music-optimized configuration
+    public static void createChinookZone(IgniteClient client) {
         try {
-            ZoneDefinition zoneDefinition = ZoneDefinition.builder("enterprise_zone")
+            ZoneDefinition zoneDefinition = ZoneDefinition.builder("chinook_zone")
                 .ifNotExists()
-                .partitions(32)              // Higher partition count for scalability
-                .replicas(3)                 // 3 replicas for high availability
-                .dataNodesAutoAdjust(120)    // Auto-adjust timeout
-                .dataNodesAutoAdjustScaleUp(1)   // Scale up delay
-                .dataNodesAutoAdjustScaleDown(300)  // Scale down delay (5 minutes)
+                .partitions(16)              // Optimized for music catalog size
+                .replicas(2)                 // 2 replicas for availability
+                .dataNodesAutoAdjust(60)     // Faster auto-adjust for music workloads
+                .dataNodesAutoAdjustScaleUp(1)   // Quick scale up for peak listening
+                .dataNodesAutoAdjustScaleDown(180)  // Scale down delay (3 minutes)
                 .storageProfiles("default")
                 .build();
             
             client.catalog().createZone(zoneDefinition);
-            System.out.println("Enterprise zone created with high availability settings");
+            System.out.println("Chinook zone created with music store optimizations");
+            
+            // Also create a separate zone for high-throughput streaming data
+            ZoneDefinition streamingZone = ZoneDefinition.builder("chinook_streaming")
+                .ifNotExists()
+                .partitions(32)              // Higher partitions for streaming data
+                .replicas(1)                 // Lower replication for performance
+                .dataNodesAutoAdjust(30)     // Fast auto-adjust for streaming
+                .storageProfiles("default")
+                .build();
+            
+            client.catalog().createZone(streamingZone);
+            System.out.println("Chinook streaming zone created for high-throughput data");
             
         } catch (Exception e) {
-            System.err.println("Failed to create enterprise zone: " + e.getMessage());
+            System.err.println("Failed to create Chinook zones: " + e.getMessage());
         }
     }
     
@@ -463,11 +482,13 @@ public class SchemaMigration {
         // Getters...
     }
     
-    // Migration registry
+    // Migration registry for Chinook music store
     private static final List<MigrationVersion> MIGRATIONS = Arrays.asList(
-        new MigrationVersion(1, "Initial schema", () -> createInitialSchema()),
-        new MigrationVersion(2, "Add customer indexes", () -> addCustomerIndexes()),
-        new MigrationVersion(3, "Create audit table", () -> createAuditTable())
+        new MigrationVersion(1, "Initial Chinook schema", () -> createInitialChinookSchema()),
+        new MigrationVersion(2, "Add Artist performance indexes", () -> addArtistIndexes()),
+        new MigrationVersion(3, "Create playlist and track tables", () -> createPlaylistTables()),
+        new MigrationVersion(4, "Add Album colocation optimization", () -> optimizeAlbumColocation()),
+        new MigrationVersion(5, "Create music analytics tables", () -> createAnalyticsTables())
     );
     
     // Execute migrations
@@ -540,20 +561,245 @@ public class SchemaMigration {
         }
     }
     
-    // Example migration methods
-    private static void createInitialSchema() {
-        // Implementation for initial schema creation
-        System.out.println("Creating initial schema...");
+    // Example migration methods for Chinook music store
+    private static void createInitialChinookSchema() {
+        // Implementation for initial Chinook schema creation
+        System.out.println("Creating initial Chinook schema (Artist, Album tables)...");
     }
     
-    private static void addCustomerIndexes() {
-        // Implementation for adding customer indexes
-        System.out.println("Adding customer indexes...");
+    private static void addArtistIndexes() {
+        // Implementation for adding Artist performance indexes
+        System.out.println("Adding Artist search and performance indexes...");
     }
     
-    private static void createAuditTable() {
-        // Implementation for creating audit table
-        System.out.println("Creating audit table...");
+    private static void createPlaylistTables() {
+        // Implementation for creating Playlist and Track tables
+        System.out.println("Creating Playlist, Track, and PlaylistTrack tables...");
+    }
+    
+    private static void optimizeAlbumColocation() {
+        // Implementation for Album-Artist colocation optimization
+        System.out.println("Optimizing Album colocation by ArtistId...");
+    }
+    
+    private static void createAnalyticsTables() {
+        // Implementation for music analytics and reporting tables
+        System.out.println("Creating music analytics and reporting tables...");
+    }
+}
+```
+
+## Complete Chinook Schema Example
+
+### Creating the Full Music Store Schema
+
+```java
+public class ChinookSchemaManager {
+    
+    // Complete Chinook schema creation
+    public static void createChinookSchema(IgniteClient client) {
+        System.out.println("Creating complete Chinook music store schema...");
+        
+        try {
+            // 1. Create zones first
+            createChinookZones(client);
+            
+            // 2. Create core music tables
+            createCoreMusicTables(client);
+            
+            // 3. Create customer and business tables
+            createBusinessTables(client);
+            
+            // 4. Create performance indexes
+            createPerformanceIndexes(client);
+            
+            System.out.println("Chinook schema creation completed successfully");
+            
+        } catch (Exception e) {
+            System.err.println("Failed to create Chinook schema: " + e.getMessage());
+            throw new RuntimeException("Schema creation failed", e);
+        }
+    }
+    
+    private static void createChinookZones(IgniteClient client) {
+        // Main transactional zone for music catalog
+        ZoneDefinition musicZone = ZoneDefinition.builder("chinook_music")
+            .ifNotExists()
+            .partitions(16)
+            .replicas(2)
+            .storageProfiles("default")
+            .build();
+        
+        // Analytics zone for reporting and aggregations
+        ZoneDefinition analyticsZone = ZoneDefinition.builder("chinook_analytics")
+            .ifNotExists()
+            .partitions(32)
+            .replicas(1)  // Lower replication for analytics
+            .storageProfiles("default")
+            .build();
+        
+        client.catalog().createZone(musicZone);
+        client.catalog().createZone(analyticsZone);
+        
+        System.out.println("Chinook zones created");
+    }
+    
+    private static void createCoreMusicTables(IgniteClient client) {
+        // Artist table (root of hierarchy)
+        TableDefinition artistTable = TableDefinition.builder("Artist")
+            .ifNotExists()
+            .columns(
+                ColumnDefinition.builder("ArtistId", ColumnType.INT32).asNonNull().build(),
+                ColumnDefinition.builder("Name", ColumnType.STRING).length(120).asNonNull().build()
+            )
+            .primaryKey("ArtistId")
+            .zone("chinook_music")
+            .build();
+        
+        // Album table (colocated with Artist)
+        TableDefinition albumTable = TableDefinition.builder("Album")
+            .ifNotExists()
+            .columns(
+                ColumnDefinition.builder("AlbumId", ColumnType.INT32).asNonNull().build(),
+                ColumnDefinition.builder("Title", ColumnType.STRING).length(160).asNonNull().build(),
+                ColumnDefinition.builder("ArtistId", ColumnType.INT32).asNonNull().build()
+            )
+            .primaryKey("AlbumId")
+            .colocation("ArtistId")  // Colocate with Artist
+            .zone("chinook_music")
+            .build();
+        
+        // Track table (colocated with Album/Artist)
+        TableDefinition trackTable = TableDefinition.builder("Track")
+            .ifNotExists()
+            .columns(
+                ColumnDefinition.builder("TrackId", ColumnType.INT32).asNonNull().build(),
+                ColumnDefinition.builder("Name", ColumnType.STRING).length(200).asNonNull().build(),
+                ColumnDefinition.builder("AlbumId", ColumnType.INT32).build(),
+                ColumnDefinition.builder("MediaTypeId", ColumnType.INT32).asNonNull().build(),
+                ColumnDefinition.builder("GenreId", ColumnType.INT32).build(),
+                ColumnDefinition.builder("Composer", ColumnType.STRING).length(220).build(),
+                ColumnDefinition.builder("Milliseconds", ColumnType.INT32).asNonNull().build(),
+                ColumnDefinition.builder("Bytes", ColumnType.INT32).build(),
+                ColumnDefinition.builder("UnitPrice", ColumnType.DECIMAL).precision(10).scale(2).asNonNull().build()
+            )
+            .primaryKey("TrackId")
+            .colocation("AlbumId")  // Colocate with Album
+            .zone("chinook_music")
+            .build();
+        
+        // Create tables in dependency order
+        client.catalog().createTable(artistTable);
+        client.catalog().createTable(albumTable);
+        client.catalog().createTable(trackTable);
+        
+        System.out.println("Core music tables created");
+    }
+    
+    private static void createBusinessTables(IgniteClient client) {
+        // Customer table
+        TableDefinition customerTable = TableDefinition.builder("Customer")
+            .ifNotExists()
+            .columns(
+                ColumnDefinition.builder("CustomerId", ColumnType.INT32).asNonNull().build(),
+                ColumnDefinition.builder("FirstName", ColumnType.STRING).length(40).asNonNull().build(),
+                ColumnDefinition.builder("LastName", ColumnType.STRING).length(20).asNonNull().build(),
+                ColumnDefinition.builder("Email", ColumnType.STRING).length(60).asNonNull().build(),
+                ColumnDefinition.builder("Country", ColumnType.STRING).length(40).build(),
+                ColumnDefinition.builder("Phone", ColumnType.STRING).length(24).build()
+            )
+            .primaryKey("CustomerId")
+            .zone("chinook_music")
+            .build();
+        
+        // Invoice table (colocated with Customer)
+        TableDefinition invoiceTable = TableDefinition.builder("Invoice")
+            .ifNotExists()
+            .columns(
+                ColumnDefinition.builder("InvoiceId", ColumnType.INT32).asNonNull().build(),
+                ColumnDefinition.builder("CustomerId", ColumnType.INT32).asNonNull().build(),
+                ColumnDefinition.builder("InvoiceDate", ColumnType.TIMESTAMP).asNonNull().build(),
+                ColumnDefinition.builder("BillingAddress", ColumnType.STRING).length(70).build(),
+                ColumnDefinition.builder("BillingCity", ColumnType.STRING).length(40).build(),
+                ColumnDefinition.builder("BillingCountry", ColumnType.STRING).length(40).build(),
+                ColumnDefinition.builder("Total", ColumnType.DECIMAL).precision(10).scale(2).asNonNull().build()
+            )
+            .primaryKey("InvoiceId")
+            .colocation("CustomerId")  // Colocate with Customer
+            .zone("chinook_music")
+            .build();
+        
+        // InvoiceLine table (colocated with Invoice/Customer)
+        TableDefinition invoiceLineTable = TableDefinition.builder("InvoiceLine")
+            .ifNotExists()
+            .columns(
+                ColumnDefinition.builder("InvoiceLineId", ColumnType.INT32).asNonNull().build(),
+                ColumnDefinition.builder("InvoiceId", ColumnType.INT32).asNonNull().build(),
+                ColumnDefinition.builder("TrackId", ColumnType.INT32).asNonNull().build(),
+                ColumnDefinition.builder("UnitPrice", ColumnType.DECIMAL).precision(10).scale(2).asNonNull().build(),
+                ColumnDefinition.builder("Quantity", ColumnType.INT32).asNonNull().build()
+            )
+            .primaryKey("InvoiceLineId")
+            .colocation("InvoiceId")  // Colocate with Invoice
+            .zone("chinook_music")
+            .build();
+        
+        client.catalog().createTable(customerTable);
+        client.catalog().createTable(invoiceTable);
+        client.catalog().createTable(invoiceLineTable);
+        
+        System.out.println("Business tables created");
+    }
+    
+    private static void createPerformanceIndexes(IgniteClient client) {
+        // Artist search index
+        client.sql().execute(null, 
+            "CREATE INDEX IF NOT EXISTS idx_artist_name ON Artist (Name)");
+        
+        // Album search by artist and title
+        client.sql().execute(null, 
+            "CREATE INDEX IF NOT EXISTS idx_album_artist_title ON Album (ArtistId, Title)");
+        
+        // Track search by album and name
+        client.sql().execute(null, 
+            "CREATE INDEX IF NOT EXISTS idx_track_album_name ON Track (AlbumId, Name)");
+        
+        // Track search by genre for recommendations
+        client.sql().execute(null, 
+            "CREATE INDEX IF NOT EXISTS idx_track_genre ON Track (GenreId, UnitPrice)");
+        
+        // Customer email index for authentication
+        client.sql().execute(null, 
+            "CREATE INDEX IF NOT EXISTS idx_customer_email ON Customer (Email)");
+        
+        // Invoice date index for reporting
+        client.sql().execute(null, 
+            "CREATE INDEX IF NOT EXISTS idx_invoice_date ON Invoice (InvoiceDate, CustomerId)");
+        
+        // Invoice line track index for sales analytics
+        client.sql().execute(null, 
+            "CREATE INDEX IF NOT EXISTS idx_invoiceline_track ON InvoiceLine (TrackId, InvoiceId)");
+        
+        System.out.println("Performance indexes created");
+    }
+    
+    // Validate schema after creation
+    public static boolean validateChinookSchema(IgniteClient client) {
+        String[] expectedTables = {
+            "Artist", "Album", "Track", "Customer", "Invoice", "InvoiceLine"
+        };
+        
+        Collection<String> actualTables = client.catalog().tables();
+        
+        for (String expectedTable : expectedTables) {
+            if (!actualTables.contains(expectedTable)) {
+                System.err.println("Missing table: " + expectedTable);
+                return false;
+            }
+        }
+        
+        System.out.println("Chinook schema validation successful");
+        return true;
     }
 }
 ```
@@ -622,9 +868,9 @@ public class EnvironmentConfig {
         public int getReplicas() { return replicas; }
     }
     
-    // Create zone based on environment
-    public static void createEnvironmentZone(IgniteClient client, Environment env) {
-        ZoneDefinition zoneDef = ZoneDefinition.builder("app_zone")
+    // Create Chinook zone based on environment
+    public static void createChinookEnvironmentZone(IgniteClient client, Environment env) {
+        ZoneDefinition zoneDef = ZoneDefinition.builder("chinook_" + env.name().toLowerCase())
             .ifNotExists()
             .partitions(env.getPartitions())
             .replicas(env.getReplicas())
@@ -633,9 +879,23 @@ public class EnvironmentConfig {
         
         try {
             client.catalog().createZone(zoneDef);
-            System.out.println("Created zone for " + env + " environment");
+            System.out.println("Created Chinook zone for " + env + " environment");
+            
+            // In production, also create a separate analytics zone
+            if (env == Environment.PRODUCTION) {
+                ZoneDefinition analyticsZone = ZoneDefinition.builder("chinook_analytics")
+                    .ifNotExists()
+                    .partitions(64)  // Higher partitions for analytics workloads
+                    .replicas(2)
+                    .storageProfiles("default")
+                    .build();
+                
+                client.catalog().createZone(analyticsZone);
+                System.out.println("Created Chinook analytics zone for production");
+            }
+            
         } catch (Exception e) {
-            System.err.println("Failed to create zone: " + e.getMessage());
+            System.err.println("Failed to create Chinook zone: " + e.getMessage());
         }
     }
 }
@@ -649,8 +909,9 @@ public class SchemaDocumentation {
     // Generate comprehensive schema documentation
     public static void generateSchemaDoc(IgniteClient client, String outputPath) {
         try (FileWriter writer = new FileWriter(outputPath)) {
-            writer.write("# Database Schema Documentation\n\n");
+            writer.write("# Chinook Music Store - Database Schema Documentation\n\n");
             writer.write("Generated on: " + LocalDateTime.now() + "\n\n");
+            writer.write("This document describes the schema for the Chinook digital music store.\n\n");
             
             // Document zones
             writer.write("## Distribution Zones\n\n");

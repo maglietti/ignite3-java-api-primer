@@ -12,15 +12,15 @@ Apache Ignite 3 represents a paradigm shift from Ignite 2's cache-centric API to
 
 ```java
 // Ignite 2 Approach
-IgniteCache<String, Customer> cache = ignite.cache("customerCache");
-Customer customer = cache.get("customer123");
-cache.put("customer123", updatedCustomer);
+IgniteCache<Integer, Artist> cache = ignite.cache("artistCache");
+Artist artist = cache.get(123);
+cache.put(123, updatedArtist);
 
 // Ignite 3 Approach
-RecordView<Customer> customerView = client.tables().table("Customer").recordView(Customer.class);
-Customer key = new Customer(); key.setId("customer123");
-Customer customer = customerView.get(null, key);
-customerView.upsert(null, updatedCustomer);
+RecordView<Artist> artistView = client.tables().table("Artist").recordView(Artist.class);
+Artist key = new Artist(); key.setArtistId(123);
+Artist artist = artistView.get(null, key);
+artistView.upsert(null, updatedArtist);
 ```
 
 #### When to Use Ignite 3 for Caching
@@ -29,9 +29,9 @@ customerView.upsert(null, updatedCustomer);
 
 - **Distributed Caching**: Shared cache across multiple application instances
 - **Session Storage**: Web session management in clustered environments
-- **Reference Data**: Configuration, lookup tables, and reference data caching
-- **Computed Results**: Expensive calculation results with TTL requirements
-- **Database Off-loading**: Reducing database load through intelligent caching
+- **Reference Data**: Artist catalogs, genre lookups, and music metadata caching
+- **Computed Results**: Album sales analytics, track popularity scores with TTL requirements
+- **Database Off-loading**: Reducing database load for frequently accessed track and artist data
 
 **Performance Characteristics:**
 
@@ -91,28 +91,28 @@ public class CacheEntry {
 
 ```java
 @Table(
-    zone = @Zone(value = "customer_cache_zone", storageProfiles = "default"),
+    zone = @Zone(value = "artist_cache_zone", storageProfiles = "default"),
     indexes = {
-        @Index(value = "idx_customer_email", columns = { @ColumnRef("email") }),
-        @Index(value = "idx_customer_last_accessed", columns = { @ColumnRef("lastAccessed") })
+        @Index(value = "idx_artist_name", columns = { @ColumnRef("name") }),
+        @Index(value = "idx_artist_last_accessed", columns = { @ColumnRef("lastAccessed") })
     }
 )
-public class CustomerCache {
+public class ArtistCache {
     @Id
-    @Column(value = "customer_id", nullable = false)
-    private String customerId;
+    @Column(value = "ArtistId", nullable = false)
+    private Integer artistId;
     
-    @Column(value = "first_name", nullable = false, length = 50)
-    private String firstName;
+    @Column(value = "Name", nullable = false, length = 120)
+    private String name;
     
-    @Column(value = "last_name", nullable = false, length = 50)
-    private String lastName;
+    @Column(value = "album_count", nullable = true)
+    private Integer albumCount;
     
-    @Column(value = "email", nullable = false, length = 100)
-    private String email;
+    @Column(value = "total_tracks", nullable = true)
+    private Integer totalTracks;
     
-    @Column(value = "phone", nullable = true, length = 20)
-    private String phone;
+    @Column(value = "popularity_score", nullable = true)
+    private Double popularityScore;
     
     @Column(value = "cached_at", nullable = false)
     private LocalDateTime cachedAt;
@@ -127,15 +127,15 @@ public class CustomerCache {
     private Long accessCount = 0L;
     
     // Constructors, getters, setters...
-    public CustomerCache() {}
+    public ArtistCache() {}
     
-    public CustomerCache(String customerId, String firstName, String lastName, 
-                        String email, String phone, Duration ttl) {
-        this.customerId = customerId;
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.email = email;
-        this.phone = phone;
+    public ArtistCache(Integer artistId, String name, Integer albumCount, 
+                      Integer totalTracks, Double popularityScore, Duration ttl) {
+        this.artistId = artistId;
+        this.name = name;
+        this.albumCount = albumCount;
+        this.totalTracks = totalTracks;
+        this.popularityScore = popularityScore;
         this.cachedAt = LocalDateTime.now();
         this.lastAccessed = LocalDateTime.now();
         this.accessCount = 0L;
@@ -165,30 +165,21 @@ public class CustomerCache {
 The cache-aside pattern is the most common caching strategy where the application manages the cache directly.
 
 ```java
-public class CacheAsideService<K, V> {
+public class ArtistCacheAsideService {
     private final IgniteClient igniteClient;
     private final RecordView<CacheEntry> cacheView;
-    private final Function<K, String> keyMapper;
-    private final Function<V, byte[]> valueSerializer;
-    private final Function<byte[], V> valueDeserializer;
-    private final Function<K, V> dataLoader; // Function to load from primary data source
+    private final Function<Integer, Artist> artistDataLoader; // Function to load Artist from primary data source
     
-    public CacheAsideService(IgniteClient igniteClient,
-                            Function<K, String> keyMapper,
-                            Function<V, byte[]> valueSerializer,
-                            Function<byte[], V> valueDeserializer,
-                            Function<K, V> dataLoader) {
+    public ArtistCacheAsideService(IgniteClient igniteClient,
+                                  Function<Integer, Artist> artistDataLoader) {
         this.igniteClient = igniteClient;
         this.cacheView = igniteClient.tables().table("CacheEntry").recordView(CacheEntry.class);
-        this.keyMapper = keyMapper;
-        this.valueSerializer = valueSerializer;
-        this.valueDeserializer = valueDeserializer;
-        this.dataLoader = dataLoader;
+        this.artistDataLoader = artistDataLoader;
     }
     
-    // Cache-aside read operation
-    public V get(K key) {
-        String cacheKey = keyMapper.apply(key);
+    // Cache-aside read operation for Artist
+    public Artist getArtist(Integer artistId) {
+        String cacheKey = "artist:" + artistId;
         
         // 1. Try to get from cache
         CacheEntry keyEntry = new CacheEntry();
@@ -199,42 +190,42 @@ public class CacheAsideService<K, V> {
             // Cache hit - update access statistics and return
             cached.recordAccess();
             cacheView.upsert(null, cached);
-            return valueDeserializer.apply(cached.getValue());
+            return deserializeArtist(cached.getValue());
         }
         
         // 2. Cache miss - load from primary data source
-        V value = dataLoader.apply(key);
+        Artist artist = artistDataLoader.apply(artistId);
         
-        if (value != null) {
+        if (artist != null) {
             // 3. Store in cache for future access
-            put(key, value, Duration.ofHours(1)); // 1 hour TTL
+            putArtist(artistId, artist, Duration.ofHours(1)); // 1 hour TTL
         }
         
-        return value;
+        return artist;
     }
     
-    // Cache-aside write operation
-    public void put(K key, V value, Duration ttl) {
-        String cacheKey = keyMapper.apply(key);
-        byte[] serializedValue = valueSerializer.apply(value);
+    // Cache-aside write operation for Artist
+    public void putArtist(Integer artistId, Artist artist, Duration ttl) {
+        String cacheKey = "artist:" + artistId;
+        byte[] serializedValue = serializeArtist(artist);
         LocalDateTime expiresAt = ttl != null ? LocalDateTime.now().plus(ttl) : null;
         
         CacheEntry entry = new CacheEntry(cacheKey, serializedValue, expiresAt);
         cacheView.upsert(null, entry);
     }
     
-    // Invalidate cache entry
-    public void evict(K key) {
-        String cacheKey = keyMapper.apply(key);
+    // Invalidate cache entry for Artist
+    public void evictArtist(Integer artistId) {
+        String cacheKey = "artist:" + artistId;
         CacheEntry keyEntry = new CacheEntry();
         keyEntry.setKey(cacheKey);
         cacheView.delete(null, keyEntry);
     }
     
-    // Bulk operations for better performance
-    public Map<K, V> getAll(Collection<K> keys) {
-        List<String> cacheKeys = keys.stream()
-            .map(keyMapper)
+    // Bulk operations for better performance - Artists
+    public Map<Integer, Artist> getAllArtists(Collection<Integer> artistIds) {
+        List<String> cacheKeys = artistIds.stream()
+            .map(id -> "artist:" + id)
             .collect(Collectors.toList());
         
         // Build SQL query for bulk retrieval
@@ -244,27 +235,42 @@ public class CacheAsideService<K, V> {
         
         String sql = "SELECT cache_key, cache_value FROM CacheEntry WHERE cache_key IN (" + placeholders + ") AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)";
         
-        Map<String, V> results = new HashMap<>();
+        Map<Integer, Artist> results = new HashMap<>();
         
         try (ResultSet<SqlRow> resultSet = igniteClient.sql().execute(null, sql, cacheKeys.toArray())) {
             while (resultSet.hasNext()) {
                 SqlRow row = resultSet.next();
                 String cacheKey = row.stringValue("cache_key");
                 byte[] value = row.binaryValue("cache_value");
-                results.put(cacheKey, valueDeserializer.apply(value));
+                
+                // Extract artist ID from cache key
+                Integer artistId = Integer.parseInt(cacheKey.substring("artist:".length()));
+                Artist artist = deserializeArtist(value);
+                results.put(artistId, artist);
             }
         }
         
-        // Convert back to original key type
-        Map<K, V> finalResults = new HashMap<>();
-        for (K key : keys) {
-            String cacheKey = keyMapper.apply(key);
-            if (results.containsKey(cacheKey)) {
-                finalResults.put(key, results.get(cacheKey));
-            }
+        return results;
+    }
+    
+    // Serialization helpers for Artist
+    private byte[] serializeArtist(Artist artist) {
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
+             ObjectOutputStream oos = new ObjectOutputStream(bos)) {
+            oos.writeObject(artist);
+            return bos.toByteArray();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to serialize Artist", e);
         }
-        
-        return finalResults;
+    }
+    
+    private Artist deserializeArtist(byte[] data) {
+        try (ByteArrayInputStream bis = new ByteArrayInputStream(data);
+             ObjectInputStream ois = new ObjectInputStream(bis)) {
+            return (Artist) ois.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            throw new RuntimeException("Failed to deserialize Artist", e);
+        }
     }
 }
 ```
@@ -274,53 +280,44 @@ public class CacheAsideService<K, V> {
 In write-through caching, data is written to both the cache and the underlying data store synchronously.
 
 ```java
-public class WriteThroughCacheService<K, V> {
+public class TrackWriteThroughCacheService {
     private final IgniteClient igniteClient;
     private final RecordView<CacheEntry> cacheView;
-    private final Function<K, String> keyMapper;
-    private final Function<V, byte[]> valueSerializer;
-    private final Function<byte[], V> valueDeserializer;
-    private final BiConsumer<K, V> dataWriter; // Function to write to primary data source
-    private final Function<K, V> dataLoader;
+    private final BiConsumer<Integer, Track> trackDataWriter; // Function to write Track to primary data source
+    private final Function<Integer, Track> trackDataLoader;
     
-    public WriteThroughCacheService(IgniteClient igniteClient,
-                                   Function<K, String> keyMapper,
-                                   Function<V, byte[]> valueSerializer,
-                                   Function<byte[], V> valueDeserializer,
-                                   BiConsumer<K, V> dataWriter,
-                                   Function<K, V> dataLoader) {
+    public TrackWriteThroughCacheService(IgniteClient igniteClient,
+                                        BiConsumer<Integer, Track> trackDataWriter,
+                                        Function<Integer, Track> trackDataLoader) {
         this.igniteClient = igniteClient;
         this.cacheView = igniteClient.tables().table("CacheEntry").recordView(CacheEntry.class);
-        this.keyMapper = keyMapper;
-        this.valueSerializer = valueSerializer;
-        this.valueDeserializer = valueDeserializer;
-        this.dataWriter = dataWriter;
-        this.dataLoader = dataLoader;
+        this.trackDataWriter = trackDataWriter;
+        this.trackDataLoader = trackDataLoader;
     }
     
-    // Write-through operation
-    public void put(K key, V value, Duration ttl) {
+    // Write-through operation for Track
+    public void putTrack(Integer trackId, Track track, Duration ttl) {
         try {
             igniteClient.transactions().runInTransaction(tx -> {
                 // 1. Write to primary data source first
-                dataWriter.accept(key, value);
+                trackDataWriter.accept(trackId, track);
                 
                 // 2. Write to cache
-                String cacheKey = keyMapper.apply(key);
-                byte[] serializedValue = valueSerializer.apply(value);
+                String cacheKey = "track:" + trackId;
+                byte[] serializedValue = serializeTrack(track);
                 LocalDateTime expiresAt = ttl != null ? LocalDateTime.now().plus(ttl) : null;
                 
                 CacheEntry entry = new CacheEntry(cacheKey, serializedValue, expiresAt);
                 cacheView.upsert(tx, entry);
             });
         } catch (Exception e) {
-            throw new RuntimeException("Write-through operation failed", e);
+            throw new RuntimeException("Write-through operation failed for Track: " + trackId, e);
         }
     }
     
-    // Read operation with cache-aside fallback
-    public V get(K key) {
-        String cacheKey = keyMapper.apply(key);
+    // Read operation with cache-aside fallback for Track
+    public Track getTrack(Integer trackId) {
+        String cacheKey = "track:" + trackId;
         
         // Try cache first
         CacheEntry keyEntry = new CacheEntry();
@@ -330,37 +327,56 @@ public class WriteThroughCacheService<K, V> {
         if (cached != null && !cached.isExpired()) {
             cached.recordAccess();
             cacheView.upsert(null, cached);
-            return valueDeserializer.apply(cached.getValue());
+            return deserializeTrack(cached.getValue());
         }
         
         // Cache miss - load from primary source and cache
-        V value = dataLoader.apply(key);
-        if (value != null) {
+        Track track = trackDataLoader.apply(trackId);
+        if (track != null) {
             // Cache the loaded value
-            String serializedKey = keyMapper.apply(key);
-            byte[] serializedValue = valueSerializer.apply(value);
-            CacheEntry entry = new CacheEntry(serializedKey, serializedValue, LocalDateTime.now().plusHours(1));
+            byte[] serializedValue = serializeTrack(track);
+            CacheEntry entry = new CacheEntry(cacheKey, serializedValue, LocalDateTime.now().plusHours(1));
             cacheView.upsert(null, entry);
         }
         
-        return value;
+        return track;
     }
     
-    // Delete operation
-    public void delete(K key) {
+    // Delete operation for Track
+    public void deleteTrack(Integer trackId) {
         try {
             igniteClient.transactions().runInTransaction(tx -> {
                 // 1. Delete from primary data source
-                // dataDeleter.accept(key); // Implement based on your data source
+                // trackDataDeleter.accept(trackId); // Implement based on your data source
                 
                 // 2. Remove from cache
-                String cacheKey = keyMapper.apply(key);
+                String cacheKey = "track:" + trackId;
                 CacheEntry keyEntry = new CacheEntry();
                 keyEntry.setKey(cacheKey);
                 cacheView.delete(tx, keyEntry);
             });
         } catch (Exception e) {
-            throw new RuntimeException("Write-through delete operation failed", e);
+            throw new RuntimeException("Write-through delete operation failed for Track: " + trackId, e);
+        }
+    }
+    
+    // Serialization helpers for Track
+    private byte[] serializeTrack(Track track) {
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream();
+             ObjectOutputStream oos = new ObjectOutputStream(bos)) {
+            oos.writeObject(track);
+            return bos.toByteArray();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to serialize Track", e);
+        }
+    }
+    
+    private Track deserializeTrack(byte[] data) {
+        try (ByteArrayInputStream bis = new ByteArrayInputStream(data);
+             ObjectInputStream ois = new ObjectInputStream(bis)) {
+            return (Track) ois.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            throw new RuntimeException("Failed to deserialize Track", e);
         }
     }
 }
@@ -371,14 +387,11 @@ public class WriteThroughCacheService<K, V> {
 Write-behind caching improves performance by writing to cache immediately and to the data store asynchronously.
 
 ```java
-public class WriteBehindCacheService<K, V> {
+public class AlbumWriteBehindCacheService {
     private final IgniteClient igniteClient;
     private final RecordView<CacheEntry> cacheView;
     private final RecordView<PendingWrite> pendingWritesView;
-    private final Function<K, String> keyMapper;
-    private final Function<V, byte[]> valueSerializer;
-    private final Function<byte[], V> valueDeserializer;
-    private final BiConsumer<K, V> dataWriter;
+    private final BiConsumer<Integer, Album> albumDataWriter;
     private final ScheduledExecutorService writeScheduler;
     
     // Table for tracking pending writes
@@ -400,32 +413,26 @@ public class WriteBehindCacheService<K, V> {
         // Constructors, getters, setters...
     }
     
-    public WriteBehindCacheService(IgniteClient igniteClient,
-                                  Function<K, String> keyMapper,
-                                  Function<V, byte[]> valueSerializer,
-                                  Function<byte[], V> valueDeserializer,
-                                  BiConsumer<K, V> dataWriter) {
+    public AlbumWriteBehindCacheService(IgniteClient igniteClient,
+                                       BiConsumer<Integer, Album> albumDataWriter) {
         this.igniteClient = igniteClient;
         this.cacheView = igniteClient.tables().table("CacheEntry").recordView(CacheEntry.class);
         this.pendingWritesView = igniteClient.tables().table("PendingWrite").recordView(PendingWrite.class);
-        this.keyMapper = keyMapper;
-        this.valueSerializer = valueSerializer;
-        this.valueDeserializer = valueDeserializer;
-        this.dataWriter = dataWriter;
+        this.albumDataWriter = albumDataWriter;
         this.writeScheduler = Executors.newScheduledThreadPool(2);
         
         // Start background write processor
         startWriteBehindProcessor();
     }
     
-    // Immediate cache write, async data store write
-    public void put(K key, V value, Duration ttl) {
-        String cacheKey = keyMapper.apply(key);
+    // Immediate cache write, async data store write for Album
+    public void putAlbum(Integer albumId, Album album, Duration ttl) {
+        String cacheKey = "album:" + albumId;
         
         try {
             igniteClient.transactions().runInTransaction(tx -> {
                 // 1. Write to cache immediately
-                byte[] serializedValue = valueSerializer.apply(value);
+                byte[] serializedValue = serializeAlbum(album);
                 LocalDateTime expiresAt = ttl != null ? LocalDateTime.now().plus(ttl) : null;
                 CacheEntry entry = new CacheEntry(cacheKey, serializedValue, expiresAt);
                 cacheView.upsert(tx, entry);
@@ -438,13 +445,13 @@ public class WriteBehindCacheService<K, V> {
                 pendingWritesView.upsert(tx, pendingWrite);
             });
         } catch (Exception e) {
-            throw new RuntimeException("Write-behind cache operation failed", e);
+            throw new RuntimeException("Write-behind cache operation failed for Album: " + albumId, e);
         }
     }
     
-    // Read from cache (same as cache-aside)
-    public V get(K key) {
-        String cacheKey = keyMapper.apply(key);
+    // Read Album from cache (same as cache-aside)
+    public Album getAlbum(Integer albumId) {
+        String cacheKey = "album:" + albumId;
         
         CacheEntry keyEntry = new CacheEntry();
         keyEntry.setKey(cacheKey);
@@ -453,7 +460,7 @@ public class WriteBehindCacheService<K, V> {
         if (cached != null && !cached.isExpired()) {
             cached.recordAccess();
             cacheView.upsert(null, cached);
-            return valueDeserializer.apply(cached.getValue());
+            return deserializeAlbum(cached.getValue());
         }
         
         return null; // For write-behind, we typically don't load from data store on miss
@@ -492,7 +499,7 @@ public class WriteBehindCacheService<K, V> {
                         System.err.println("Failed to process pending write for key " + cacheKey + ": " + e.getMessage());
                         incrementRetryCount(cacheKey);
                     }
-                }\n            }\n        } catch (Exception e) {\n            System.err.println("Error processing pending writes: " + e.getMessage());\n        }\n    }\n    \n    private void processPendingPut(String cacheKey) {\n        // Get current value from cache\n        CacheEntry keyEntry = new CacheEntry();\n        keyEntry.setKey(cacheKey);\n        CacheEntry cached = cacheView.get(null, keyEntry);\n        \n        if (cached != null && cached.getValue() != null) {\n            // Deserialize and write to data store\n            V value = valueDeserializer.apply(cached.getValue());\n            // Convert cache key back to original key type for data writer\n            // This is a simplified approach - in practice you'd need proper key mapping\n            K originalKey = (K) cacheKey; // Simplified - implement proper reverse mapping\n            dataWriter.accept(originalKey, value);\n        }\n    }\n    \n    private void processPendingDelete(String cacheKey) {\n        // Implement delete operation to data store\n        // dataDeleter.accept(cacheKey);\n    }\n    \n    private void incrementRetryCount(String cacheKey) {\n        try {\n            igniteClient.sql().execute(null, \n                "UPDATE PendingWrite SET retry_count = retry_count + 1 WHERE cache_key = ?", \n                cacheKey);\n        } catch (Exception e) {\n            System.err.println("Failed to increment retry count: " + e.getMessage());\n        }\n    }\n}\n```\n\n### Read-Through Pattern\n\nRead-through caching automatically loads data from the backing store when a cache miss occurs.\n\n```java\npublic class ReadThroughCacheService<K, V> {\n    private final IgniteClient igniteClient;\n    private final RecordView<CacheEntry> cacheView;\n    private final Function<K, String> keyMapper;\n    private final Function<V, byte[]> valueSerializer;\n    private final Function<byte[], V> valueDeserializer;\n    private final Function<K, V> dataLoader;\n    private final Duration defaultTtl;\n    \n    public ReadThroughCacheService(IgniteClient igniteClient,\n                                  Function<K, String> keyMapper,\n                                  Function<V, byte[]> valueSerializer,\n                                  Function<byte[], V> valueDeserializer,\n                                  Function<K, V> dataLoader,\n                                  Duration defaultTtl) {\n        this.igniteClient = igniteClient;\n        this.cacheView = igniteClient.tables().table("CacheEntry").recordView(CacheEntry.class);\n        this.keyMapper = keyMapper;\n        this.valueSerializer = valueSerializer;\n        this.valueDeserializer = valueDeserializer;\n        this.dataLoader = dataLoader;\n        this.defaultTtl = defaultTtl;\n    }\n    \n    // Read-through get operation\n    public V get(K key) {\n        String cacheKey = keyMapper.apply(key);\n        \n        // Try cache first\n        CacheEntry keyEntry = new CacheEntry();\n        keyEntry.setKey(cacheKey);\n        CacheEntry cached = cacheView.get(null, keyEntry);\n        \n        if (cached != null && !cached.isExpired()) {\n            // Cache hit\n            cached.recordAccess();\n            cacheView.upsert(null, cached);\n            return valueDeserializer.apply(cached.getValue());\n        }\n        \n        // Cache miss - load through the cache\n        try {\n            return igniteClient.transactions().runInTransaction(tx -> {\n                // Double-check locking pattern in case another thread loaded it\n                CacheEntry doubleCheck = cacheView.get(tx, keyEntry);\n                if (doubleCheck != null && !doubleCheck.isExpired()) {\n                    doubleCheck.recordAccess();\n                    cacheView.upsert(tx, doubleCheck);\n                    return valueDeserializer.apply(doubleCheck.getValue());\n                }\n                \n                // Load from data source\n                V value = dataLoader.apply(key);\n                \n                if (value != null) {\n                    // Store in cache\n                    byte[] serializedValue = valueSerializer.apply(value);\n                    LocalDateTime expiresAt = defaultTtl != null ? LocalDateTime.now().plus(defaultTtl) : null;\n                    CacheEntry newEntry = new CacheEntry(cacheKey, serializedValue, expiresAt);\n                    cacheView.upsert(tx, newEntry);\n                }\n                \n                return value;\n            });\n        } catch (Exception e) {\n            throw new RuntimeException("Read-through operation failed for key: " + key, e);\n        }\n    }\n    \n    // Bulk read-through operation\n    public Map<K, V> getAll(Collection<K> keys) {\n        Map<K, V> result = new HashMap<>();\n        List<K> cacheMisses = new ArrayList<>();\n        \n        // First, try to get all from cache\n        for (K key : keys) {\n            String cacheKey = keyMapper.apply(key);\n            CacheEntry keyEntry = new CacheEntry();\n            keyEntry.setKey(cacheKey);\n            CacheEntry cached = cacheView.get(null, keyEntry);\n            \n            if (cached != null && !cached.isExpired()) {\n                result.put(key, valueDeserializer.apply(cached.getValue()));\n                \n                // Update access statistics\n                cached.recordAccess();\n                cacheView.upsert(null, cached);\n            } else {\n                cacheMisses.add(key);\n            }\n        }\n        \n        // Load cache misses\n        if (!cacheMisses.isEmpty()) {\n            Map<K, V> loaded = loadAndCacheMultiple(cacheMisses);\n            result.putAll(loaded);\n        }\n        \n        return result;\n    }\n    \n    private Map<K, V> loadAndCacheMultiple(List<K> keys) {\n        Map<K, V> loaded = new HashMap<>();\n        \n        try {\n            igniteClient.transactions().runInTransaction(tx -> {\n                for (K key : keys) {\n                    try {\n                        V value = dataLoader.apply(key);\n                        if (value != null) {\n                            loaded.put(key, value);\n                            \n                            // Cache the loaded value\n                            String cacheKey = keyMapper.apply(key);\n                            byte[] serializedValue = valueSerializer.apply(value);\n                            LocalDateTime expiresAt = defaultTtl != null ? LocalDateTime.now().plus(defaultTtl) : null;\n                            CacheEntry entry = new CacheEntry(cacheKey, serializedValue, expiresAt);\n                            cacheView.upsert(tx, entry);\n                        }\n                    } catch (Exception e) {\n                        System.err.println("Failed to load key " + key + ": " + e.getMessage());\n                    }\n                }\n            });\n        } catch (Exception e) {\n            throw new RuntimeException("Bulk read-through operation failed", e);\n        }\n        \n        return loaded;\n    }\n}\n```\n\n## 9.3 Cache Abstraction Layer\n\n### Generic Cache Interface\n\n```java\npublic interface DistributedCache<K, V> {\n    \n    // Basic operations\n    V get(K key);\n    void put(K key, V value);\n    void put(K key, V value, Duration ttl);\n    boolean putIfAbsent(K key, V value);\n    boolean putIfAbsent(K key, V value, Duration ttl);\n    void evict(K key);\n    void clear();\n    \n    // Bulk operations\n    Map<K, V> getAll(Collection<K> keys);\n    void putAll(Map<K, V> entries);\n    void putAll(Map<K, V> entries, Duration ttl);\n    void evictAll(Collection<K> keys);\n    \n    // Conditional operations\n    boolean replace(K key, V value);\n    boolean replace(K key, V oldValue, V newValue);\n    V getAndReplace(K key, V value);\n    boolean remove(K key, V value);\n    V getAndRemove(K key);\n    \n    // Async operations\n    CompletableFuture<V> getAsync(K key);\n    CompletableFuture<Void> putAsync(K key, V value);\n    CompletableFuture<Void> putAsync(K key, V value, Duration ttl);\n    CompletableFuture<Void> evictAsync(K key);\n    \n    // Statistics and management\n    CacheStats getStats();\n    void refresh(K key);\n    void refresh(Collection<K> keys);\n    boolean containsKey(K key);\n    long size();\n    \n    // Cache-specific operations\n    void expire(K key, Duration ttl);\n    Duration getTimeToLive(K key);\n    LocalDateTime getCreationTime(K key);\n    LocalDateTime getLastAccessTime(K key);\n    long getAccessCount(K key);\n}\n\n// Statistics interface\npublic interface CacheStats {\n    long getHitCount();\n    long getMissCount();\n    double getHitRate();\n    long getEvictionCount();\n    long getSize();\n    Duration getAverageLoadTime();\n    long getTotalLoadTime();\n}\n```\n\n### Ignite 3 Cache Implementation\n\n```java\npublic class IgniteDistributedCache<K, V> implements DistributedCache<K, V> {\n    private final IgniteClient igniteClient;\n    private final RecordView<CacheEntry> cacheView;\n    private final Function<K, String> keySerializer;\n    private final Function<String, K> keyDeserializer;\n    private final Function<V, byte[]> valueSerializer;\n    private final Function<byte[], V> valueDeserializer;\n    private final String cacheName;\n    private final Duration defaultTtl;\n    private final CacheStatsImpl stats;\n    \n    public IgniteDistributedCache(IgniteClient igniteClient,\n                                 String cacheName,\n                                 Function<K, String> keySerializer,\n                                 Function<String, K> keyDeserializer,\n                                 Function<V, byte[]> valueSerializer,\n                                 Function<byte[], V> valueDeserializer,\n                                 Duration defaultTtl) {\n        this.igniteClient = igniteClient;\n        this.cacheView = igniteClient.tables().table("CacheEntry").recordView(CacheEntry.class);\n        this.keySerializer = keySerializer;\n        this.keyDeserializer = keyDeserializer;\n        this.valueSerializer = valueSerializer;\n        this.valueDeserializer = valueDeserializer;\n        this.cacheName = cacheName;\n        this.defaultTtl = defaultTtl;\n        this.stats = new CacheStatsImpl();\n    }\n    \n    @Override\n    public V get(K key) {\n        long startTime = System.nanoTime();\n        \n        try {\n            String cacheKey = buildCacheKey(key);\n            CacheEntry keyEntry = new CacheEntry();\n            keyEntry.setKey(cacheKey);\n            CacheEntry cached = cacheView.get(null, keyEntry);\n            \n            if (cached != null && !cached.isExpired()) {\n                // Update access statistics\n                cached.recordAccess();\n                cacheView.upsert(null, cached);\n                \n                stats.recordHit();\n                return valueDeserializer.apply(cached.getValue());\n            } else {\n                stats.recordMiss();\n                return null;\n            }\n        } finally {\n            stats.recordLoadTime(System.nanoTime() - startTime);\n        }\n    }\n    \n    @Override\n    public void put(K key, V value) {\n        put(key, value, defaultTtl);\n    }\n    \n    @Override\n    public void put(K key, V value, Duration ttl) {\n        String cacheKey = buildCacheKey(key);\n        byte[] serializedValue = valueSerializer.apply(value);\n        LocalDateTime expiresAt = ttl != null ? LocalDateTime.now().plus(ttl) : null;\n        \n        CacheEntry entry = new CacheEntry(cacheKey, serializedValue, expiresAt);\n        cacheView.upsert(null, entry);\n    }\n    \n    @Override\n    public boolean putIfAbsent(K key, V value, Duration ttl) {\n        try {\n            return igniteClient.transactions().runInTransaction(tx -> {\n                String cacheKey = buildCacheKey(key);\n                CacheEntry keyEntry = new CacheEntry();\n                keyEntry.setKey(cacheKey);\n                CacheEntry existing = cacheView.get(tx, keyEntry);\n                \n                if (existing != null && !existing.isExpired()) {\n                    return false; // Key already exists\n                }\n                \n                // Insert new entry\n                byte[] serializedValue = valueSerializer.apply(value);\n                LocalDateTime expiresAt = ttl != null ? LocalDateTime.now().plus(ttl) : null;\n                CacheEntry entry = new CacheEntry(cacheKey, serializedValue, expiresAt);\n                cacheView.upsert(tx, entry);\n                \n                return true;\n            });\n        } catch (Exception e) {\n            throw new RuntimeException("putIfAbsent operation failed", e);\n        }\n    }\n    \n    @Override\n    public void evict(K key) {\n        String cacheKey = buildCacheKey(key);\n        CacheEntry keyEntry = new CacheEntry();\n        keyEntry.setKey(cacheKey);\n        boolean deleted = cacheView.delete(null, keyEntry);\n        \n        if (deleted) {\n            stats.recordEviction();\n        }\n    }\n    \n    @Override\n    public Map<K, V> getAll(Collection<K> keys) {\n        if (keys.isEmpty()) {\n            return Collections.emptyMap();\n        }\n        \n        List<String> cacheKeys = keys.stream()\n            .map(this::buildCacheKey)\n            .collect(Collectors.toList());\n        \n        String placeholders = cacheKeys.stream()\n            .map(k -> "?")\n            .collect(Collectors.joining(","));\n        \n        String sql = "SELECT cache_key, cache_value FROM CacheEntry WHERE cache_key IN (" + placeholders + \") AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)";\n        \n        Map<K, V> result = new HashMap<>();\n        \n        try (ResultSet<SqlRow> resultSet = igniteClient.sql().execute(null, sql, cacheKeys.toArray())) {\n            while (resultSet.hasNext()) {\n                SqlRow row = resultSet.next();\n                String cacheKey = row.stringValue("cache_key");\n                byte[] value = row.binaryValue("cache_value");\n                \n                K originalKey = extractOriginalKey(cacheKey);\n                V deserializedValue = valueDeserializer.apply(value);\n                result.put(originalKey, deserializedValue);\n                \n                stats.recordHit();\n            }\n        }\n        \n        // Record misses\n        int misses = keys.size() - result.size();\n        for (int i = 0; i < misses; i++) {\n            stats.recordMiss();\n        }\n        \n        return result;\n    }\n    \n    @Override\n    public CompletableFuture<V> getAsync(K key) {\n        return CompletableFuture.supplyAsync(() -> get(key));\n    }\n    \n    @Override\n    public CompletableFuture<Void> putAsync(K key, V value, Duration ttl) {\n        return CompletableFuture.runAsync(() -> put(key, value, ttl));\n    }\n    \n    @Override\n    public long size() {\n        String sql = "SELECT COUNT(*) as count FROM CacheEntry WHERE cache_key LIKE ? AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)";\n        String pattern = cacheName + ":%";\n        \n        try (ResultSet<SqlRow> resultSet = igniteClient.sql().execute(null, sql, pattern)) {\n            if (resultSet.hasNext()) {\n                return resultSet.next().longValue("count");\n            }\n        }\n        \n        return 0;\n    }\n    \n    @Override\n    public void clear() {\n        String sql = "DELETE FROM CacheEntry WHERE cache_key LIKE ?";\n        String pattern = cacheName + ":%";\n        igniteClient.sql().execute(null, sql, pattern);\n    }\n    \n    @Override\n    public boolean containsKey(K key) {\n        String cacheKey = buildCacheKey(key);\n        String sql = "SELECT 1 FROM CacheEntry WHERE cache_key = ? AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)";\n        \n        try (ResultSet<SqlRow> resultSet = igniteClient.sql().execute(null, sql, cacheKey)) {\n            return resultSet.hasNext();\n        }\n    }\n    \n    @Override\n    public CacheStats getStats() {\n        return stats;\n    }\n    \n    // Helper methods\n    private String buildCacheKey(K key) {\n        return cacheName + ":" + keySerializer.apply(key);\n    }\n    \n    private K extractOriginalKey(String cacheKey) {\n        String originalKey = cacheKey.substring(cacheName.length() + 1);\n        return keyDeserializer.apply(originalKey);\n    }\n    \n    // TTL and expiration management\n    @Override\n    public void expire(K key, Duration ttl) {\n        try {\n            igniteClient.transactions().runInTransaction(tx -> {\n                String cacheKey = buildCacheKey(key);\n                CacheEntry keyEntry = new CacheEntry();\n                keyEntry.setKey(cacheKey);\n                CacheEntry existing = cacheView.get(tx, keyEntry);\n                \n                if (existing != null) {\n                    existing.setExpiresAt(LocalDateTime.now().plus(ttl));\n                    cacheView.upsert(tx, existing);\n                }\n            });\n        } catch (Exception e) {\n            throw new RuntimeException("Failed to set expiration", e);\n        }\n    }\n    \n    @Override\n    public Duration getTimeToLive(K key) {\n        String cacheKey = buildCacheKey(key);\n        CacheEntry keyEntry = new CacheEntry();\n        keyEntry.setKey(cacheKey);\n        CacheEntry cached = cacheView.get(null, keyEntry);\n        \n        if (cached != null && cached.getExpiresAt() != null) {\n            return Duration.between(LocalDateTime.now(), cached.getExpiresAt());\n        }\n        \n        return null; // No expiration set\n    }\n    \n    // Statistics implementation\n    private static class CacheStatsImpl implements CacheStats {\n        private final AtomicLong hitCount = new AtomicLong(0);\n        private final AtomicLong missCount = new AtomicLong(0);\n        private final AtomicLong evictionCount = new AtomicLong(0);\n        private final AtomicLong totalLoadTime = new AtomicLong(0);\n        private final AtomicLong loadCount = new AtomicLong(0);\n        \n        public void recordHit() {\n            hitCount.incrementAndGet();\n        }\n        \n        public void recordMiss() {\n            missCount.incrementAndGet();\n        }\n        \n        public void recordEviction() {\n            evictionCount.incrementAndGet();\n        }\n        \n        public void recordLoadTime(long nanos) {\n            totalLoadTime.addAndGet(nanos);\n            loadCount.incrementAndGet();\n        }\n        \n        @Override\n        public long getHitCount() {\n            return hitCount.get();\n        }\n        \n        @Override\n        public long getMissCount() {\n            return missCount.get();\n        }\n        \n        @Override\n        public double getHitRate() {\n            long hits = getHitCount();\n            long total = hits + getMissCount();\n            return total == 0 ? 0.0 : (double) hits / total;\n        }\n        \n        @Override\n        public long getEvictionCount() {\n            return evictionCount.get();\n        }\n        \n        @Override\n        public Duration getAverageLoadTime() {\n            long loads = loadCount.get();\n            return loads == 0 ? Duration.ZERO : Duration.ofNanos(totalLoadTime.get() / loads);\n        }\n        \n        @Override\n        public long getTotalLoadTime() {\n            return totalLoadTime.get();\n        }\n        \n        @Override\n        public long getSize() {\n            return 0; // Would need to be calculated separately\n        }\n    }\n}\n```\n\n### Cache Factory and Builder Pattern
+                }\n            }\n        } catch (Exception e) {\n            System.err.println("Error processing pending writes: " + e.getMessage());\n        }\n    }\n    \n    private void processPendingPut(String cacheKey) {\n        // Get current value from cache\n        CacheEntry keyEntry = new CacheEntry();\n        keyEntry.setKey(cacheKey);\n        CacheEntry cached = cacheView.get(null, keyEntry);\n        \n        if (cached != null && cached.getValue() != null) {\n            // Deserialize and write to data store\n            Album album = deserializeAlbum(cached.getValue());\n            // Extract album ID from cache key\n            Integer albumId = Integer.parseInt(cacheKey.substring(\"album:\".length()));\n            albumDataWriter.accept(albumId, album);\n        }\n    }\n    \n    private void processPendingDelete(String cacheKey) {\n        // Implement delete operation to data store\n        // albumDataDeleter.accept(cacheKey);\n    }\n    \n    // Serialization helpers for Album\n    private byte[] serializeAlbum(Album album) {\n        try (ByteArrayOutputStream bos = new ByteArrayOutputStream();\n             ObjectOutputStream oos = new ObjectOutputStream(bos)) {\n            oos.writeObject(album);\n            return bos.toByteArray();\n        } catch (IOException e) {\n            throw new RuntimeException(\"Failed to serialize Album\", e);\n        }\n    }\n    \n    private Album deserializeAlbum(byte[] data) {\n        try (ByteArrayInputStream bis = new ByteArrayInputStream(data);\n             ObjectInputStream ois = new ObjectInputStream(bis)) {\n            return (Album) ois.readObject();\n        } catch (IOException | ClassNotFoundException e) {\n            throw new RuntimeException(\"Failed to deserialize Album\", e);\n        }\n    }\n    \n    private void incrementRetryCount(String cacheKey) {\n        try {\n            igniteClient.sql().execute(null, \n                "UPDATE PendingWrite SET retry_count = retry_count + 1 WHERE cache_key = ?", \n                cacheKey);\n        } catch (Exception e) {\n            System.err.println("Failed to increment retry count: " + e.getMessage());\n        }\n    }\n}\n```\n\n### Read-Through Pattern\n\nRead-through caching automatically loads data from the backing store when a cache miss occurs.\n\n```java\npublic class ReadThroughCacheService<K, V> {\n    private final IgniteClient igniteClient;\n    private final RecordView<CacheEntry> cacheView;\n    private final Function<K, String> keyMapper;\n    private final Function<V, byte[]> valueSerializer;\n    private final Function<byte[], V> valueDeserializer;\n    private final Function<K, V> dataLoader;\n    private final Duration defaultTtl;\n    \n    public ReadThroughCacheService(IgniteClient igniteClient,\n                                  Function<K, String> keyMapper,\n                                  Function<V, byte[]> valueSerializer,\n                                  Function<byte[], V> valueDeserializer,\n                                  Function<K, V> dataLoader,\n                                  Duration defaultTtl) {\n        this.igniteClient = igniteClient;\n        this.cacheView = igniteClient.tables().table("CacheEntry").recordView(CacheEntry.class);\n        this.keyMapper = keyMapper;\n        this.valueSerializer = valueSerializer;\n        this.valueDeserializer = valueDeserializer;\n        this.dataLoader = dataLoader;\n        this.defaultTtl = defaultTtl;\n    }\n    \n    // Read-through get operation\n    public V get(K key) {\n        String cacheKey = keyMapper.apply(key);\n        \n        // Try cache first\n        CacheEntry keyEntry = new CacheEntry();\n        keyEntry.setKey(cacheKey);\n        CacheEntry cached = cacheView.get(null, keyEntry);\n        \n        if (cached != null && !cached.isExpired()) {\n            // Cache hit\n            cached.recordAccess();\n            cacheView.upsert(null, cached);\n            return valueDeserializer.apply(cached.getValue());\n        }\n        \n        // Cache miss - load through the cache\n        try {\n            return igniteClient.transactions().runInTransaction(tx -> {\n                // Double-check locking pattern in case another thread loaded it\n                CacheEntry doubleCheck = cacheView.get(tx, keyEntry);\n                if (doubleCheck != null && !doubleCheck.isExpired()) {\n                    doubleCheck.recordAccess();\n                    cacheView.upsert(tx, doubleCheck);\n                    return valueDeserializer.apply(doubleCheck.getValue());\n                }\n                \n                // Load from data source\n                V value = dataLoader.apply(key);\n                \n                if (value != null) {\n                    // Store in cache\n                    byte[] serializedValue = valueSerializer.apply(value);\n                    LocalDateTime expiresAt = defaultTtl != null ? LocalDateTime.now().plus(defaultTtl) : null;\n                    CacheEntry newEntry = new CacheEntry(cacheKey, serializedValue, expiresAt);\n                    cacheView.upsert(tx, newEntry);\n                }\n                \n                return value;\n            });\n        } catch (Exception e) {\n            throw new RuntimeException("Read-through operation failed for key: " + key, e);\n        }\n    }\n    \n    // Bulk read-through operation\n    public Map<K, V> getAll(Collection<K> keys) {\n        Map<K, V> result = new HashMap<>();\n        List<K> cacheMisses = new ArrayList<>();\n        \n        // First, try to get all from cache\n        for (K key : keys) {\n            String cacheKey = keyMapper.apply(key);\n            CacheEntry keyEntry = new CacheEntry();\n            keyEntry.setKey(cacheKey);\n            CacheEntry cached = cacheView.get(null, keyEntry);\n            \n            if (cached != null && !cached.isExpired()) {\n                result.put(key, valueDeserializer.apply(cached.getValue()));\n                \n                // Update access statistics\n                cached.recordAccess();\n                cacheView.upsert(null, cached);\n            } else {\n                cacheMisses.add(key);\n            }\n        }\n        \n        // Load cache misses\n        if (!cacheMisses.isEmpty()) {\n            Map<K, V> loaded = loadAndCacheMultiple(cacheMisses);\n            result.putAll(loaded);\n        }\n        \n        return result;\n    }\n    \n    private Map<K, V> loadAndCacheMultiple(List<K> keys) {\n        Map<K, V> loaded = new HashMap<>();\n        \n        try {\n            igniteClient.transactions().runInTransaction(tx -> {\n                for (K key : keys) {\n                    try {\n                        V value = dataLoader.apply(key);\n                        if (value != null) {\n                            loaded.put(key, value);\n                            \n                            // Cache the loaded value\n                            String cacheKey = keyMapper.apply(key);\n                            byte[] serializedValue = valueSerializer.apply(value);\n                            LocalDateTime expiresAt = defaultTtl != null ? LocalDateTime.now().plus(defaultTtl) : null;\n                            CacheEntry entry = new CacheEntry(cacheKey, serializedValue, expiresAt);\n                            cacheView.upsert(tx, entry);\n                        }\n                    } catch (Exception e) {\n                        System.err.println("Failed to load key " + key + ": " + e.getMessage());\n                    }\n                }\n            });\n        } catch (Exception e) {\n            throw new RuntimeException("Bulk read-through operation failed", e);\n        }\n        \n        return loaded;\n    }\n}\n```\n\n## 9.3 Cache Abstraction Layer\n\n### Generic Cache Interface\n\n```java\npublic interface DistributedCache<K, V> {\n    \n    // Basic operations\n    V get(K key);\n    void put(K key, V value);\n    void put(K key, V value, Duration ttl);\n    boolean putIfAbsent(K key, V value);\n    boolean putIfAbsent(K key, V value, Duration ttl);\n    void evict(K key);\n    void clear();\n    \n    // Bulk operations\n    Map<K, V> getAll(Collection<K> keys);\n    void putAll(Map<K, V> entries);\n    void putAll(Map<K, V> entries, Duration ttl);\n    void evictAll(Collection<K> keys);\n    \n    // Conditional operations\n    boolean replace(K key, V value);\n    boolean replace(K key, V oldValue, V newValue);\n    V getAndReplace(K key, V value);\n    boolean remove(K key, V value);\n    V getAndRemove(K key);\n    \n    // Async operations\n    CompletableFuture<V> getAsync(K key);\n    CompletableFuture<Void> putAsync(K key, V value);\n    CompletableFuture<Void> putAsync(K key, V value, Duration ttl);\n    CompletableFuture<Void> evictAsync(K key);\n    \n    // Statistics and management\n    CacheStats getStats();\n    void refresh(K key);\n    void refresh(Collection<K> keys);\n    boolean containsKey(K key);\n    long size();\n    \n    // Cache-specific operations\n    void expire(K key, Duration ttl);\n    Duration getTimeToLive(K key);\n    LocalDateTime getCreationTime(K key);\n    LocalDateTime getLastAccessTime(K key);\n    long getAccessCount(K key);\n}\n\n// Statistics interface\npublic interface CacheStats {\n    long getHitCount();\n    long getMissCount();\n    double getHitRate();\n    long getEvictionCount();\n    long getSize();\n    Duration getAverageLoadTime();\n    long getTotalLoadTime();\n}\n```\n\n### Ignite 3 Cache Implementation\n\n```java\npublic class IgniteDistributedCache<K, V> implements DistributedCache<K, V> {\n    private final IgniteClient igniteClient;\n    private final RecordView<CacheEntry> cacheView;\n    private final Function<K, String> keySerializer;\n    private final Function<String, K> keyDeserializer;\n    private final Function<V, byte[]> valueSerializer;\n    private final Function<byte[], V> valueDeserializer;\n    private final String cacheName;\n    private final Duration defaultTtl;\n    private final CacheStatsImpl stats;\n    \n    public IgniteDistributedCache(IgniteClient igniteClient,\n                                 String cacheName,\n                                 Function<K, String> keySerializer,\n                                 Function<String, K> keyDeserializer,\n                                 Function<V, byte[]> valueSerializer,\n                                 Function<byte[], V> valueDeserializer,\n                                 Duration defaultTtl) {\n        this.igniteClient = igniteClient;\n        this.cacheView = igniteClient.tables().table("CacheEntry").recordView(CacheEntry.class);\n        this.keySerializer = keySerializer;\n        this.keyDeserializer = keyDeserializer;\n        this.valueSerializer = valueSerializer;\n        this.valueDeserializer = valueDeserializer;\n        this.cacheName = cacheName;\n        this.defaultTtl = defaultTtl;\n        this.stats = new CacheStatsImpl();\n    }\n    \n    @Override\n    public V get(K key) {\n        long startTime = System.nanoTime();\n        \n        try {\n            String cacheKey = buildCacheKey(key);\n            CacheEntry keyEntry = new CacheEntry();\n            keyEntry.setKey(cacheKey);\n            CacheEntry cached = cacheView.get(null, keyEntry);\n            \n            if (cached != null && !cached.isExpired()) {\n                // Update access statistics\n                cached.recordAccess();\n                cacheView.upsert(null, cached);\n                \n                stats.recordHit();\n                return valueDeserializer.apply(cached.getValue());\n            } else {\n                stats.recordMiss();\n                return null;\n            }\n        } finally {\n            stats.recordLoadTime(System.nanoTime() - startTime);\n        }\n    }\n    \n    @Override\n    public void put(K key, V value) {\n        put(key, value, defaultTtl);\n    }\n    \n    @Override\n    public void put(K key, V value, Duration ttl) {\n        String cacheKey = buildCacheKey(key);\n        byte[] serializedValue = valueSerializer.apply(value);\n        LocalDateTime expiresAt = ttl != null ? LocalDateTime.now().plus(ttl) : null;\n        \n        CacheEntry entry = new CacheEntry(cacheKey, serializedValue, expiresAt);\n        cacheView.upsert(null, entry);\n    }\n    \n    @Override\n    public boolean putIfAbsent(K key, V value, Duration ttl) {\n        try {\n            return igniteClient.transactions().runInTransaction(tx -> {\n                String cacheKey = buildCacheKey(key);\n                CacheEntry keyEntry = new CacheEntry();\n                keyEntry.setKey(cacheKey);\n                CacheEntry existing = cacheView.get(tx, keyEntry);\n                \n                if (existing != null && !existing.isExpired()) {\n                    return false; // Key already exists\n                }\n                \n                // Insert new entry\n                byte[] serializedValue = valueSerializer.apply(value);\n                LocalDateTime expiresAt = ttl != null ? LocalDateTime.now().plus(ttl) : null;\n                CacheEntry entry = new CacheEntry(cacheKey, serializedValue, expiresAt);\n                cacheView.upsert(tx, entry);\n                \n                return true;\n            });\n        } catch (Exception e) {\n            throw new RuntimeException("putIfAbsent operation failed", e);\n        }\n    }\n    \n    @Override\n    public void evict(K key) {\n        String cacheKey = buildCacheKey(key);\n        CacheEntry keyEntry = new CacheEntry();\n        keyEntry.setKey(cacheKey);\n        boolean deleted = cacheView.delete(null, keyEntry);\n        \n        if (deleted) {\n            stats.recordEviction();\n        }\n    }\n    \n    @Override\n    public Map<K, V> getAll(Collection<K> keys) {\n        if (keys.isEmpty()) {\n            return Collections.emptyMap();\n        }\n        \n        List<String> cacheKeys = keys.stream()\n            .map(this::buildCacheKey)\n            .collect(Collectors.toList());\n        \n        String placeholders = cacheKeys.stream()\n            .map(k -> "?")\n            .collect(Collectors.joining(","));\n        \n        String sql = "SELECT cache_key, cache_value FROM CacheEntry WHERE cache_key IN (" + placeholders + \") AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)";\n        \n        Map<K, V> result = new HashMap<>();\n        \n        try (ResultSet<SqlRow> resultSet = igniteClient.sql().execute(null, sql, cacheKeys.toArray())) {\n            while (resultSet.hasNext()) {\n                SqlRow row = resultSet.next();\n                String cacheKey = row.stringValue("cache_key");\n                byte[] value = row.binaryValue("cache_value");\n                \n                K originalKey = extractOriginalKey(cacheKey);\n                V deserializedValue = valueDeserializer.apply(value);\n                result.put(originalKey, deserializedValue);\n                \n                stats.recordHit();\n            }\n        }\n        \n        // Record misses\n        int misses = keys.size() - result.size();\n        for (int i = 0; i < misses; i++) {\n            stats.recordMiss();\n        }\n        \n        return result;\n    }\n    \n    @Override\n    public CompletableFuture<V> getAsync(K key) {\n        return CompletableFuture.supplyAsync(() -> get(key));\n    }\n    \n    @Override\n    public CompletableFuture<Void> putAsync(K key, V value, Duration ttl) {\n        return CompletableFuture.runAsync(() -> put(key, value, ttl));\n    }\n    \n    @Override\n    public long size() {\n        String sql = "SELECT COUNT(*) as count FROM CacheEntry WHERE cache_key LIKE ? AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)";\n        String pattern = cacheName + ":%";\n        \n        try (ResultSet<SqlRow> resultSet = igniteClient.sql().execute(null, sql, pattern)) {\n            if (resultSet.hasNext()) {\n                return resultSet.next().longValue("count");\n            }\n        }\n        \n        return 0;\n    }\n    \n    @Override\n    public void clear() {\n        String sql = "DELETE FROM CacheEntry WHERE cache_key LIKE ?";\n        String pattern = cacheName + ":%";\n        igniteClient.sql().execute(null, sql, pattern);\n    }\n    \n    @Override\n    public boolean containsKey(K key) {\n        String cacheKey = buildCacheKey(key);\n        String sql = "SELECT 1 FROM CacheEntry WHERE cache_key = ? AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)";\n        \n        try (ResultSet<SqlRow> resultSet = igniteClient.sql().execute(null, sql, cacheKey)) {\n            return resultSet.hasNext();\n        }\n    }\n    \n    @Override\n    public CacheStats getStats() {\n        return stats;\n    }\n    \n    // Helper methods\n    private String buildCacheKey(K key) {\n        return cacheName + ":" + keySerializer.apply(key);\n    }\n    \n    private K extractOriginalKey(String cacheKey) {\n        String originalKey = cacheKey.substring(cacheName.length() + 1);\n        return keyDeserializer.apply(originalKey);\n    }\n    \n    // TTL and expiration management\n    @Override\n    public void expire(K key, Duration ttl) {\n        try {\n            igniteClient.transactions().runInTransaction(tx -> {\n                String cacheKey = buildCacheKey(key);\n                CacheEntry keyEntry = new CacheEntry();\n                keyEntry.setKey(cacheKey);\n                CacheEntry existing = cacheView.get(tx, keyEntry);\n                \n                if (existing != null) {\n                    existing.setExpiresAt(LocalDateTime.now().plus(ttl));\n                    cacheView.upsert(tx, existing);\n                }\n            });\n        } catch (Exception e) {\n            throw new RuntimeException("Failed to set expiration", e);\n        }\n    }\n    \n    @Override\n    public Duration getTimeToLive(K key) {\n        String cacheKey = buildCacheKey(key);\n        CacheEntry keyEntry = new CacheEntry();\n        keyEntry.setKey(cacheKey);\n        CacheEntry cached = cacheView.get(null, keyEntry);\n        \n        if (cached != null && cached.getExpiresAt() != null) {\n            return Duration.between(LocalDateTime.now(), cached.getExpiresAt());\n        }\n        \n        return null; // No expiration set\n    }\n    \n    // Statistics implementation\n    private static class CacheStatsImpl implements CacheStats {\n        private final AtomicLong hitCount = new AtomicLong(0);\n        private final AtomicLong missCount = new AtomicLong(0);\n        private final AtomicLong evictionCount = new AtomicLong(0);\n        private final AtomicLong totalLoadTime = new AtomicLong(0);\n        private final AtomicLong loadCount = new AtomicLong(0);\n        \n        public void recordHit() {\n            hitCount.incrementAndGet();\n        }\n        \n        public void recordMiss() {\n            missCount.incrementAndGet();\n        }\n        \n        public void recordEviction() {\n            evictionCount.incrementAndGet();\n        }\n        \n        public void recordLoadTime(long nanos) {\n            totalLoadTime.addAndGet(nanos);\n            loadCount.incrementAndGet();\n        }\n        \n        @Override\n        public long getHitCount() {\n            return hitCount.get();\n        }\n        \n        @Override\n        public long getMissCount() {\n            return missCount.get();\n        }\n        \n        @Override\n        public double getHitRate() {\n            long hits = getHitCount();\n            long total = hits + getMissCount();\n            return total == 0 ? 0.0 : (double) hits / total;\n        }\n        \n        @Override\n        public long getEvictionCount() {\n            return evictionCount.get();\n        }\n        \n        @Override\n        public Duration getAverageLoadTime() {\n            long loads = loadCount.get();\n            return loads == 0 ? Duration.ZERO : Duration.ofNanos(totalLoadTime.get() / loads);\n        }\n        \n        @Override\n        public long getTotalLoadTime() {\n            return totalLoadTime.get();\n        }\n        \n        @Override\n        public long getSize() {\n            return 0; // Would need to be calculated separately\n        }\n    }\n}\n```\n\n### Cache Factory and Builder Pattern
 
 ```java
 public class CacheFactory {
