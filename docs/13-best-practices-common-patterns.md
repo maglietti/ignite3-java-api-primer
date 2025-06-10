@@ -1,4 +1,4 @@
-# 12. Best Practices & Common Patterns
+# 13. Best Practices & Common Patterns
 
 This section provides best practices for production Apache Ignite 3 deployments, covering resource management, error handling, performance optimization, and testing strategies.
 

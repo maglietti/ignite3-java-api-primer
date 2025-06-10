@@ -1,4 +1,4 @@
-# 10. Advanced Topics
+# 11. Advanced Topics
 
 This section covers enterprise-grade patterns and advanced techniques for production Apache Ignite 3 deployments.
 

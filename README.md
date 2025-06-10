@@ -10,12 +10,12 @@
 6. [Transactions](./docs/06-transactions.md)
 7. [Compute API - Distributed Processing](./docs/07-compute-api-distributed-processing.md)
 8. [Data Streaming](./docs/08-data-streaming.md)
-9. [Schema and Catalog Management](./docs/09-schema-and-catalog-management.md)
-10. [Advanced Topics](./docs/10-advanced-topics.md)
-11. [Integration Patterns](./docs/11-integration-patterns.md)
-12. [Best Practices & Common Patterns](./docs/12-best-practices-common-patterns.md)
-13. [Troubleshooting Guide](./docs/13-troubleshooting-guide.md)
-14. [Caching Patterns](./docs/14-caching-patterns.md)
+9. [Caching Patterns](./docs/09-caching-patterns.md)
+10. [Schema and Catalog Management](./docs/10-schema-and-catalog-management.md)
+11. [Advanced Topics](./docs/11-advanced-topics.md)
+12. [Integration Patterns](./docs/12-integration-patterns.md)
+13. [Best Practices & Common Patterns](./docs/13-best-practices-common-patterns.md)
+14. [Troubleshooting Guide](./docs/14-troubleshooting-guide.md)
 
 ---
 

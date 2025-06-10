@@ -67,31 +67,31 @@ public class AdaptiveStreaming {
         return builder.retryLimit(3).build();
     }
     
-    // Monitor and adjust streaming performance
-    public static void monitoredStreaming(IgniteClient client, List<Entry<Tuple, Tuple>> data) {
-        KeyValueView<Tuple, Tuple> view = client.tables().table("performance_test").keyValueView();
+    // Monitor and adjust streaming performance for Artist data
+    public static void monitoredStreaming(IgniteClient client, List<Entry<Tuple, Tuple>> artistData) {
+        KeyValueView<Tuple, Tuple> view = client.tables().table("Artist").keyValueView();
         
         long startTime = System.currentTimeMillis();
         
         try (var publisher = new SubmissionPublisher<DataStreamerItem<Entry<Tuple, Tuple>>>()) {
-            DataStreamerOptions options = adaptiveOptions(data.size(), data.size() > 10000);
+            DataStreamerOptions options = adaptiveOptions(artistData.size(), artistData.size() > 10000);
             
             CompletableFuture<Void> streamerFut = view.streamData(publisher, options);
             
-            // Submit data with progress monitoring
+            // Submit artist data with progress monitoring
             int batchSize = 1000;
-            for (int i = 0; i < data.size(); i += batchSize) {
-                int endIndex = Math.min(i + batchSize, data.size());
+            for (int i = 0; i < artistData.size(); i += batchSize) {
+                int endIndex = Math.min(i + batchSize, artistData.size());
                 
                 for (int j = i; j < endIndex; j++) {
-                    publisher.submit(DataStreamerItem.of(data.get(j)));
+                    publisher.submit(DataStreamerItem.of(artistData.get(j)));
                 }
                 
                 // Log progress
                 if (i % 10000 == 0) {
                     long elapsed = System.currentTimeMillis() - startTime;
-                    double rate = (double) i / elapsed * 1000; // records per second
-                    System.out.printf("Streamed %d records, rate: %.2f records/sec%n", i, rate);
+                    double rate = (double) i / elapsed * 1000; // artists per second
+                    System.out.printf("Streamed %d artists, rate: %.2f artists/sec%n", i, rate);
                 }
             }
             
@@ -99,9 +99,9 @@ public class AdaptiveStreaming {
             streamerFut.join();
             
             long totalTime = System.currentTimeMillis() - startTime;
-            double finalRate = (double) data.size() / totalTime * 1000;
-            System.out.printf("Streaming completed: %d records in %d ms (%.2f records/sec)%n", 
-                data.size(), totalTime, finalRate);
+            double finalRate = (double) artistData.size() / totalTime * 1000;
+            System.out.printf("Artist streaming completed: %d artists in %d ms (%.2f artists/sec)%n", 
+                artistData.size(), totalTime, finalRate);
         }
     }
 }
@@ -110,9 +110,9 @@ public class AdaptiveStreaming {
 #### Memory Management for Large Datasets
 
 ```java
-// Efficient memory usage for large streaming operations
-public static void memoryEfficientStreaming(IgniteClient client, int totalRecords) {
-    KeyValueView<Tuple, Tuple> view = client.tables().table("large_dataset").keyValueView();
+// Efficient memory usage for large track streaming operations
+public static void memoryEfficientTrackStreaming(IgniteClient client, int totalTracks) {
+    KeyValueView<Tuple, Tuple> view = client.tables().table("Track").keyValueView();
     
     DataStreamerOptions options = DataStreamerOptions.builder()
         .pageSize(5000)
@@ -126,14 +126,18 @@ public static void memoryEfficientStreaming(IgniteClient client, int totalRecord
         
         CompletableFuture<Void> streamerFut = view.streamData(publisher, options);
         
-        // Generate and stream data without holding everything in memory
-        for (int i = 0; i < totalRecords; i++) {
-            Tuple key = Tuple.create().set("id", i);
+        // Generate and stream track data without holding everything in memory
+        String[] sampleTrackNames = {"Bohemian Rhapsody", "Stairway to Heaven", "Hotel California", 
+                                     "Sweet Child O' Mine", "Smoke on the Water", "Imagine"};
+        
+        for (int i = 0; i < totalTracks; i++) {
+            Tuple key = Tuple.create().set("TrackId", i);
             Tuple value = Tuple.create()
-                .set("data", "Record " + i)
-                .set("timestamp", System.currentTimeMillis());
+                .set("Name", sampleTrackNames[i % sampleTrackNames.length] + " " + i)
+                .set("AlbumId", (i / 10) + 1)
+                .set("Milliseconds", 180000 + (i * 1000));
             
-            // Create entry and submit immediately
+            // Create track entry and submit immediately
             Entry<Tuple, Tuple> entry = Map.entry(key, value);
             publisher.submit(DataStreamerItem.of(entry));
             
@@ -144,7 +148,7 @@ public static void memoryEfficientStreaming(IgniteClient client, int totalRecord
                 long maxMemory = runtime.maxMemory();
                 
                 if (usedMemory > maxMemory * 0.8) {
-                    System.out.println("High memory usage detected, pausing...");
+                    System.out.println("High memory usage detected during track streaming, pausing...");
                     try { Thread.sleep(100); } catch (InterruptedException e) {}
                 }
             }
@@ -161,18 +165,20 @@ public static void memoryEfficientStreaming(IgniteClient client, int totalRecord
 ### High-Throughput Ingestion
 
 ```java
-KeyValueView<Tuple, Tuple> view = client.tables().table("accounts").keyValueView();
+// High-throughput streaming of customer data
+KeyValueView<Tuple, Tuple> view = client.tables().table("Customer").keyValueView();
 
 try (var publisher = new SubmissionPublisher<DataStreamerItem<Entry<Tuple, Tuple>>>()) {
     CompletableFuture<Void> streamerFut = view.streamData(publisher, options);
     
-    // Submit data
-    for (int i = 0; i < ACCOUNTS_COUNT; i++) {
-        Tuple key = Tuple.create().set("accountNumber", i);
+    // Submit customer data
+    for (int i = 1; i <= CUSTOMER_COUNT; i++) {
+        Tuple key = Tuple.create().set("CustomerId", i);
         Tuple value = Tuple.create()
-            .set("name", "name" + i)
-            .set("balance", rnd.nextLong(100_000))
-            .set("active", rnd.nextBoolean());
+            .set("FirstName", "Customer" + i)
+            .set("LastName", "LastName" + i)
+            .set("Email", "customer" + i + "@example.com")
+            .set("Country", i % 3 == 0 ? "USA" : i % 3 == 1 ? "Canada" : "Brazil");
         
         publisher.submit(DataStreamerItem.of(Map.entry(key, value)));
     }
@@ -231,9 +237,9 @@ public class StreamingErrorHandling {
         public int getRetryCount() { return retryCount.get(); }
     }
     
-    // Streaming with error handling
-    public static void robustStreaming(IgniteClient client, List<Entry<Tuple, Tuple>> data) {
-        KeyValueView<Tuple, Tuple> view = client.tables().table("robust_test").keyValueView();
+    // Streaming with error handling for Album data
+    public static void robustStreaming(IgniteClient client, List<Entry<Tuple, Tuple>> albumData) {
+        KeyValueView<Tuple, Tuple> view = client.tables().table("Album").keyValueView();
         StreamingErrorHandler errorHandler = new StreamingErrorHandler();
         
         DataStreamerOptions options = DataStreamerOptions.builder()
@@ -250,8 +256,8 @@ public class StreamingErrorHandling {
                     return null;
                 });
             
-            // Submit data with individual error handling
-            for (Entry<Tuple, Tuple> entry : data) {
+            // Submit album data with individual error handling
+            for (Entry<Tuple, Tuple> entry : albumData) {
                 try {
                     DataStreamerItem<Entry<Tuple, Tuple>> item = DataStreamerItem.of(entry);
                     publisher.submit(item);
@@ -290,9 +296,9 @@ public class DeadLetterQueueStreaming {
     private static final Queue<DataStreamerItem<Entry<Tuple, Tuple>>> deadLetterQueue = 
         new ConcurrentLinkedQueue<>();
     
-    // Stream with dead letter queue for failed items
-    public static void streamingWithDLQ(IgniteClient client, List<Entry<Tuple, Tuple>> data) {
-        KeyValueView<Tuple, Tuple> view = client.tables().table("dlq_test").keyValueView();
+    // Stream Track data with dead letter queue for failed items
+    public static void streamingWithDLQ(IgniteClient client, List<Entry<Tuple, Tuple>> trackData) {
+        KeyValueView<Tuple, Tuple> view = client.tables().table("Track").keyValueView();
         
         DataStreamerOptions options = DataStreamerOptions.builder()
             .pageSize(1000)
@@ -306,8 +312,8 @@ public class DeadLetterQueueStreaming {
                     return null;
                 });
             
-            // Submit items with error tracking
-            for (Entry<Tuple, Tuple> entry : data) {
+            // Submit track items with error tracking
+            for (Entry<Tuple, Tuple> entry : trackData) {
                 DataStreamerItem<Entry<Tuple, Tuple>> item = DataStreamerItem.of(entry);
                 
                 try {
@@ -334,9 +340,9 @@ public class DeadLetterQueueStreaming {
             return;
         }
         
-        System.out.println("Reprocessing " + deadLetterQueue.size() + " failed items");
+        System.out.println("Reprocessing " + deadLetterQueue.size() + " failed track items");
         
-        KeyValueView<Tuple, Tuple> view = client.tables().table("dlq_test").keyValueView();
+        KeyValueView<Tuple, Tuple> view = client.tables().table("Track").keyValueView();
         
         // Reprocess with more conservative settings
         DataStreamerOptions retryOptions = DataStreamerOptions.builder()
@@ -366,7 +372,7 @@ public class DeadLetterQueueStreaming {
             publisher.close();
             reprocessFut.join();
             
-            System.out.printf("DLQ processing complete - Reprocessed: %d, Failed: %d%n", 
+            System.out.printf("Track DLQ processing complete - Reprocessed: %d, Failed: %d%n", 
                 reprocessed, failed);
         }
     }
@@ -425,9 +431,9 @@ public class CircuitBreakerStreaming {
         public boolean isOpen() { return isOpen; }
     }
     
-    // Streaming with circuit breaker protection
-    public static void protectedStreaming(IgniteClient client, List<Entry<Tuple, Tuple>> data) {
-        KeyValueView<Tuple, Tuple> view = client.tables().table("circuit_test").keyValueView();
+    // Streaming with circuit breaker protection for Playlist data
+    public static void protectedPlaylistStreaming(IgniteClient client, List<Entry<Tuple, Tuple>> playlistData) {
+        KeyValueView<Tuple, Tuple> view = client.tables().table("Playlist").keyValueView();
         StreamingCircuitBreaker circuitBreaker = new StreamingCircuitBreaker(5, 30000); // 5 failures, 30s timeout
         
         DataStreamerOptions options = DataStreamerOptions.builder()
@@ -438,20 +444,20 @@ public class CircuitBreakerStreaming {
         int processed = 0;
         int skipped = 0;
         
-        for (int i = 0; i < data.size(); i += 1000) {
+        for (int i = 0; i < playlistData.size(); i += 1000) {
             if (!circuitBreaker.allowRequest()) {
-                skipped += Math.min(1000, data.size() - i);
-                System.out.println("Circuit breaker open - skipping batch");
+                skipped += Math.min(1000, playlistData.size() - i);
+                System.out.println("Circuit breaker open - skipping playlist batch");
                 continue;
             }
             
             try (var publisher = new SubmissionPublisher<DataStreamerItem<Entry<Tuple, Tuple>>>()) {
                 CompletableFuture<Void> streamerFut = view.streamData(publisher, options);
                 
-                // Process batch
-                int endIndex = Math.min(i + 1000, data.size());
+                // Process playlist batch
+                int endIndex = Math.min(i + 1000, playlistData.size());
                 for (int j = i; j < endIndex; j++) {
-                    publisher.submit(DataStreamerItem.of(data.get(j)));
+                    publisher.submit(DataStreamerItem.of(playlistData.get(j)));
                 }
                 
                 publisher.close();
@@ -468,7 +474,7 @@ public class CircuitBreakerStreaming {
             }
         }
         
-        System.out.printf("Streaming completed - Processed: %d, Skipped: %d%n", processed, skipped);
+        System.out.printf("Playlist streaming completed - Processed: %d, Skipped: %d%n", processed, skipped);
     }
 }
 ```
@@ -482,9 +488,9 @@ Backpressure occurs when the data producer generates data faster than the consum
 ```java
 public class BackpressureManagement {
     
-    // Monitor and handle backpressure
-    public static void adaptiveBackpressureStreaming(IgniteClient client, int totalRecords) {
-        KeyValueView<Tuple, Tuple> view = client.tables().table("backpressure_test").keyValueView();
+    // Monitor and handle backpressure for Invoice data
+    public static void adaptiveBackpressureStreaming(IgniteClient client, int totalInvoices) {
+        KeyValueView<Tuple, Tuple> view = client.tables().table("Invoice").keyValueView();
         
         // Start with moderate settings
         DataStreamerOptions initialOptions = DataStreamerOptions.builder()
@@ -523,10 +529,13 @@ public class BackpressureManagement {
                 });
             });
             
-            // Submit data with backpressure awareness
-            for (int i = 0; i < totalRecords; i++) {
-                Tuple key = Tuple.create().set("id", i);
-                Tuple value = Tuple.create().set("data", "Record " + i);
+            // Submit invoice data with backpressure awareness
+            for (int i = 1; i <= totalInvoices; i++) {
+                Tuple key = Tuple.create().set("InvoiceId", i);
+                Tuple value = Tuple.create()
+                    .set("CustomerId", (i % 100) + 1)
+                    .set("InvoiceDate", "2023-01-" + String.format("%02d", (i % 28) + 1))
+                    .set("Total", 9.99 + (i * 0.50));
                 Entry<Tuple, Tuple> entry = Map.entry(key, value);
                 
                 try {
@@ -556,15 +565,15 @@ public class BackpressureManagement {
                 
                 // Periodic progress report
                 if (i % 10000 == 0) {
-                    System.out.printf("Progress: %d/%d, Backpressure events: %d, Lag: %d%n", 
-                        i, totalRecords, backpressureEvents.get(), publisher.estimateMaximumLag());
+                    System.out.printf("Invoice Progress: %d/%d, Backpressure events: %d, Lag: %d%n", 
+                        i, totalInvoices, backpressureEvents.get(), publisher.estimateMaximumLag());
                 }
             }
             
             publisher.close();
             streamerFut.join();
             
-            System.out.println("Streaming completed. Total backpressure events: " + backpressureEvents.get());
+            System.out.println("Invoice streaming completed. Total backpressure events: " + backpressureEvents.get());
         }
     }
 }
@@ -575,12 +584,12 @@ public class BackpressureManagement {
 ```java
 public class FlowControlStrategies {
     
-    // Strategy 1: Rate limiting
-    public static void rateLimitedStreaming(IgniteClient client, List<Entry<Tuple, Tuple>> data) {
-        KeyValueView<Tuple, Tuple> view = client.tables().table("rate_limited").keyValueView();
+    // Strategy 1: Rate limiting for Artist data
+    public static void rateLimitedArtistStreaming(IgniteClient client, List<Entry<Tuple, Tuple>> artistData) {
+        KeyValueView<Tuple, Tuple> view = client.tables().table("Artist").keyValueView();
         
         // Create rate limiter (e.g., Google Guava RateLimiter could be used here)
-        SimpleRateLimiter rateLimiter = new SimpleRateLimiter(1000); // 1000 records per second
+        SimpleRateLimiter rateLimiter = new SimpleRateLimiter(1000); // 1000 artists per second
         
         DataStreamerOptions options = DataStreamerOptions.builder()
             .pageSize(500)
@@ -590,7 +599,7 @@ public class FlowControlStrategies {
         try (var publisher = new SubmissionPublisher<DataStreamerItem<Entry<Tuple, Tuple>>>()) {
             CompletableFuture<Void> streamerFut = view.streamData(publisher, options);
             
-            for (Entry<Tuple, Tuple> entry : data) {
+            for (Entry<Tuple, Tuple> entry : artistData) {
                 // Wait for rate limiter permission
                 rateLimiter.acquire();
                 
@@ -602,15 +611,15 @@ public class FlowControlStrategies {
         }
     }
     
-    // Strategy 2: Adaptive batch sizing
-    public static void adaptiveBatchStreaming(IgniteClient client, List<Entry<Tuple, Tuple>> data) {
-        KeyValueView<Tuple, Tuple> view = client.tables().table("adaptive").keyValueView();
+    // Strategy 2: Adaptive batch sizing for Album data
+    public static void adaptiveBatchAlbumStreaming(IgniteClient client, List<Entry<Tuple, Tuple>> albumData) {
+        KeyValueView<Tuple, Tuple> view = client.tables().table("Album").keyValueView();
         
         int currentBatchSize = 1000;
         int minBatchSize = 100;
         int maxBatchSize = 5000;
         
-        for (int i = 0; i < data.size(); i += currentBatchSize) {
+        for (int i = 0; i < albumData.size(); i += currentBatchSize) {
             long batchStart = System.currentTimeMillis();
             
             DataStreamerOptions options = DataStreamerOptions.builder()
@@ -621,10 +630,10 @@ public class FlowControlStrategies {
             try (var publisher = new SubmissionPublisher<DataStreamerItem<Entry<Tuple, Tuple>>>()) {
                 CompletableFuture<Void> streamerFut = view.streamData(publisher, options);
                 
-                // Submit current batch
-                int endIndex = Math.min(i + currentBatchSize, data.size());
+                // Submit current album batch
+                int endIndex = Math.min(i + currentBatchSize, albumData.size());
                 for (int j = i; j < endIndex; j++) {
-                    publisher.submit(DataStreamerItem.of(data.get(j)));
+                    publisher.submit(DataStreamerItem.of(albumData.get(j)));
                 }
                 
                 publisher.close();
@@ -641,20 +650,20 @@ public class FlowControlStrategies {
                     currentBatchSize = Math.max(currentBatchSize / 2, minBatchSize);
                 }
                 
-                System.out.printf("Batch %d-%d processed in %d ms, next batch size: %d%n", 
+                System.out.printf("Album batch %d-%d processed in %d ms, next batch size: %d%n", 
                     i, endIndex - 1, batchDuration, currentBatchSize);
                 
             } catch (Exception e) {
-                System.err.println("Batch failed: " + e.getMessage());
+                System.err.println("Album batch failed: " + e.getMessage());
                 // Reduce batch size on failure
                 currentBatchSize = Math.max(currentBatchSize / 2, minBatchSize);
             }
         }
     }
     
-    // Strategy 3: Producer-consumer pattern with bounded queue
-    public static void producerConsumerStreaming(IgniteClient client, List<Entry<Tuple, Tuple>> data) {
-        KeyValueView<Tuple, Tuple> view = client.tables().table("producer_consumer").keyValueView();
+    // Strategy 3: Producer-consumer pattern with bounded queue for Invoice data
+    public static void producerConsumerStreaming(IgniteClient client, List<Entry<Tuple, Tuple>> invoiceData) {
+        KeyValueView<Tuple, Tuple> view = client.tables().table("Invoice").keyValueView();
         
         // Bounded queue to control memory usage
         BlockingQueue<Entry<Tuple, Tuple>> queue = new ArrayBlockingQueue<>(10000);
@@ -662,7 +671,7 @@ public class FlowControlStrategies {
         // Producer thread
         Thread producer = new Thread(() -> {
             try {
-                for (Entry<Tuple, Tuple> entry : data) {
+                for (Entry<Tuple, Tuple> entry : invoiceData) {
                     queue.put(entry); // Blocks when queue is full
                 }
                 // Signal end of data
@@ -752,20 +761,20 @@ public class FlowControlStrategies {
 6. **Graceful Degradation**: Slow down rather than fail
 
 ```java
-// Complete example combining all backpressure strategies
+// Complete example combining all backpressure strategies for streaming media data
 public static void backpressureHandling(IgniteClient client, 
-                                                   Iterator<Entry<Tuple, Tuple>> dataIterator) {
-    KeyValueView<Tuple, Tuple> view = client.tables().table("streaming_test").keyValueView();
+                                                   Iterator<Entry<Tuple, Tuple>> mediaDataIterator) {
+    KeyValueView<Tuple, Tuple> view = client.tables().table("MediaType").keyValueView();
     
     SimpleRateLimiter rateLimiter = new SimpleRateLimiter(5000); // 5000 records/sec
     int adaptiveBatchSize = 1000;
     
-    while (dataIterator.hasNext()) {
+    while (mediaDataIterator.hasNext()) {
         List<Entry<Tuple, Tuple>> batch = new ArrayList<>();
         
-        // Collect batch
-        for (int i = 0; i < adaptiveBatchSize && dataIterator.hasNext(); i++) {
-            batch.add(dataIterator.next());
+        // Collect media data batch
+        for (int i = 0; i < adaptiveBatchSize && mediaDataIterator.hasNext(); i++) {
+            batch.add(mediaDataIterator.next());
         }
         
         long batchStart = System.currentTimeMillis();

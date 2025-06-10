@@ -1,4 +1,4 @@
-# 11. Integration Patterns
+# 12. Integration Patterns
 
 This section demonstrates how to integrate Apache Ignite 3 with popular frameworks and enterprise patterns commonly used in production environments.
 

@@ -1,4 +1,4 @@
-# 9. Schema and Catalog Management
+# 10. Schema and Catalog Management
 
 ## Introduction to Catalog Management
 
