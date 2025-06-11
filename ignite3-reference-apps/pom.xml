@@ -30,10 +30,14 @@
         <assertj.version>3.26.3</assertj.version>
         <testcontainers.version>1.20.4</testcontainers.version>
         
+        <!-- Integration -->
+        <spring.boot.version>3.2.11</spring.boot.version>
+        
         <!-- Build plugins -->
         <maven.compiler.plugin.version>3.13.0</maven.compiler.plugin.version>
         <maven.surefire.plugin.version>3.5.2</maven.surefire.plugin.version>
         <maven.failsafe.plugin.version>3.5.2</maven.failsafe.plugin.version>
+        <spring.boot.maven.plugin.version>3.2.11</spring.boot.maven.plugin.version>
     </properties>
 
     <modules>
@@ -121,6 +125,26 @@
                 <scope>test</scope>
             </dependency>
 
+            <!-- Spring Boot Dependencies -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter</artifactId>
+                <version>${spring.boot.version}</version>
+            </dependency>
+            
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-web</artifactId>
+                <version>${spring.boot.version}</version>
+            </dependency>
+            
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-test</artifactId>
+                <version>${spring.boot.version}</version>
+                <scope>test</scope>
+            </dependency>
+
             <!-- Internal Module Dependencies -->
             <dependency>
                 <groupId>com.apache.ignite.examples</groupId>
@@ -185,6 +209,12 @@
                             </goals>
                         </execution>
                     </executions>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <version>${spring.boot.maven.plugin.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
