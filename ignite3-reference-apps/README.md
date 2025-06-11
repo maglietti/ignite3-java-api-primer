@@ -55,8 +55,8 @@ curl -X POST http://localhost:10300/management/v1/cluster/init \
 
 Verify cluster is initialized and ready:
 ```bash
-curl http://localhost:10300/management/v1/cluster/status
-# Should show "state": "started"
+curl http://localhost:10300/management/v1/cluster/state
+# {"cmgNodes":["node1","node2","node3"],"msNodes":["node1","node2","node3"],"igniteVersion":"3.0.0","clusterTag":{"clusterName":"ignite3-reference-cluster","clusterId":"b30643d3-34b0-4c2a-b8f7-e74c5f8ca316"}}
 ```
 
 ### 2. Setup Sample Data
@@ -87,19 +87,19 @@ curl http://localhost:10300/management/v1/cluster/status
 ignite3-reference-apps/
 ├── 00-docker/                      # Docker cluster setup (start here!)
 ├── 01-sample-data-setup/           # Foundation module with sample data
-├── 02-getting-started-app/         # Basic Ignite 3 operations
+├── 02-getting-started-app/         # QUICK START - just the key concepts
 ├── 03-schema-annotations-app/      # Schema-as-code examples
-├── 04-table-api-app/              # Object-oriented data access
-├── 05-sql-api-app/                # SQL operations and queries
-├── 06-transactions-app/           # Transaction patterns
-├── 07-compute-api-app/            # Distributed computing
-├── 08-data-streaming-app/         # High-throughput data loading
-├── 09-caching-patterns-app/       # Caching strategies
-├── 10-catalog-management-app/     # Schema and zone management
-├── 11-advanced-topics-app/        # Error handling, monitoring
-├── 12-integration-patterns-app/   # Spring Boot, JPA integration
-├── 13-best-practices-app/         # Performance and testing
-└── 14-troubleshooting-app/        # Diagnostics and debugging
+├── 04-table-api-app/               # Object-oriented data access
+├── 05-sql-api-app/                 # SQL operations and queries
+├── 06-transactions-app/            # Transaction patterns
+├── 07-compute-api-app/             # Distributed computing
+├── 08-data-streaming-app/          # High-throughput data loading
+├── 09-caching-patterns-app/        # Caching strategies
+├── 10-catalog-management-app/      # Schema and zone management
+├── 11-advanced-topics-app/         # Error handling, monitoring
+├── 12-integration-patterns-app/    # Spring Boot, JPA integration
+├── 13-best-practices-app/          # Performance and testing
+└── 14-troubleshooting-app/         # Diagnostics and debugging
 ```
 
 ## Sample Dataset
