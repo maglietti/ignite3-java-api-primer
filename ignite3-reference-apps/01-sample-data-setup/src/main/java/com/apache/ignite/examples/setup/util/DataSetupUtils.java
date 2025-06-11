@@ -57,21 +57,18 @@ public class DataSetupUtils {
         }
     }
     
+
     public static void displayTables(IgniteClient client) {
         try {
             logger.info("Existing tables in the cluster:");
-            var resultSet = client.sql().execute(null, 
-                "SELECT table_name, table_schema FROM INFORMATION_SCHEMA.TABLES " +
-                "WHERE table_schema != 'SYSTEM' ORDER BY table_name");
+            List<Table> tables = client.tables().tables();
             
-            if (!resultSet.hasNext()) {
+            if (tables.isEmpty()) {
                 logger.info("  No user tables found");
             } else {
-                resultSet.forEachRemaining(row -> {
-                    String tableName = row.stringValue("table_name");
-                    String schema = row.stringValue("table_schema");
-                    logger.info("  Table: {}.{}", schema, tableName);
-                });
+                for (Table table : tables) {
+                    logger.info("  Table: {}", table.name());
+                }
             }
         } catch (Exception e) {
             logger.error("Error displaying table information: {}", e.getMessage());
@@ -113,25 +110,6 @@ public class DataSetupUtils {
         } catch (Exception e) {
             logger.error("Error getting row count for table '{}': {}", tableName, e.getMessage());
             return -1;
-        }
-    }
-    
-    public static void displayClusterInfo(IgniteClient client) {
-        try {
-            logger.info("Cluster information:");
-            
-            var nodeResultSet = client.sql().execute(null, 
-                "SELECT name, id FROM SYSTEM.NODE_ATTRIBUTES ORDER BY name");
-            
-            logger.info("Cluster nodes:");
-            nodeResultSet.forEachRemaining(row -> {
-                String name = row.stringValue("name");
-                String id = row.stringValue("id");
-                logger.info("  Node: {} (ID: {})", name, id);
-            });
-            
-        } catch (Exception e) {
-            logger.error("Error displaying cluster information: {}", e.getMessage());
         }
     }
     
