@@ -19,7 +19,10 @@ Learn Ignite 3's Table API for type-safe, object-oriented data operations. Work 
 
 ## Prerequisites
 
-**Required**: Complete [sample-data-setup](../sample-data-setup/) to have tables and data available.
+- **⚠️ Required**: Apache Ignite 3 cluster running (see [00-docker setup](../00-docker/README.md))
+- **Required**: Complete [01-sample-data-setup](../01-sample-data-setup/) to have tables and data available.
+
+> **Cluster Requirement**: The 3-node Ignite cluster from `00-docker` must be running before executing this application.
 
 ## Coming Soon
 

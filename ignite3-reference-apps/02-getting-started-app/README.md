@@ -18,10 +18,17 @@ Learn the fundamentals of Apache Ignite 3 through practical examples using the m
 
 ## Prerequisites
 
-**Required**: Complete [sample-data-setup](../sample-data-setup/) first to create the music store schema and load sample data.
+- **⚠️ Required**: Apache Ignite 3 cluster running (see [00-docker setup](../00-docker/README.md))
+- **Required**: Complete [01-sample-data-setup](../01-sample-data-setup/) first to create the music store schema and load sample data.
+
+> **Cluster Requirement**: The 3-node Ignite cluster from `00-docker` must be running before executing this application.
 
 ```bash
-cd sample-data-setup
+# Start cluster first
+cd 00-docker && docker-compose up -d
+
+# Then setup sample data  
+cd ../01-sample-data-setup
 mvn exec:java  # Run ProjectInitializationApp
 ```
 

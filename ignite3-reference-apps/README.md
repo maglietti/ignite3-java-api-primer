@@ -19,15 +19,52 @@ This multi-module Maven project provides practical, runnable examples for all ma
 ### Prerequisites
 
 - Java 17+
-- Apache Ignite 3 cluster running (see [Ignite 3 Documentation](https://ignite.apache.org/docs/3.0.0/))
 - Maven 3.8+
+- Docker & Docker Compose
 
-### Setup Sample Data
+### 1. Start Ignite 3 Cluster
+
+**⚠️ Required First Step**: Start and initialize the 3-node Docker cluster before running any applications.
+
+**Quick setup** (recommended):
+```bash
+cd 00-docker
+./init-cluster.sh
+```
+
+**Manual setup**:
+```bash
+cd 00-docker
+docker-compose up -d
+```
+
+Wait for containers to be healthy, then initialize the cluster:
+```bash
+# Wait 30-60 seconds for startup
+docker-compose ps
+
+# Initialize cluster (required before first use)
+curl -X POST http://localhost:10300/management/v1/cluster/init \
+  -H "Content-Type: application/json" \
+  -d '{
+    "metaStorageNodes": ["node1", "node2", "node3"],
+    "cmgNodes": ["node1", "node2", "node3"],
+    "clusterName": "ignite3-reference-cluster"
+  }'
+```
+
+Verify cluster is initialized and ready:
+```bash
+curl http://localhost:10300/management/v1/cluster/status
+# Should show "state": "started"
+```
+
+### 2. Setup Sample Data
 
 1. **Start with complete initialization** (recommended for first-time users):
 
    ```bash
-   cd sample-data-setup
+   cd 01-sample-data-setup
    mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.setup.app.ProjectInitializationApp"
    ```
 
@@ -48,20 +85,21 @@ This multi-module Maven project provides practical, runnable examples for all ma
 
 ```text
 ignite3-reference-apps/
-├── sample-data-setup/          # Foundation module with sample data
-├── getting-started-app/        # Basic Ignite 3 operations
-├── schema-annotations-app/     # Schema-as-code examples
-├── table-api-app/             # Object-oriented data access
-├── sql-api-app/               # SQL operations and queries
-├── transactions-app/          # Transaction patterns
-├── compute-api-app/           # Distributed computing
-├── data-streaming-app/        # High-throughput data loading
-├── caching-patterns-app/      # Caching strategies
-├── catalog-management-app/    # Schema and zone management
-├── advanced-topics-app/       # Error handling, monitoring
-├── integration-patterns-app/  # Spring Boot, JPA integration
-├── best-practices-app/        # Performance and testing
-└── troubleshooting-app/       # Diagnostics and debugging
+├── 00-docker/                      # Docker cluster setup (start here!)
+├── 01-sample-data-setup/           # Foundation module with sample data
+├── 02-getting-started-app/         # Basic Ignite 3 operations
+├── 03-schema-annotations-app/      # Schema-as-code examples
+├── 04-table-api-app/              # Object-oriented data access
+├── 05-sql-api-app/                # SQL operations and queries
+├── 06-transactions-app/           # Transaction patterns
+├── 07-compute-api-app/            # Distributed computing
+├── 08-data-streaming-app/         # High-throughput data loading
+├── 09-caching-patterns-app/       # Caching strategies
+├── 10-catalog-management-app/     # Schema and zone management
+├── 11-advanced-topics-app/        # Error handling, monitoring
+├── 12-integration-patterns-app/   # Spring Boot, JPA integration
+├── 13-best-practices-app/         # Performance and testing
+└── 14-troubleshooting-app/        # Diagnostics and debugging
 ```
 
 ## Sample Dataset
@@ -219,13 +257,19 @@ Edit configuration in:
 
 ### Common Issues
 
-1. **Connection Failed**
-   - Verify Ignite 3 cluster is running
+1. **Connection Failed / Cluster Not Initialized**
+   - Verify Ignite 3 cluster is running: `docker-compose ps`
+   - **Most Common**: Cluster not initialized - run initialization:
+     ```bash
+     curl -X POST http://localhost:10300/management/v1/cluster/init \
+       -H "Content-Type: application/json" \
+       -d '{"metaStorageNodes": ["node1", "node2", "node3"], "cmgNodes": ["node1", "node2", "node3"], "clusterName": "ignite3-reference-cluster"}'
+     ```
    - Check cluster address and port
    - Confirm network connectivity
 
 2. **Table Not Found**
-   - Run `sample-data-setup` module first
+   - Run `01-sample-data-setup` module first
    - Verify schema creation completed successfully
    - Check zone configuration
 
