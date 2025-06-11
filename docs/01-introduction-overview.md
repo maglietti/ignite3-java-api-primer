@@ -121,7 +121,7 @@ Each section pairs theoretical concepts with practical, executable examples usin
 
 **⚠️ Important**: Before diving into the concepts, set up your development environment using the reference applications. This ensures you can immediately practice what you learn.
 
-### 🚀 Quick Start (5 minutes)
+### Quick Start (5 minutes)
 
 1. **Start your Ignite 3 cluster**:
 
@@ -145,7 +145,7 @@ Each section pairs theoretical concepts with practical, executable examples usin
 
 You should see music store data and analytics reports, confirming your environment is ready.
 
-### 🎯 What You Just Created
+### What You Just Created
 
 - **3-Node Ignite 3 Cluster**: Production-like distributed setup
 - **Music Store Dataset**: 11 tables with realistic relationships
@@ -156,7 +156,7 @@ You should see music store data and analytics reports, confirming your environme
 - **Distribution Strategy**: Optimized data placement with colocation
 - **Sample Applications**: Ready-to-run examples for each API area
 
-### 🧭 Navigation Between Docs and Code
+### Navigation Between Docs and Code
 
 Each documentation section corresponds to a reference application:
 
@@ -171,10 +171,10 @@ Each documentation section corresponds to a reference application:
 
 Each section includes:
 
-- **📖 Concepts**: Core principles and theory
-- **💻 Code Examples**: Inline code snippets  
-- **🔗 Reference App**: Link to runnable application
-- **🎯 Practice Exercises**: Suggested modifications and experiments
+- **Concepts**: Core principles and theory
+- **Code Examples**: Inline code snippets  
+- **Reference App**: Link to runnable application
+- **Practice Exercises**: Suggested modifications and experiments
 
 ### 📋 Prerequisites
 
@@ -194,7 +194,7 @@ Each section includes:
 
 ### **Phase 1: Foundation** (Sections 1-3)
 
-**🎯 Goal**: Understand Ignite 3 basics and get comfortable with the development environment
+**Goal**: Understand Ignite 3 basics and get comfortable with the development environment
 
 1. **[Introduction & Overview](01-introduction-overview.md)** ← *You are here*
 2. **[Getting Started](02-getting-started.md)** - First connections and basic operations
@@ -204,7 +204,7 @@ Each section includes:
 
 ### **Phase 2: Core APIs** (Sections 4-6)
 
-**🎯 Goal**: Master the two primary data access patterns and transaction handling
+**Goal**: Master the two primary data access patterns and transaction handling
 
 4. **[Table API](04-table-api-object-oriented-data-access.md)** - Object-oriented data access
 5. **[SQL API](05-sql-api-relational-data-access.md)** - Relational queries and operations
@@ -214,7 +214,7 @@ Each section includes:
 
 ### **Phase 3: Advanced Features** (Sections 7-9)
 
-**🎯 Goal**: Scale beyond basic operations with distributed computing and caching
+**Goal**: Scale beyond basic operations with distributed computing and caching
 
 7. **[Compute API](07-compute-api-distributed-processing.md)** - Distributed processing jobs
 8. **[Data Streaming](08-data-streaming.md)** - High-throughput data loading
@@ -224,7 +224,7 @@ Each section includes:
 
 ### **Phase 4: Production Readiness** (Sections 10-14)
 
-**🎯 Goal**: Production deployment, integration, and operational excellence
+**Goal**: Production deployment, integration, and operational excellence
 
 10. **[Schema & Catalog Management](10-schema-and-catalog-management.md)** - Schema evolution
 11. **[Advanced Topics](11-advanced-topics.md)** - Error handling and monitoring
