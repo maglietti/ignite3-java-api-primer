@@ -130,26 +130,37 @@ ignite3-reference-apps/
 │   ├── pom.xml (standalone, no external dependencies)
 │   └── src/main/java/
 │       └── com/apache/ignite/examples/setup/
-│           ├── model/ (Music store POJOs)
-│           │   ├── Artist.java
-│           │   ├── Album.java
-│           │   ├── Track.java
-│           │   ├── Customer.java
-│           │   └── Invoice.java
+│           ├── model/ (Complete music store domain - 11 POJOs)
+│           │   ├── Artist.java          (Music artists)
+│           │   ├── Album.java           (Albums with artist relationships)
+│           │   ├── Track.java           (Songs with album/genre/media type refs)
+│           │   ├── Genre.java           (Music genres - reference data)
+│           │   ├── MediaType.java       (Audio formats - reference data)
+│           │   ├── Customer.java        (Music store customers)
+│           │   ├── Employee.java        (Store employees with hierarchy)
+│           │   ├── Invoice.java         (Customer purchases)
+│           │   ├── InvoiceLine.java     (Purchase line items)
+│           │   ├── Playlist.java        (User playlists)
+│           │   └── PlaylistTrack.java   (Playlist-track associations)
 │           ├── config/ (Sample data configurations)
 │           │   ├── IgniteConfiguration.java
 │           │   └── MusicStoreZoneConfiguration.java
 │           ├── util/ (Data loading utilities)
-│           │   ├── DataSetupUtils.java
-│           │   ├── BulkDataLoader.java
-│           │   └── TableCreationUtils.java
+│           │   ├── DataSetupUtils.java       (Connection and basic operations)
+│           │   ├── BulkDataLoader.java       (SQL script execution)
+│           │   ├── TableCreationUtils.java   (Schema creation and management)
+│           │   ├── DataLoadingUtils.java     (Sample data creation)
+│           │   └── ReportingUtils.java       (Query and analysis utilities)
 │           └── app/
-│               ├── ProjectInitializationApp.java
-│               └── DataLoadingApp.java
+│               ├── ProjectInitializationApp.java  (Main setup application)
+│               ├── DataLoadingApp.java           (Data population)
+│               ├── SchemaCreationApp.java        (Schema-only setup)
+│               └── SampleAnalyticsApp.java       (Demo queries and reports)
 │   └── src/main/resources/
-│       ├── music-store-schema.sql
-│       ├── sample-data.sql
-│       └── log4j2.xml
+│       ├── music-store-schema.sql    (Complete DDL for all 11 tables)
+│       ├── sample-data.sql          (Rich sample music store data)
+│       ├── additional-albums.sql    (Extended sample data)
+│       └── log4j2.xml              (Logging configuration)
 ├── getting-started-app/
 │   ├── pom.xml
 │   └── src/main/java/
@@ -309,12 +320,52 @@ sample-data-setup/
     └── log4j2.xml              (Logging configuration)
 ```
 
-**Extracted Components from Reference Source**:
+**Complete Sample Data Architecture** (Extracted from Reference Source):
 
-- **POJOs**: Artist, Album, Track, Customer, Invoice with Ignite 3 annotations
-- **SQL Scripts**: Schema creation and sample data loading
-- **Utilities**: Connection management, table creation, bulk loading
-- **Configuration**: Zone setup, colocation strategies, storage profiles
+**11 Entity Model Classes** (All with Ignite 3 Annotations):
+
+**Core Music Entities** (MusicStore Zone - 2 replicas):
+- **Artist**: Music artists and bands (root entity)
+- **Album**: Music albums (colocated by ArtistId)
+- **Track**: Individual songs (colocated by AlbumId, complex entity with 9 fields)
+- **Playlist**: User-created playlists
+- **PlaylistTrack**: Many-to-many playlist-track relationships (colocated by PlaylistId)
+
+**Business Entities** (MusicStore Zone - 2 replicas):
+- **Customer**: Store customers (13 fields including address, support rep)
+- **Employee**: Store employees with hierarchy (15 fields, self-referencing ReportsTo)
+- **Invoice**: Customer purchases (colocated by CustomerId, 8 fields)
+- **InvoiceLine**: Purchase line items (colocated by InvoiceId)
+
+**Reference Data** (MusicStoreReplicated Zone - 3 replicas):
+- **Genre**: Music genres (lookup table)
+- **MediaType**: Audio file formats (lookup table)
+
+**Advanced Ignite 3 Features Demonstrated**:
+- **Distribution Zones**: Two zones with different replica strategies
+- **Colocation**: Hierarchical data placement (Artist→Album→Track, Customer→Invoice→InvoiceLine)
+- **Composite Primary Keys**: Multi-field keys (Album, Track, Invoice, InvoiceLine, PlaylistTrack)
+- **Indexes**: Foreign key indexes for performance
+- **Data Types**: String, Integer, BigDecimal, LocalDate support
+- **Annotations**: Complete @Table, @Column, @Id, @Zone, @ColumnRef, @Index usage
+
+**Utility Classes for Complete Functionality**:
+- **DataSetupUtils**: Connection management, cluster operations
+- **TableCreationUtils**: Zone creation, table management, schema operations
+- **BulkDataLoader**: SQL script parsing and execution
+- **DataLoadingUtils**: Programmatic sample data creation with transactions
+- **ReportingUtils**: Complex queries, joins, analytics
+
+**Application Patterns**:
+- **Schema Creation**: POJO-based table creation using annotations
+- **Data Loading**: Transactional batch operations
+- **SQL Integration**: Both DDL and DML operations
+- **Analytics**: Complex joins across the full entity hierarchy
+
+**SQL Scripts and Data**:
+- **Complete DDL**: All 11 tables with proper zones and colocation
+- **Rich Sample Data**: Realistic music store data with relationships
+- **Extended Data Sets**: Additional albums and tracks for testing
 
 **Integration Strategy for Reference Apps**:
 
@@ -329,7 +380,9 @@ sample-data-setup/
 - **Business Entities**: Customer → Invoice workflows
 - **Colocation Strategy**: All related data colocated by ArtistId/CustomerId
 - **Naming Conventions**: PascalCase fields (ArtistId, AlbumId, TrackId)
-- **Zone Configuration**: `@Zone(value = "MusicStore", storageProfiles = "default")`
+- **Zone Configuration**: 
+  - Primary entities: `@Zone(value = "MusicStore", storageProfiles = "default")` (2 replicas)
+  - Reference data: `@Zone(value = "MusicStoreReplicated", storageProfiles = "default")` (3 replicas)
 - **Terminology**: "Sample data", "music store data", "sample dataset" (not "Chinook")
 
 #### Testing Strategy
@@ -418,9 +471,18 @@ sample-data-setup/
 **Phase 2C: Module 1 Integration**
 
 1. **Documentation Update**: Update Module 1 (Getting Started) to reference initialization app
-2. **Setup Instructions**: "Run ProjectInitializationApp to set up sample data"
-3. **Data Loading**: "Use DataLoadingApp to populate sample music store data"
-4. **Verification Steps**: Include steps to verify successful setup and data loading
+2. **Setup Instructions**: "Run ProjectInitializationApp to set up complete music store schema and sample data"
+3. **Alternative Workflows**: 
+   - "Use SchemaCreationApp for schema-only setup"
+   - "Use DataLoadingApp to populate existing schema with sample data"
+   - "Use SampleAnalyticsApp to explore sample data with queries"
+4. **Verification Steps**: Include steps to verify successful setup and explore the 11-table schema
+
+**Sample Data Complexity Levels**:
+1. **Basic Setup**: Core entities (Artist, Album, Track) for simple examples
+2. **Business Setup**: Add Customer, Invoice, InvoiceLine for transaction examples
+3. **Complete Setup**: All 11 entities for advanced scenarios (playlists, employees, hierarchy)
+4. **Analytics Ready**: Rich sample data for reporting and complex query examples
 
 ## Complete Project History
 
@@ -869,29 +931,58 @@ ignite3-java-api-primer/
     └── 14-troubleshooting-guide.md ✅ (renumbered, Chinook updated)
 ```
 
-### Sample Data Reference Source
+### Complete Sample Data Reference Source
 
 ```text
 /Users/maglietti/Code/magliettiGit/ignite3-chinook-demo/ (EXTRACTION SOURCE)
 ├── src/main/java/com/example/
-│   ├── model/ (POJOs to extract) ⭐ EXTRACTION SOURCE
-│   │   ├── Artist.java
-│   │   ├── Album.java
-│   │   ├── Track.java
-│   │   ├── Customer.java
-│   │   └── Invoice.java
-│   ├── app/ (applications to adapt)
-│   │   └── BulkLoadApp.java ⭐ ADAPTATION SOURCE
+│   ├── model/ (11 complete POJOs to extract) ⭐ EXTRACTION SOURCE
+│   │   ├── Artist.java           → Artist.java
+│   │   ├── Album.java            → Album.java
+│   │   ├── Track.java            → Track.java
+│   │   ├── Genre.java            → Genre.java
+│   │   ├── MediaType.java        → MediaType.java
+│   │   ├── Customer.java         → Customer.java
+│   │   ├── Employee.java         → Employee.java
+│   │   ├── Invoice.java          → Invoice.java
+│   │   ├── InvoiceLine.java      → InvoiceLine.java
+│   │   ├── Playlist.java         → Playlist.java
+│   │   └── PlaylistTrack.java    → PlaylistTrack.java
+│   ├── app/ (applications to adapt) ⭐ ADAPTATION SOURCE
+│   │   ├── BulkLoadApp.java      → ProjectInitializationApp.java
+│   │   ├── CreateTablesApp.java  → SchemaCreationApp.java
+│   │   ├── LoadDataApp.java      → DataLoadingApp.java
+│   │   └── Main.java             → SampleAnalyticsApp.java
 │   └── util/ (utilities to extract) ⭐ EXTRACTION SOURCE
-│       ├── ChinookUtils.java → DataSetupUtils.java
-│       ├── SqlImportUtils.java → BulkDataLoader.java
-│       └── TableUtils.java → TableCreationUtils.java
-└── src/main/resources/
-    ├── chinook-ignite3.sql ⭐ DATA SOURCE
-    └── model_sample_data.sql ⭐ DATA SOURCE
+│       ├── ChinookUtils.java     → DataSetupUtils.java
+│       ├── TableUtils.java       → TableCreationUtils.java
+│       ├── SqlImportUtils.java   → BulkDataLoader.java
+│       ├── DataUtils.java        → DataLoadingUtils.java
+│       └── ReportingUtils.java   → ReportingUtils.java
+├── docs/ (documentation to reference) ⭐ REFERENCE SOURCE
+│   ├── data-model.md            (Complete ERD and relationships)
+│   ├── pojo-mapping.md          (Annotation patterns and colocation)
+│   ├── distribution-zones.md    (Zone configuration strategies)
+│   └── developer-guide.md       (Usage patterns and examples)
+└── src/main/resources/ (data and scripts) ⭐ DATA SOURCE
+    ├── chinook-ignite3.sql      → music-store-schema.sql
+    ├── model_sample_data.sql    → sample-data.sql
+    └── 2020-2025-albums.sql     → additional-albums.sql
 ```
 
-**Note**: Components will be extracted and adapted from the reference source to create a standalone implementation with no external dependencies. Terminology will be updated to use "sample data" instead of domain-specific names.
+**Extraction Strategy**:
+- **Complete Entity Model**: All 11 POJOs with proper Ignite 3 annotations
+- **Terminology Normalization**: Update "Chinook" references to "MusicStore" zones
+- **Documentation Integration**: Extract key concepts from docs/ directory
+- **Rich Sample Data**: Multiple SQL data files for different complexity levels
+- **Application Patterns**: Complete workflow from schema creation to analytics
+
+**Benefits of Complete Extraction**:
+1. **Full Feature Coverage**: Demonstrates all major Ignite 3 capabilities
+2. **Realistic Complexity**: 11-table schema with proper relationships
+3. **Educational Value**: Progresses from simple to advanced concepts
+4. **Production Patterns**: Real-world distribution strategies and colocation
+5. **Query Examples**: Complex joins and analytics across full data model
 
 ---
 
@@ -899,6 +990,6 @@ ignite3-java-api-primer/
 
 **Phase 1 Status**: ✅ **COMPLETED** - All 14 documentation sections now have comprehensive music store sample data integration, creating a cohesive and practical learning experience for Apache Ignite 3 Java API users.
 
-**Phase 2 Status**: 📋 **PLANNED** - Reference applications architecture designed with standalone sample data integration strategy. Ready for implementation.
+**Phase 2 Status**: 📋 **PLANNED** - Reference applications architecture designed with complete standalone sample data integration strategy. Ready for implementation with full 11-entity music store model.
 
-**Project Summary**: Successfully created a comprehensive Apache Ignite 3 Java API primer with 100% consistent music store sample data examples. Phase 1 covers all major API areas from basic operations to advanced microservices patterns in documentation form. Phase 2 will provide runnable reference applications that demonstrate these concepts in executable code, using extracted sample data components in a standalone repository with no external dependencies.
+**Project Summary**: Successfully created a comprehensive Apache Ignite 3 Java API primer with 100% consistent music store sample data examples. Phase 1 covers all major API areas from basic operations to advanced microservices patterns in documentation form. Phase 2 will provide runnable reference applications that demonstrate these concepts in executable code, using a complete 11-entity music store model extracted from the reference source, creating a standalone repository with no external dependencies and comprehensive coverage of Ignite 3 features including distribution zones, colocation, complex relationships, and advanced query patterns.
