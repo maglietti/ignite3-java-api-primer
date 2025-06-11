@@ -37,6 +37,9 @@ public class DataLoadingApp {
                 case "extended":
                     loadExtendedData(client);
                     break;
+                case "complete":
+                    loadCompleteData(client);
+                    break;
                 default:
                     logger.error("Unknown load mode: {}. Use: programmatic, sql, clear, or extended", loadMode);
                     printUsage();
@@ -126,6 +129,20 @@ public class DataLoadingApp {
         }
     }
     
+    private static void loadCompleteData(IgniteClient client) {
+        logger.info("Loading compete Chinook data set...");
+        
+        try {
+            DataLoadingUtils.clearAllData(client);
+            BulkDataLoader.loadCompleteDataFromScript(client);
+            BulkDataLoader.validateDataLoad(client);
+            logger.info("Complete data loading completed successfully");
+        } catch (Exception e) {
+            logger.error("Complete data loading failed: {}", e.getMessage());
+            throw e;
+        }
+    }
+
     private static void displayDataSummary(IgniteClient client) {
         logger.info("\n=== Data Loading Summary ===");
         
@@ -152,6 +169,7 @@ public class DataLoadingApp {
         logger.info("    sql          - Load data from SQL scripts");
         logger.info("    clear        - Clear all data from tables");
         logger.info("    extended     - Load additional extended sample data");
+        logger.info("    complete     - Load the complete Chinook Data Set");
         logger.info("");
         logger.info("Examples:");
         logger.info("  java -jar data-loading-app.jar");

@@ -25,7 +25,7 @@ import com.apache.ignite.examples.setup.model.Track;
 /**
  * Data loading utilities demonstrating transactional data operations in Ignite 3.
  * 
- * This class showcases critical distributed systems patterns:
+ * This class showcases distributed systems patterns:
  * - Transactional Data Loading: All related data loaded atomically  
  * - POJO-based Operations: Type-safe data operations with RecordView
  * - Colocation-Aware Loading: Data loaded respecting colocation strategies

@@ -122,6 +122,10 @@ public class BulkDataLoader {
         executeSqlScript(client, "/additional-albums.sql");
     }
     
+    public static void loadCompleteDataFromScript(IgniteClient client) {
+        executeSqlScript(client, "/music-store-complete.sql");
+    }
+
     public static void executeCustomStatement(IgniteClient client, String sql) {
         try {
             logger.info("Executing custom SQL: {}", 
