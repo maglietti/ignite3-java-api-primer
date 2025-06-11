@@ -524,31 +524,34 @@ public interface ArtistMapper {
     List<ArtistWithSales> findTopSellingArtists(int limit);
 }
 
-// Service using MyBatis
+// Service using MyBatis for music domain
 @Service
-public class CustomerMyBatisService {
-    private final CustomerMapper customerMapper;
+public class ArtistMyBatisService {
+    private final ArtistMapper artistMapper;
     
-    public CustomerMyBatisService(CustomerMapper customerMapper) {
-        this.customerMapper = customerMapper;
+    public ArtistMyBatisService(ArtistMapper artistMapper) {
+        this.artistMapper = artistMapper;
     }
     
-    public Customer getCustomer(Long id) {
-        return customerMapper.findById(id);
+    public Artist getArtist(Integer id) {
+        return artistMapper.findById(id);
     }
     
-    public List<Customer> getCustomersByCountry(String country) {
-        return customerMapper.findByCountry(country);
+    public List<Artist> searchArtists(String namePart) {
+        return artistMapper.findByNameContaining(namePart);
     }
     
-    public Customer createCustomer(Customer customer) {
-        customer.setCreatedAt(LocalDateTime.now());
-        customerMapper.insert(customer);
-        return customer;
+    public Artist createArtist(Artist artist) {
+        artistMapper.insert(artist);
+        return artist;
     }
     
-    public List<CustomerWithOrderCount> getCustomersWithOrderStats(String country) {
-        return customerMapper.findCustomersWithOrderCount(country);
+    public List<ArtistWithStats> getArtistsWithStats(String namePart) {
+        return artistMapper.findArtistsWithStats(namePart);
+    }
+    
+    public List<ArtistWithSales> getTopSellingArtists(int limit) {
+        return artistMapper.findTopSellingArtists(limit);
     }
 }
 ```
@@ -556,41 +559,134 @@ public class CustomerMyBatisService {
 #### JPA/Hibernate Integration
 
 ```java
-// JPA Entity (for JDBC-based access)
+// JPA Entity for Artist (JDBC-based access)
 @Entity
-@javax.persistence.Table(name = "Customer")
-public class CustomerJPA {
+@javax.persistence.Table(name = "Artist")
+public class ArtistJPA {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "ArtistId")
+    private Integer artistId;
     
-    @Column(name = "firstName")
-    private String firstName;
-    
-    @Column(name = "lastName")
-    private String lastName;
-    
-    @Column(name = "email")
-    private String email;
-    
-    @Column(name = "phoneNumber")
-    private String phoneNumber;
-    
-    @Column(name = "createdAt")
-    private LocalDateTime createdAt;
+    @Column(name = "Name", nullable = false)
+    private String name;
     
     // Constructors, getters, setters...
+    public ArtistJPA() {}
+    
+    public ArtistJPA(String name) {
+        this.name = name;
+    }
+    
+    public Integer getArtistId() {
+        return artistId;
+    }
+    
+    public void setArtistId(Integer artistId) {
+        this.artistId = artistId;
+    }
+    
+    public String getName() {
+        return name;
+    }
+    
+    public void setName(String name) {
+        this.name = name;
+    }
 }
 
-// JPA Repository
-@Repository
-public interface CustomerJPARepository extends JpaRepository<CustomerJPA, Long> {
-    List<CustomerJPA> findByCountry(String country);
-    List<CustomerJPA> findByEmailContaining(String emailPart);
-    Optional<CustomerJPA> findByEmail(String email);
+// JPA Entity for Album
+@Entity
+@javax.persistence.Table(name = "Album")
+public class AlbumJPA {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "AlbumId")
+    private Integer albumId;
     
-    @Query("SELECT c FROM CustomerJPA c WHERE c.createdAt >= :since")
-    List<CustomerJPA> findRecentCustomers(@Param("since") LocalDateTime since);
+    @Column(name = "Title", nullable = false)
+    private String title;
+    
+    @Column(name = "ArtistId", nullable = false)
+    private Integer artistId;
+    
+    // JPA relationship mapping
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ArtistId", insertable = false, updatable = false)
+    private ArtistJPA artist;
+    
+    // Constructors, getters, setters...
+    public AlbumJPA() {}
+    
+    public AlbumJPA(String title, Integer artistId) {
+        this.title = title;
+        this.artistId = artistId;
+    }
+    
+    // Getters and setters...
+    public Integer getAlbumId() {
+        return albumId;
+    }
+    
+    public void setAlbumId(Integer albumId) {
+        this.albumId = albumId;
+    }
+    
+    public String getTitle() {
+        return title;
+    }
+    
+    public void setTitle(String title) {
+        this.title = title;
+    }
+    
+    public Integer getArtistId() {
+        return artistId;
+    }
+    
+    public void setArtistId(Integer artistId) {
+        this.artistId = artistId;
+    }
+    
+    public ArtistJPA getArtist() {
+        return artist;
+    }
+    
+    public void setArtist(ArtistJPA artist) {
+        this.artist = artist;
+    }
+}
+
+// JPA Repository for Artist
+@Repository
+public interface ArtistJPARepository extends JpaRepository<ArtistJPA, Integer> {
+    List<ArtistJPA> findByNameContaining(String namePart);
+    Optional<ArtistJPA> findByName(String name);
+    
+    @Query("SELECT a FROM ArtistJPA a WHERE a.name LIKE %:pattern%")
+    List<ArtistJPA> searchByNamePattern(@Param("pattern") String pattern);
+    
+    // Find artists with most albums
+    @Query(value = "SELECT a.* FROM Artist a " +
+           "JOIN (SELECT ArtistId, COUNT(*) as album_count " +
+           "      FROM Album GROUP BY ArtistId " +
+           "      ORDER BY album_count DESC LIMIT :limit) top " +
+           "ON a.ArtistId = top.ArtistId", 
+           nativeQuery = true)
+    List<ArtistJPA> findTopArtistsByAlbumCount(@Param("limit") int limit);
+}
+
+// JPA Repository for Album
+@Repository
+public interface AlbumJPARepository extends JpaRepository<AlbumJPA, Integer> {
+    List<AlbumJPA> findByArtistId(Integer artistId);
+    List<AlbumJPA> findByTitleContaining(String titlePart);
+    
+    @Query("SELECT al FROM AlbumJPA al JOIN al.artist a WHERE a.name = :artistName")
+    List<AlbumJPA> findByArtistName(@Param("artistName") String artistName);
+    
+    @Query("SELECT COUNT(al) FROM AlbumJPA al WHERE al.artistId = :artistId")
+    long countByArtistId(@Param("artistId") Integer artistId);
 }
 
 // Hibernate configuration for Ignite
@@ -608,7 +704,7 @@ public class HibernateConfiguration {
         em.setJpaVendorAdapter(vendorAdapter);
         
         Properties properties = new Properties();
-        properties.setProperty("hibernate.dialect", "org.hibernate.dialect.H2Dialect"); // Close enough for Ignite
+        properties.setProperty("hibernate.dialect", "org.hibernate.dialect.H2Dialect"); // Close enough for Ignite SQL
         properties.setProperty("hibernate.hbm2ddl.auto", "validate");
         properties.setProperty("hibernate.show_sql", "true");
         em.setJpaProperties(properties);
@@ -806,13 +902,27 @@ public class ResilientIgniteService {
         return timeLimiter.executeCompletionStage(decoratedSupplier.get()).toCompletableFuture();
     }
     
-    // Example usage
-    public Customer getCustomerWithResilience(Long id) {
+    // Example usage with music domain
+    public Artist getArtistWithResilience(Integer id) {
         return executeWithResilience(() -> {
-            RecordView<Customer> view = igniteClient.tables().table("Customer").recordView(Customer.class);
-            Customer key = new Customer();
-            key.setId(id);
+            RecordView<Artist> view = igniteClient.tables().table("Artist").recordView(Artist.class);
+            Artist key = new Artist();
+            key.setArtistId(id);
             return view.get(null, key);
+        });
+    }
+    
+    public List<Track> getTracksByGenreWithResilience(String genre) {
+        return executeWithResilience(() -> {
+            try (ResultSet<Track> resultSet = igniteClient.sql().execute(null, Mapper.of(Track.class),
+                    "SELECT t.* FROM Track t JOIN Genre g ON t.GenreId = g.GenreId WHERE g.Name = ?", genre)) {
+                
+                List<Track> tracks = new ArrayList<>();
+                while (resultSet.hasNext()) {
+                    tracks.add(resultSet.next());
+                }
+                return tracks;
+            }
         });
     }
 }
@@ -833,25 +943,25 @@ public class TracingIgniteService {
         this.tracer = tracer;
     }
     
-    public Customer getCustomerWithTracing(Long id) {
+    public Artist getArtistWithTracing(Integer id) {
         Span span = tracer.nextSpan()
-            .name("ignite.get-customer")
-            .tag("customer.id", String.valueOf(id))
+            .name("ignite.get-artist")
+            .tag("artist.id", String.valueOf(id))
             .start();
         
         try (Tracer.SpanInScope ws = tracer.withSpanInScope(span)) {
-            RecordView<Customer> view = igniteClient.tables().table("Customer").recordView(Customer.class);
+            RecordView<Artist> view = igniteClient.tables().table("Artist").recordView(Artist.class);
             
-            Customer key = new Customer();
-            key.setId(id);
+            Artist key = new Artist();
+            key.setArtistId(id);
             
-            Customer result = view.get(null, key);
+            Artist result = view.get(null, key);
             
             if (result != null) {
-                span.tag("customer.found", "true");
-                span.tag("customer.email", result.getEmail());
+                span.tag("artist.found", "true");
+                span.tag("artist.name", result.getName());
             } else {
-                span.tag("customer.found", "false");
+                span.tag("artist.found", "false");
             }
             
             return result;
@@ -864,23 +974,23 @@ public class TracingIgniteService {
         }
     }
     
-    public CompletableFuture<List<Customer>> getCustomersByCountryWithTracing(String country) {
+    public CompletableFuture<List<Track>> getTracksByGenreWithTracing(String genre) {
         Span span = tracer.nextSpan()
-            .name("ignite.get-customers-by-country")
-            .tag("customer.country", country)
+            .name("ignite.get-tracks-by-genre")
+            .tag("track.genre", genre)
             .start();
         
         try (Tracer.SpanInScope ws = tracer.withSpanInScope(span)) {
-            return igniteClient.sql().executeAsync(null, Mapper.of(Customer.class), 
-                    "SELECT * FROM Customer WHERE country = ?", country)
+            return igniteClient.sql().executeAsync(null, Mapper.of(Track.class), 
+                    "SELECT t.* FROM Track t JOIN Genre g ON t.GenreId = g.GenreId WHERE g.Name = ?", genre)
                 .thenApply(resultSet -> {
-                    List<Customer> customers = new ArrayList<>();
+                    List<Track> tracks = new ArrayList<>();
                     while (resultSet.hasNext()) {
-                        customers.add(resultSet.next());
+                        tracks.add(resultSet.next());
                     }
                     
-                    span.tag("customers.count", String.valueOf(customers.size()));
-                    return customers;
+                    span.tag("tracks.count", String.valueOf(tracks.size()));
+                    return tracks;
                 })
                 .exceptionally(throwable -> {
                     span.tag("error", throwable.getMessage());
@@ -913,15 +1023,28 @@ public class IgniteHealthIndicator implements HealthIndicator {
     @Override
     public Health health() {
         try {
-            // Perform a simple health check query
+            // Perform health check queries for music domain
             long startTime = System.currentTimeMillis();
+            
+            // Basic connectivity test
             igniteClient.sql().execute(null, "SELECT 1 as health_check").next();
+            
+            // Test access to core music tables
+            var artistCount = igniteClient.sql().execute(null, "SELECT COUNT(*) as count FROM Artist").next();
+            var albumCount = igniteClient.sql().execute(null, "SELECT COUNT(*) as count FROM Album").next();
+            var trackCount = igniteClient.sql().execute(null, "SELECT COUNT(*) as count FROM Track").next();
+            
             long responseTime = System.currentTimeMillis() - startTime;
             
             return Health.up()
                 .withDetail("responseTime", responseTime + "ms")
                 .withDetail("connections", igniteClient.connections().size())
                 .withDetail("status", "Connected")
+                .withDetail("musicCatalog", Map.of(
+                    "artists", artistCount.longValue("count"),
+                    "albums", albumCount.longValue("count"),
+                    "tracks", trackCount.longValue("count")
+                ))
                 .build();
                 
         } catch (Exception e) {
@@ -980,11 +1103,12 @@ public class IgniteSpringCacheConfiguration {
     public CacheManager cacheManager(IgniteClient igniteClient) {
         SimpleCacheManager cacheManager = new SimpleCacheManager();
         
-        // Create caches for different use cases
+        // Create caches for music domain use cases
         List<Cache> caches = Arrays.asList(
-            new IgniteSpringCache("users", igniteClient, Duration.ofMinutes(30)),
-            new IgniteSpringCache("products", igniteClient, Duration.ofHours(2)),
-            new IgniteSpringCache("sessions", igniteClient, Duration.ofMinutes(20))
+            new IgniteSpringCache("artists", igniteClient, Duration.ofHours(24)),
+            new IgniteSpringCache("albums", igniteClient, Duration.ofHours(12)),
+            new IgniteSpringCache("tracks", igniteClient, Duration.ofHours(6)),
+            new IgniteSpringCache("playlists", igniteClient, Duration.ofHours(2))
         );
         
         cacheManager.setCaches(caches);
@@ -1128,34 +1252,544 @@ public class IgniteSpringCacheConfiguration {
     }
 }
 
-// Usage in service classes
+// Usage in music service classes
 @Service
-public class ProductService {
+public class MusicCacheService {
     
-    @Cacheable("products")
-    public Product getProduct(Long productId) {
+    @Cacheable("artists")
+    public Artist getArtist(Integer artistId) {
         // This method result will be cached in Ignite
-        return loadProductFromDatabase(productId);
+        return loadArtistFromDatabase(artistId);
     }
     
-    @CacheEvict(value = "products", key = "#product.id")
-    public void updateProduct(Product product) {
-        saveProductToDatabase(product);
+    @CacheEvict(value = "artists", key = "#artist.artistId")
+    public void updateArtist(Artist artist) {
+        saveArtistToDatabase(artist);
     }
     
-    @CachePut(value = "products", key = "#result.id")
-    public Product createProduct(Product product) {
-        return saveProductToDatabase(product);
+    @CachePut(value = "artists", key = "#result.artistId")
+    public Artist createArtist(Artist artist) {
+        return saveArtistToDatabase(artist);
     }
     
-    private Product loadProductFromDatabase(Long productId) {
-        // Database loading logic
-        return new Product();
+    @Cacheable("albums")
+    public List<Album> getArtistAlbums(Integer artistId) {
+        return loadArtistAlbumsFromDatabase(artistId);
     }
     
-    private Product saveProductToDatabase(Product product) {
-        // Database saving logic
-        return product;
+    @CacheEvict(value = "albums", key = "#album.artistId")
+    public void updateAlbum(Album album) {
+        saveAlbumToDatabase(album);
+    }
+    
+    @Cacheable("tracks")
+    public List<Track> getAlbumTracks(Integer albumId) {
+        return loadAlbumTracksFromDatabase(albumId);
+    }
+    
+    private Artist loadArtistFromDatabase(Integer artistId) {
+        // Database loading logic for artist
+        return new Artist();
+    }
+    
+    private Artist saveArtistToDatabase(Artist artist) {
+        // Database saving logic for artist
+        return artist;
+    }
+    
+    private List<Album> loadArtistAlbumsFromDatabase(Integer artistId) {
+        // Database loading logic for albums
+        return new ArrayList<>();
+    }
+    
+    private void saveAlbumToDatabase(Album album) {
+        // Database saving logic for album
+    }
+    
+    private List<Track> loadAlbumTracksFromDatabase(Integer albumId) {
+        // Database loading logic for tracks
+        return new ArrayList<>();
     }
 }
+
+## Music Store Microservices Architecture
+
+### Music Catalog Service
+
+#### Artist Service Microservice
+
+```java
+@RestController
+@RequestMapping("/api/v1/artists")
+public class ArtistController {
+    private final ArtistService artistService;
+    private final IgniteMetrics igniteMetrics;
+    
+    public ArtistController(ArtistService artistService, IgniteMetrics igniteMetrics) {
+        this.artistService = artistService;
+        this.igniteMetrics = igniteMetrics;
+    }
+    
+    @GetMapping("/{id}")
+    public ResponseEntity<Artist> getArtist(@PathVariable Integer id) {
+        return igniteMetrics.recordOperation(() -> {
+            Artist artist = artistService.getArtist(id)
+                .orElseThrow(() -> new EntityNotFoundException("Artist not found: " + id));
+            return ResponseEntity.ok(artist);
+        });
+    }
+    
+    @GetMapping
+    public ResponseEntity<List<Artist>> searchArtists(
+            @RequestParam(required = false) String name,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        
+        return igniteMetrics.recordOperation(() -> {
+            List<Artist> artists;
+            if (name != null && !name.isEmpty()) {
+                artists = artistService.searchArtists(name);
+            } else {
+                artists = artistService.getAllArtists(page, size);
+            }
+            return ResponseEntity.ok(artists);
+        });
+    }
+    
+    @PostMapping
+    public ResponseEntity<Artist> createArtist(@Valid @RequestBody CreateArtistRequest request) {
+        return igniteMetrics.recordOperation(() -> {
+            Artist artist = new Artist(null, request.getName());
+            Artist created = artistService.createArtist(artist);
+            return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        });
+    }
+    
+    @PutMapping("/{id}")
+    public ResponseEntity<Artist> updateArtist(
+            @PathVariable Integer id, 
+            @Valid @RequestBody UpdateArtistRequest request) {
+        
+        return igniteMetrics.recordOperation(() -> {
+            Artist updated = artistService.updateArtist(id, request.getName());
+            return ResponseEntity.ok(updated);
+        });
+    }
+    
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteArtist(@PathVariable Integer id) {
+        return igniteMetrics.recordOperation(() -> {
+            artistService.deleteArtist(id);
+            return ResponseEntity.noContent().build();
+        });
+    }
+    
+    @GetMapping("/{id}/albums")
+    public ResponseEntity<List<Album>> getArtistAlbums(@PathVariable Integer id) {
+        return igniteMetrics.recordOperation(() -> {
+            List<Album> albums = artistService.getArtistAlbums(id);
+            return ResponseEntity.ok(albums);
+        });
+    }
+    
+    @GetMapping("/popular")
+    public ResponseEntity<List<ArtistWithStats>> getPopularArtists(
+            @RequestParam(defaultValue = "10") int limit) {
+        
+        return igniteMetrics.recordOperation(() -> {
+            List<ArtistWithStats> popularArtists = artistService.getPopularArtists(limit);
+            return ResponseEntity.ok(popularArtists);
+        });
+    }
+}
+
+// DTOs for API
+public record CreateArtistRequest(@NotBlank String name) {}
+public record UpdateArtistRequest(@NotBlank String name) {}
+
+public record ArtistWithStats(
+    Integer artistId,
+    String name,
+    long albumCount,
+    long trackCount,
+    BigDecimal totalSales
+) {}
+```
+
+#### Music Recommendation Service
+
+```java
+@RestController
+@RequestMapping("/api/v1/recommendations")
+public class RecommendationController {
+    private final RecommendationService recommendationService;
+    private final IgniteMetrics igniteMetrics;
+    
+    public RecommendationController(RecommendationService recommendationService, IgniteMetrics igniteMetrics) {
+        this.recommendationService = recommendationService;
+        this.igniteMetrics = igniteMetrics;
+    }
+    
+    @GetMapping("/artists/{artistId}/similar")
+    public ResponseEntity<List<Artist>> getSimilarArtists(
+            @PathVariable Integer artistId,
+            @RequestParam(defaultValue = "5") int limit) {
+        
+        return igniteMetrics.recordOperation(() -> {
+            List<Artist> similarArtists = recommendationService.findSimilarArtists(artistId, limit);
+            return ResponseEntity.ok(similarArtists);
+        });
+    }
+    
+    @GetMapping("/customers/{customerId}/tracks")
+    public ResponseEntity<List<RecommendedTrack>> getRecommendedTracks(
+            @PathVariable Integer customerId,
+            @RequestParam(defaultValue = "10") int limit) {
+        
+        return igniteMetrics.recordOperation(() -> {
+            List<RecommendedTrack> recommendations = recommendationService
+                .getPersonalizedTrackRecommendations(customerId, limit);
+            return ResponseEntity.ok(recommendations);
+        });
+    }
+    
+    @GetMapping("/genres/{genre}/trending")
+    public ResponseEntity<List<TrendingTrack>> getTrendingTracks(
+            @PathVariable String genre,
+            @RequestParam(defaultValue = "20") int limit) {
+        
+        return igniteMetrics.recordOperation(() -> {
+            List<TrendingTrack> trending = recommendationService.getTrendingTracksByGenre(genre, limit);
+            return ResponseEntity.ok(trending);
+        });
+    }
+    
+    @PostMapping("/playlists/generate")
+    public ResponseEntity<GeneratedPlaylist> generatePlaylist(
+            @Valid @RequestBody PlaylistGenerationRequest request) {
+        
+        return igniteMetrics.recordOperation(() -> {
+            GeneratedPlaylist playlist = recommendationService.generatePlaylist(request);
+            return ResponseEntity.ok(playlist);
+        });
+    }
+}
+
+@Service
+public class RecommendationService {
+    private final IgniteClient igniteClient;
+    private final ResilientIgniteService resilientService;
+    
+    public RecommendationService(IgniteClient igniteClient, ResilientIgniteService resilientService) {
+        this.igniteClient = igniteClient;
+        this.resilientService = resilientService;
+    }
+    
+    public List<Artist> findSimilarArtists(Integer artistId, int limit) {
+        return resilientService.executeWithResilience(() -> {
+            // Complex query to find similar artists based on genre and customer purchase patterns
+            try (ResultSet<Artist> resultSet = igniteClient.sql().execute(null, Mapper.of(Artist.class), """
+                    SELECT DISTINCT a2.*
+                    FROM Artist a1
+                    JOIN Album al1 ON a1.ArtistId = al1.ArtistId
+                    JOIN Track t1 ON al1.AlbumId = t1.AlbumId
+                    JOIN Track t2 ON t1.GenreId = t2.GenreId
+                    JOIN Album al2 ON t2.AlbumId = al2.AlbumId
+                    JOIN Artist a2 ON al2.ArtistId = a2.ArtistId
+                    WHERE a1.ArtistId = ? AND a2.ArtistId != ?
+                    ORDER BY RANDOM() LIMIT ?
+                    """, artistId, artistId, limit)) {
+                
+                List<Artist> similarArtists = new ArrayList<>();
+                while (resultSet.hasNext()) {
+                    similarArtists.add(resultSet.next());
+                }
+                return similarArtists;
+            }
+        });
+    }
+    
+    public List<RecommendedTrack> getPersonalizedTrackRecommendations(Integer customerId, int limit) {
+        return resilientService.executeWithResilience(() -> {
+            // Recommendation based on customer purchase history and genre preferences
+            try (ResultSet<RecommendedTrack> resultSet = igniteClient.sql().execute(
+                    null, Mapper.of(RecommendedTrack.class), """
+                    SELECT t.TrackId, t.Name as trackName, al.Title as albumTitle, 
+                           ar.Name as artistName, t.UnitPrice,
+                           COUNT(*) as popularity_score
+                    FROM Track t
+                    JOIN Album al ON t.AlbumId = al.AlbumId
+                    JOIN Artist ar ON al.ArtistId = ar.ArtistId
+                    JOIN Genre g ON t.GenreId = g.GenreId
+                    WHERE g.GenreId IN (
+                        SELECT DISTINCT g2.GenreId
+                        FROM InvoiceLine il
+                        JOIN Track t2 ON il.TrackId = t2.TrackId
+                        JOIN Genre g2 ON t2.GenreId = g2.GenreId
+                        JOIN Invoice i ON il.InvoiceId = i.InvoiceId
+                        WHERE i.CustomerId = ?
+                    )
+                    AND t.TrackId NOT IN (
+                        SELECT il2.TrackId
+                        FROM InvoiceLine il2
+                        JOIN Invoice i2 ON il2.InvoiceId = i2.InvoiceId
+                        WHERE i2.CustomerId = ?
+                    )
+                    GROUP BY t.TrackId, t.Name, al.Title, ar.Name, t.UnitPrice
+                    ORDER BY popularity_score DESC
+                    LIMIT ?
+                    """, customerId, customerId, limit)) {
+                
+                List<RecommendedTrack> recommendations = new ArrayList<>();
+                while (resultSet.hasNext()) {
+                    recommendations.add(resultSet.next());
+                }
+                return recommendations;
+            }
+        });
+    }
+    
+    public GeneratedPlaylist generatePlaylist(PlaylistGenerationRequest request) {
+        return resilientService.executeWithResilience(() -> {
+            List<Track> tracks = new ArrayList<>();
+            
+            // Generate playlist based on criteria
+            if (request.genres() != null && !request.genres().isEmpty()) {
+                tracks.addAll(getTracksByGenres(request.genres(), request.maxTracks()));
+            }
+            
+            if (request.artistIds() != null && !request.artistIds().isEmpty()) {
+                tracks.addAll(getTracksByArtists(request.artistIds(), request.maxTracks() / 2));
+            }
+            
+            // Remove duplicates and limit
+            tracks = tracks.stream()
+                .distinct()
+                .limit(request.maxTracks())
+                .collect(Collectors.toList());
+            
+            return new GeneratedPlaylist(
+                "Generated Playlist",
+                request.description(),
+                tracks,
+                LocalDateTime.now()
+            );
+        });
+    }
+    
+    private List<Track> getTracksByGenres(List<String> genres, int limit) {
+        String genreList = genres.stream()
+            .map(g -> "'" + g + "'")
+            .collect(Collectors.joining(","));
+        
+        try (ResultSet<Track> resultSet = igniteClient.sql().execute(
+                null, Mapper.of(Track.class), 
+                "SELECT t.* FROM Track t JOIN Genre g ON t.GenreId = g.GenreId " +
+                "WHERE g.Name IN (" + genreList + ") ORDER BY RANDOM() LIMIT ?", limit)) {
+            
+            List<Track> tracks = new ArrayList<>();
+            while (resultSet.hasNext()) {
+                tracks.add(resultSet.next());
+            }
+            return tracks;
+        }
+    }
+    
+    private List<Track> getTracksByArtists(List<Integer> artistIds, int limit) {
+        String artistList = artistIds.stream()
+            .map(String::valueOf)
+            .collect(Collectors.joining(","));
+        
+        try (ResultSet<Track> resultSet = igniteClient.sql().execute(
+                null, Mapper.of(Track.class),
+                "SELECT t.* FROM Track t JOIN Album al ON t.AlbumId = al.AlbumId " +
+                "WHERE al.ArtistId IN (" + artistList + ") ORDER BY RANDOM() LIMIT ?", limit)) {
+            
+            List<Track> tracks = new ArrayList<>();
+            while (resultSet.hasNext()) {
+                tracks.add(resultSet.next());
+            }
+            return tracks;
+        }
+    }
+}
+
+// DTOs for recommendations
+public record RecommendedTrack(
+    Integer trackId,
+    String trackName,
+    String albumTitle,
+    String artistName,
+    BigDecimal unitPrice,
+    int popularityScore
+) {}
+
+public record TrendingTrack(
+    Integer trackId,
+    String trackName,
+    String albumTitle,
+    String artistName,
+    long purchaseCount,
+    BigDecimal avgPrice
+) {}
+
+public record PlaylistGenerationRequest(
+    List<String> genres,
+    List<Integer> artistIds,
+    String description,
+    @Min(1) @Max(100) int maxTracks
+) {}
+
+public record GeneratedPlaylist(
+    String name,
+    String description,
+    List<Track> tracks,
+    LocalDateTime createdAt
+) {}
+```
+
+### Event-Driven Architecture
+
+```java
+// Music domain events
+public sealed interface MusicEvent permits ArtistCreated, AlbumReleased, TrackPurchased {
+    String eventId();
+    LocalDateTime timestamp();
+}
+
+public record ArtistCreated(
+    String eventId,
+    LocalDateTime timestamp,
+    Integer artistId,
+    String artistName
+) implements MusicEvent {}
+
+public record AlbumReleased(
+    String eventId,
+    LocalDateTime timestamp,
+    Integer albumId,
+    String albumTitle,
+    Integer artistId,
+    String artistName
+) implements MusicEvent {}
+
+public record TrackPurchased(
+    String eventId,
+    LocalDateTime timestamp,
+    Integer trackId,
+    String trackName,
+    Integer customerId,
+    BigDecimal price
+) implements MusicEvent {}
+
+// Event publisher using Ignite as event store
+@Component
+public class MusicEventPublisher {
+    private final IgniteClient igniteClient;
+    private final ApplicationEventPublisher eventPublisher;
+    
+    public MusicEventPublisher(IgniteClient igniteClient, ApplicationEventPublisher eventPublisher) {
+        this.igniteClient = igniteClient;
+        this.eventPublisher = eventPublisher;
+    }
+    
+    public void publishEvent(MusicEvent event) {
+        // Store event in Ignite for durability
+        storeEvent(event);
+        
+        // Publish locally for immediate processing
+        eventPublisher.publishEvent(event);
+    }
+    
+    private void storeEvent(MusicEvent event) {
+        RecordView<EventRecord> eventView = igniteClient.tables().table("MusicEvent").recordView(EventRecord.class);
+        
+        EventRecord record = new EventRecord(
+            event.eventId(),
+            event.getClass().getSimpleName(),
+            serializeEvent(event),
+            event.timestamp()
+        );
+        
+        eventView.upsert(null, record);
+    }
+    
+    private String serializeEvent(MusicEvent event) {
+        // Implement JSON serialization
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            return mapper.writeValueAsString(event);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to serialize event", e);
+        }
+    }
+}
+
+// Event handlers for cross-service coordination
+@Component
+public class MusicEventHandler {
+    private final RecommendationService recommendationService;
+    private final AnalyticsService analyticsService;
+    
+    public MusicEventHandler(RecommendationService recommendationService, AnalyticsService analyticsService) {
+        this.recommendationService = recommendationService;
+        this.analyticsService = analyticsService;
+    }
+    
+    @EventListener
+    public void handleArtistCreated(ArtistCreated event) {
+        // Update recommendation models
+        recommendationService.refreshArtistModel(event.artistId());
+        
+        // Update analytics
+        analyticsService.recordArtistCreation(event);
+    }
+    
+    @EventListener
+    public void handleAlbumReleased(AlbumReleased event) {
+        // Update album recommendations
+        recommendationService.refreshAlbumRecommendations(event.albumId());
+        
+        // Generate trending analysis
+        analyticsService.analyzeNewRelease(event);
+    }
+    
+    @EventListener
+    public void handleTrackPurchased(TrackPurchased event) {
+        // Update customer preferences
+        recommendationService.updateCustomerPreferences(event.customerId(), event.trackId());
+        
+        // Update sales analytics
+        analyticsService.recordSale(event);
+    }
+}
+
+@Table(zone = @Zone(value = "events", storageProfiles = "default"))
+public class EventRecord {
+    @Id
+    @Column(value = "event_id", nullable = false)
+    private String eventId;
+    
+    @Column(value = "event_type", nullable = false)
+    private String eventType;
+    
+    @Column(value = "event_data", nullable = false)
+    private String eventData;
+    
+    @Column(value = "timestamp", nullable = false)
+    private LocalDateTime timestamp;
+    
+    // Constructors, getters, setters...
+    public EventRecord() {}
+    
+    public EventRecord(String eventId, String eventType, String eventData, LocalDateTime timestamp) {
+        this.eventId = eventId;
+        this.eventType = eventType;
+        this.eventData = eventData;
+        this.timestamp = timestamp;
+    }
+    
+    // Getters and setters...
+}
+```
 ```
