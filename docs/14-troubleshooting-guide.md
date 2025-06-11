@@ -130,7 +130,7 @@ SSLHandshakeException: sun.security.validator.ValidatorException: PKIX path buil
 **Symptoms:**
 
 ```
-TableNotFoundException: Table 'Customer' does not exist
+TableNotFoundException: Table 'Artist' does not exist
 ```
 
 **Diagnostic Steps:**
@@ -150,7 +150,7 @@ public class SchemaDiagnostics {
         System.out.println("Available zones: " + zones);
         
         // Check specific table
-        String tableName = "Customer";
+        String tableName = "Artist";
         if (tables.contains(tableName)) {
             try {
                 TableDefinition tableDef = client.catalog().tableDefinition(tableName);
@@ -262,16 +262,16 @@ public class TransactionTroubleshooting {
     }
     
     // Break large transactions into smaller ones
-    public static void handleLargeDatasetTransactions(IgniteClient client, List<Customer> customers) {
+    public static void handleLargeDatasetTransactions(IgniteClient client, List<Artist> artists) {
         int batchSize = 100;  // Smaller batches to avoid timeout
         
-        for (int i = 0; i < customers.size(); i += batchSize) {
-            int endIndex = Math.min(i + batchSize, customers.size());
-            List<Customer> batch = customers.subList(i, endIndex);
+        for (int i = 0; i < artists.size(); i += batchSize) {
+            int endIndex = Math.min(i + batchSize, artists.size());
+            List<Artist> batch = artists.subList(i, endIndex);
             
             try {
                 client.transactions().runInTransaction(tx -> {
-                    RecordView<Customer> view = client.tables().table("Customer").recordView(Customer.class);
+                    RecordView<Artist> view = client.tables().table("Artist").recordView(Artist.class);
                     view.upsertAll(tx, batch);
                 });
                 
@@ -304,38 +304,55 @@ TransactionException: Deadlock detected
 public class DeadlockPrevention {
     
     // Consistent ordering to prevent deadlocks
-    public static void transferFunds(IgniteClient client, Long fromAccountId, Long toAccountId, BigDecimal amount) {
+    public static void updateArtistAndAlbum(IgniteClient client, Long artistId, Long albumId, String newArtistName, String newAlbumTitle) {
         // Always acquire locks in the same order (by ID) to prevent deadlocks
-        Long firstId = Math.min(fromAccountId, toAccountId);
-        Long secondId = Math.max(fromAccountId, toAccountId);
+        Long firstId = Math.min(artistId, albumId);
+        Long secondId = Math.max(artistId, albumId);
         
         try {
             client.transactions().runInTransaction(tx -> {
-                RecordView<Account> accountView = client.tables().table("Account").recordView(Account.class);
+                RecordView<Artist> artistView = client.tables().table("Artist").recordView(Artist.class);
+                RecordView<Album> albumView = client.tables().table("Album").recordView(Album.class);
                 
-                // Get accounts in consistent order
-                Account firstAccount = getAccount(accountView, tx, firstId);
-                Account secondAccount = getAccount(accountView, tx, secondId);
-                
-                // Determine which is from/to
-                Account fromAccount = fromAccountId.equals(firstId) ? firstAccount : secondAccount;
-                Account toAccount = fromAccountId.equals(firstId) ? secondAccount : firstAccount;
-                
-                // Perform transfer
-                fromAccount.setBalance(fromAccount.getBalance().subtract(amount));
-                toAccount.setBalance(toAccount.getBalance().add(amount));
-                
-                accountView.upsert(tx, fromAccount);
-                accountView.upsert(tx, toAccount);
+                // Always acquire locks in same order to prevent deadlock
+                if (artistId.equals(firstId)) {
+                    // Get artist first, then album
+                    Artist artist = getArtist(artistView, tx, artistId);
+                    Album album = getAlbum(albumView, tx, albumId);
+                    
+                    // Update both
+                    artist.setName(newArtistName);
+                    album.setTitle(newAlbumTitle);
+                    
+                    artistView.upsert(tx, artist);
+                    albumView.upsert(tx, album);
+                } else {
+                    // Get album first, then artist
+                    Album album = getAlbum(albumView, tx, albumId);
+                    Artist artist = getArtist(artistView, tx, artistId);
+                    
+                    // Update both
+                    album.setTitle(newAlbumTitle);
+                    artist.setName(newArtistName);
+                    
+                    albumView.upsert(tx, album);
+                    artistView.upsert(tx, artist);
+                }
             });
         } catch (Exception e) {
-            System.err.println("Transfer failed: " + e.getMessage());
+            System.err.println("Update failed: " + e.getMessage());
         }
     }
     
-    private static Account getAccount(RecordView<Account> view, Transaction tx, Long id) {
-        Account key = new Account();
-        key.setId(id);
+    private static Artist getArtist(RecordView<Artist> view, Transaction tx, Long id) {
+        Artist key = new Artist();
+        key.setArtistId(id);
+        return view.get(tx, key);
+    }
+    
+    private static Album getAlbum(RecordView<Album> view, Transaction tx, Long id) {
+        Album key = new Album();
+        key.setAlbumId(id);
         return view.get(tx, key);
     }
 }
@@ -410,11 +427,11 @@ public class MemoryConfiguration {
     
     // Process large result sets efficiently
     public static void processLargeResultSet(IgniteClient client) {
-        try (ResultSet<Customer> resultSet = client.sql().execute(
-                null, Mapper.of(Customer.class), "SELECT * FROM Customer")) {
+        try (ResultSet<Track> resultSet = client.sql().execute(
+                null, Mapper.of(Track.class), "SELECT * FROM Track")) {
             
             int batchSize = 0;
-            List<Customer> batch = new ArrayList<>(1000);
+            List<Track> batch = new ArrayList<>(1000);
             
             while (resultSet.hasNext()) {
                 batch.add(resultSet.next());
@@ -438,9 +455,9 @@ public class MemoryConfiguration {
         }
     }
     
-    private static void processBatch(List<Customer> batch) {
+    private static void processBatch(List<Track> batch) {
         // Process batch
-        System.out.println("Processed batch of " + batch.size() + " customers");
+        System.out.println("Processed batch of " + batch.size() + " tracks");
     }
 }
 ```
@@ -749,21 +766,21 @@ public class RequestResponseDebugging {
             }
         }
         
-        public Customer getCustomerWithDebug(Long id) {
-            return executeWithDebug("getCustomer(" + id + ")", () -> {
-                RecordView<Customer> view = delegate.tables().table("Customer").recordView(Customer.class);
-                Customer key = new Customer();
-                key.setId(id);
+        public Artist getArtistWithDebug(Long id) {
+            return executeWithDebug("getArtist(" + id + ")", () -> {
+                RecordView<Artist> view = delegate.tables().table("Artist").recordView(Artist.class);
+                Artist key = new Artist();
+                key.setArtistId(id);
                 return view.get(null, key);
             });
         }
         
-        public List<Customer> queryWithDebug(String sql, Object... params) {
-            return executeWithDebug("query(" + sql + ")", () -> {
-                try (ResultSet<Customer> resultSet = delegate.sql().execute(
-                        null, Mapper.of(Customer.class), sql, params)) {
+        public List<Track> queryTracksWithDebug(String sql, Object... params) {
+            return executeWithDebug("queryTracks(" + sql + ")", () -> {
+                try (ResultSet<Track> resultSet = delegate.sql().execute(
+                        null, Mapper.of(Track.class), sql, params)) {
                     
-                    List<Customer> results = new ArrayList<>();
+                    List<Track> results = new ArrayList<>();
                     while (resultSet.hasNext()) {
                         results.add(resultSet.next());
                     }
@@ -893,18 +910,360 @@ public class PerformanceProfiling {
         // Profile various operations
         for (int i = 0; i < 10; i++) {
             profiler.profile("simple-query", () -> {
-                return client.sql().execute(null, "SELECT COUNT(*) as count FROM Customer").next();
+                return client.sql().execute(null, "SELECT COUNT(*) as count FROM Artist").next();
             });
             
             profiler.profile("table-access", () -> {
-                RecordView<Customer> view = client.tables().table("Customer").recordView(Customer.class);
-                Customer key = new Customer();
-                key.setId(1L);
+                RecordView<Artist> view = client.tables().table("Artist").recordView(Artist.class);
+                Artist key = new Artist();
+                key.setArtistId(1L);
                 return view.get(null, key);
             });
         }
         
         profiler.printReport();
+    }
+}
+```
+
+## Music Store Specific Troubleshooting
+
+### Common Music Domain Issues
+
+#### Issue: "Artist-Album-Track Relationship Problems"
+
+**Symptoms:**
+
+```
+ConstraintViolationException: Foreign key constraint violation
+```
+
+**Common Scenarios & Solutions:**
+
+```java
+public class MusicDomainTroubleshooting {
+    
+    // Verify music domain relationships
+    public static void validateMusicRelationships(IgniteClient client) {
+        System.out.println("=== Music Domain Relationship Validation ===");
+        
+        try {
+            // Check for orphaned albums (albums without artists)
+            try (ResultSet<SqlRow> orphanedAlbums = client.sql().execute(null, 
+                    "SELECT a.AlbumId, a.Title FROM Album a LEFT JOIN Artist ar ON a.ArtistId = ar.ArtistId WHERE ar.ArtistId IS NULL")) {
+                
+                List<String> orphans = new ArrayList<>();
+                while (orphanedAlbums.hasNext()) {
+                    SqlRow row = orphanedAlbums.next();
+                    orphans.add("Album " + row.longValue("AlbumId") + ": " + row.stringValue("Title"));
+                }
+                
+                if (orphans.isEmpty()) {
+                    System.out.println("✅ No orphaned albums found");
+                } else {
+                    System.out.println("❌ Found orphaned albums:");
+                    orphans.forEach(System.out::println);
+                }
+            }
+            
+            // Check for orphaned tracks (tracks without albums)
+            try (ResultSet<SqlRow> orphanedTracks = client.sql().execute(null, 
+                    "SELECT t.TrackId, t.Name FROM Track t LEFT JOIN Album a ON t.AlbumId = a.AlbumId WHERE a.AlbumId IS NULL")) {
+                
+                List<String> orphans = new ArrayList<>();
+                while (orphanedTracks.hasNext()) {
+                    SqlRow row = orphanedTracks.next();
+                    orphans.add("Track " + row.longValue("TrackId") + ": " + row.stringValue("Name"));
+                }
+                
+                if (orphans.isEmpty()) {
+                    System.out.println("✅ No orphaned tracks found");
+                } else {
+                    System.out.println("❌ Found orphaned tracks:");
+                    orphans.forEach(System.out::println);
+                }
+            }
+            
+            // Check for duplicate artist names
+            try (ResultSet<SqlRow> duplicateArtists = client.sql().execute(null, 
+                    "SELECT Name, COUNT(*) as count FROM Artist GROUP BY Name HAVING COUNT(*) > 1")) {
+                
+                List<String> duplicates = new ArrayList<>();
+                while (duplicateArtists.hasNext()) {
+                    SqlRow row = duplicateArtists.next();
+                    duplicates.add(row.stringValue("Name") + " (" + row.longValue("count") + " entries)");
+                }
+                
+                if (duplicates.isEmpty()) {
+                    System.out.println("✅ No duplicate artist names found");
+                } else {
+                    System.out.println("❌ Found duplicate artist names:");
+                    duplicates.forEach(System.out::println);
+                }
+            }
+            
+        } catch (Exception e) {
+            System.err.println("Validation failed: " + e.getMessage());
+        }
+    }
+    
+    // Fix common relationship issues
+    public static void fixOrphanedRecords(IgniteClient client) {
+        System.out.println("=== Fixing Orphaned Records ===");
+        
+        try {
+            // Create "Unknown Artist" if it doesn't exist
+            RecordView<Artist> artistView = client.tables().table("Artist").recordView(Artist.class);
+            Artist unknownArtist = new Artist(0L, "Unknown Artist");
+            artistView.upsert(null, unknownArtist);
+            
+            // Create "Unknown Album" if it doesn't exist
+            RecordView<Album> albumView = client.tables().table("Album").recordView(Album.class);
+            Album unknownAlbum = new Album(0L, "Unknown Album", 0L);
+            albumView.upsert(null, unknownAlbum);
+            
+            // Fix orphaned albums
+            int fixedAlbums = client.sql().execute(null, 
+                "UPDATE Album SET ArtistId = 0 WHERE ArtistId NOT IN (SELECT ArtistId FROM Artist)").affectedRows();
+            System.out.println("Fixed " + fixedAlbums + " orphaned albums");
+            
+            // Fix orphaned tracks
+            int fixedTracks = client.sql().execute(null, 
+                "UPDATE Track SET AlbumId = 0 WHERE AlbumId NOT IN (SELECT AlbumId FROM Album)").affectedRows();
+            System.out.println("Fixed " + fixedTracks + " orphaned tracks");
+            
+        } catch (Exception e) {
+            System.err.println("Failed to fix orphaned records: " + e.getMessage());
+        }
+    }
+}
+```
+
+#### Issue: "Genre and Playlist Data Inconsistencies"
+
+**Symptoms:**
+
+```
+Genre references don't match Track.GenreId values
+Playlist tracks reference non-existent tracks
+```
+
+**Solutions:**
+
+```java
+public class PlaylistTroubleshooting {
+    
+    // Validate playlist integrity
+    public static void validatePlaylistIntegrity(IgniteClient client) {
+        System.out.println("=== Playlist Integrity Check ===");
+        
+        try {
+            // Check for playlist tracks referencing non-existent tracks
+            try (ResultSet<SqlRow> invalidPlaylistTracks = client.sql().execute(null, """
+                    SELECT pt.PlaylistId, pt.TrackId 
+                    FROM PlaylistTrack pt 
+                    LEFT JOIN Track t ON pt.TrackId = t.TrackId 
+                    WHERE t.TrackId IS NULL
+                    """)) {
+                
+                List<String> invalid = new ArrayList<>();
+                while (invalidPlaylistTracks.hasNext()) {
+                    SqlRow row = invalidPlaylistTracks.next();
+                    invalid.add("Playlist " + row.longValue("PlaylistId") + " references missing track " + row.longValue("TrackId"));
+                }
+                
+                if (invalid.isEmpty()) {
+                    System.out.println("✅ All playlist tracks are valid");
+                } else {
+                    System.out.println("❌ Found invalid playlist tracks:");
+                    invalid.forEach(System.out::println);
+                }
+            }
+            
+            // Check for tracks with invalid genre references
+            try (ResultSet<SqlRow> invalidGenres = client.sql().execute(null, """
+                    SELECT t.TrackId, t.Name, t.GenreId 
+                    FROM Track t 
+                    LEFT JOIN Genre g ON t.GenreId = g.GenreId 
+                    WHERE t.GenreId IS NOT NULL AND g.GenreId IS NULL
+                    """)) {
+                
+                List<String> invalid = new ArrayList<>();
+                while (invalidGenres.hasNext()) {
+                    SqlRow row = invalidGenres.next();
+                    invalid.add("Track " + row.longValue("TrackId") + " (" + row.stringValue("Name") + ") references invalid genre " + row.longValue("GenreId"));
+                }
+                
+                if (invalid.isEmpty()) {
+                    System.out.println("✅ All track genres are valid");
+                } else {
+                    System.out.println("❌ Found tracks with invalid genres:");
+                    invalid.forEach(System.out::println);
+                }
+            }
+            
+        } catch (Exception e) {
+            System.err.println("Playlist validation failed: " + e.getMessage());
+        }
+    }
+    
+    // Generate comprehensive music analytics report
+    public static void generateMusicAnalyticsReport(IgniteClient client) {
+        System.out.println("=== Music Store Analytics Report ===");
+        
+        try {
+            // Total counts
+            try (ResultSet<SqlRow> counts = client.sql().execute(null, """
+                    SELECT 
+                        (SELECT COUNT(*) FROM Artist) as artists,
+                        (SELECT COUNT(*) FROM Album) as albums,
+                        (SELECT COUNT(*) FROM Track) as tracks,
+                        (SELECT COUNT(*) FROM Customer) as customers,
+                        (SELECT COUNT(*) FROM Invoice) as invoices
+                    """)) {
+                
+                if (counts.hasNext()) {
+                    SqlRow row = counts.next();
+                    System.out.println("Total Artists: " + row.longValue("artists"));
+                    System.out.println("Total Albums: " + row.longValue("albums"));
+                    System.out.println("Total Tracks: " + row.longValue("tracks"));
+                    System.out.println("Total Customers: " + row.longValue("customers"));
+                    System.out.println("Total Invoices: " + row.longValue("invoices"));
+                }
+            }
+            
+            // Top 5 artists by track count
+            System.out.println("\nTop 5 Artists by Track Count:");
+            try (ResultSet<SqlRow> topArtists = client.sql().execute(null, """
+                    SELECT ar.Name, COUNT(t.TrackId) as track_count
+                    FROM Artist ar
+                    JOIN Album al ON ar.ArtistId = al.ArtistId
+                    JOIN Track t ON al.AlbumId = t.AlbumId
+                    GROUP BY ar.ArtistId, ar.Name
+                    ORDER BY track_count DESC
+                    LIMIT 5
+                    """)) {
+                
+                while (topArtists.hasNext()) {
+                    SqlRow row = topArtists.next();
+                    System.out.println("  " + row.stringValue("Name") + ": " + row.longValue("track_count") + " tracks");
+                }
+            }
+            
+            // Most popular genres
+            System.out.println("\nTop 5 Genres by Track Count:");
+            try (ResultSet<SqlRow> topGenres = client.sql().execute(null, """
+                    SELECT g.Name, COUNT(t.TrackId) as track_count
+                    FROM Genre g
+                    JOIN Track t ON g.GenreId = t.GenreId
+                    GROUP BY g.GenreId, g.Name
+                    ORDER BY track_count DESC
+                    LIMIT 5
+                    """)) {
+                
+                while (topGenres.hasNext()) {
+                    SqlRow row = topGenres.next();
+                    System.out.println("  " + row.stringValue("Name") + ": " + row.longValue("track_count") + " tracks");
+                }
+            }
+            
+        } catch (Exception e) {
+            System.err.println("Analytics report failed: " + e.getMessage());
+        }
+    }
+}
+```
+
+#### Issue: "Performance Issues with Music Queries"
+
+**Common Slow Queries:**
+
+```java
+public class MusicQueryOptimization {
+    
+    // Diagnose slow music queries
+    public static void diagnoseMusicQueryPerformance(IgniteClient client) {
+        System.out.println("=== Music Query Performance Diagnostics ===");
+        
+        // Test problematic queries
+        String[] slowQueries = {
+            "SELECT * FROM Track WHERE Name LIKE '%love%'",  // Full table scan
+            "SELECT * FROM Track t JOIN Album a ON t.AlbumId = a.AlbumId",  // Large join
+            "SELECT ar.Name, COUNT(*) FROM Artist ar JOIN Album al ON ar.ArtistId = al.ArtistId GROUP BY ar.Name"  // Aggregation
+        };
+        
+        for (String query : slowQueries) {
+            long startTime = System.currentTimeMillis();
+            
+            try (ResultSet<SqlRow> resultSet = client.sql().execute(null, query)) {
+                int count = 0;
+                while (resultSet.hasNext()) {
+                    resultSet.next();
+                    count++;
+                }
+                
+                long duration = System.currentTimeMillis() - startTime;
+                System.out.printf("Query: %s\n  Duration: %dms, Rows: %d\n", 
+                    query.substring(0, Math.min(50, query.length())) + "...", duration, count);
+                
+                if (duration > 1000) {
+                    System.out.println("  ⚠️ SLOW QUERY DETECTED!");
+                    suggestMusicQueryOptimizations(query);
+                }
+            } catch (Exception e) {
+                System.err.println("Query failed: " + e.getMessage());
+            }
+            
+            System.out.println();
+        }
+    }
+    
+    private static void suggestMusicQueryOptimizations(String query) {
+        System.out.println("  Optimization Suggestions:");
+        
+        if (query.toLowerCase().contains("like '%")) {
+            System.out.println("    - Consider full-text search instead of LIKE '%pattern%'");
+            System.out.println("    - Create index on frequently searched text columns");
+        }
+        
+        if (query.toLowerCase().contains("join")) {
+            System.out.println("    - Ensure join columns are indexed");
+            System.out.println("    - Consider denormalizing frequently joined data");
+        }
+        
+        if (query.toLowerCase().contains("group by")) {
+            System.out.println("    - Consider pre-computed aggregations");
+            System.out.println("    - Add composite index on GROUP BY columns");
+        }
+    }
+    
+    // Create recommended indexes for music domain
+    public static void createRecommendedMusicIndexes(IgniteClient client) {
+        System.out.println("=== Creating Recommended Music Domain Indexes ===");
+        
+        String[] indexQueries = {
+            "CREATE INDEX IF NOT EXISTS idx_album_artist ON Album (ArtistId)",
+            "CREATE INDEX IF NOT EXISTS idx_track_album ON Track (AlbumId)", 
+            "CREATE INDEX IF NOT EXISTS idx_track_genre ON Track (GenreId)",
+            "CREATE INDEX IF NOT EXISTS idx_track_name ON Track (Name)",
+            "CREATE INDEX IF NOT EXISTS idx_artist_name ON Artist (Name)",
+            "CREATE INDEX IF NOT EXISTS idx_invoice_customer ON Invoice (CustomerId)",
+            "CREATE INDEX IF NOT EXISTS idx_invoiceline_invoice ON InvoiceLine (InvoiceId)",
+            "CREATE INDEX IF NOT EXISTS idx_invoiceline_track ON InvoiceLine (TrackId)"
+        };
+        
+        for (String indexQuery : indexQueries) {
+            try {
+                client.sql().execute(null, indexQuery);
+                System.out.println("✅ Created: " + indexQuery);
+            } catch (Exception e) {
+                if (e.getMessage().contains("already exists")) {
+                    System.out.println("✅ Already exists: " + indexQuery);
+                } else {
+                    System.err.println("❌ Failed: " + indexQuery + " - " + e.getMessage());
+                }
+            }
+        }
     }
 }
 ```
@@ -954,7 +1313,7 @@ public class EmergencyDebugging {
         try {
             long startTime = System.currentTimeMillis();
             for (int i = 0; i < 10; i++) {
-                client.sql().execute(null, "SELECT " + i).next();
+                client.sql().execute(null, "SELECT " + i + " as test_value").next();
             }
             long avgTime = (System.currentTimeMillis() - startTime) / 10;
             
@@ -996,6 +1355,12 @@ public class EmergencyDebugging {
             2. Check zone configuration
             3. Validate annotations
             4. Ensure proper DDL execution
+            
+            Music Domain Issues:
+            1. Check Artist-Album-Track relationships
+            2. Validate Genre and Playlist integrity
+            3. Look for orphaned records
+            4. Verify music query performance
             
             Transaction Issues:
             1. Check transaction timeout settings
