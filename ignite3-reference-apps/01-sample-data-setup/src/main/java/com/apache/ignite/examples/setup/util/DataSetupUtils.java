@@ -1,5 +1,6 @@
 package com.apache.ignite.examples.setup.util;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import org.apache.ignite.client.IgniteClient;

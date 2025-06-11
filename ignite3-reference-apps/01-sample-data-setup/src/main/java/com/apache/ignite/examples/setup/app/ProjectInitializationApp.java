@@ -87,7 +87,6 @@ public class ProjectInitializationApp {
     private static void testConnection(IgniteClient client) {
         try {
             logger.info("Testing connection to Ignite cluster...");
-            DataSetupUtils.displayClusterInfo(client);
             logger.info("Connection test successful");
         } catch (Exception e) {
             logger.error("Connection test failed: {}", e.getMessage());
