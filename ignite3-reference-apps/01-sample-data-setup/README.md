@@ -20,10 +20,11 @@ This module provides the foundation for all Apache Ignite 3 reference applicatio
 ## Architecture
 
 ### Distribution Strategy
+
 ```
 MusicStore Zone (2 replicas)          MusicStoreReplicated Zone (3 replicas)
 ├── Artist (root entity)              ├── Genre (lookup data)
-├── Album (colocated by ArtistId)      └── MediaType (lookup data)
+├── Album (colocated by ArtistId)     └── MediaType (lookup data)
 ├── Track (colocated by AlbumId)       
 ├── Customer (root entity)             
 ├── Invoice (colocated by CustomerId)  
@@ -34,6 +35,7 @@ MusicStore Zone (2 replicas)          MusicStoreReplicated Zone (3 replicas)
 ```
 
 ### Colocation Chains
+
 1. **Music Hierarchy**: Artist → Album (by ArtistId) → Track (by AlbumId)
 2. **Business Hierarchy**: Customer → Invoice (by CustomerId) → InvoiceLine (by InvoiceId)  
 3. **Playlist Hierarchy**: Playlist → PlaylistTrack (by PlaylistId)
@@ -41,12 +43,14 @@ MusicStore Zone (2 replicas)          MusicStoreReplicated Zone (3 replicas)
 ## Quick Start
 
 ### Complete Setup (Recommended)
+
 ```bash
 mvn exec:java
 # Runs ProjectInitializationApp - complete setup with data and reports
 ```
 
 ### Individual Components
+
 ```bash
 # Schema only
 mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.setup.app.SchemaCreationApp"
@@ -59,6 +63,7 @@ mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.setup.app.SampleAnaly
 ```
 
 ### Custom Cluster Address
+
 ```bash
 mvn exec:java -Dexec.args="192.168.1.100:10800"
 ```
@@ -66,8 +71,10 @@ mvn exec:java -Dexec.args="192.168.1.100:10800"
 ## Applications
 
 ### 1. ProjectInitializationApp
+
 **Purpose**: Complete setup for new users  
 **What it does**:
+
 - Tests cluster connection
 - Creates distribution zones and tables
 - Loads sample data transactionally
@@ -77,8 +84,10 @@ mvn exec:java -Dexec.args="192.168.1.100:10800"
 **Best for**: First-time setup, complete environment initialization
 
 ### 2. SchemaCreationApp  
+
 **Purpose**: Schema management operations  
 **Modes**:
+
 - `annotation` - Create schema from annotated POJOs (default)
 - `sql` - Create schema from SQL scripts
 - `drop` - Remove entire schema
@@ -87,8 +96,10 @@ mvn exec:java -Dexec.args="192.168.1.100:10800"
 **Best for**: Understanding schema-as-code, zone configuration
 
 ### 3. DataLoadingApp
+
 **Purpose**: Data population and management  
 **Modes**:
+
 - `programmatic` - Load via Java POJOs (default)  
 - `sql` - Load from SQL scripts
 - `clear` - Remove all data
@@ -97,8 +108,10 @@ mvn exec:java -Dexec.args="192.168.1.100:10800"
 **Best for**: Learning data loading patterns, transaction handling
 
 ### 4. SampleAnalyticsApp
+
 **Purpose**: Query examples and reporting  
 **Modes**:
+
 - `all` - All available reports (default)
 - `artists` - Artist-focused analysis
 - `albums` - Album-focused analysis  
@@ -112,6 +125,7 @@ mvn exec:java -Dexec.args="192.168.1.100:10800"
 ## Sample Dataset
 
 ### Music Entities (11 tables total)
+
 - **5 Artists**: AC/DC, Accept, Aerosmith, Black Sabbath, Led Zeppelin, etc.
 - **15 Albums**: Representative albums from various artists
 - **15+ Tracks**: Individual songs with metadata (duration, composer, price)
@@ -119,6 +133,7 @@ mvn exec:java -Dexec.args="192.168.1.100:10800"
 - **7 Media Types**: MP3, AAC, FLAC, etc.
 
 ### Business Entities  
+
 - **4 Customers**: International customer base
 - **3 Employees**: Hierarchical organization structure
 - **Sample Invoices**: Purchase transactions with line items
@@ -127,6 +142,7 @@ mvn exec:java -Dexec.args="192.168.1.100:10800"
 ## Key Concepts Demonstrated
 
 ### Schema-as-Code Example
+
 ```java
 @Table(zone = @Zone(value = "MusicStore", storageProfiles = "default"),
        colocateBy = @ColumnRef("ArtistId"))
@@ -138,6 +154,7 @@ public class Album {
 ```
 
 ### Distribution Zone Configuration
+
 ```java
 // Business data - balanced replication
 CREATE ZONE MusicStore WITH REPLICAS=2, PARTITIONS=25
@@ -147,6 +164,7 @@ CREATE ZONE MusicStoreReplicated WITH REPLICAS=3, PARTITIONS=25
 ```
 
 ### Transactional Data Loading
+
 ```java
 client.transactions().runInTransaction(tx -> {
     // Load related data together atomically
@@ -175,12 +193,14 @@ try (IgniteClient client = DataSetupUtils.connectToCluster()) {
 ## Troubleshooting
 
 ### Connection Issues
+
 ```bash
 # Test connection
 mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.setup.app.SampleAnalyticsApp" -Dexec.args="127.0.0.1:10800 info"
 ```
 
 ### Schema Issues  
+
 ```bash
 # Check schema status
 mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.setup.app.SchemaCreationApp" -Dexec.args="127.0.0.1:10800 info"
@@ -191,6 +211,7 @@ mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.setup.app.SchemaCreat
 ```
 
 ### Data Issues
+
 ```bash
 # Clear and reload data
 mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.setup.app.DataLoadingApp" -Dexec.args="127.0.0.1:10800 clear"
