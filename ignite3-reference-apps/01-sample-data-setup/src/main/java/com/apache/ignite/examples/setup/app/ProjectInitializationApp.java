@@ -49,24 +49,29 @@ public class ProjectInitializationApp {
             logger.info("=== Phase 1: Connection Test ===");
             testConnection(client);
             
-            // Phase 2: Create the complete schema using annotation-based POJOs
+            // Phase 2: Clean up any existing schema to ensure a fresh start
+            // This ensures initialization always sets Ignite to a known good state
+            logger.info("=== Phase 2: Schema Cleanup ===");
+            cleanupExistingSchema(client);
+            
+            // Phase 3: Create the complete schema using annotation-based POJOs
             // This demonstrates Ignite 3's schema-as-code capabilities
-            logger.info("=== Phase 2: Schema Creation ===");
+            logger.info("=== Phase 3: Schema Creation ===");
             createSchema(client);
             
-            // Phase 3: Load sample data using both programmatic and transactional approaches
+            // Phase 4: Load sample data using both programmatic and transactional approaches
             // This shows proper data loading patterns for Ignite 3
-            logger.info("=== Phase 3: Data Loading ===");
+            logger.info("=== Phase 4: Data Loading ===");
             loadSampleData(client);
             
-            // Phase 4: Verify everything was created correctly
+            // Phase 5: Verify everything was created correctly
             // Important for confirming setup success
-            logger.info("=== Phase 4: Verification ===");
+            logger.info("=== Phase 5: Verification ===");
             verifySetup(client);
             
-            // Phase 5: Generate reports to demonstrate the data and query capabilities
+            // Phase 6: Generate reports to demonstrate the data and query capabilities
             // This gives immediate feedback on what was created
-            logger.info("=== Phase 5: Sample Reports ===");
+            logger.info("=== Phase 6: Sample Reports ===");
             generateSampleReports(client);
             
             // Success! The environment is ready for learning and development
@@ -91,6 +96,17 @@ public class ProjectInitializationApp {
         } catch (Exception e) {
             logger.error("Connection test failed: {}", e.getMessage());
             throw new RuntimeException("Unable to connect to Ignite cluster", e);
+        }
+    }
+    
+    private static void cleanupExistingSchema(IgniteClient client) {
+        try {
+            logger.info("Cleaning up existing music store schema...");
+            TableCreationUtils.dropAllTables(client);
+            logger.info("Schema cleanup completed successfully");
+        } catch (Exception e) {
+            logger.warn("Schema cleanup encountered issues: {}", e.getMessage());
+            logger.info("Continuing with schema creation...");
         }
     }
     

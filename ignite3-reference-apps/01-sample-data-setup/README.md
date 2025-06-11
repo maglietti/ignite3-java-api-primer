@@ -45,27 +45,27 @@ MusicStore Zone (2 replicas)          MusicStoreReplicated Zone (3 replicas)
 ### Complete Setup (Recommended)
 
 ```bash
-mvn exec:java
-# Runs ProjectInitializationApp - complete setup with data and reports
+mvn compile exec:java
+# Compiles the project and runs ProjectInitializationApp - complete setup with data and reports
 ```
 
 ### Individual Components
 
 ```bash
 # Schema only
-mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.setup.app.SchemaCreationApp"
+mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.setup.app.SchemaCreationApp"
 
 # Data only (requires existing schema)  
-mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.setup.app.DataLoadingApp"
+mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.setup.app.DataLoadingApp"
 
 # Analytics and reports
-mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.setup.app.SampleAnalyticsApp"
+mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.setup.app.SampleAnalyticsApp"
 ```
 
 ### Custom Cluster Address
 
 ```bash
-mvn exec:java -Dexec.args="192.168.1.100:10800"
+mvn compile exec:java -Dexec.args="192.168.1.100:10800"
 ```
 
 ## Applications
@@ -196,26 +196,26 @@ try (IgniteClient client = DataSetupUtils.connectToCluster()) {
 
 ```bash
 # Test connection
-mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.setup.app.SampleAnalyticsApp" -Dexec.args="127.0.0.1:10800 info"
+mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.setup.app.SampleAnalyticsApp" -Dexec.args="127.0.0.1:10800 info"
 ```
 
 ### Schema Issues  
 
 ```bash
 # Check schema status
-mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.setup.app.SchemaCreationApp" -Dexec.args="127.0.0.1:10800 info"
+mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.setup.app.SchemaCreationApp" -Dexec.args="127.0.0.1:10800 info"
 
 # Recreate schema
-mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.setup.app.SchemaCreationApp" -Dexec.args="127.0.0.1:10800 drop"
-mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.setup.app.SchemaCreationApp"
+mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.setup.app.SchemaCreationApp" -Dexec.args="127.0.0.1:10800 drop"
+mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.setup.app.SchemaCreationApp"
 ```
 
 ### Data Issues
 
 ```bash
 # Clear and reload data
-mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.setup.app.DataLoadingApp" -Dexec.args="127.0.0.1:10800 clear"
-mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.setup.app.DataLoadingApp"
+mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.setup.app.DataLoadingApp" -Dexec.args="127.0.0.1:10800 clear"
+mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.setup.app.DataLoadingApp"
 ```
 
 ## Next Steps
