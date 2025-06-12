@@ -125,7 +125,7 @@ import org.apache.ignite.table.RecordView;
 
 public class HelloIgnite {
     
-    @Table(zone = @Zone(value = "QuickStart", storageProfiles = "default"))
+    @org.apache.ignite.catalog.annotations.Table(zone = @Zone(value = "QuickStart", storageProfiles = "default"))
     public static class Book {
         @Id
         private Integer id;
@@ -160,6 +160,7 @@ public class HelloIgnite {
                 ZoneDefinition.builder("QuickStart")
                     .ifNotExists()
                     .replicas(2)
+                    .storageProfiles("default")
                     .build()
             );
             
