@@ -29,12 +29,6 @@
             <artifactId>ignite-api</artifactId>
         </dependency>
 
-        <!-- Sample Data Setup Module -->
-        <dependency>
-            <groupId>com.apache.ignite.examples</groupId>
-            <artifactId>01-sample-data-setup</artifactId>
-        </dependency>
-
         <!-- Logging Dependencies -->
         <dependency>
             <groupId>org.slf4j</groupId>

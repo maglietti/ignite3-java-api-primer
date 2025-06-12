@@ -8,52 +8,6 @@ Apache Ignite 3 represents a fundamental shift in distributed database architect
 
 This module introduces you to the essential patterns every Ignite 3 developer needs to master. By the end, you'll understand how to connect, store, and query data in a distributed environment that scales effortlessly from development to production.
 
-### What Makes Ignite 3 Different?
-
-```mermaid
-flowchart TD
-    A["Your Application"] --> B["Ignite 3 Client"]
-    B --> C["Distribution Zones"]
-    C --> D["Partitioned Tables"]
-    D --> E["Co-located Data"]
-    E --> F["In-Memory Processing"]
-    F --> G["Persistent Storage"]
-    
-    H["Traditional Database"] --> I["Network Calls"]
-    I --> J["Remote Storage"]
-    J --> K["Data Transfer"]
-    K --> L["Application Processing"]
-```
-
-**Ignite 3 Advantages:**
-- **Co-location**: Related data lives on the same nodes, eliminating network hops
-- **Distribution Zones**: Control exactly how your data is partitioned and replicated
-- **Memory Speed**: Hot data lives in memory while maintaining persistence
-- **SQL + Objects**: Choose the right API for each operation
-- **Linear Scalability**: Add nodes to increase both storage and processing power
-
-### Learning Path Overview
-
-```mermaid
-flowchart LR
-    A["Connect"] --> B["Define Schema"]
-    B --> C["Store Data"]
-    C --> D["Query Data"]
-    D --> E["Scale Up"]
-    
-    A1["IgniteClient.builder()"] --> A
-    B1["@Table annotations"] --> B
-    C1["RecordView.upsert()"] --> C
-    D1["client.sql().execute()"] --> D
-    E1["Add nodes + partitions"] --> E
-```
-
-1. **Connection Patterns**: Establish reliable connections to your cluster
-2. **Schema Definition**: Define tables using simple Java classes
-3. **Data Operations**: Insert, update, and retrieve data efficiently
-4. **Query Capabilities**: Leverage SQL for complex operations
-5. **Performance Optimization**: Use distribution zones and co-location strategies
-
 ## 2.2 Environment Setup
 
 ### Dependencies You Need
@@ -171,7 +125,7 @@ import org.apache.ignite.table.RecordView;
 
 public class HelloIgnite {
     
-    @Table(zone = @Zone(value = "QuickStart", storageProfiles = "default"))
+    @org.apache.ignite.catalog.annotations.Table(zone = @Zone(value = "QuickStart", storageProfiles = "default"))
     public static class Book {
         @Id
         private Integer id;
@@ -206,6 +160,7 @@ public class HelloIgnite {
                 ZoneDefinition.builder("QuickStart")
                     .ifNotExists()
                     .replicas(2)
+                    .storageProfiles("default")
                     .build()
             );
             

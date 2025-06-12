@@ -65,8 +65,8 @@ public class MusicStoreZoneConfiguration {
     }
     
     public static void dropDistributionZones(IgniteClient client) {
-        dropZone(client, MUSIC_STORE_ZONE);
-        dropZone(client, MUSIC_STORE_REPLICATED_ZONE);
+        dropZone(client, MUSIC_STORE_ZONE.toUpperCase());
+        dropZone(client, MUSIC_STORE_REPLICATED_ZONE.toUpperCase());
     }
     
     public static void dropZone(IgniteClient client, String zoneName) {

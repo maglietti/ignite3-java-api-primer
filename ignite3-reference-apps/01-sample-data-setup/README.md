@@ -42,6 +42,8 @@ MusicStore Zone (2 replicas)          MusicStoreReplicated Zone (3 replicas)
 
 ## Quick Start
 
+> **Cluster Requirement**: All reference applications require the 3-node Ignite cluster from `00-docker` to be running. Start it with `docker-compose up -d` before proceeding.
+
 ### Complete Setup (Recommended)
 
 ```bash
@@ -240,5 +242,3 @@ After running this setup:
 - Java 17+
 - Maven 3.8+
 - **⚠️ Required**: Apache Ignite 3 cluster running (see [00-docker setup](../00-docker/README.md))
-
-> **Cluster Requirement**: All reference applications require the 3-node Ignite cluster from `00-docker` to be running. Start it with `docker-compose up -d` before proceeding.
