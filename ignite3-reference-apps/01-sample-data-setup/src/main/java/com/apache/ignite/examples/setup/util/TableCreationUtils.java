@@ -144,6 +144,7 @@ public class TableCreationUtils {
             dropMusicEntityTables(client);
             dropReferenceDataTables(client);
             
+            logger.info("Dropping all music store zones...");
             MusicStoreZoneConfiguration.dropDistributionZones(client);
             
             logger.info("All music store tables dropped successfully");
