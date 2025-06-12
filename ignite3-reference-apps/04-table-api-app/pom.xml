@@ -18,6 +18,13 @@
     <description>Apache Ignite 3 table API object-oriented data access reference application</description>
 
     <dependencies>
+        <!-- Sample Data Setup Module (for model classes) -->
+        <dependency>
+            <groupId>com.apache.ignite.examples</groupId>
+            <artifactId>01-sample-data-setup</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        
         <!-- Apache Ignite 3 Dependencies -->
         <dependency>
             <groupId>org.apache.ignite</groupId>
@@ -64,6 +71,36 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+            </plugin>
+            
+            <!-- Exec plugin for running demos -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.0</version>
+                <configuration>
+                    <mainClass>com.apache.ignite.examples.tableapi.TableAPIDemo</mainClass>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>recordview</id>
+                        <configuration>
+                            <mainClass>com.apache.ignite.examples.tableapi.RecordViewOperations</mainClass>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>keyvalue</id>
+                        <configuration>
+                            <mainClass>com.apache.ignite.examples.tableapi.KeyValueOperations</mainClass>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>async</id>
+                        <configuration>
+                            <mainClass>com.apache.ignite.examples.tableapi.AsyncTableOperations</mainClass>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

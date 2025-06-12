@@ -1,339 +1,236 @@
 # 4. Table API - Object-Oriented Data Access
 
-## Table Management (`IgniteTables`)
+## 4.1 Understanding Object-Oriented Data Access
 
-### Listing Tables
+### Beyond SQL: Working with Data as Objects
 
-The `IgniteTables` interface provides methods to discover and access tables in your Ignite cluster:
+Traditional database programming requires constant mental context switching. You design your application using object-oriented principles, but when it's time to persist or retrieve data, you switch to SQL thinking - rows, columns, JOIN operations, and result set iteration.
 
+Apache Ignite 3's Table API eliminates this friction entirely by providing **native object-oriented data access**. Your Java objects become first-class citizens in the database, with direct CRUD operations that feel natural to Java developers.
+
+### Why Object-Oriented Data Access Matters
+
+Consider a typical music store operation - finding an artist and updating their information:
+
+**Traditional SQL Approach:**
 ```java
-// Get all available tables
-CompletableFuture<List<Table>> allTables = client.tables().tablesAsync();
-allTables.thenAccept(tables -> {
-    System.out.println("Available tables:");
-    tables.forEach(table -> System.out.println("- " + table.name()));
-});
+// Mental model: Objects
+Artist artist = new Artist(1, "AC/DC");
 
-// Synchronous version
-List<Table> tables = client.tables().tables();
-for (Table table : tables) {
-    System.out.println("Table: " + table.name());
+// Implementation: SQL context switch
+String sql = "SELECT ArtistId, Name FROM Artist WHERE ArtistId = ?";
+try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+    stmt.setInt(1, 1);
+    ResultSet rs = stmt.executeQuery();
+    if (rs.next()) {
+        artist.setName(rs.getString("Name"));
+        // Manual mapping between ResultSet and Object
+    }
+}
+
+// Update: More SQL
+String updateSql = "UPDATE Artist SET Name = ? WHERE ArtistId = ?";
+try (PreparedStatement stmt = connection.prepareStatement(updateSql)) {
+    stmt.setString(1, "AC/DC (Remastered)");
+    stmt.setInt(2, 1);
+    stmt.executeUpdate();
 }
 ```
 
-### Getting Table References
-
+**Ignite 3 Table API Approach:**
 ```java
-// Get a specific table by name
+// Mental model and implementation: Objects all the way
 Table artistTable = client.tables().table("Artist");
-if (artistTable != null) {
-    System.out.println("Found table: " + artistTable.name());
-} else {
-    System.out.println("Table not found");
-}
+RecordView<Artist> artists = artistTable.recordView(Artist.class);
 
-// Async version
-CompletableFuture<Table> tableAsync = client.tables().tableAsync("Artist");
-tableAsync.thenAccept(table -> {
-    if (table != null) {
-        System.out.println("Async found table: " + table.name());
-    }
-});
-
-// Safe table access with error handling
-public static Table getTableSafely(IgniteClient client, String tableName) {
-    try {
-        return client.tables().table(tableName);
-    } catch (Exception e) {
-        System.err.println("Error accessing table '" + tableName + "': " + e.getMessage());
-        return null;
-    }
+// Direct object operations - no SQL required
+Artist artist = artists.get(null, new Artist(1, null));
+if (artist != null) {
+    artist.setName("AC/DC (Remastered)");
+    artists.upsert(null, artist);
 }
 ```
 
-### Table Information and Metadata
+The difference is profound: **zero impedance mismatch** between your object model and data operations.
 
-```java
-// Get table metadata
-Table table = client.tables().table("Artist");
-if (table != null) {
-    System.out.println("Table name: " + table.name());
+### When to Use Table API vs SQL API
+
+Understanding when to use each approach is crucial for optimal performance and code clarity:
+
+**Use Table API When:**
+- **Known Primary Keys**: You know exactly which records to fetch
+- **Single Record Operations**: Working with individual entities
+- **Type Safety Critical**: Compile-time validation prevents runtime errors
+- **Complex Object Graphs**: POJOs with nested relationships
+- **High-Performance Point Operations**: Direct key-based access
+
+**Use SQL API When:**
+- **Complex Queries**: JOIN operations across multiple tables
+- **Aggregate Functions**: COUNT, SUM, AVG, GROUP BY operations
+- **Range Queries**: WHERE clauses with conditions beyond exact key match
+- **Analytical Operations**: Reporting and business intelligence queries
+- **Dynamic Queries**: Query structure determined at runtime
+
+### Table API Architecture Overview
+
+The Table API provides two complementary views of your data:
+
+```mermaid
+graph TD
+    A["Table<br/>(Physical Storage)"] --> B["RecordView&lt;Artist&gt;<br/>(Complete Records)"]
+    A --> C["KeyValueView&lt;Integer, String&gt;<br/>(Key-Value Pairs)"]
     
-    // You can also inspect schema through SQL
-    var result = client.sql().execute(null, 
-        "SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE " +
-        "FROM INFORMATION_SCHEMA.COLUMNS " +
-        "WHERE TABLE_NAME = ? " +
-        "ORDER BY ORDINAL_POSITION", 
-        table.name());
+    B --> D["get(artistKey)<br/>upsert(artistRecord)<br/>delete(artistKey)"]
+    C --> E["get(artistId)<br/>put(artistId, artistName)<br/>remove(artistId)"]
     
-    System.out.println("Schema for " + table.name() + ":");
-    while (result.hasNext()) {
-        var row = result.next();
-        System.out.printf("  %s: %s (%s)%n", 
-            row.stringValue("COLUMN_NAME"),
-            row.stringValue("DATA_TYPE"),
-            row.stringValue("IS_NULLABLE"));
-    }
-}
+    F["Your Java Objects"] --> B
+    G["Simple Key-Value Data"] --> C
 ```
 
-## Key-Value Operations (`KeyValueView`)
+**RecordView**: Treats each database row as a complete object. Perfect when you need full entity operations.
 
-### Working with Tuples
+**KeyValueView**: Separates keys from values, ideal for cache-like operations where you only need specific fields.
 
-```java
-KeyValueView<Tuple, Tuple> kvView = client.tables().table("accounts").keyValueView();
+## 4.2 Working with RecordView: Complete Object Operations
 
-Tuple key = Tuple.create().set("accountNumber", 123456);
-Tuple value = Tuple.create()
-    .set("firstName", "Val")
-    .set("lastName", "Kulichenko")
-    .set("balance", 100.00d);
-kvView.put(null, key, value);
-```
+### Setting Up RecordView
 
-### Working with POJOs
+The RecordView provides the most natural object-oriented experience. Here's how to set it up with our music store entities:
 
 ```java
-KeyValueView<AccountKey, Account> kvView = client.tables()
-    .table("accounts")
-    .keyValueView(AccountKey.class, Account.class);
-
-AccountKey key = new AccountKey(123456);
-Account value = new Account("Val", "Kulichenko", 100.00d);
-kvView.put(null, key, value);
-```
-
-### Put, Get, Remove Operations
-
-#### Basic Put Operations
-
-```java
-// Get KeyValueView for Artist table
+// Get table reference
 Table artistTable = client.tables().table("Artist");
-KeyValueView<Tuple, Tuple> kvView = artistTable.keyValueView();
 
-// CREATE: Put a new artist using Tuples
-Tuple key = Tuple.create().set("ArtistId", 100);
-Tuple value = Tuple.create().set("Name", "The Beatles");
-kvView.put(null, key, value);
-System.out.println("Added artist with Tuple");
+// Create strongly-typed RecordView
+RecordView<Artist> artists = artistTable.recordView(Artist.class);
 
-// Add more artists for demonstration
-Tuple key2 = Tuple.create().set("ArtistId", 101);
-Tuple value2 = Tuple.create().set("Name", "Led Zeppelin");
-kvView.put(null, key2, value2);
-
-Tuple key3 = Tuple.create().set("ArtistId", 102);
-Tuple value3 = Tuple.create().set("Name", "Pink Floyd");
-kvView.put(null, key3, value3);
-System.out.println("Added multiple artists with Tuples");
+// RecordView automatically handles:
+// - Object-to-tuple mapping
+// - Type validation
+// - Null value handling
+// - Primary key extraction
 ```
 
-#### Advanced Put Operations with POJOs
+**What Happens Under the Hood:**
+1. **Schema Validation**: Ignite validates your Artist class against the table schema
+2. **Mapper Creation**: Automatic mapping between Java fields and table columns
+3. **Type Safety**: Compile-time checking ensures data integrity
+4. **Performance Optimization**: Direct binary serialization without SQL parsing
+
+### Basic CRUD Operations
+
+#### Create and Update Operations
 
 ```java
-// Define key and value classes for complex tables
-public static class AlbumKey {
-    @Id
-    @Column(value = "AlbumId", nullable = false)
-    private Integer AlbumId;
-    
-    @Id
-    @Column(value = "ArtistId", nullable = false)
-    private Integer ArtistId;
-    
-    public AlbumKey() {}
-    public AlbumKey(Integer albumId, Integer artistId) {
-        this.AlbumId = albumId;
-        this.ArtistId = artistId;
-    }
-    
-    // Getters and setters
-    public Integer getAlbumId() { return AlbumId; }
-    public void setAlbumId(Integer albumId) { this.AlbumId = albumId; }
-    public Integer getArtistId() { return ArtistId; }
-    public void setArtistId(Integer artistId) { this.ArtistId = artistId; }
-}
+// CREATE: Insert a new artist
+Artist newArtist = new Artist(1, "AC/DC");
+artists.upsert(null, newArtist);
+System.out.println("Added artist: " + newArtist.getName());
 
-public static class AlbumValue {
-    @Column(value = "Title", nullable = false, length = 160)
-    private String Title;
-    
-    public AlbumValue() {}
-    public AlbumValue(String title) {
-        this.Title = title;
-    }
-    
-    // Getters and setters
-    public String getTitle() { return Title; }
-    public void setTitle(String title) { this.Title = title; }
-}
+// UPSERT: Insert or update (most common operation)
+Artist ledZeppelin = new Artist(2, "Led Zeppelin");
+artists.upsert(null, ledZeppelin);
 
-// Use strongly-typed KeyValueView
-Table albumTable = client.tables().table("Album");
-KeyValueView<AlbumKey, AlbumValue> albumKvView = 
-    albumTable.keyValueView(AlbumKey.class, AlbumValue.class);
-
-// Put album with proper key and value
-AlbumKey albumKey = new AlbumKey(200, 100);  // Album ID 200, Artist ID 100 (The Beatles)
-AlbumValue albumValue = new AlbumValue("Abbey Road");
-albumKvView.put(null, albumKey, albumValue);
-System.out.println("Added album: " + albumValue.getTitle());
-
-// Add more albums for The Beatles
-albumKvView.put(null, new AlbumKey(201, 100), new AlbumValue("Sgt. Pepper's Lonely Hearts Club Band"));
-albumKvView.put(null, new AlbumKey(202, 100), new AlbumValue("Revolver"));
+// Update existing artist
+ledZeppelin.setName("Led Zeppelin IV");
+artists.upsert(null, ledZeppelin);  // Automatically updates
+System.out.println("Updated artist name");
 ```
 
-#### Get Operations
+**Key Insights:**
+- **upsert()** is the primary operation - it handles both inserts and updates
+- **No separate UPDATE statement** - object state determines the operation
+- **Primary key detection** - Ignite uses @Id annotations to identify keys
+- **Atomic operations** - Each upsert is atomic and consistent
+
+#### Read Operations
 
 ```java
-// GET: Retrieve by key
-Tuple artistKey = Tuple.create().set("ArtistId", 100);
-Tuple artistValue = kvView.get(null, artistKey);
-if (artistValue != null) {
-    System.out.println("Found artist: " + artistValue.stringValue("Name"));
+// READ: Get artist by primary key
+Artist keyObj = new Artist(1, null);  // Only ID needed for lookup
+Artist found = artists.get(null, keyObj);
+
+if (found != null) {
+    System.out.println("Found artist: " + found.getName());
 } else {
     System.out.println("Artist not found");
 }
 
-// Get with strongly-typed classes
-AlbumKey searchKey = new AlbumKey(200, 100);
-AlbumValue foundAlbum = albumKvView.get(null, searchKey);
-if (foundAlbum != null) {
-    System.out.println("Found album: " + foundAlbum.getTitle());
-} else {
-    System.out.println("Album not found");
+// Alternative: Create key object inline
+Artist acdc = artists.get(null, new Artist(1, null));
+if (acdc != null) {
+    System.out.println("AC/DC albums coming soon!");
 }
 ```
 
-#### Bulk Get Operations
+**Performance Note**: RecordView.get() is extremely fast because:
+- **Direct key lookup** - no table scans or index searches
+- **Colocation-aware** - data retrieval happens on the correct node
+- **Binary protocol** - no SQL parsing overhead
+
+#### Delete Operations
 
 ```java
-// Get multiple records at once
-Collection<Tuple> keys = Arrays.asList(
-    Tuple.create().set("ArtistId", 100),
-    Tuple.create().set("ArtistId", 101),
-    Tuple.create().set("ArtistId", 102)
-);
+// DELETE: Remove artist by key
+Artist keyForDeletion = new Artist(2, null);
+boolean deleted = artists.delete(null, keyForDeletion);
 
-Map<Tuple, Tuple> results = kvView.getAll(null, keys);
-results.forEach((key, value) -> {
-    if (value != null) {
-        System.out.println("Artist " + key.intValue("ArtistId") + 
-                         ": " + value.stringValue("Name"));
-    }
-});
-```
-
-#### Remove Operations
-
-```java
-// REMOVE: Delete by key
-Tuple keyToRemove = Tuple.create().set("ArtistId", 100);
-boolean removed = kvView.remove(null, keyToRemove);
-if (removed) {
+if (deleted) {
     System.out.println("Artist removed successfully");
 } else {
-    System.out.println("Artist not found for removal");
+    System.out.println("Artist not found for deletion");
 }
 
-// Remove with value check (conditional remove)
-Tuple expectedValue = Tuple.create().set("Name", "The Beatles");
-boolean conditionallyRemoved = kvView.remove(null, keyToRemove, expectedValue);
-System.out.println("Conditionally removed: " + conditionallyRemoved);
-
-// Bulk remove
-Collection<Tuple> keysToRemove = Arrays.asList(
-    Tuple.create().set("ArtistId", 101),
-    Tuple.create().set("ArtistId", 102)
-);
-
-Collection<Tuple> removedKeys = kvView.removeAll(null, keysToRemove);
-System.out.println("Removed " + removedKeys.size() + " artists");
+// DELETE with value verification (conditional delete)
+Artist exactMatch = new Artist(1, "AC/DC");
+boolean conditionallyDeleted = artists.deleteExact(null, exactMatch);
+System.out.println("Conditional delete result: " + conditionallyDeleted);
 ```
 
-#### Conditional Operations
+### Working with Complex Entities
+
+Let's see how Table API handles more complex entities with composite keys and relationships:
 
 ```java
-// PUT_IF_ABSENT: Only insert if key doesn't exist
-Tuple newKey = Tuple.create().set("ArtistId", 103);
-Tuple newValue = Tuple.create().set("Name", "Queen");
-boolean inserted = kvView.putIfAbsent(null, newKey, newValue);
-if (inserted) {
-    System.out.println("New artist added");
-} else {
-    System.out.println("Artist already exists");
+// Album entity with composite primary key
+Album album = new Album(1, 1, "Back in Black");  // AlbumId=1, ArtistId=1
+
+Table albumTable = client.tables().table("Album");
+RecordView<Album> albums = albumTable.recordView(Album.class);
+
+// Insert album (automatically colocated with artist)
+albums.upsert(null, album);
+
+// Read album using composite key
+Album albumKey = new Album(1, 1, null);  // AlbumId + ArtistId for lookup
+Album found = albums.get(null, albumKey);
+
+if (found != null) {
+    System.out.println("Album: " + found.getTitle() + 
+                      " by Artist ID: " + found.getArtistId());
 }
 
-// REPLACE: Only update if key exists
-Tuple updateValue = Tuple.create().set("Name", "Queen (Updated)");
-boolean replaced = kvView.replace(null, newKey, updateValue);
-System.out.println("Artist updated: " + replaced);
+// Track entity with even more complexity
+Track track = new Track();
+track.setTrackId(1);
+track.setAlbumId(1);
+track.setName("Hells Bells");
+track.setComposer("Young, Johnson");
+track.setMilliseconds(312000);
+track.setUnitPrice(new BigDecimal("0.99"));
 
-// REPLACE with value check
-Tuple currentValue = Tuple.create().set("Name", "Queen (Updated)");
-Tuple newValueForReplace = Tuple.create().set("Name", "Queen (Final)");
-boolean conditionallyReplaced = kvView.replace(null, newKey, currentValue, newValueForReplace);
-System.out.println("Conditionally replaced: " + conditionallyReplaced);
+Table trackTable = client.tables().table("Track");
+RecordView<Track> tracks = trackTable.recordView(Track.class);
+tracks.upsert(null, track);
 ```
 
-## Record Operations (`RecordView`)
-
-### Insert, Update, Upsert, Delete
-
-```java
-RecordView<Tuple> accounts = client.tables().table("accounts").recordView();
-
-Tuple newAccountTuple = Tuple.create()
-    .set("accountNumber", 123456)
-    .set("firstName", "Val")
-    .set("lastName", "Kulichenko")
-    .set("balance", 100.00d);
-accounts.insert(null, newAccountTuple);
-```
-
-### Bulk Operations
+### Bulk Operations for High Performance
 
 #### Bulk Insert Operations
 
 ```java
-// Using RecordView for bulk inserts with POJOs
-@Table(zone = @Zone(value = "Chinook", storageProfiles = "default"))
-public static class Artist {
-    @Id
-    @Column(value = "ArtistId", nullable = false)
-    private Integer ArtistId;
-    
-    @Column(value = "Name", nullable = true, length = 120)
-    private String Name;
-    
-    public Artist() {}
-    public Artist(Integer artistId, String name) {
-        this.ArtistId = artistId;
-        this.Name = name;
-    }
-    
-    // Getters and setters
-    public Integer getArtistId() { return ArtistId; }
-    public void setArtistId(Integer artistId) { this.ArtistId = artistId; }
-    public String getName() { return Name; }
-    public void setName(String name) { this.Name = name; }
-    
-    @Override
-    public String toString() {
-        return "Artist{ArtistId=" + ArtistId + ", Name='" + Name + "'}";
-    }
-}
-
-// Bulk insert with RecordView
-Table artistTable = client.tables().table("Artist");
-RecordView<Artist> artistView = artistTable.recordView(Artist.class);
-
-// Create multiple artists from Chinook dataset
-List<Artist> artists = Arrays.asList(
+// Create multiple artists from music store dataset
+List<Artist> musicStoreArtists = Arrays.asList(
     new Artist(1, "AC/DC"),
     new Artist(2, "Accept"),
     new Artist(3, "Aerosmith"),
@@ -346,121 +243,261 @@ List<Artist> artists = Arrays.asList(
     new Artist(10, "The Beatles")
 );
 
-// Bulk insert using upsertAll
-artistView.upsertAll(null, artists);
-System.out.println("Upserted " + artists.size() + " artists from Chinook dataset");
+// Bulk upsert - highly optimized batch operation
+artists.upsertAll(null, musicStoreArtists);
+System.out.println("Loaded " + musicStoreArtists.size() + " artists from music store dataset");
 ```
 
-#### Bulk Update Operations
+**Performance Benefits of Bulk Operations:**
+- **Network Optimization**: Single round trip for multiple records
+- **Batch Processing**: Server-side optimizations for bulk operations  
+- **Transaction Efficiency**: All operations within single transaction scope
+- **Colocation Awareness**: Operations routed to correct nodes efficiently
+
+#### Bulk Read Operations
 
 ```java
-// Bulk update existing records
-List<Artist> updatedArtists = Arrays.asList(
-    new Artist(1, "AC/DC (Remastered)"),
-    new Artist(2, "Accept (Special Edition)"),
-    new Artist(3, "Aerosmith (Greatest Hits)")
+// Prepare key objects for bulk retrieval
+List<Artist> artistKeys = Arrays.asList(
+    new Artist(1, null),    // AC/DC
+    new Artist(2, null),    // Accept
+    new Artist(3, null),    // Aerosmith
+    new Artist(10, null)    // The Beatles
 );
 
-// Upsert will update existing records
-artistView.upsertAll(null, updatedArtists);
-System.out.println("Updated " + updatedArtists.size() + " artist names");
+// Bulk get operation
+List<Artist> foundArtists = artists.getAll(null, artistKeys);
+
+// Process results (maintains order)
+for (int i = 0; i < artistKeys.size(); i++) {
+    Artist key = artistKeys.get(i);
+    Artist found = foundArtists.get(i);
+    
+    if (found != null) {
+        System.out.println("Artist " + key.getArtistId() + ": " + found.getName());
+    } else {
+        System.out.println("Artist " + key.getArtistId() + ": Not found");
+    }
+}
 ```
 
 #### Bulk Delete Operations
 
 ```java
-// Delete multiple records by key
-List<Artist> keysToDelete = Arrays.asList(
-    new Artist(4, null),  // Only ID needed for deletion
-    new Artist(5, null)
+// Delete multiple artists by key
+List<Artist> artistsToDelete = Arrays.asList(
+    new Artist(4, null),    // Alanis Morissette
+    new Artist(5, null)     // Alice In Chains
 );
 
-Collection<Artist> deletedKeys = artistView.deleteAll(null, keysToDelete);
+List<Artist> deletedKeys = artists.deleteAll(null, artistsToDelete);
 System.out.println("Deleted " + deletedKeys.size() + " artists");
 
-// Alternative: delete by providing key objects
-List<Artist> artistsToDelete = new ArrayList<>();
-artistsToDelete.add(new Artist());
-artistsToDelete.get(0).setArtistId(1);
-artistsToDelete.add(new Artist());
-artistsToDelete.get(1).setArtistId(2);
-
-Collection<Artist> deletedArtists = artistView.deleteAll(null, artistsToDelete);
-System.out.println("Deleted artists: " + deletedArtists.size());
+// deletedKeys contains the keys that were successfully deleted
+deletedKeys.forEach(deleted -> 
+    System.out.println("Deleted artist ID: " + deleted.getArtistId()));
 ```
 
-#### Performance Considerations for Bulk Operations
+### Transaction Integration
+
+RecordView operations integrate seamlessly with Ignite 3's transaction system:
 
 ```java
-// Efficient bulk loading pattern
-public static void bulkLoadArtists(IgniteClient client, List<Artist> artists) {
-    Table table = client.tables().table("Artist");
-    RecordView<Artist> view = table.recordView(Artist.class);
+// Create a new album and tracks in a single transaction
+client.transactions().runInTransaction(tx -> {
+    // Insert album
+    Album album = new Album(2, 1, "Highway to Hell");
+    albums.upsert(tx, album);
     
-    // Process in batches for better performance
-    int batchSize = 1000;
-    for (int i = 0; i < artists.size(); i += batchSize) {
-        int endIndex = Math.min(i + batchSize, artists.size());
-        List<Artist> batch = artists.subList(i, endIndex);
-        
-        view.upsertAll(null, batch);
-        System.out.println("Processed batch: " + (i / batchSize + 1) + 
-                         ", records: " + batch.size());
-    }
-}
-
-// Usage
-List<Artist> manyArtists = new ArrayList<>();
-for (int i = 1; i <= 10000; i++) {
-    manyArtists.add(new Artist(i, "Artist " + i));
-}
-
-bulkLoadArtists(client, manyArtists);
+    // Insert related tracks
+    List<Track> albumTracks = Arrays.asList(
+        new Track(1, 2, "Highway to Hell", 208000, new BigDecimal("0.99")),
+        new Track(2, 2, "Girls Got Rhythm", 206000, new BigDecimal("0.99")),
+        new Track(3, 2, "Walk All Over You", 294000, new BigDecimal("0.99"))
+    );
+    
+    tracks.upsertAll(tx, albumTracks);
+    
+    System.out.println("Album and tracks added in transaction");
+    return true;  // Commit transaction
+});
 ```
 
-#### Bulk Operations with KeyValueView
+**Transaction Benefits:**
+- **ACID Guarantees**: All operations succeed or fail together
+- **Consistency**: Related data stays consistent across operations
+- **Isolation**: Other operations don't see partial results
+- **Distributed Transactions**: Works across multiple cluster nodes
+
+## 4.3 Working with KeyValueView: Efficient Key-Value Operations
+
+### When KeyValueView Excels
+
+KeyValueView provides a cache-like interface that separates keys from values. This is particularly useful for:
+
+- **Partial Updates**: Updating only specific fields
+- **Simple Data Types**: Working with primitives or simple objects
+- **Cache Patterns**: Key-value style operations
+- **Performance-Critical Code**: Minimal object creation overhead
+
+### Setting Up KeyValueView
 
 ```java
-// Bulk operations using KeyValueView with Tuples
-KeyValueView<Tuple, Tuple> kvView = client.tables().table("Artist").keyValueView();
+// Create KeyValueView with separate key and value types
+Table artistTable = client.tables().table("Artist");
+KeyValueView<Integer, String> artistNames = 
+    artistTable.keyValueView(Integer.class, String.class);
 
-// Prepare bulk data
-Map<Tuple, Tuple> bulkData = new HashMap<>();
-for (int i = 100; i < 110; i++) {
-    Tuple key = Tuple.create().set("ArtistId", i);
-    Tuple value = Tuple.create().set("Name", "Bulk Artist " + i);
-    bulkData.put(key, value);
+// For complex keys and values, use Tuple
+KeyValueView<Tuple, Tuple> artistTuples = artistTable.keyValueView();
+```
+
+### Basic KeyValueView Operations
+
+#### Put and Get Operations
+
+```java
+// PUT: Simple key-value operations
+artistNames.put(null, 100, "Dream Theater");
+artistNames.put(null, 101, "Tool");
+artistNames.put(null, 102, "Porcupine Tree");
+
+// GET: Retrieve values by key
+String artistName = artistNames.get(null, 100);
+if (artistName != null) {
+    System.out.println("Artist 100: " + artistName);
 }
 
-// Bulk put
-kvView.putAll(null, bulkData);
-System.out.println("Bulk inserted " + bulkData.size() + " artists with KeyValueView");
+// GET with default value
+String nameWithDefault = artistNames.getOrDefault(null, 999, "Unknown Artist");
+System.out.println("Artist 999: " + nameWithDefault);
+```
+
+#### Working with Nullable Values
+
+```java
+// Handle null values explicitly
+artistNames.put(null, 103, null);  // Explicitly store null
+
+// Use getNullable for null-aware retrieval
+NullableValue<String> nullableResult = artistNames.getNullable(null, 103);
+if (nullableResult != null) {
+    String value = nullableResult.get();  // This will be null
+    System.out.println("Artist 103 name is explicitly null: " + (value == null));
+}
+
+// Regular get() throws exception for null values
+try {
+    String nullName = artistNames.get(null, 103);  // Throws UnexpectedNullValueException
+} catch (UnexpectedNullValueException e) {
+    System.out.println("Cannot retrieve null value with get()");
+}
+```
+
+### Advanced KeyValueView Patterns
+
+#### Conditional Operations
+
+```java
+// PUT_IF_ABSENT: Only insert if key doesn't exist
+boolean inserted = artistNames.putIfAbsent(null, 104, "Metallica");
+if (inserted) {
+    System.out.println("New artist added");
+} else {
+    System.out.println("Artist already exists");
+}
+
+// REPLACE: Only update if key exists
+boolean replaced = artistNames.replace(null, 104, "Metallica (Updated)");
+System.out.println("Artist name updated: " + replaced);
+
+// REPLACE with value check: Update only if current value matches
+boolean conditionalReplace = artistNames.replace(
+    null, 104, "Metallica (Updated)", "Metallica (Final)");
+System.out.println("Conditional update: " + conditionalReplace);
+```
+
+#### Get-and-Modify Operations
+
+```java
+// GET_AND_PUT: Atomic read-modify-write
+String previousName = artistNames.getAndPut(null, 100, "Dream Theater (Progressive)");
+System.out.println("Previous name: " + previousName);
+
+// GET_AND_REMOVE: Atomic read-and-delete
+String removedName = artistNames.getAndRemove(null, 102);
+if (removedName != null) {
+    System.out.println("Removed artist: " + removedName);
+}
+```
+
+### Bulk Operations with KeyValueView
+
+```java
+// Bulk put using Map
+Map<Integer, String> bulkArtists = new HashMap<>();
+bulkArtists.put(200, "Iron Maiden");
+bulkArtists.put(201, "Judas Priest");
+bulkArtists.put(202, "Black Sabbath");
+bulkArtists.put(203, "Deep Purple");
+
+artistNames.putAll(null, bulkArtists);
+System.out.println("Bulk inserted " + bulkArtists.size() + " artists");
 
 // Bulk get
-Collection<Tuple> keys = bulkData.keySet();
-Map<Tuple, Tuple> retrieved = kvView.getAll(null, keys);
-System.out.println("Retrieved " + retrieved.size() + " artists");
+Set<Integer> keysToGet = Set.of(200, 201, 202, 203);
+Map<Integer, String> retrieved = artistNames.getAll(null, keysToGet);
+
+retrieved.forEach((id, name) -> 
+    System.out.println("Artist " + id + ": " + name));
 
 // Bulk remove
-Collection<Tuple> removedKeys = kvView.removeAll(null, keys);
+Collection<Integer> removedKeys = artistNames.removeAll(null, keysToGet);
 System.out.println("Removed " + removedKeys.size() + " artists");
 ```
 
-## Async Operations
+### Working with Tuple-based KeyValueView
 
-### CompletableFuture Patterns
-
-#### Basic Async Operations
+For maximum flexibility, you can use Tuple objects for both keys and values:
 
 ```java
-// Async put operation
-Table artistTable = client.tables().table("Artist");
-RecordView<Artist> artistView = artistTable.recordView(Artist.class);
+// Complex album operations with Tuples
+Table albumTable = client.tables().table("Album");
+KeyValueView<Tuple, Tuple> albumKV = albumTable.keyValueView();
 
-Artist newArtist = new Artist(200, "Dream Theater");
+// Create composite key using Tuple
+Tuple albumKey = Tuple.create()
+    .set("AlbumId", 10)
+    .set("ArtistId", 1);
 
-// Non-blocking insert
-CompletableFuture<Void> insertFuture = artistView.upsertAsync(null, newArtist);
+// Create value Tuple
+Tuple albumValue = Tuple.create()
+    .set("Title", "Let There Be Rock");
+
+// Put album
+albumKV.put(null, albumKey, albumValue);
+
+// Get album
+Tuple retrievedValue = albumKV.get(null, albumKey);
+if (retrievedValue != null) {
+    String title = retrievedValue.stringValue("Title");
+    System.out.println("Album title: " + title);
+}
+```
+
+## 4.4 Asynchronous Operations for High Performance
+
+### Understanding Async Programming with Table API
+
+Modern applications require non-blocking operations to achieve high throughput and responsiveness. Ignite 3's Table API provides comprehensive async support using CompletableFuture, allowing you to build highly concurrent applications.
+
+### Basic Async Operations
+
+```java
+// Async upsert operation
+Artist newArtist = new Artist(300, "Pink Floyd");
+
+CompletableFuture<Void> insertFuture = artists.upsertAsync(null, newArtist);
 insertFuture.thenRun(() -> {
     System.out.println("Artist inserted asynchronously");
 }).exceptionally(throwable -> {
@@ -469,10 +506,9 @@ insertFuture.thenRun(() -> {
 });
 
 // Async get operation
-Artist keyArtist = new Artist();
-keyArtist.setArtistId(200);
+Artist keyArtist = new Artist(300, null);
+CompletableFuture<Artist> getFuture = artists.getAsync(null, keyArtist);
 
-CompletableFuture<Artist> getFuture = artistView.getAsync(null, keyArtist);
 getFuture.thenAccept(artist -> {
     if (artist != null) {
         System.out.println("Found artist: " + artist.getName());
@@ -482,99 +518,106 @@ getFuture.thenAccept(artist -> {
 });
 ```
 
-#### Chaining Async Operations
+### Chaining Async Operations
 
 ```java
-// Chain multiple async operations
-CompletableFuture<Void> chainedOperations = artistView
-    .getAsync(null, keyArtist)
+// Chain multiple async operations for complex workflows
+CompletableFuture<String> result = artists
+    .getAsync(null, new Artist(1, null))  // Get AC/DC
     .thenCompose(artist -> {
         if (artist != null) {
-            // Update the artist
-            artist.setName(artist.getName() + " (Updated)");
-            return artistView.upsertAsync(null, artist);
+            // Get albums for this artist
+            Album albumKey = new Album(null, artist.getArtistId(), null);
+            return albums.getAllAsync(null, List.of(albumKey))
+                .thenApply(albumList -> 
+                    artist.getName() + " has " + albumList.size() + " albums");
         } else {
-            // Insert new artist if not found
-            Artist newArtist = new Artist(200, "Tool");
-            return artistView.upsertAsync(null, newArtist);
+            return CompletableFuture.completedFuture("Artist not found");
         }
     })
-    .thenRun(() -> {
-        System.out.println("Chained operations completed");
-    })
     .exceptionally(throwable -> {
-        System.err.println("Chained operation failed: " + throwable.getMessage());
-        return null;
+        return "Error: " + throwable.getMessage();
     });
 
-// Wait for completion if needed
-chainedOperations.join();
+// Use the result
+result.thenAccept(message -> System.out.println(message));
 ```
 
-#### Parallel Async Operations
+### Parallel Async Operations
 
 ```java
-// Execute multiple operations in parallel
+// Execute multiple independent operations in parallel
 List<CompletableFuture<Void>> futures = new ArrayList<>();
 
-// Insert more Chinook artists in parallel
-String[] artistNames = {"Billy Cobham", "Buddy Guy", "Chico Buarque", "Cidade Negra", 
-                       "Cláudio Zoli", "Various Artists", "Led Zeppelin", "Frank Zappa", 
-                       "Foo Fighters", "Metallica"};
+// Load multiple artists in parallel
+String[] artistNames = {"System Of A Down", "Slipknot", "Rammstein", 
+                       "Linkin Park", "Disturbed"};
 
 for (int i = 0; i < artistNames.length; i++) {
-    Artist artist = new Artist(300 + i, artistNames[i]);
-    CompletableFuture<Void> future = artistView.upsertAsync(null, artist);
+    Artist artist = new Artist(400 + i, artistNames[i]);
+    CompletableFuture<Void> future = artists.upsertAsync(null, artist);
     futures.add(future);
 }
 
 // Wait for all operations to complete
 CompletableFuture<Void> allFutures = CompletableFuture.allOf(
-    futures.toArray(new CompletableFuture[0])
-);
+    futures.toArray(new CompletableFuture[0]));
 
 allFutures.thenRun(() -> {
-    System.out.println("All parallel operations completed");
-}).join();
+    System.out.println("All " + artistNames.length + " artists loaded in parallel");
+}).join();  // Wait for completion
 ```
 
-#### Async Bulk Operations
+### Async Bulk Operations
 
 ```java
-// Async bulk operations with more Chinook artists
-List<Artist> bulkArtists = Arrays.asList(
-    new Artist(400, "Iron Maiden"),
-    new Artist(401, "Pearl Jam"),
-    new Artist(402, "Red Hot Chili Peppers")
+// Async bulk operations for maximum throughput
+List<Album> albumBatch = Arrays.asList(
+    new Album(10, 1, "Back in Black"),
+    new Album(11, 1, "Highway to Hell"),
+    new Album(12, 2, "Balls to the Wall"),
+    new Album(13, 3, "Pump")
 );
 
-CompletableFuture<Void> bulkInsert = artistView.upsertAllAsync(null, bulkArtists);
-bulkInsert.thenRun(() -> {
-    System.out.println("Bulk insert completed asynchronously");
-    
-    // Chain with bulk get
-    return artistView.getAllAsync(null, bulkArtists);
-}).thenCompose(ignored -> artistView.getAllAsync(null, bulkArtists))
-  .thenAccept(results -> {
-    System.out.println("Retrieved " + results.size() + " artists");
-    results.forEach(artist -> System.out.println("  - " + artist));
-});
+CompletableFuture<Void> bulkInsert = albums.upsertAllAsync(null, albumBatch);
+bulkInsert
+    .thenRun(() -> System.out.println("Bulk insert completed"))
+    .thenCompose(ignored -> {
+        // Chain with bulk get
+        List<Album> keys = albumBatch.stream()
+            .map(album -> new Album(album.getAlbumId(), album.getArtistId(), null))
+            .collect(Collectors.toList());
+        return albums.getAllAsync(null, keys);
+    })
+    .thenAccept(results -> {
+        System.out.println("Retrieved " + results.size() + " albums");
+        results.forEach(album -> {
+            if (album != null) {
+                System.out.println("  - " + album.getTitle());
+            }
+        });
+    });
 ```
 
-#### Advanced Async Patterns
+### Advanced Async Patterns
+
+#### Timeout and Retry Logic
 
 ```java
-// Async with timeout
-CompletableFuture<Artist> getWithTimeout = artistView.getAsync(null, keyArtist)
+// Async operation with timeout
+CompletableFuture<Artist> getWithTimeout = artists
+    .getAsync(null, new Artist(1, null))
     .orTimeout(5, TimeUnit.SECONDS)
     .exceptionally(throwable -> {
         if (throwable instanceof TimeoutException) {
             System.err.println("Operation timed out");
+        } else {
+            System.err.println("Operation failed: " + throwable.getMessage());
         }
         return null;
     });
 
-// Async with retry logic
+// Retry logic for transient failures
 public static CompletableFuture<Void> insertWithRetry(
         RecordView<Artist> view, Artist artist, int maxRetries) {
     
@@ -582,115 +625,26 @@ public static CompletableFuture<Void> insertWithRetry(
         .exceptionallyCompose(throwable -> {
             if (maxRetries > 0) {
                 System.out.println("Retrying insert, attempts left: " + maxRetries);
-                return insertWithRetry(view, artist, maxRetries - 1);
+                // Add exponential backoff
+                return CompletableFuture
+                    .delayedExecutor(1000, TimeUnit.MILLISECONDS)
+                    .execute(() -> insertWithRetry(view, artist, maxRetries - 1));
             } else {
                 return CompletableFuture.failedFuture(throwable);
             }
         });
 }
-
-// Usage
-Artist retryArtist = new Artist(500, "System Of A Down");
-insertWithRetry(artistView, retryArtist, 3)
-    .thenRun(() -> System.out.println("Insert succeeded with retry"))
-    .exceptionally(throwable -> {
-        System.err.println("Insert failed after retries: " + throwable.getMessage());
-        return null;
-    });
 ```
 
-#### Combining Sync and Async Operations
+#### Circuit Breaker Pattern
 
 ```java
-// Sometimes you need to mix sync and async operations
-public static void hybridOperations(IgniteClient client) {
-    Table table = client.tables().table("Artist");
-    RecordView<Artist> view = table.recordView(Artist.class);
-    
-    // Sync operation to check if artist exists
-    Artist checkArtist = new Artist();
-    checkArtist.setArtistId(600);
-    Artist existing = view.get(null, checkArtist);
-    
-    if (existing == null) {
-        // Async insert if doesn't exist
-        Artist newArtist = new Artist(600, "Rage Against The Machine");
-        view.upsertAsync(null, newArtist)
-            .thenRun(() -> System.out.println("Hybrid: Artist created"))
-            .join(); // Wait for completion
-    } else {
-        // Async update if exists
-        existing.setName(existing.getName() + " (Updated)");
-        view.upsertAsync(null, existing)
-            .thenRun(() -> System.out.println("Hybrid: Artist updated"))
-            .join();
-    }
-}
-```
-
-### Error Handling in Async Code
-
-#### Basic Error Handling
-
-```java
-// Handle exceptions in async operations
-Artist testArtist = new Artist(700, "Nirvana");
-
-artistView.upsertAsync(null, testArtist)
-    .thenRun(() -> {
-        System.out.println("Success: Artist inserted");
-    })
-    .exceptionally(throwable -> {
-        System.err.println("Error inserting artist: " + throwable.getMessage());
-        throwable.printStackTrace();
-        return null;
-    });
-```
-
-#### Specific Exception Handling
-
-```java
-// Handle different types of exceptions
-artistView.getAsync(null, keyArtist)
-    .thenAccept(artist -> {
-        if (artist != null) {
-            System.out.println("Found: " + artist);
-        } else {
-            System.out.println("Artist not found");
-        }
-    })
-    .exceptionally(throwable -> {
-        if (throwable instanceof IgniteClientConnectionException) {
-            System.err.println("Connection error: " + throwable.getMessage());
-        } else if (throwable instanceof TimeoutException) {
-            System.err.println("Operation timed out");
-        } else {
-            System.err.println("Unexpected error: " + throwable.getMessage());
-        }
-        return null;
-    });
-```
-
-#### Error Recovery Patterns
-
-```java
-// Async operation with fallback
-public static CompletableFuture<Artist> getArtistWithFallback(
-        RecordView<Artist> view, Artist key, Artist fallbackArtist) {
-    
-    return view.getAsync(null, key)
-        .thenApply(artist -> artist != null ? artist : fallbackArtist)
-        .exceptionally(throwable -> {
-            System.err.println("Get failed, using fallback: " + throwable.getMessage());
-            return fallbackArtist;
-        });
-}
-
-// Circuit breaker pattern for async operations
 public static class AsyncCircuitBreaker {
     private volatile boolean isOpen = false;
     private volatile long lastFailureTime = 0;
     private final long timeout = 60000; // 1 minute
+    private final AtomicInteger failureCount = new AtomicInteger(0);
+    private final int failureThreshold = 5;
     
     public <T> CompletableFuture<T> execute(Supplier<CompletableFuture<T>> operation) {
         if (isOpen && (System.currentTimeMillis() - lastFailureTime) < timeout) {
@@ -701,9 +655,13 @@ public static class AsyncCircuitBreaker {
         return operation.get()
             .whenComplete((result, throwable) -> {
                 if (throwable != null) {
-                    isOpen = true;
-                    lastFailureTime = System.currentTimeMillis();
+                    int failures = failureCount.incrementAndGet();
+                    if (failures >= failureThreshold) {
+                        isOpen = true;
+                        lastFailureTime = System.currentTimeMillis();
+                    }
                 } else {
+                    failureCount.set(0);
                     isOpen = false;
                 }
             });
@@ -712,114 +670,431 @@ public static class AsyncCircuitBreaker {
 
 // Usage
 AsyncCircuitBreaker circuitBreaker = new AsyncCircuitBreaker();
-Artist searchKey = new Artist();
-searchKey.setArtistId(800);
+Artist searchKey = new Artist(500, null);
 
-circuitBreaker.execute(() -> artistView.getAsync(null, searchKey))
+circuitBreaker.execute(() -> artists.getAsync(null, searchKey))
     .thenAccept(artist -> {
         System.out.println("Circuit breaker success: " + artist);
     })
     .exceptionally(throwable -> {
-        System.err.println("Circuit breaker failed: " + throwable.getMessage());
+        System.err.println("Circuit breaker protection: " + throwable.getMessage());
         return null;
     });
 ```
 
-#### Comprehensive Error Handling Utility
+## 4.5 Error Handling and Best Practices
+
+### Exception Hierarchy and Handling
+
+Understanding Ignite 3's exception hierarchy is crucial for robust error handling:
 
 ```java
-public static class AsyncTableOperations {
+try {
+    // Table API operations
+    Artist artist = artists.get(null, new Artist(1, null));
+    artists.upsert(null, artist);
     
-    public static <T> CompletableFuture<T> withErrorHandling(
-            CompletableFuture<T> operation, String operationName) {
-        
-        return operation.exceptionally(throwable -> {
-            System.err.println("Error in " + operationName + ": " + throwable.getMessage());
-            
-            if (throwable instanceof IgniteClientConnectionException) {
-                System.err.println("Connection issue - check cluster status");
-            } else if (throwable instanceof SqlException) {
-                System.err.println("SQL error - check query syntax and data");
-            } else if (throwable instanceof TimeoutException) {
-                System.err.println("Timeout - operation took too long");
-            }
-            
-            return null;
-        });
-    }
+} catch (MarshallerException e) {
+    // Schema or type mismatch
+    System.err.println("Data mapping error: " + e.getMessage());
+    // Check your POJO annotations and field types
     
-    public static <T> CompletableFuture<T> withRetry(
-            Supplier<CompletableFuture<T>> operation, 
-            int maxRetries, 
-            String operationName) {
-        
-        return operation.get()
-            .exceptionallyCompose(throwable -> {
-                if (maxRetries > 0) {
-                    System.out.println("Retrying " + operationName + 
-                                     ", attempts left: " + maxRetries);
-                    return withRetry(operation, maxRetries - 1, operationName);
-                } else {
-                    System.err.println("All retry attempts failed for " + operationName);
-                    return CompletableFuture.failedFuture(throwable);
-                }
-            });
+} catch (UnexpectedNullValueException e) {
+    // Null value in non-nullable field
+    System.err.println("Null value error: " + e.getMessage());
+    // Use getNullable() for nullable columns
+    
+} catch (TransactionException e) {
+    // Transaction-related errors
+    System.err.println("Transaction error: " + e.getMessage());
+    // Retry or rollback as appropriate
+    
+} catch (TableNotFoundException e) {
+    // Table doesn't exist
+    System.err.println("Table not found: " + e.getMessage());
+    // Ensure table is created before accessing
+    
+} catch (IgniteException e) {
+    // General Ignite errors
+    System.err.println("Ignite error: " + e.getMessage());
+    // Check cluster connectivity and status
+}
+```
+
+### Defensive Programming Patterns
+
+```java
+// Safe table access with validation
+public static RecordView<Artist> getArtistViewSafely(IgniteClient client) {
+    try {
+        Table table = client.tables().table("Artist");
+        if (table == null) {
+            throw new IllegalStateException("Artist table not found");
+        }
+        return table.recordView(Artist.class);
+    } catch (Exception e) {
+        System.err.println("Failed to get Artist table view: " + e.getMessage());
+        throw new RuntimeException("Artist table access failed", e);
     }
 }
 
-// Usage examples
-Artist testArtist = new Artist(900, "Soundgarden");
-
-// With error handling
-AsyncTableOperations.withErrorHandling(
-    artistView.upsertAsync(null, testArtist),
-    "insert artist"
-).thenRun(() -> {
-    System.out.println("Artist inserted successfully");
-});
-
-// With retry and error handling
-AsyncTableOperations.withRetry(
-    () -> artistView.getAsync(null, testArtist),
-    3,
-    "get artist"
-).thenAccept(artist -> {
-    if (artist != null) {
-        System.out.println("Artist retrieved: " + artist);
+// Null-safe operations
+public static boolean safeUpsert(RecordView<Artist> view, Artist artist) {
+    if (artist == null || artist.getArtistId() == null) {
+        System.err.println("Invalid artist data");
+        return false;
     }
-});
-```
-
-#### Best Practices for Async Error Handling
-
-1. **Always Handle Exceptions**: Use `.exceptionally()` or `.handle()` to catch errors
-2. **Specific Error Types**: Handle different exception types appropriately
-3. **Fallback Strategies**: Provide default values or alternative operations
-4. **Logging**: Log errors with sufficient context for debugging
-5. **Circuit Breakers**: Implement circuit breakers for resilience
-6. **Timeouts**: Set appropriate timeouts to prevent hanging operations
-7. **Retry Logic**: Implement exponential backoff for transient errors
-
-```java
-// Complete example with all best practices
-public static CompletableFuture<Void> robustAsyncOperation(
-        RecordView<Artist> view, Artist artist) {
     
-    return view.upsertAsync(null, artist)
-        .orTimeout(10, TimeUnit.SECONDS)
-        .exceptionallyCompose(throwable -> {
-            if (throwable instanceof TimeoutException) {
-                System.err.println("Operation timed out, retrying...");
-                return view.upsertAsync(null, artist)
-                    .orTimeout(20, TimeUnit.SECONDS);
-            } else {
-                return CompletableFuture.failedFuture(throwable);
+    try {
+        view.upsert(null, artist);
+        return true;
+    } catch (Exception e) {
+        System.err.println("Failed to upsert artist " + artist.getArtistId() + 
+                          ": " + e.getMessage());
+        return false;
+    }
+}
+
+// Bulk operation with partial failure handling
+public static void safeBulkUpsert(RecordView<Artist> view, List<Artist> artists) {
+    List<Artist> validArtists = artists.stream()
+        .filter(Objects::nonNull)
+        .filter(a -> a.getArtistId() != null)
+        .collect(Collectors.toList());
+    
+    if (validArtists.isEmpty()) {
+        System.out.println("No valid artists to insert");
+        return;
+    }
+    
+    try {
+        view.upsertAll(null, validArtists);
+        System.out.println("Successfully upserted " + validArtists.size() + " artists");
+    } catch (Exception e) {
+        System.err.println("Bulk upsert failed: " + e.getMessage());
+        // Fall back to individual operations
+        int successCount = 0;
+        for (Artist artist : validArtists) {
+            if (safeUpsert(view, artist)) {
+                successCount++;
             }
-        })
-        .exceptionally(throwable -> {
-            System.err.println("Final error: " + throwable.getMessage());
-            // Could send to error tracking service
-            return null;
-        });
+        }
+        System.out.println("Individual upserts: " + successCount + "/" + validArtists.size());
+    }
 }
 ```
+
+### Performance Best Practices
+
+#### Batch Operations
+
+```java
+// Efficient batch loading pattern
+public static void efficientBulkLoad(RecordView<Artist> view, List<Artist> artists) {
+    int batchSize = 1000;  // Optimal batch size for most workloads
+    
+    for (int i = 0; i < artists.size(); i += batchSize) {
+        int endIndex = Math.min(i + batchSize, artists.size());
+        List<Artist> batch = artists.subList(i, endIndex);
+        
+        try {
+            view.upsertAll(null, batch);
+            System.out.println("Processed batch " + (i / batchSize + 1) + 
+                             ": " + batch.size() + " records");
+        } catch (Exception e) {
+            System.err.println("Batch " + (i / batchSize + 1) + " failed: " + e.getMessage());
+            // Process individually as fallback
+        }
+    }
+}
+```
+
+#### Resource Management
+
+```java
+// Proper resource lifecycle management
+public class MusicStoreService implements AutoCloseable {
+    private final IgniteClient client;
+    private final RecordView<Artist> artists;
+    private final RecordView<Album> albums;
+    private final RecordView<Track> tracks;
+    
+    public MusicStoreService() {
+        this.client = IgniteClient.builder()
+            .addresses("127.0.0.1:10800")
+            .build();
+        
+        this.artists = client.tables().table("Artist").recordView(Artist.class);
+        this.albums = client.tables().table("Album").recordView(Album.class);
+        this.tracks = client.tables().table("Track").recordView(Track.class);
+    }
+    
+    public void addArtistWithAlbums(Artist artist, List<Album> artistAlbums) {
+        // Use transaction for consistency
+        client.transactions().runInTransaction(tx -> {
+            artists.upsert(tx, artist);
+            albums.upsertAll(tx, artistAlbums);
+            return true;
+        });
+    }
+    
+    @Override
+    public void close() {
+        if (client != null) {
+            client.close();
+        }
+    }
+}
+
+// Usage with try-with-resources
+try (MusicStoreService service = new MusicStoreService()) {
+    Artist newArtist = new Artist(1000, "New Band");
+    List<Album> albums = List.of(
+        new Album(1000, 1000, "First Album"),
+        new Album(1001, 1000, "Second Album")
+    );
+    
+    service.addArtistWithAlbums(newArtist, albums);
+}
+```
+
+#### Connection Pool Optimization
+
+```java
+// Configure client for optimal performance
+IgniteClient client = IgniteClient.builder()
+    .addresses("127.0.0.1:10800", "127.0.0.1:10801", "127.0.0.1:10802")  // Multiple nodes
+    .connectionTimeout(5000)      // 5 second connection timeout
+    .requestTimeout(30000)        // 30 second operation timeout
+    .maxConnectionsPerNode(10)    // Connection pool size
+    .build();
+```
+
+## 4.6 Integration with Business Logic
+
+### Domain Service Patterns
+
+```java
+/**
+ * Music Store service demonstrating Table API integration with business logic
+ */
+public class MusicStoreManager {
+    private final RecordView<Artist> artists;
+    private final RecordView<Album> albums;
+    private final RecordView<Track> tracks;
+    private final IgniteClient client;
+    
+    public MusicStoreManager(IgniteClient client) {
+        this.client = client;
+        this.artists = client.tables().table("Artist").recordView(Artist.class);
+        this.albums = client.tables().table("Album").recordView(Album.class);
+        this.tracks = client.tables().table("Track").recordView(Track.class);
+    }
+    
+    /**
+     * Add a complete artist discography in a single transaction
+     */
+    public void addArtistDiscography(ArtistDiscography discography) {
+        client.transactions().runInTransaction(tx -> {
+            // Add artist
+            artists.upsert(tx, discography.getArtist());
+            
+            // Add all albums
+            albums.upsertAll(tx, discography.getAlbums());
+            
+            // Add all tracks
+            tracks.upsertAll(tx, discography.getAllTracks());
+            
+            System.out.println("Added discography for: " + 
+                             discography.getArtist().getName());
+            return true;
+        });
+    }
+    
+    /**
+     * Find popular artists (those with many albums)
+     */
+    public List<Artist> findPopularArtists(int minAlbumCount) {
+        // Note: This would typically use SQL API for the aggregation
+        // Here we show how Table API can be combined with business logic
+        
+        List<Artist> allArtists = getAllArtists();  // Table API operation
+        
+        return allArtists.stream()
+            .filter(artist -> getAlbumCount(artist.getArtistId()) >= minAlbumCount)
+            .collect(Collectors.toList());
+    }
+    
+    private List<Artist> getAllArtists() {
+        // In real implementation, this would use proper pagination
+        // This is simplified for demonstration
+        return List.of(/* retrieve from cache or use SQL for better performance */);
+    }
+    
+    private int getAlbumCount(Integer artistId) {
+        // This is inefficient - in practice, use SQL API for aggregations
+        // Shown here to demonstrate Table API usage patterns
+        
+        // Use SQL for counting (more efficient than Table API for this)
+        var result = client.sql().execute(null,
+            "SELECT COUNT(*) as album_count FROM Album WHERE ArtistId = ?", artistId);
+        
+        if (result.hasNext()) {
+            return result.next().intValue("album_count");
+        }
+        return 0;
+    }
+}
+
+/**
+ * Value object for artist discography operations
+ */
+public class ArtistDiscography {
+    private final Artist artist;
+    private final List<Album> albums;
+    private final Map<Integer, List<Track>> tracksByAlbum;
+    
+    public ArtistDiscography(Artist artist, List<Album> albums, 
+                           Map<Integer, List<Track>> tracksByAlbum) {
+        this.artist = artist;
+        this.albums = albums;
+        this.tracksByAlbum = tracksByAlbum;
+    }
+    
+    public List<Track> getAllTracks() {
+        return tracksByAlbum.values().stream()
+            .flatMap(List::stream)
+            .collect(Collectors.toList());
+    }
+    
+    // Getters...
+    public Artist getArtist() { return artist; }
+    public List<Album> getAlbums() { return albums; }
+}
+```
+
+### Testing Patterns
+
+```java
+/**
+ * Unit test patterns for Table API operations
+ */
+public class MusicStoreManagerTest {
+    private IgniteClient client;
+    private MusicStoreManager manager;
+    
+    @BeforeEach
+    void setUp() {
+        // Use embedded Ignite for testing
+        client = IgniteClient.builder()
+            .addresses("127.0.0.1:10800")
+            .build();
+        manager = new MusicStoreManager(client);
+    }
+    
+    @Test
+    void testAddArtistDiscography() {
+        // Arrange
+        Artist artist = new Artist(9999, "Test Artist");
+        List<Album> albums = List.of(
+            new Album(9999, 9999, "Test Album")
+        );
+        List<Track> tracks = List.of(
+            new Track(9999, 9999, "Test Track", 180000, new BigDecimal("0.99"))
+        );
+        
+        ArtistDiscography discography = new ArtistDiscography(
+            artist, albums, Map.of(9999, tracks));
+        
+        // Act
+        manager.addArtistDiscography(discography);
+        
+        // Assert
+        RecordView<Artist> artists = client.tables().table("Artist").recordView(Artist.class);
+        Artist found = artists.get(null, new Artist(9999, null));
+        
+        assertNotNull(found);
+        assertEquals("Test Artist", found.getName());
+        
+        // Cleanup
+        artists.delete(null, new Artist(9999, null));
+    }
+    
+    @AfterEach
+    void tearDown() {
+        if (client != null) {
+            client.close();
+        }
+    }
+}
+```
+
+## 4.7 Summary: Mastering Object-Oriented Data Access
+
+### What You've Learned
+
+Throughout this module, you've mastered the fundamental patterns of object-oriented data access with Apache Ignite 3:
+
+**Core Concepts:**
+- **RecordView**: Complete object operations with automatic mapping
+- **KeyValueView**: Efficient key-value operations with type safety
+- **Async Programming**: Non-blocking operations for high-performance applications
+- **Transaction Integration**: ACID guarantees across distributed operations
+
+**Practical Skills:**
+- **CRUD Operations**: Create, read, update, and delete with Java objects
+- **Bulk Operations**: High-performance batch processing
+- **Error Handling**: Robust exception management and recovery patterns
+- **Business Integration**: Combining Table API with domain logic
+
+### When to Use Table API
+
+**Table API Excels For:**
+✅ **Known Primary Keys**: Direct access to specific records  
+✅ **High-Performance Point Operations**: Single record CRUD operations  
+✅ **Type Safety**: Compile-time validation and IDE support  
+✅ **Complex Objects**: POJOs with rich domain logic  
+✅ **Transactional Operations**: ACID guarantees for business workflows  
+
+**Consider SQL API For:**
+⚠️ **Complex Queries**: JOINs, aggregations, and analytical operations  
+⚠️ **Range Queries**: WHERE clauses beyond exact key matches  
+⚠️ **Dynamic Queries**: Query structure determined at runtime  
+⚠️ **Reporting**: Business intelligence and data analysis  
+
+### Performance Optimization Guidelines
+
+1. **Use Bulk Operations**: Always prefer `upsertAll()`, `getAll()`, `deleteAll()` for multiple records
+2. **Leverage Async Patterns**: Use async operations for concurrent workloads
+3. **Proper Transaction Scoping**: Group related operations in transactions
+4. **Resource Management**: Use try-with-resources for client lifecycle
+5. **Error Handling**: Implement circuit breakers and retry logic for resilience
+
+### Next Steps: Advanced Data Access
+
+You're now ready to explore complementary data access patterns:
+
+**[Module 5: SQL API](05-sql-api-relational-data-access.md)** - Learn when and how to use SQL for complex queries, aggregations, and analytical operations
+
+**[Module 6: Transactions](06-transactions.md)** - Master distributed transaction patterns for complex business workflows
+
+**Hands-on Practice**: The `04-table-api-app` reference application provides runnable examples of every pattern covered in this module, using the complete music store dataset.
+
+### Reference Application
+
+The **`04-table-api-app`** demonstrates all concepts with working code:
+
+- **RecordViewOperations.java**: Complete CRUD patterns with music store entities
+- **KeyValueOperations.java**: Efficient key-value operations and caching patterns  
+- **AsyncTableOperations.java**: High-performance async programming patterns
+- **BulkOperationsDemo.java**: Batch processing and performance optimization
+- **ErrorHandlingPatterns.java**: Robust error handling and recovery strategies
+
+Run the reference application to see these concepts in action:
+
+```bash
+cd ignite3-reference-apps/04-table-api-app
+mvn compile exec:java
+```
+
+The Table API provides the foundation for building robust, high-performance distributed applications with Apache Ignite 3. Master these patterns, and you'll be well-equipped to handle the majority of data access scenarios in modern distributed systems.
