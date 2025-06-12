@@ -16,7 +16,7 @@ import org.apache.ignite.table.RecordView;
  */
 public class HelloWorldApp {
     
-    @org.apache.ignite.catalog.annotations.Table(zone = @Zone(value = "QuickStart", storageProfiles = "default"))
+    @org.apache.ignite.catalog.annotations.Table(value = "SimpleBook", zone = @Zone(value = "QuickStart", storageProfiles = "default"))
     public static class Book {
         @Id
         private Integer id;
@@ -58,12 +58,13 @@ public class HelloWorldApp {
             System.out.println("Zone created: QuickStart");
             
             // 2. Create table
+            client.catalog().dropTable("SimpleBook");
             client.catalog().createTable(Book.class);
-            System.out.println("Table created: Book");
+            System.out.println("Table created: SimpleBook");
             
             // 3. Insert data
             RecordView<Book> books = client.tables()
-                .table("Book")
+                .table("SimpleBook")
                 .recordView(Book.class);
             
             books.upsert(null, new Book(1, "1984"));
@@ -75,7 +76,7 @@ public class HelloWorldApp {
             System.out.println("Found: " + book);
             
             // 5. Query with SQL
-            var result = client.sql().execute(null, "SELECT id, title FROM Book ORDER BY id");
+            var result = client.sql().execute(null, "SELECT id, title FROM SimpleBook ORDER BY id");
             System.out.println("All books:");
             while (result.hasNext()) {
                 var row = result.next();
