@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document provides a comprehensive information architecture for the Apache Ignite 3 Java API, mapping out all major components, their relationships, and interaction patterns. The architecture is organized into 8 distinct layers, each serving specific purposes in the distributed computing ecosystem.
+This document provides an information architecture for the Apache Ignite 3 Java API, mapping out all major components, their relationships, and interaction patterns. The architecture is organized into 8 distinct layers, each serving specific purposes in the distributed computing ecosystem.
 
 ## Architecture Layers
 
