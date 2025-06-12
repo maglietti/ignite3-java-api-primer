@@ -1,65 +1,167 @@
-# Getting Started - Apache Ignite 3 Reference
+# Getting Started App - Apache Ignite 3 Reference
 
-**Basic Ignite 3 operations and connection patterns**
+**Essential Ignite 3 operations and connection patterns**
 
-📖 **Related Documentation**: [Getting Started Guide](../../docs/02-getting-started.md)
+**Related Documentation**: [Getting Started Guide](../../docs/02-getting-started.md)
 
 ## Overview
 
-Learn the fundamentals of Apache Ignite 3 through practical examples using the music store dataset. This module covers essential operations that every Ignite 3 developer needs to know.
+This module teaches Apache Ignite 3 fundamentals through simple, focused examples. Each application demonstrates one key concept using minimal code, following the KISS principle for educational clarity.
 
 ## What You'll Learn
 
-- **Client Connections**: Establish and manage connections to Ignite clusters
-- **Basic CRUD Operations**: Create, read, update, and delete data
-- **Table Access**: Work with tables using simple patterns
+- **Client Connection Management**: Establish secure, reliable connections
+- **Distribution Zones**: Configure data partitioning and replication  
+- **Table Creation**: Define tables using POJO annotations
+- **CRUD Operations**: Insert, read, update, and delete data efficiently
+- **SQL Integration**: Query data using standard SQL
+- **Transaction Patterns**: Ensure data consistency across operations
 - **Error Handling**: Handle common connection and operation errors
-- **Resource Management**: Properly manage client resources
+- **Resource Management**: Properly manage client resources and cleanup
 
 ## Prerequisites
 
 - **⚠️ Required**: Apache Ignite 3 cluster running (see [00-docker setup](../00-docker/README.md))
-- **Required**: Complete [01-sample-data-setup](../01-sample-data-setup/) first to create the music store schema and load sample data.
+- **Optional**: [01-sample-data-setup](../01-sample-data-setup/) for music store examples
 
-> **Cluster Requirement**: The 3-node Ignite cluster from `00-docker` must be running before executing this application.
+> **Cluster Requirement**: The 3-node Ignite cluster from `00-docker` must be running before executing applications.
 
 ```bash
 # Start cluster first
-cd 00-docker && docker-compose up -d
-
-# Then setup sample data  
-cd ../01-sample-data-setup
-mvn exec:java  # Run ProjectInitializationApp
+cd ../00-docker && docker-compose up -d
 ```
 
-## Coming Soon
+## Applications
 
-This reference application is in development. It will demonstrate:
+### 1. HelloWorldApp
 
-### Connection Patterns
-- Single cluster connections
-- Multi-node cluster connections  
-- Connection pooling and lifecycle management
-- Authentication and security basics
+**The simplest possible Ignite 3 application**
 
-### Basic Operations
-- Simple table lookups by primary key
-- Basic insert, update, delete operations
-- Working with the Artist and Album tables
-- Handling connection errors gracefully
+Shows the 5 essential steps:
 
-### Code Examples
-- Hello World with Ignite 3
-- Connect and query sample data
-- Basic table operations
-- Resource cleanup patterns
+1. Connect to cluster
+2. Create distribution zone  
+3. Create table from POJO
+4. Insert and read data
+5. Query with SQL
 
-## Development Status
+```bash
+mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.gettingstarted.HelloWorldApp"
+```
 
-🚧 **In Development** - This module will be implemented as part of Phase 2B of the reference applications project.
+**Expected Output:**
 
-## Related Modules
+```
+=== Hello World: Apache Ignite 3 ===
+Zone created: QuickStart
+Table created: Book
+Data inserted
+Found: Book{id=1, title='1984'}
+All books:
+  1: 1984
+  2: Brave New World
+Success!
+```
 
-- **Prerequisites**: [sample-data-setup](../sample-data-setup/) - Create sample data first
-- **Next Steps**: [schema-annotations-app](../schema-annotations-app/) - Learn schema definition
-- **See Also**: [table-api-app](../table-api-app/) - Object-oriented data access
+### 2. BasicSetupDemo
+
+**Tables with relationships**
+
+Shows related data patterns:
+
+- Two tables (Author and Book)
+- Transaction to insert related records
+- JOIN query to combine data
+
+```bash
+mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.gettingstarted.BasicSetupDemo"
+```
+
+**Expected Output:**
+
+```
+=== Basic Setup: Related Tables ===
+Tables created
+Data inserted with transaction
+Books by author:
+  Aldous Huxley - Brave New World
+  George Orwell - 1984
+  George Orwell - Animal Farm
+Success!
+```
+
+### 3. ConnectionExamples
+
+**Different connection patterns**
+
+Shows connection options:
+
+- Basic connection (development)
+- Multi-node connection (production failover)
+- Connection with custom timeouts
+
+```bash
+mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.gettingstarted.ConnectionExamples"
+```
+
+**Expected Output:**
+
+```
+=== Connection Examples ===
+
+1. Basic Connection:
+  Connected to: [localhost:10800]
+  Health check: OK
+
+2. Multi-Node Connection:
+  Multi-node connection failed: ...
+  (This is normal with single-node setup)
+
+3. Connection with Timeouts:
+  Connected with custom timeouts
+  Connect timeout: 5 seconds
+  Operation timeout: 10 seconds
+  Response time: 23ms
+```
+
+## Key Patterns
+
+**Connection**: Always use try-with-resources for automatic cleanup
+**Zones**: Control how data is distributed across nodes  
+**Tables**: Define using simple POJO classes with annotations
+**Transactions**: Use for operations that must succeed or fail together
+**SQL**: Standard SQL works alongside object operations
+
+## Running the Examples
+
+Start the cluster first:
+
+```bash
+cd ../00-docker && docker-compose up -d
+```
+
+Run any example:
+
+```bash
+mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.gettingstarted.HelloWorldApp"
+```
+
+## Common Issues
+
+**Connection refused**: Make sure the Docker cluster is running
+**Tables already exist**: This is normal - applications handle existing tables gracefully
+
+## Next Steps
+
+After completing these examples:
+
+1. **[Schema Annotations](../03-schema-annotations-app/)**: Learn advanced POJO mapping
+2. **[Table API](../04-table-api-app/)**: Master record and key-value operations  
+3. **[SQL API](../05-sql-api-app/)**: Advanced SQL patterns and optimization
+4. **[Transactions](../06-transactions-app/)**: Complex transaction scenarios
+
+## Related Resources
+
+- **Music Store Examples**: [sample-data-setup](../01-sample-data-setup/) for comprehensive dataset
+- **Docker Setup**: [docker](../00-docker/) for cluster management
+- **Documentation**: [Getting Started Guide](../../docs/02-getting-started.md)

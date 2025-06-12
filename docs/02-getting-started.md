@@ -1,8 +1,64 @@
 # 2. Getting Started
 
-## Setup & Dependencies
+## 2.1 Your First Steps with Apache Ignite 3
 
-### Maven Dependencies
+### Why Start Here?
+
+Apache Ignite 3 represents a fundamental shift in distributed database architecture. Unlike traditional databases that separate storage and compute, Ignite 3 co-locates data with processing power, enabling applications that think and act at memory speed while maintaining the durability and consistency of persistent storage.
+
+This module introduces you to the essential patterns every Ignite 3 developer needs to master. By the end, you'll understand how to connect, store, and query data in a distributed environment that scales effortlessly from development to production.
+
+### What Makes Ignite 3 Different?
+
+```mermaid
+flowchart TD
+    A["Your Application"] --> B["Ignite 3 Client"]
+    B --> C["Distribution Zones"]
+    C --> D["Partitioned Tables"]
+    D --> E["Co-located Data"]
+    E --> F["In-Memory Processing"]
+    F --> G["Persistent Storage"]
+    
+    H["Traditional Database"] --> I["Network Calls"]
+    I --> J["Remote Storage"]
+    J --> K["Data Transfer"]
+    K --> L["Application Processing"]
+```
+
+**Ignite 3 Advantages:**
+- **Co-location**: Related data lives on the same nodes, eliminating network hops
+- **Distribution Zones**: Control exactly how your data is partitioned and replicated
+- **Memory Speed**: Hot data lives in memory while maintaining persistence
+- **SQL + Objects**: Choose the right API for each operation
+- **Linear Scalability**: Add nodes to increase both storage and processing power
+
+### Learning Path Overview
+
+```mermaid
+flowchart LR
+    A["Connect"] --> B["Define Schema"]
+    B --> C["Store Data"]
+    C --> D["Query Data"]
+    D --> E["Scale Up"]
+    
+    A1["IgniteClient.builder()"] --> A
+    B1["@Table annotations"] --> B
+    C1["RecordView.upsert()"] --> C
+    D1["client.sql().execute()"] --> D
+    E1["Add nodes + partitions"] --> E
+```
+
+1. **Connection Patterns**: Establish reliable connections to your cluster
+2. **Schema Definition**: Define tables using simple Java classes
+3. **Data Operations**: Insert, update, and retrieve data efficiently
+4. **Query Capabilities**: Leverage SQL for complex operations
+5. **Performance Optimization**: Use distribution zones and co-location strategies
+
+## 2.2 Environment Setup
+
+### Dependencies You Need
+
+For any Ignite 3 application, you need just one dependency:
 
 ```xml
 <dependency>
@@ -12,180 +68,98 @@
 </dependency>
 ```
 
-### Gradle Dependencies
+That's it! The client library includes everything needed to connect, define schemas, and perform operations.
 
-```groovy
-implementation 'org.apache.ignite:ignite-client:3.0.0'
+### Running Cluster Setup
+
+Before your first application, you need an Ignite 3 cluster running. The simplest approach uses Docker:
+
+```bash
+# Clone and start the reference cluster
+git clone <your-repo>
+cd ignite3-reference-apps/00-docker
+docker-compose up -d
+
+# Initialize the cluster (one-time setup)
+./init-cluster.sh
 ```
 
-### Basic Project Setup
+This gives you a 3-node cluster perfect for development and learning.
 
-#### Creating a New Maven Project
+## 2.3 Core Concepts in Action
 
-Create a new Maven project with the following structure:
+### Your First Connection
 
-```
-your-ignite-project/
-├── pom.xml
-└── src/
-    └── main/
-        └── java/
-            └── com/
-                └── example/
-                    └── IgniteHelloWorld.java
-```
-
-#### Complete pom.xml Configuration
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-
-    <groupId>com.example</groupId>
-    <artifactId>ignite3-hello-world</artifactId>
-    <version>1.0-SNAPSHOT</version>
-    <packaging>jar</packaging>
-
-    <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <ignite.version>3.0.0</ignite.version>
-    </properties>
-
-    <dependencies>
-        <dependency>
-            <groupId>org.apache.ignite</groupId>
-            <artifactId>ignite-client</artifactId>
-            <version>${ignite.version}</version>
-        </dependency>
-    </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.11.0</version>
-                <configuration>
-                    <source>17</source>
-                    <target>17</target>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
-</project>
-```
-
-#### Gradle Alternative
-
-For Gradle users, create a `build.gradle` file:
-
-```groovy
-plugins {
-    id 'java'
-    id 'application'
-}
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
-}
-
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    implementation 'org.apache.ignite:ignite-client:3.0.0'
-}
-
-application {
-    mainClass = 'com.example.IgniteHelloWorld'
-}
-```
-
-## Connection Patterns
-
-### Thin Client Connection
+Connecting to Ignite 3 is straightforward. The client automatically handles connection pooling, failover, and resource management:
 
 ```java
 try (IgniteClient client = IgniteClient.builder()
-        .addresses("127.0.0.1:10800")
+        .addresses("localhost:10800")
         .build()) {
-    // Work with client
+    
+    // Your application logic here
+    System.out.println("Connected to: " + client.connections());
+}
+// Client automatically closes and cleans up resources
+```
+
+**Why This Works:**
+- **Try-with-resources**: Ensures proper cleanup even if exceptions occur
+- **Single address**: For development; production uses multiple addresses for failover
+- **Default timeouts**: Reasonable defaults for most applications
+
+### Creating Your First Table
+
+Instead of writing SQL DDL, Ignite 3 lets you define tables using Java classes:
+
+```java
+@Table(zone = @Zone(value = "QuickStart", storageProfiles = "default"))
+public class Book {
+    @Id
+    @Column(value = "id", nullable = false)
+    private Integer id;
+    
+    @Column(value = "title", nullable = false, length = 100)
+    private String title;
+    
+    @Column(value = "author", nullable = false, length = 50)
+    private String author;
+    
+    // Constructor, getters, setters...
 }
 ```
 
-### Embedded Server Setup
+**What This Achieves:**
+- **Type Safety**: Your schema is validated at compile time
+- **Automatic DDL**: Ignite generates the table structure
+- **Zone Assignment**: Data goes to the "QuickStart" distribution zone
+- **Performance**: Annotations drive indexing and partitioning strategies
+
+### The Distribution Zone Concept
+
+Before creating tables, you need a distribution zone - think of it as a "container" that controls how your data is distributed:
 
 ```java
-IgniteServer server = IgniteServer.start(nodeName, configPath, workDir);
-```
-
-### Configuration Basics
-
-#### Advanced Client Configuration
-
-```java
-IgniteClient client = IgniteClient.builder()
-    .addresses("localhost:10800", "localhost:10801", "localhost:10802")
-    .connectTimeout(5000)  // 5 seconds
-    .operationTimeout(30000)  // 30 seconds
-    .heartbeatInterval(3000)  // 3 seconds
-    .retryPolicy(RetryLimitPolicy.builder().retryLimit(3).build())
-    .build();
-```
-
-#### SSL Configuration
-
-```java
-SslConfiguration sslConfig = SslConfiguration.builder()
-    .enabled(true)
-    .keyStorePath("/path/to/keystore.jks")
-    .keyStorePassword("keystorePassword")
-    .trustStorePath("/path/to/truststore.jks")
-    .trustStorePassword("truststorePassword")
+// Create a zone for our application data
+ZoneDefinition zone = ZoneDefinition.builder("QuickStart")
+    .ifNotExists()
+    .replicas(2)        // Keep 2 copies of each piece of data
+    .storageProfiles("default")
     .build();
 
-IgniteClient client = IgniteClient.builder()
-    .addresses("localhost:10800")
-    .ssl(sslConfig)
-    .build();
+client.catalog().createZone(zone);
 ```
 
-#### Authentication Setup
+**Zone Benefits:**
+- **Fault Tolerance**: Multiple replicas protect against node failures
+- **Performance Control**: Choose optimal replica count for your workload
+- **Storage Selection**: Pick storage engines optimized for your access patterns
 
-```java
-IgniteClient client = IgniteClient.builder()
-    .addresses("localhost:10800")
-    .authenticator(BasicAuthenticator.builder()
-        .username("ignite")
-        .password("password")
-        .build())
-    .build();
-```
+## 2.4 Your First Complete Application
 
-#### Connection Pooling and Timeouts
+### Complete Working Example
 
-```java
-IgniteClient client = IgniteClient.builder()
-    .addresses("localhost:10800")
-    .connectTimeout(10000)  // Connection timeout in milliseconds
-    .operationTimeout(60000)  // Operation timeout in milliseconds
-    .heartbeatInterval(5000)  // Heartbeat interval in milliseconds
-    .backgroundReconnectInterval(2000)  // Reconnection interval
-    .build();
-```
-
-## First Steps
-
-### Hello World Example
-
-Here's a complete "Hello World" example that demonstrates connecting to Ignite, creating a simple table, and performing basic operations using the Chinook music dataset:
+Here's a minimal but complete Ignite 3 application that demonstrates all the essential patterns:
 
 ```java
 package com.example;
@@ -194,220 +168,164 @@ import org.apache.ignite.client.IgniteClient;
 import org.apache.ignite.catalog.annotations.*;
 import org.apache.ignite.catalog.definitions.ZoneDefinition;
 import org.apache.ignite.table.RecordView;
-import org.apache.ignite.table.Table;
 
-import java.util.List;
-import java.util.ArrayList;
-
-public class IgniteHelloWorld {
+public class HelloIgnite {
     
-    // Define a simple POJO for our music store example
-    @org.apache.ignite.catalog.annotations.Table(
-        zone = @Zone(value = "Chinook", storageProfiles = "default")
-    )
-    public static class Artist {
+    @Table(zone = @Zone(value = "QuickStart", storageProfiles = "default"))
+    public static class Book {
         @Id
-        @Column(value = "ArtistId", nullable = false)
-        private Integer ArtistId;
+        private Integer id;
         
-        @Column(value = "Name", nullable = false, length = 120)
-        private String Name;
+        @Column(length = 100)
+        private String title;
         
-        // Default constructor
-        public Artist() {}
-        
-        // Constructor with parameters
-        public Artist(Integer artistId, String name) {
-            this.ArtistId = artistId;
-            this.Name = name;
+        public Book() {}
+        public Book(Integer id, String title) {
+            this.id = id;
+            this.title = title;
         }
         
         // Getters and setters
-        public Integer getArtistId() { return ArtistId; }
-        public void setArtistId(Integer artistId) { this.ArtistId = artistId; }
-        public String getName() { return Name; }
-        public void setName(String name) { this.Name = name; }
+        public Integer getId() { return id; }
+        public void setId(Integer id) { this.id = id; }
+        public String getTitle() { return title; }
+        public void setTitle(String title) { this.title = title; }
         
-        @Override
         public String toString() {
-            return "Artist{ArtistId=" + ArtistId + ", Name='" + Name + "'}";
+            return "Book{id=" + id + ", title='" + title + "'}";
         }
     }
     
     public static void main(String[] args) {
-        // Connect to Ignite cluster
         try (IgniteClient client = IgniteClient.builder()
                 .addresses("localhost:10800")
                 .build()) {
             
-            System.out.println("Connected to Ignite cluster: " + client.connections());
+            // 1. Create zone
+            client.catalog().createZone(
+                ZoneDefinition.builder("QuickStart")
+                    .ifNotExists()
+                    .replicas(2)
+                    .build()
+            );
             
-            // Step 1: Create a distribution zone
-            createDistributionZone(client);
+            // 2. Create table
+            client.catalog().createTable(Book.class);
             
-            // Step 2: Create a table from our POJO
-            createTable(client);
+            // 3. Insert data
+            RecordView<Book> books = client.tables()
+                .table("Book")
+                .recordView(Book.class);
             
-            // Step 3: Perform CRUD operations
-            performCrudOperations(client);
+            books.upsert(null, new Book(1, "1984"));
             
-            // Step 4: Query data with SQL
-            queryWithSQL(client);
+            // 4. Read data
+            Book book = books.get(null, new Book(1, null));
+            System.out.println("Found: " + book);
             
-            System.out.println("Hello World example completed successfully!");
+            // 5. Query with SQL
+            var result = client.sql().execute(null, "SELECT * FROM Book");
+            while (result.hasNext()) {
+                var row = result.next();
+                System.out.println("SQL result: " + row.stringValue("title"));
+            }
             
         } catch (Exception e) {
-            System.err.println("Error: " + e.getMessage());
             e.printStackTrace();
-        }
-    }
-    
-    private static void createDistributionZone(IgniteClient client) {
-        try {
-            ZoneDefinition zone = ZoneDefinition.builder("Chinook")
-                .ifNotExists()
-                .partitions(4)
-                .replicas(2)
-                .storageProfiles("default")
-                .build();
-                
-            client.catalog().createZone(zone);
-            System.out.println("Created distribution zone: Chinook");
-        } catch (Exception e) {
-            System.out.println("Zone already exists or error: " + e.getMessage());
-        }
-    }
-    
-    private static void createTable(IgniteClient client) {
-        try {
-            client.catalog().createTable(Artist.class);
-            System.out.println("Created table: Artist");
-        } catch (Exception e) {
-            System.out.println("Table already exists or error: " + e.getMessage());
-        }
-    }
-    
-    private static void performCrudOperations(IgniteClient client) {
-        // Get table and create record view
-        Table table = client.tables().table("Artist");
-        RecordView<Artist> recordView = table.recordView(Artist.class);
-        
-        // INSERT: Add some artists
-        List<Artist> artists = new ArrayList<>();
-        artists.add(new Artist(1, "The Beatles"));
-        artists.add(new Artist(2, "Led Zeppelin"));
-        artists.add(new Artist(3, "Pink Floyd"));
-        
-        recordView.upsertAll(null, artists);
-        System.out.println("Inserted " + artists.size() + " artists");
-        
-        // READ: Get a specific artist
-        Artist key = new Artist();
-        key.setArtistId(1);
-        Artist beatles = recordView.get(null, key);
-        System.out.println("Retrieved: " + beatles);
-        
-        // UPDATE: Modify the artist name (just for demonstration)
-        beatles.setName("The Beatles (Remastered)");
-        recordView.upsert(null, beatles);
-        System.out.println("Updated Beatles entry");
-        
-        // Verify the update
-        Artist updatedBeatles = recordView.get(null, key);
-        System.out.println("After update: " + updatedBeatles);
-    }
-    
-    private static void queryWithSQL(IgniteClient client) {
-        System.out.println("\n--- Querying with SQL ---");
-        
-        // Query all artists
-        var result = client.sql().execute(null, "SELECT * FROM Artist ORDER BY ArtistId");
-        
-        while (result.hasNext()) {
-            var row = result.next();
-            System.out.println("Artist: ID=" + row.intValue("ArtistId") + 
-                             ", Name=" + row.stringValue("Name"));
-        }
-        
-        // Count artists
-        var countResult = client.sql().execute(null, "SELECT COUNT(*) as total FROM Artist");
-        if (countResult.hasNext()) {
-            var row = countResult.next();
-            System.out.println("Total artists in database: " + row.longValue("total"));
         }
     }
 }
 ```
 
-### Running the Hello World Example
+### What This Example Shows
 
-1. **Start the Ignite cluster** (using Docker):
+**In just 40 lines**, this application demonstrates:
 
-   ```bash
-   # Create docker-compose.yml
-   version: '3.8'
-   services:
-     ignite-node:
-       image: apacheignite/ignite:3.0.0
-       ports:
-         - "10300:10300"
-         - "10800:10800"
-       environment:
-         - IGNITE_CLUSTER_NAME=hello-cluster
-   
-   # Start the cluster
-   docker-compose up -d
-   ```
+1. **Connection**: Simple client setup with automatic resource management
+2. **Schema**: Table creation from Java classes using annotations
+3. **Distribution**: Zone configuration controls data placement
+4. **Storage**: Insert and retrieve operations using type-safe APIs  
+5. **Querying**: SQL access to the same data
 
-2. **Initialize the cluster**:
+### Running the Example
 
-   ```bash
-   docker run --rm -it --network=host apacheignite/ignite:3.0.0 cli
-   connect http://localhost:10300
-   cluster init --name=hello-cluster --metastorage-group=ignite-node
-   exit
-   ```
+```bash
+# 1. Start cluster (reference Docker setup)
+cd ignite3-reference-apps/00-docker && docker-compose up -d
 
-3. **Compile and run your application**:
-
-   ```bash
-   mvn compile exec:java -Dexec.mainClass="com.example.IgniteHelloWorld"
-   ```
-
-### Expected Output
-
-```
-Connected to Ignite cluster: [localhost:10800]
-Created distribution zone: Chinook
-Created table: Artist
-Inserted 3 artists
-Retrieved: Artist{ArtistId=1, Name='The Beatles'}
-Updated Beatles entry
-After update: Artist{ArtistId=1, Name='The Beatles (Remastered)'}
-
---- Querying with SQL ---
-Artist: ID=1, Name=The Beatles (Remastered)
-Artist: ID=2, Name=Led Zeppelin
-Artist: ID=3, Name=Pink Floyd
-Total artists in database: 3
-Hello World example completed successfully!
+# 2. Run the application
+javac -cp ignite-client-3.0.0.jar HelloIgnite.java
+java -cp .:ignite-client-3.0.0.jar HelloIgnite
 ```
 
-### Key Concepts Demonstrated
+**Expected Output:**
+```
+Found: Book{id=1, title='1984'}
+SQL result: 1984
+```
 
-1. **Connection Management**: Proper use of try-with-resources
-2. **Schema Definition**: Using annotations to define tables
-3. **Distribution Zones**: Creating zones for data partitioning
-4. **CRUD Operations**: Insert, read, update using the Table API
-5. **SQL Integration**: Querying data with SQL
-6. **Resource Cleanup**: Automatic cleanup with AutoCloseable
+## 2.5 Understanding What Happened
 
-### Next Steps
+### The Distribution Zone
 
-After running this example successfully, you can:
+When you created the "QuickStart" zone, Ignite 3 configured how your data spreads across cluster nodes:
 
-- Explore the full Chinook music dataset with Albums and Tracks
-- Learn about co-location for performance optimization (Album colocated with Artist)
-- Implement transaction patterns for related data operations
-- Try bulk data loading techniques with the complete Chinook dataset
-- Experiment with different distribution strategies for music and business data
+```mermaid
+flowchart TD
+    A["QuickStart Zone"] --> B["Node 1: Replica 1"]
+    A --> C["Node 2: Replica 2"] 
+    A --> D["Node 3: Backup"]
+    
+    B --> E["Book table partition"]
+    C --> F["Book table partition"]
+```
+
+**Why This Matters:**
+- **Fault Tolerance**: With 2 replicas, your data survives node failures
+- **Load Distribution**: Reads and writes spread across multiple nodes
+- **Scalability**: Add more nodes to handle more data and traffic
+
+### The Table Creation Process
+
+```mermaid
+sequenceDiagram
+    participant App as Application
+    participant Client as IgniteClient
+    participant Catalog as Catalog Service
+    participant Nodes as Cluster Nodes
+    
+    App->>Client: createTable(Book.class)
+    Client->>Catalog: Register table schema
+    Catalog->>Nodes: Distribute table definition
+    Nodes->>Nodes: Create partitions in QuickStart zone
+    Catalog->>Client: Table ready
+    Client->>App: Success
+```
+
+### Type Safety in Action
+
+Notice how the same `Book` class works for both object operations and SQL queries:
+
+```java
+// Object API - type safe
+books.upsert(null, new Book(1, "1984"));
+Book book = books.get(null, new Book(1, null));
+
+// SQL API - same data, different access pattern
+var result = client.sql().execute(null, "SELECT * FROM Book");
+```
+
+**This dual API approach means:**
+- Use objects when you know exact keys and want type safety
+- Use SQL for complex queries, joins, and analytical operations
+- Both APIs access the same underlying distributed data
+
+## 2.6 Building from Here
+
+Now that you understand the basics, you're ready to explore:
+
+**[Module 3: Schema Annotations](03-schema-as-code-with-annotations.md)** - Advanced table design patterns
+**[Module 4: Table API](04-table-api-object-oriented-data-access.md)** - Object-oriented data operations  
+**[Module 5: SQL API](05-sql-api-relational-data-access.md)** - Relational query patterns
+
+**Hands-on Practice:** The [reference applications](../ignite3-reference-apps/) provide working examples of every concept, from simple getting started patterns through complex production scenarios using the complete music store dataset.
