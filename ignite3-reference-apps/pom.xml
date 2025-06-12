@@ -43,6 +43,7 @@
     <modules>
         <module>01-sample-data-setup</module>
         <module>02-getting-started-app</module>
+        <!-- Uncomment as modules are implemented:
         <module>03-schema-annotations-app</module>
         <module>04-table-api-app</module>
         <module>05-sql-api-app</module>
@@ -55,6 +56,7 @@
         <module>12-integration-patterns-app</module>
         <module>13-best-practices-app</module>
         <module>14-troubleshooting-app</module>
+        -->
     </modules>
 
     <dependencyManagement>

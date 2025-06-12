@@ -11,7 +11,7 @@
         <version>1.0.0</version>
     </parent>
 
-    <artifactId>sample-data-setup</artifactId>
+    <artifactId>01-sample-data-setup</artifactId>
     <packaging>jar</packaging>
 
     <name>Sample Data Setup</name>
@@ -71,9 +71,18 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.4.1</version>
                 <configuration>
-                    <mainClass>com.apache.ignite.examples.setup.app.ProjectInitializationApp</mainClass>
                     <commandlineArgs>127.0.0.1:10800</commandlineArgs>
+                    <includeProjectDependencies>true</includeProjectDependencies>
+                    <includePluginDependencies>false</includePluginDependencies>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>default</id>
+                        <configuration>
+                            <mainClass>com.apache.ignite.examples.setup.app.ProjectInitializationApp</mainClass>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
