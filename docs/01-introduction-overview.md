@@ -134,13 +134,13 @@ Each section pairs theoretical concepts with practical, executable examples usin
 
    ```bash
    cd ../01-sample-data-setup
-   mvn exec:java
+   mvn compile exec:java
    ```
 
 3. **Verify everything works**:
 
    ```bash
-   mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.setup.app.SampleAnalyticsApp"
+   mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.setup.app.SampleAnalyticsApp"
    ```
 
 You should see music store data and analytics reports, confirming your environment is ready.
