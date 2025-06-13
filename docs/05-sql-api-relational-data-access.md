@@ -418,8 +418,6 @@ The SQL API integrates with Ignite's transaction system, allowing you to combine
 
 ### Basic Transaction Usage
 
-TODO: Fix here and in reference code: The resource type Transaction does not implement java.lang.AutoCloseableJava(16778087)
-
 ```java
 /**
  * Transaction integration with SQL operations.
@@ -431,7 +429,8 @@ public class SQLTransactions {
         IgniteSql sql = client.sql();
         
         // Execute SQL operations within a transaction
-        try (Transaction tx = client.transactions().begin()) {
+        Transaction tx = client.transactions().begin()
+        try {
             // Insert new artist
             sql.execute(tx, "INSERT INTO Artist (Name, Country) VALUES (?, ?)", 
                 "New Artist", "USA");
