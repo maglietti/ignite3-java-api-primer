@@ -21,34 +21,36 @@ Harness Ignite 3's distributed computing capabilities to process data where it l
 
 **Required**: Complete [sample-data-setup](../sample-data-setup/) for data and understanding of colocation.
 
-## Coming Soon
+## Reference Applications
 
-This reference application is in development. It will demonstrate:
+This module provides comprehensive compute demonstrations:
 
-### Basic Job Execution
-```java
-// Simple compute job
-JobDescriptor<String, String> job = JobDescriptor.builder(MusicAnalysisJob.class)
-    .units(DeploymentUnit.builder("music-jobs", "1.0.0").build())
-    .build();
+### 1. BasicComputeDemo - Job Submission Fundamentals
+- **TrackDurationJob**: Calculate total duration for track collections
+- **NameProcessingJob**: CPU-intensive string processing  
+- **AlbumStatsJob**: Multi-table analysis with SQL integration
+- **Key Concepts**: Job creation, targeting strategies, result handling
 
-String result = client.compute().execute(
-    JobTarget.anyNode(), 
-    job, 
-    "AC/DC"
-);
-```
+### 2. ColocationComputeDemo - Data-Local Execution
+- **ArtistAnalysisJob**: Colocated artist sales analysis
+- **LocalTrackStatsJob**: Broadcast statistics gathering
+- **CustomerPurchaseAnalysisJob**: Customer data processing
+- **GenreAnalysisMapJob**: MapReduce pattern implementation
 
-### Data-Colocated Processing
-```java
-// Process data where it lives
-JobTarget target = JobTarget.colocated("Artist", artistKey);
-ArtistStats stats = client.compute().execute(
-    target,
-    artistAnalysisJob,
-    artistKey
-);
-```
+### 3. AsyncComputePatterns - Non-blocking Execution  
+- **TrackAnalysisJob**: Async track data processing
+- **ArtistSalesJob**: Parallel artist analysis
+- **LongRunningAnalysisJob**: Job monitoring and control
+- **GenreCountJob + DetailedGenreAnalysisJob**: Workflow orchestration
+
+### 4. MusicStoreJobs - Business Intelligence
+- **CustomerRecommendationJob**: Personalized music recommendations
+- **SalesAnalysisMapJob**: Distributed sales performance analysis
+- **ContentPopularityJob**: Track and genre popularity trends
+- **RevenueOptimizationJob**: Revenue analysis and optimization
+
+### 5. ComputeAPIDemo - Complete Demonstration
+Main application that runs all compute patterns in sequence with comprehensive output formatting.
 
 ### Music Store Use Cases
 - **Artist Analysis**: Calculate statistics for artist catalogs
@@ -69,9 +71,31 @@ ArtistStats stats = client.compute().execute(
 - Progress monitoring and cancellation
 - Resource management
 
+## Quick Start
+
+**Run all demos:**
+```bash
+mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.compute.ComputeAPIDemo"
+```
+
+**Run individual demos:**
+```bash
+# Basic patterns
+mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.compute.BasicComputeDemo"
+
+# Data locality patterns  
+mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.compute.ColocationComputeDemo"
+
+# Async execution patterns
+mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.compute.AsyncComputePatterns"
+
+# Business intelligence jobs
+mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.compute.MusicStoreJobs"
+```
+
 ## Development Status
 
-🚧 **In Development** - This module will be implemented as part of Phase 2B of the reference applications project.
+✅ **COMPLETED** - Full implementation with comprehensive compute patterns and real-world analytics jobs.
 
 ## Related Modules
 
