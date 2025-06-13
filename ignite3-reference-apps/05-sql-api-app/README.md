@@ -6,7 +6,7 @@
 
 ## Overview
 
-This reference application demonstrates the Ignite 3 SQL API, focusing on Java interface usage patterns rather than SQL syntax. Learn to use the `IgniteSql` interface and related classes for database operations, result processing, and transaction integration in distributed environments.
+This reference application demonstrates the Ignite 3 SQL API, focusing on Java interface usage patterns. Learn to use the `IgniteSql` interface and related classes for database operations, result processing, and transaction integration in distributed environments.
 
 ## What You'll Learn
 

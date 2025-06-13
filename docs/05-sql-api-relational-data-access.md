@@ -10,23 +10,24 @@ The SQL API is designed around a few core interfaces that provide both synchrono
 graph TB
     subgraph "Core SQL API Interfaces"
         A[IgniteSql] --> B[Statement]
-        A --> C[ResultSet&lt;SqlRow&gt;]
-        A --> D[AsyncResultSet&lt;SqlRow&gt;]
+        A --> C["ResultSet<SqlRow>"]
+        A --> D["AsyncResultSet<SqlRow>"]
         B --> E[StatementBuilder]
         C --> F[SqlRow]
         F --> G[ResultSetMetadata]
     end
-    
+
     subgraph "Supporting Interfaces"
         H[BatchedArguments] --> A
-        I[Mapper&lt;T&gt;] --> A
+        I["Mapper<T>"] --> A
         J[Transaction] --> A
     end
-    
+
     subgraph "Client Access"
-        K[IgniteClient] --> L[client.sql()]
+        K[IgniteClient] --> L["client.sql()"]
         L --> A
     end
+
 ```
 
 **Key Design Principles:**
@@ -45,7 +46,7 @@ The `IgniteSql` interface serves as the primary entry point for SQL operations. 
 
 ```java
 /**
- * Demonstrates basic SQL API access and query execution.
+ * Basic SQL API access and query execution.
  * The IgniteSql interface is obtained from the main client and provides
  * access to SQL operations in Ignite 3.
  */
@@ -80,7 +81,7 @@ The `IgniteSql` interface provides several execute methods for different use cas
 
 ```java
 /**
- * Demonstrates the primary execute methods available in the IgniteSql interface.
+ * The primary execute methods available in the IgniteSql interface.
  * Understanding when to use each method enables effective SQL API usage.
  */
 public class SQLExecuteMethods {
@@ -124,7 +125,7 @@ Always use parameter binding to prevent SQL injection and ensure type safety:
 
 ```java
 /**
- * Demonstrates parameter binding techniques for secure SQL execution.
+ * Parameter binding techniques for secure SQL execution.
  * Parameter binding ensures security and performance.
  */
 public class ParameterBinding {
@@ -162,7 +163,7 @@ The `Statement` interface allows you to configure query execution parameters and
 
 ```java
 /**
- * Demonstrates statement configuration for optimized query execution.
+ * Statement configuration for optimized query execution.
  * Statement builders provide control over query behavior.
  */
 public class StatementConfiguration {
@@ -173,19 +174,19 @@ public class StatementConfiguration {
             .query("SELECT * FROM Artist WHERE Name LIKE ?")
             .build();
         
-        // Advanced statement configuration
+        // Statement configuration
         Statement advancedStmt = sql.statementBuilder()
             .query("SELECT * FROM Track ORDER BY Milliseconds DESC")
             .defaultSchema("MUSIC_STORE")           // Set default schema
             .queryTimeout(30, TimeUnit.SECONDS)     // Set timeout
             .pageSize(1000)                         // Configure result paging
-            .timeZoneId(ZoneId.of("UTC"))          // Set timezone for temporal operations
+            .timeZoneId(ZoneId.of("UTC"))           // Set timezone for temporal operations
             .build();
         
         // Execute configured statement
         ResultSet<SqlRow> longTracks = sql.execute(null, advancedStmt);
         
-        // Statement reuse for performance
+        // Reusable statement configuration
         Statement artistLookup = sql.statementBuilder()
             .query("SELECT ArtistId, Name FROM Artist WHERE Name = ?")
             .build();
@@ -196,7 +197,7 @@ public class StatementConfiguration {
     }
     
     /**
-     * Demonstrates pagination configuration for large result sets.
+     * Pagination configuration for large result sets.
      */
     public void demonstratePagination(IgniteSql sql) {
         // Configure statement for paged results
@@ -230,7 +231,7 @@ Working with `ResultSet<SqlRow>` and extracting typed data forms the foundation 
 
 ```java
 /**
- * Demonstrates ResultSet processing patterns.
+ * ResultSet processing patterns.
  * These patterns enable effective data retrieval.
  */
 public class ResultSetProcessing {
@@ -263,7 +264,7 @@ public class ResultSetProcessing {
     }
     
     /**
-     * Demonstrates handling different data types from SQL results.
+     * Handling different data types from SQL results.
      */
     public void demonstrateDataTypes(IgniteSql sql) {
         ResultSet<SqlRow> result = sql.execute(null,
@@ -293,7 +294,7 @@ public class ResultSetProcessing {
     }
     
     /**
-     * Demonstrates metadata access for dynamic result processing.
+     * Metadata access for dynamic result processing.
      */
     public void demonstrateMetadata(IgniteSql sql) {
         ResultSet<SqlRow> result = sql.execute(null, "SELECT * FROM Artist LIMIT 1");
@@ -326,7 +327,7 @@ public class ResultSetProcessing {
 
 ```java
 /**
- * Demonstrates advanced patterns for processing complex query results.
+ * Advanced patterns for processing complex query results.
  */
 public class AdvancedResultProcessing {
     
@@ -389,7 +390,7 @@ public class AdvancedResultProcessing {
             JOIN Album al ON a.ArtistId = al.ArtistId
             JOIN Track t ON al.AlbumId = t.AlbumId  
             GROUP BY a.ArtistId, a.Name
-            HAVING COUNT(t.TrackId) > 10
+            HAVING COUNT(t.TrackId) > 1
             ORDER BY TotalValue DESC
             """;
         
@@ -413,13 +414,15 @@ public class AdvancedResultProcessing {
 
 ## Transaction Integration
 
-The SQL API seamlessly integrates with Ignite's transaction system, allowing you to combine SQL operations with Table API operations in ACID-compliant transactions.
+The SQL API integrates with Ignite's transaction system, allowing you to combine SQL operations with Table API operations in ACID-compliant transactions.
 
 ### Basic Transaction Usage
 
+TODO: Fix here and in reference code: The resource type Transaction does not implement java.lang.AutoCloseableJava(16778087)
+
 ```java
 /**
- * Demonstrates transaction integration with SQL operations.
+ * Transaction integration with SQL operations.
  * Transactions ensure ACID compliance across distributed operations.
  */
 public class SQLTransactions {
@@ -455,7 +458,7 @@ public class SQLTransactions {
     }
     
     /**
-     * Demonstrates mixing Table API and SQL operations in the same transaction.
+     * Mixing Table API and SQL operations in the same transaction.
      */
     public void demonstrateMixedOperations(IgniteClient client) {
         IgniteSql sql = client.sql();
@@ -489,7 +492,7 @@ public class SQLTransactions {
     }
     
     /**
-     * Demonstrates transaction rollback and error handling.
+     * Transaction rollback and error handling.
      */
     public void demonstrateTransactionRollback(IgniteClient client) {
         IgniteSql sql = client.sql();
@@ -529,7 +532,7 @@ For high-performance applications, the SQL API provides asynchronous operations 
 
 ```java
 /**
- * Demonstrates asynchronous SQL operations for non-blocking database access.
+ * Asynchronous SQL operations for non-blocking database access.
  * Async operations enable high-throughput applications.
  */
 public class AsyncSQLOperations {
@@ -562,7 +565,7 @@ public class AsyncSQLOperations {
     }
     
     /**
-     * Demonstrates async pagination for large result sets.
+     * Async pagination for large result sets.
      */
     public void demonstrateAsyncPagination(IgniteSql sql) {
         Statement pagedStmt = sql.statementBuilder()
@@ -606,7 +609,7 @@ public class AsyncSQLOperations {
     }
     
     /**
-     * Demonstrates parallel async operations for improved performance.
+     * Parallel async operations for improved performance.
      */
     public void demonstrateParallelOperations(IgniteSql sql) {
         // Execute multiple independent queries in parallel
@@ -652,7 +655,7 @@ Batch operations provide efficient bulk data processing capabilities for high-pe
 
 ```java
 /**
- * Demonstrates batch operations for efficient bulk data processing.
+ * Batch operations for efficient bulk data processing.
  * Batch operations improve performance for bulk operations.
  */
 public class BatchOperations {
@@ -678,7 +681,7 @@ public class BatchOperations {
     }
     
     /**
-     * Demonstrates batch operations from collections.
+     * Batch operations from collections.
      */
     public void demonstrateBatchFromCollection(IgniteSql sql) {
         // Prepare data from existing collections
@@ -706,7 +709,7 @@ public class BatchOperations {
     }
     
     /**
-     * Demonstrates async batch operations.
+     * Async batch operations.
      */
     public void demonstrateAsyncBatch(IgniteSql sql) {
         BatchedArguments albumBatch = BatchedArguments.create()
@@ -730,7 +733,7 @@ public class BatchOperations {
     }
     
     /**
-     * Demonstrates batch error handling and partial success scenarios.
+     * Batch error handling and partial success scenarios.
      */
     public void demonstrateBatchErrorHandling(IgniteSql sql) {
         // Create batch with some invalid data
@@ -788,7 +791,7 @@ The `Mapper` interface allows you to automatically convert SQL query results int
 
 ```java
 /**
- * Demonstrates object mapping for type-safe result processing.
+ * Object mapping for type-safe result processing.
  * Object mapping reduces boilerplate code and provides compile-time safety.
  */
 public class ObjectMapping {
@@ -847,7 +850,7 @@ public class ObjectMapping {
     }
     
     /**
-     * Demonstrates custom mapping configuration.
+     * Custom mapping configuration.
      */
     public void demonstrateCustomMapping(IgniteSql sql) {
         // Create custom mapper with field mappings
@@ -865,7 +868,7 @@ public class ObjectMapping {
     }
     
     /**
-     * Demonstrates single-column mapping for simple types.
+     * Single-column mapping for simple types.
      */
     public void demonstrateSingleColumnMapping(IgniteSql sql) {
         // Map to single column for simple aggregates
@@ -895,7 +898,7 @@ Error handling and resource management enable robust SQL API usage in production
 
 ```java
 /**
- * Demonstrates error handling for SQL operations.
+ * Error handling for SQL operations.
  * Error handling enables reliable production applications.
  */
 public class SQLErrorHandling {
@@ -928,7 +931,7 @@ public class SQLErrorHandling {
     }
     
     /**
-     * Demonstrates transaction error handling and rollback.
+     * Transaction error handling and rollback.
      */
     public void demonstrateTransactionErrorHandling(IgniteClient client) {
         IgniteSql sql = client.sql();
@@ -961,7 +964,7 @@ public class SQLErrorHandling {
     }
     
     /**
-     * Demonstrates retry patterns for transient failures.
+     * Retry patterns for transient failures.
      */
     public void demonstrateRetryPattern(IgniteSql sql) {
         int maxRetries = 3;
@@ -1000,7 +1003,7 @@ public class SQLErrorHandling {
     }
     
     /**
-     * Demonstrates comprehensive resource cleanup.
+     * Comprehensive resource cleanup.
      */
     public void demonstrateResourceManagement() {
         // Proper resource management with try-with-resources
@@ -1029,7 +1032,7 @@ public class SQLErrorHandling {
     }
     
     /**
-     * Demonstrates async error handling.
+     * Async error handling.
      */
     public void demonstrateAsyncErrorHandling(IgniteSql sql) {
         CompletableFuture<AsyncResultSet<SqlRow>> future = sql.executeAsync(null,
@@ -1065,13 +1068,13 @@ Performance characteristics and optimization techniques enable production SQL AP
 
 ```java
 /**
- * Demonstrates performance optimization techniques for SQL API usage.
+ * Performance optimization techniques for SQL API usage.
  * These patterns enable high-performance applications.
  */
 public class SQLPerformanceOptimization {
     
     /**
-     * Demonstrates prepared statement reuse for better performance.
+     * Prepared statement reuse for better performance.
      */
     public void demonstratePreparedStatementReuse(IgniteSql sql) {
         // Create reusable prepared statement
@@ -1101,7 +1104,7 @@ public class SQLPerformanceOptimization {
     }
     
     /**
-     * Demonstrates optimal pagination for large result sets.
+     * Optimal pagination for large result sets.
      */
     public void demonstrateOptimalPagination(IgniteSql sql) {
         // Configure statement for optimal paging
@@ -1136,7 +1139,7 @@ public class SQLPerformanceOptimization {
     }
     
     /**
-     * Demonstrates batch optimization for bulk operations.
+     * Batch optimization for bulk operations.
      */
     public void demonstrateBatchOptimization(IgniteSql sql) {
         // Optimal batch size balances memory usage and network efficiency
@@ -1174,7 +1177,7 @@ public class SQLPerformanceOptimization {
     }
     
     /**
-     * Demonstrates async operations for improved throughput.
+     * Async operations for improved throughput.
      */
     public void demonstrateAsyncThroughputOptimization(IgniteSql sql) {
         List<String> queries = Arrays.asList(
