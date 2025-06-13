@@ -43,11 +43,11 @@
     <modules>
         <module>01-sample-data-setup</module>
         <module>02-getting-started-app</module>
-        <!-- Uncomment as modules are implemented:
         <module>03-schema-annotations-app</module>
         <module>04-table-api-app</module>
         <module>05-sql-api-app</module>
         <module>06-transactions-app</module>
+        <!-- Uncomment as modules are implemented:
         <module>07-compute-api-app</module>
         <module>08-data-streaming-app</module>
         <module>09-caching-patterns-app</module>
