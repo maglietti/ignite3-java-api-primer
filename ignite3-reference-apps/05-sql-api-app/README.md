@@ -1,88 +1,271 @@
-# SQL API - Apache Ignite 3 Reference
+# SQL API - Apache Ignite 3 Reference Application
 
-**Relational data access and complex queries**
+**Comprehensive demonstration of Ignite 3 Java SQL API for relational data access**
 
 📖 **Related Documentation**: [SQL API - Relational Data Access](../../docs/05-sql-api-relational-data-access.md)
 
 ## Overview
 
-Master Ignite 3's SQL capabilities for complex queries, joins, and analytics. Learn DDL/DML operations, parameterized queries, and POJO result mapping.
+This reference application demonstrates the complete Ignite 3 SQL API, focusing on Java interface usage patterns rather than SQL syntax. Learn how to effectively use the `IgniteSql` interface and related classes for database operations, result processing, and transaction integration in distributed environments.
 
 ## What You'll Learn
 
-- **DDL Operations**: Create, alter, and drop tables via SQL
-- **DML Operations**: Insert, update, delete with SQL
-- **Complex Queries**: Joins, aggregations, and analytics
-- **Parameterized Queries**: Safe, efficient query patterns
-- **Result Mapping**: Convert SQL results to POJOs
-- **Query Optimization**: Performance tuning for distributed queries
+### Core SQL API Concepts
+- **IgniteSql Interface**: Primary gateway to all SQL operations
+- **Statement Management**: Building reusable, configurable statements
+- **ResultSet Processing**: Type-safe data extraction and iteration
+- **Parameter Binding**: Secure, efficient parameterized queries
+- **Transaction Integration**: ACID compliance with distributed operations
+
+### Advanced Patterns
+- **Asynchronous Operations**: Non-blocking query execution with CompletableFuture
+- **Batch Operations**: Efficient bulk data processing with BatchedArguments
+- **Object Mapping**: Automatic POJO conversion using Mapper interface
+- **Error Handling**: Comprehensive exception management and retry patterns
+- **Performance Optimization**: Statement reuse, pagination, and optimization techniques
+
+### Practical Examples
+- **DDL Operations**: Schema management and evolution
+- **DML Operations**: Data manipulation with validation
+- **Complex Queries**: JOINs, aggregations, subqueries, and analytics
+- **Result Processing**: Metadata introspection and dynamic processing
 
 ## Prerequisites
 
-**Required**: Complete [sample-data-setup](../sample-data-setup/) to have the music store schema and data.
+**Required**: 
+1. Ignite 3 cluster running on `localhost:10800`
+2. Complete [sample-data-setup](../01-sample-data-setup/) to load the music store schema and data
 
-## Coming Soon
+## Reference Applications
 
-This reference application is in development. It will demonstrate:
+### 1. SQLAPIDemo.java
+**Comprehensive demonstration of all SQL API concepts**
 
-### DDL Operations
-```sql
--- Create tables via SQL
-CREATE TABLE Artist (
-    ArtistId INTEGER PRIMARY KEY,
-    Name VARCHAR(120) NOT NULL
-) WITH PRIMARY_ZONE='MusicStore';
-
--- Create indexes
-CREATE INDEX idx_album_artist ON Album (ArtistId);
+```bash
+mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.SQLAPIDemo"
 ```
 
-### DML Operations
-```java
-// Parameterized inserts
-client.sql().execute(null, 
-    "INSERT INTO Artist (ArtistId, Name) VALUES (?, ?)", 
-    1, "AC/DC");
+**Features demonstrated:**
+- Basic SQL interface access and query execution
+- Statement configuration and reuse patterns
+- ResultSet processing with various data types
+- Transaction integration (successful and rollback scenarios)
+- Batch operations for bulk data processing
+- Object mapping with single-column and custom mapping
+- Error handling with retry patterns
+- Performance optimization techniques
 
-// Batch operations
-BatchedArguments batch = BatchedArguments.of(
-    Arguments.of(1, "AC/DC"),
-    Arguments.of(2, "Accept")
-);
-client.sql().executeBatch(null, "INSERT INTO Artist VALUES (?, ?)", batch);
+### 2. DDLOperations.java
+**Schema management using the SQL API**
+
+```bash
+mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.DDLOperations"
 ```
 
-### Complex Queries
-```java
-// Multi-table joins
-ResultSet<ArtistWithAlbums> results = client.sql().execute(null,
-    "SELECT a.Name as ArtistName, COUNT(al.AlbumId) as AlbumCount " +
-    "FROM Artist a LEFT JOIN Album al ON a.ArtistId = al.ArtistId " +
-    "GROUP BY a.ArtistId, a.Name ORDER BY AlbumCount DESC");
+**Operations covered:**
+- Distribution zone creation and configuration
+- Table creation with colocation strategies
+- Index management for query performance
+- Schema evolution (adding columns, modifying structures)
+- Schema introspection using system catalogs
+- Proper cleanup and dependency management
+
+### 3. DMLOperations.java
+**Data manipulation patterns and best practices**
+
+```bash
+mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.DMLOperations"
 ```
 
-### Analytics Examples
-- Artist popularity analysis
-- Album and track statistics  
-- Customer purchase patterns
-- Revenue reporting
-- Genre distribution analysis
+**Patterns demonstrated:**
+- INSERT operations with parameter binding
+- UPDATE operations with conditional logic
+- DELETE operations with cascading considerations
+- MERGE/UPSERT patterns for conflict resolution
+- Batch DML operations for bulk processing
+- Transactional DML for ACID compliance
+- Data validation and constraint handling
 
-### POJO Mapping
+### 4. QueryOperations.java
+**Complex query patterns and analytical operations**
+
+```bash
+mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.QueryOperations"
+```
+
+**Query types covered:**
+- Simple queries with filtering and sorting
+- Multi-table JOINs (INNER, LEFT, self-joins)
+- Aggregate queries with GROUP BY and HAVING
+- Subqueries and correlated subqueries
+- Analytical queries for business intelligence
+- Asynchronous query execution
+- Paginated result processing
+- Metadata introspection and dynamic processing
+- Performance optimization patterns
+
+## Key SQL API Classes Demonstrated
+
+### Core Interfaces
+- **`IgniteSql`**: Main SQL interface obtained via `client.sql()`
+- **`Statement`**: Configurable, reusable query statements
+- **`ResultSet<SqlRow>`**: Type-safe result iteration and data extraction
+- **`SqlRow`**: Individual row access with typed value extraction methods
+
+### Supporting Classes
+- **`BatchedArguments`**: Bulk operation parameter management
+- **`Mapper<T>`**: Automatic object mapping configuration
+- **`AsyncResultSet<SqlRow>`**: Non-blocking result processing
+- **`Transaction`**: ACID transaction integration
+
+### Utility Patterns
+- **Statement Builder**: Configurable statement creation with timeouts and pagination
+- **Parameter Binding**: Safe parameterization with `?` placeholders
+- **Resource Management**: Proper cleanup with try-with-resources
+- **Error Handling**: SQL exception management and retry logic
+
+## Code Examples
+
+### Basic Query Execution
 ```java
-// Map results to POJOs
-ResultSet<Artist> artists = client.sql().execute(null, 
+IgniteSql sql = client.sql();
+
+// Simple query with parameters
+ResultSet<SqlRow> artists = sql.execute(null, 
+    "SELECT ArtistId, Name FROM Artist WHERE Name LIKE ? ORDER BY Name", 
+    "%Rock%");
+
+while (artists.hasNext()) {
+    SqlRow row = artists.next();
+    int id = row.intValue("ArtistId");
+    String name = row.stringValue("Name");
+    System.out.println("Artist " + id + ": " + name);
+}
+```
+
+### Statement Configuration and Reuse
+```java
+Statement artistLookup = sql.statementBuilder()
+    .query("SELECT ArtistId, Name FROM Artist WHERE Country = ?")
+    .queryTimeout(30, TimeUnit.SECONDS)
+    .pageSize(100)
+    .build();
+
+// Reuse with different parameters
+ResultSet<SqlRow> ukArtists = sql.execute(null, artistLookup, "UK");
+ResultSet<SqlRow> usArtists = sql.execute(null, artistLookup, "USA");
+```
+
+### Batch Operations
+```java
+BatchedArguments batch = BatchedArguments.create()
+    .add("Artist 1", "Country A")
+    .add("Artist 2", "Country B")
+    .add("Artist 3", "Country C");
+
+long[] results = sql.executeBatch(null,
+    "INSERT INTO Artist (Name, Country) VALUES (?, ?)", batch);
+```
+
+### Transaction Integration
+```java
+try (Transaction tx = client.transactions().begin()) {
+    sql.execute(tx, "INSERT INTO Artist (Name) VALUES (?)", "New Artist");
+    sql.execute(tx, "INSERT INTO Album (ArtistId, Title) VALUES (?, ?)", 
+        artistId, "New Album");
+    tx.commit();
+}
+```
+
+### Object Mapping
+```java
+// Single-column mapping
+ResultSet<String> names = sql.execute(null,
+    Mapper.of(String.class, "Name"),
+    "SELECT Name FROM Artist ORDER BY Name");
+
+// Custom POJO mapping (with @Column annotations)
+ResultSet<Artist> artists = sql.execute(null,
     Mapper.of(Artist.class),
-    "SELECT * FROM Artist WHERE Name LIKE ?", "A%");
+    "SELECT ArtistId, Name, Country FROM Artist WHERE Country = ?", "UK");
 ```
 
-## Development Status
+### Asynchronous Operations
+```java
+CompletableFuture<AsyncResultSet<SqlRow>> future = sql.executeAsync(null,
+    "SELECT COUNT(*) as count FROM Artist");
 
-🚧 **In Development** - This module will be implemented as part of Phase 2B of the reference applications project.
+future.thenAccept(resultSet -> {
+    for (SqlRow row : resultSet.currentPage()) {
+        long count = row.longValue("count");
+        System.out.println("Total artists: " + count);
+    }
+    resultSet.closeAsync();
+});
+```
 
-## Related Modules
+## Performance Best Practices
 
-- **Prerequisites**: [sample-data-setup](../sample-data-setup/) - Schema and data required
-- **Foundation**: [table-api-app](../table-api-app/) - Object-oriented operations
-- **Next Steps**: [transactions-app](../transactions-app/) - Transactional SQL
-- **See Also**: [data-streaming-app](../data-streaming-app/) - Bulk data operations
+1. **Statement Reuse**: Create Statement objects for repeated queries
+2. **Parameter Binding**: Always use `?` placeholders instead of string concatenation
+3. **Batch Operations**: Use BatchedArguments for bulk modifications
+4. **Pagination**: Configure appropriate page sizes for large result sets
+5. **Async Processing**: Use async operations for high-throughput scenarios
+6. **Resource Management**: Always use try-with-resources for proper cleanup
+7. **Transaction Scope**: Keep transactions as short as possible
+8. **Object Mapping**: Use Mapper<T> to reduce boilerplate code
+
+## Error Handling Patterns
+
+The reference applications demonstrate comprehensive error handling:
+
+- **SQL Exception Management**: Proper catching and handling of SqlException
+- **Transaction Rollback**: Automatic rollback with try-with-resources
+- **Retry Patterns**: Exponential backoff for transient failures
+- **Batch Error Handling**: Partial success scenarios with SqlBatchException
+- **Resource Cleanup**: Guaranteed cleanup even when errors occur
+
+## Testing and Development
+
+### Running Individual Examples
+```bash
+# Run complete demo
+mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.SQLAPIDemo"
+
+# Run specific operation types
+mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.DDLOperations"
+mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.DMLOperations"
+mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.QueryOperations"
+```
+
+### Prerequisites Check
+Ensure the music store sample data is loaded:
+```bash
+cd ../01-sample-data-setup
+mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.setup.app.ProjectInitializationApp"
+```
+
+### Troubleshooting
+- **Connection Issues**: Verify Ignite cluster is running on `localhost:10800`
+- **Missing Data**: Run the sample data setup first
+- **Permission Errors**: Ensure cluster allows DDL operations
+- **Memory Issues**: Adjust pagination settings for large result sets
+
+## Integration with Other Modules
+
+- **Prerequisites**: [01-sample-data-setup](../01-sample-data-setup/) - Required music store schema and data
+- **Related**: [04-table-api-app](../04-table-api-app/) - Object-oriented data access patterns
+- **Next Steps**: [06-transactions-app](../06-transactions-app/) - Advanced transaction patterns
+- **Advanced**: [07-compute-api-app](../07-compute-api-app/) - Distributed computing with SQL results
+
+## Key Takeaways
+
+1. **Java-First Approach**: Focus on Java API patterns rather than SQL syntax
+2. **Type Safety**: Leverage strongly-typed interfaces for compile-time safety
+3. **Resource Management**: Always use proper cleanup patterns
+4. **Performance**: Use statement reuse, batching, and async operations appropriately
+5. **Error Handling**: Implement comprehensive exception management
+6. **Transaction Integration**: Understand how SQL operations work within transactions
+7. **Distributed Awareness**: Consider colocation and distribution in query design
+
+The SQL API provides familiar SQL semantics while abstracting the complexity of distributed query execution, making it easy to build robust, high-performance applications on Ignite 3.
