@@ -93,7 +93,7 @@ ignite3-reference-apps/
 ├── 05-sql-api-app/                 # SQL operations and queries
 ├── 06-transactions-app/            # Transaction patterns
 ├── 07-compute-api-app/             # Distributed computing
-├── 08-data-streaming-app/          # High-throughput data loading
+├── 08-data-streaming-app/          # High-throughput data loading ✅
 ├── 09-caching-patterns-app/        # Caching strategies
 ├── 10-catalog-management-app/      # Schema and zone management
 ├── 11-advanced-topics-app/         # Error handling, monitoring
@@ -206,10 +206,10 @@ client.transactions().runInTransaction(tx -> {
 **Purpose**: Distributed processing and job execution  
 **Features**: Compute jobs, data colocation, job targeting
 
-### 8. Data Streaming
+### 8. Data Streaming ✅
 
 **Purpose**: High-throughput data loading and processing  
-**Features**: Data streamers, backpressure handling, error recovery
+**Features**: DataStreamer API, Flow control, bulk ingestion, backpressure handling
 
 ### 9. Integration Patterns
 
