@@ -27,6 +27,7 @@ This is a comprehensive documentation project for Apache Ignite 3's Java API, de
 - **Resource Management**: Always use try-with-resources
 - **Error Handling**: Comprehensive exception handling patterns
 - **Async Patterns**: CompletableFuture for non-blocking operations
+- **Code Structure**: We are writing educational code, reference apps do need the same rigor as enterprise code. Apply the KISS principle.
 - **Educational Comments**: For reference applications, include comprehensive comments explaining:
   - **Class-level JavaDoc**: Purpose, Ignite 3 concepts demonstrated, usage examples
   - **Method-level JavaDoc**: Parameters, return values, and why specific patterns are used
@@ -87,7 +88,7 @@ This is a comprehensive documentation project for Apache Ignite 3's Java API, de
 
 **Integration Strategy for Reference Apps**:
 
-- **Model Reuse**: Import from `sample-data-setup` module within same repository
+- **Model Reuse**: Re-implement or copy but DO NOT import from `sample-data-setup` module within same repository
 - **Shared Dependencies**: Common Maven parent POM manages Ignite dependencies
 - **Data Consistency**: All apps use same sample dataset and configuration
 - **Progressive Complexity**: Start with simple models, build to advanced patterns
@@ -98,7 +99,7 @@ This is a comprehensive documentation project for Apache Ignite 3's Java API, de
 - **Business Entities**: Customer → Invoice workflows
 - **Colocation Strategy**: All related data colocated by ArtistId/CustomerId
 - **Naming Conventions**: PascalCase fields (ArtistId, AlbumId, TrackId)
-- **Zone Configuration**: 
+- **Zone Configuration**:
   - Primary entities: `@Zone(value = "MusicStore", storageProfiles = "default")` (2 replicas)
   - Reference data: `@Zone(value = "MusicStoreReplicated", storageProfiles = "default")` (3 replicas)
 - **Terminology**: "Sample data", "music store data", "sample dataset" (not "Chinook")
@@ -136,7 +137,7 @@ This is a comprehensive documentation project for Apache Ignite 3's Java API, de
 - **Code Style**: Consistent formatting and naming conventions
 - **Error Handling**: Comprehensive exception handling patterns
 - **Resource Management**: Proper cleanup and lifecycle management
-- **Educational Documentation**: 
+- **Educational Documentation**:
   - Comprehensive JavaDoc for all classes and public methods
   - Inline comments explaining Ignite 3 concepts (colocation, zones, transactions)
   - Learning-focused comments that explain WHY patterns are used
@@ -178,6 +179,7 @@ Phase 2 focuses on creating a standalone Java project that houses all reference 
 **Phase 2A Tasks Completed**:
 
 **Planning & Design (Session 12)**:
+
 - ✅ **Documentation Analysis**: Identified 14 sections requiring reference applications
 - ✅ **Ignite 3 Source Review**: Analyzed actual API structure in `/Users/maglietti/Code/ignite/ignite-3`
 - ✅ **Project Structure Design**: Planned multi-module Maven project architecture
@@ -188,6 +190,7 @@ Phase 2 focuses on creating a standalone Java project that houses all reference 
 - ✅ **Documentation Standards**: Defined code documentation and README requirements
 
 **Module 02 Implementation (Session 13 - June 12, 2025)**:
+
 - ✅ **Documentation Enhancement**: Completely rewrote Module 02 with comprehensive narrative flow, Mermaid diagrams, and educational progression
 - ✅ **Reference App Creation**: Built complete getting-started-app module with three working applications:
   - **HelloWorldApp**: Simple 5-step demonstration using Book entity (40 lines, perfect for beginners)
@@ -199,6 +202,7 @@ Phase 2 focuses on creating a standalone Java project that houses all reference 
 - ✅ **Educational Design**: Applications demonstrate progressive complexity from simple operations to advanced patterns
 
 **Modules 01-05 Complete Implementation (Session 15 - December 13, 2024)**:
+
 - ✅ **Module 01**: Sample Data Setup - Complete music store schema and data loading utilities
 - ✅ **Module 02**: Getting Started - Three progressive reference applications (HelloWorld, BasicSetup, Connections)
 - ✅ **Module 03**: Schema and Annotations - Entity modeling with Ignite 3 annotations and colocation patterns
@@ -210,6 +214,7 @@ Phase 2 focuses on creating a standalone Java project that houses all reference 
 - ✅ **Writing Standards Compliance**: Applied objective language and avoided subjective qualifiers across all modules
 
 **Prompting Pattern Enhancement (Session 15 - December 13, 2024)**:
+
 - ✅ **Process Improvement**: Developed 6-element prompting template to prevent scope creep
 - ✅ **Source Code Integration**: Added mandatory Ignite 3 source code review to all module prompts
 - ✅ **Writing Standards Enforcement**: Built-in CLAUDE.md User Preferences compliance checking
@@ -218,6 +223,7 @@ Phase 2 focuses on creating a standalone Java project that houses all reference 
 - ✅ **Quality Assurance**: Prompts now include mandatory steps to prevent common development issues
 
 **Implementation Highlights**:
+
 - **Real API Usage**: All applications use authentic Ignite 3 Java APIs with proper error handling and resource management
 - **Distinct Sample Data**: Each application uses different entities (SimpleBook, Author/Book, connection testing) to avoid schema conflicts
 - **Production Patterns**: Demonstrates try-with-resources, transactions, zone management, and SQL integration
@@ -435,6 +441,7 @@ sample-data-setup/
 **11 Entity Model Classes** (All with Ignite 3 Annotations):
 
 **Core Music Entities** (MusicStore Zone - 2 replicas):
+
 - **Artist**: Music artists and bands (root entity)
 - **Album**: Music albums (colocated by ArtistId)
 - **Track**: Individual songs (colocated by AlbumId, complex entity with 9 fields)
@@ -442,16 +449,19 @@ sample-data-setup/
 - **PlaylistTrack**: Many-to-many playlist-track relationships (colocated by PlaylistId)
 
 **Business Entities** (MusicStore Zone - 2 replicas):
+
 - **Customer**: Store customers (13 fields including address, support rep)
 - **Employee**: Store employees with hierarchy (15 fields, self-referencing ReportsTo)
 - **Invoice**: Customer purchases (colocated by CustomerId, 8 fields)
 - **InvoiceLine**: Purchase line items (colocated by InvoiceId)
 
 **Reference Data** (MusicStoreReplicated Zone - 3 replicas):
+
 - **Genre**: Music genres (lookup table)
 - **MediaType**: Audio file formats (lookup table)
 
 **Advanced Ignite 3 Features Demonstrated**:
+
 - **Distribution Zones**: Two zones with different replica strategies
 - **Colocation**: Hierarchical data placement (Artist→Album→Track, Customer→Invoice→InvoiceLine)
 - **Composite Primary Keys**: Multi-field keys (Album, Track, Invoice, InvoiceLine, PlaylistTrack)
@@ -460,6 +470,7 @@ sample-data-setup/
 - **Annotations**: Complete @Table, @Column, @Id, @Zone, @ColumnRef, @Index usage
 
 **Utility Classes for Complete Functionality**:
+
 - **DataSetupUtils**: Connection management, cluster operations
 - **TableCreationUtils**: Zone creation, table management, schema operations
 - **BulkDataLoader**: SQL script parsing and execution
@@ -467,12 +478,14 @@ sample-data-setup/
 - **ReportingUtils**: Complex queries, joins, analytics
 
 **Application Patterns**:
+
 - **Schema Creation**: POJO-based table creation using annotations
 - **Data Loading**: Transactional batch operations
 - **SQL Integration**: Both DDL and DML operations
 - **Analytics**: Complex joins across the full entity hierarchy
 
 **SQL Scripts and Data**:
+
 - **Complete DDL**: All 11 tables with proper zones and colocation
 - **Rich Sample Data**: Realistic music store data with relationships
 - **Extended Data Sets**: Additional albums and tracks for testing
