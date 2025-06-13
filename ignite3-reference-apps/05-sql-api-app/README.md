@@ -1,12 +1,12 @@
 # SQL API - Apache Ignite 3 Reference Application
 
-**Comprehensive demonstration of Ignite 3 Java SQL API for relational data access**
+**Demonstration of Ignite 3 Java SQL API for relational data access**
 
 📖 **Related Documentation**: [SQL API - Relational Data Access](../../docs/05-sql-api-relational-data-access.md)
 
 ## Overview
 
-This reference application demonstrates the complete Ignite 3 SQL API, focusing on Java interface usage patterns rather than SQL syntax. Learn how to effectively use the `IgniteSql` interface and related classes for database operations, result processing, and transaction integration in distributed environments.
+This reference application demonstrates the Ignite 3 SQL API, focusing on Java interface usage patterns rather than SQL syntax. Learn to use the `IgniteSql` interface and related classes for database operations, result processing, and transaction integration in distributed environments.
 
 ## What You'll Learn
 
@@ -21,7 +21,7 @@ This reference application demonstrates the complete Ignite 3 SQL API, focusing 
 - **Asynchronous Operations**: Non-blocking query execution with CompletableFuture
 - **Batch Operations**: Efficient bulk data processing with BatchedArguments
 - **Object Mapping**: Automatic POJO conversion using Mapper interface
-- **Error Handling**: Comprehensive exception management and retry patterns
+- **Error Handling**: Exception management and retry patterns
 - **Performance Optimization**: Statement reuse, pagination, and optimization techniques
 
 ### Practical Examples
@@ -39,7 +39,7 @@ This reference application demonstrates the complete Ignite 3 SQL API, focusing 
 ## Reference Applications
 
 ### 1. SQLAPIDemo.java
-**Comprehensive demonstration of all SQL API concepts**
+**Demonstration of SQL API concepts**
 
 ```bash
 mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.SQLAPIDemo"
@@ -217,9 +217,9 @@ future.thenAccept(resultSet -> {
 
 ## Error Handling Patterns
 
-The reference applications demonstrate comprehensive error handling:
+The reference applications demonstrate error handling:
 
-- **SQL Exception Management**: Proper catching and handling of SqlException
+- **SQL Exception Management**: Catching and handling of SqlException
 - **Transaction Rollback**: Automatic rollback with try-with-resources
 - **Retry Patterns**: Exponential backoff for transient failures
 - **Batch Error Handling**: Partial success scenarios with SqlBatchException
@@ -264,7 +264,7 @@ mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.setup.app.Pro
 2. **Type Safety**: Leverage strongly-typed interfaces for compile-time safety
 3. **Resource Management**: Always use proper cleanup patterns
 4. **Performance**: Use statement reuse, batching, and async operations appropriately
-5. **Error Handling**: Implement comprehensive exception management
+5. **Error Handling**: Implement exception management
 6. **Transaction Integration**: Understand how SQL operations work within transactions
 7. **Distributed Awareness**: Consider colocation and distribution in query design
 

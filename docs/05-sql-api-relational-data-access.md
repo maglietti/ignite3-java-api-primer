@@ -1,6 +1,6 @@
 # 5. SQL API - Java Interface for Relational Data Access
 
-The Ignite 3 SQL API provides a comprehensive Java interface for relational database operations in distributed environments. This module focuses on teaching developers how to effectively use the `IgniteSql` interface and related classes to perform database operations, handle results, and integrate with transactions.
+The Ignite 3 SQL API delivers relational database operations through Java interfaces designed for distributed environments. This module teaches developers to use the `IgniteSql` interface and related classes for database operations, result handling, and transaction integration.
 
 ## Overview: The SQL API Architecture
 
@@ -39,15 +39,15 @@ graph TB
 
 ## Getting Started with the IgniteSql Interface
 
-The `IgniteSql` interface is your primary entry point for all SQL operations. You obtain it from the main client interface and use it for both DDL and DML operations.
+The `IgniteSql` interface serves as the primary entry point for SQL operations. Access it through the main client interface for both DDL and DML operations.
 
-### Obtaining the SQL Interface
+### IgniteSql Operations
 
 ```java
 /**
- * Demonstrates basic SQL API access and simple query execution.
+ * Demonstrates basic SQL API access and query execution.
  * The IgniteSql interface is obtained from the main client and provides
- * access to all SQL operations in Ignite 3.
+ * access to SQL operations in Ignite 3.
  */
 public class BasicSQLAccess {
     
@@ -56,7 +56,7 @@ public class BasicSQLAccess {
                 .addresses("localhost:10800")
                 .build()) {
             
-            // Obtain the SQL interface - this is your gateway to all SQL operations
+            // Access SQL operations through the client interface
             IgniteSql sql = client.sql();
             
             // Simple query execution - returns ResultSet<SqlRow>
@@ -81,7 +81,7 @@ The `IgniteSql` interface provides several execute methods for different use cas
 ```java
 /**
  * Demonstrates the primary execute methods available in the IgniteSql interface.
- * Understanding when to use each method is crucial for effective SQL API usage.
+ * Understanding when to use each method enables effective SQL API usage.
  */
 public class SQLExecuteMethods {
     
@@ -124,8 +124,8 @@ Always use parameter binding to prevent SQL injection and ensure type safety:
 
 ```java
 /**
- * Demonstrates proper parameter binding techniques for secure SQL execution.
- * Parameter binding is essential for both security and performance.
+ * Demonstrates parameter binding techniques for secure SQL execution.
+ * Parameter binding ensures security and performance.
  */
 public class ParameterBinding {
     
@@ -162,8 +162,8 @@ The `Statement` interface allows you to configure query execution parameters and
 
 ```java
 /**
- * Demonstrates advanced statement configuration for optimized query execution.
- * Statement builders provide fine-grained control over query behavior.
+ * Demonstrates statement configuration for optimized query execution.
+ * Statement builders provide control over query behavior.
  */
 public class StatementConfiguration {
     
@@ -224,14 +224,14 @@ public class StatementConfiguration {
 
 ## ResultSet Processing and Data Access
 
-Understanding how to work with `ResultSet<SqlRow>` and extract typed data is fundamental to effective SQL API usage.
+Working with `ResultSet<SqlRow>` and extracting typed data forms the foundation of SQL API usage.
 
 ### Basic ResultSet Operations
 
 ```java
 /**
- * Demonstrates comprehensive ResultSet processing patterns.
- * Understanding these patterns is essential for effective data retrieval.
+ * Demonstrates ResultSet processing patterns.
+ * These patterns enable effective data retrieval.
  */
 public class ResultSetProcessing {
     
@@ -530,7 +530,7 @@ For high-performance applications, the SQL API provides asynchronous operations 
 ```java
 /**
  * Demonstrates asynchronous SQL operations for non-blocking database access.
- * Async operations are essential for high-throughput applications.
+ * Async operations enable high-throughput applications.
  */
 public class AsyncSQLOperations {
     
@@ -646,14 +646,14 @@ public class AsyncSQLOperations {
 
 ## Batch Operations for Bulk Data
 
-Batch operations provide efficient bulk data processing capabilities, essential for high-performance data loading and updates.
+Batch operations provide efficient bulk data processing capabilities for high-performance data loading and updates.
 
 ### Creating and Executing Batches
 
 ```java
 /**
  * Demonstrates batch operations for efficient bulk data processing.
- * Batch operations significantly improve performance for bulk operations.
+ * Batch operations improve performance for bulk operations.
  */
 public class BatchOperations {
     
@@ -789,7 +789,7 @@ The `Mapper` interface allows you to automatically convert SQL query results int
 ```java
 /**
  * Demonstrates object mapping for type-safe result processing.
- * Object mapping eliminates boilerplate code and provides compile-time safety.
+ * Object mapping reduces boilerplate code and provides compile-time safety.
  */
 public class ObjectMapping {
     
@@ -889,14 +889,14 @@ public class ObjectMapping {
 
 ## Error Handling and Resource Management
 
-Proper error handling and resource management are crucial for robust SQL API usage in production applications.
+Error handling and resource management enable robust SQL API usage in production applications.
 
 ### Exception Handling Patterns
 
 ```java
 /**
- * Demonstrates comprehensive error handling for SQL operations.
- * Proper error handling is essential for production applications.
+ * Demonstrates error handling for SQL operations.
+ * Error handling enables reliable production applications.
  */
 public class SQLErrorHandling {
     
@@ -1059,14 +1059,14 @@ public class SQLErrorHandling {
 
 ## Performance Optimization and Best Practices
 
-Understanding performance characteristics and optimization techniques is essential for production SQL API usage.
+Performance characteristics and optimization techniques enable production SQL API usage.
 
 ### Query Optimization Patterns
 
 ```java
 /**
  * Demonstrates performance optimization techniques for SQL API usage.
- * These patterns are essential for high-performance applications.
+ * These patterns enable high-performance applications.
  */
 public class SQLPerformanceOptimization {
     
@@ -1229,7 +1229,7 @@ public class SQLPerformanceOptimization {
 
 ## Summary
 
-The Ignite 3 SQL API provides a comprehensive, type-safe interface for relational database operations in distributed environments. Key takeaways:
+The Ignite 3 SQL API provides a type-safe interface for relational database operations in distributed environments. Key takeaways:
 
 ### Core Patterns
 
@@ -1259,4 +1259,4 @@ The SQL API integrates seamlessly with other Ignite 3 APIs while providing famil
 
 ## Reference Application
 
-The complete reference application demonstrating all these patterns is available in the `ignite3-reference-apps/05-sql-api-app` module, with practical examples of each concept covered in this documentation.
+The reference application demonstrating these patterns is available in the `ignite3-reference-apps/05-sql-api-app` module, with examples of each concept covered in this documentation.

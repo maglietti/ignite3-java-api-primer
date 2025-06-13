@@ -16,7 +16,7 @@ import java.time.LocalDate;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Comprehensive demonstration of the Ignite 3 SQL API for Java developers.
+ * Demonstration of the Ignite 3 SQL API for Java developers.
  * 
  * This application demonstrates how to use the IgniteSql interface and related classes
  * for relational database operations in distributed environments. It covers:
@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
  * - Performance optimization patterns
  * 
  * The focus is on teaching Java API usage patterns rather than SQL syntax,
- * showing how to effectively work with the Ignite 3 distributed SQL engine.
+ * showing how to work with the Ignite 3 distributed SQL engine.
  * 
  * Prerequisites:
  * - Ignite 3 cluster running on localhost:10800
