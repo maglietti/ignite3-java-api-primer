@@ -88,7 +88,7 @@ This is a comprehensive documentation project for Apache Ignite 3's Java API, de
 
 **Integration Strategy for Reference Apps**:
 
-- **Model Reuse**: Re-implement or copy but DO NOT import from `sample-data-setup` module within same repository
+- **Model Reuse**: Re-implement consistently or copy but DO NOT import from `sample-data-setup` module within same repository
 - **Shared Dependencies**: Common Maven parent POM manages Ignite dependencies
 - **Data Consistency**: All apps use same sample dataset and configuration
 - **Progressive Complexity**: Start with simple models, build to advanced patterns

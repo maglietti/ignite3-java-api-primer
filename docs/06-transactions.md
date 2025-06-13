@@ -1,634 +1,1021 @@
-# 6. Transactions
+# 6. Transactions - Ensuring Data Consistency in Distributed Systems
 
-## Getting Started with Transactions
+In a music store's daily operations, data consistency matters. When a customer purchases multiple tracks, the payment processing, inventory updates, and playlist additions must succeed together—or fail together. This is where transactions become critical in distributed systems like Ignite 3.
 
-Access the transaction manager through the main Ignite client interface:
+## The Transaction Challenge in Music Store Operations
 
-```java
-// Get transaction manager
-IgniteTransactions transactions = client.transactions();
+Consider this scenario: A customer selects five tracks from different albums and clicks "Buy Now." The system must:
 
-// Begin a transaction
-Transaction tx = transactions.begin();
+1. **Create an invoice** for the customer
+2. **Add line items** for each track
+3. **Update inventory counts** for each track
+4. **Add tracks to** the customer's purchased playlist
+5. **Process the payment** and update the customer's account
+
+If any step fails—network issues, insufficient inventory, payment decline—the entire operation should rollback. The customer shouldn't see a charge without receiving their music, and inventory shouldn't decrease without a completed sale.
+
+This is exactly what Ignite 3's Transaction API delivers: **atomic operations across multiple tables and nodes** with full ACID guarantees.
+
+## Overview: Transaction API Architecture
+
+The Transaction API is built around interfaces that provide both explicit control and automatic management:
+
+```mermaid
+graph TB
+    subgraph "Core Transaction Interfaces"
+        A[IgniteTransactions] --> B[Transaction]
+        A --> C[TransactionOptions]
+        B --> D[commit/rollback]
+        C --> E[timeout/readOnly]
+    end
+
+    subgraph "Integration Points"
+        F[IgniteClient] --> G["client.transactions()"]
+        G --> A
+        H[RecordView] --> I["operation(tx, ...)"]
+        J[IgniteSql] --> K["execute(tx, ...)"]
+    end
+
+    subgraph "Usage Patterns"
+        L[Explicit Management] --> M["tx.begin() → operations → tx.commit()"]
+        N[Functional Pattern] --> O["runInTransaction(tx → operations)"]
+        P[Async Operations] --> Q["beginAsync() → CompletableFuture chains"]
+    end
 ```
 
-The `Transaction` interface provides methods for commit, rollback, and state management. The `IgniteTransactions` interface offers several patterns for transaction execution.
+**Key Design Principles:**
 
-## Transaction Interface Usage
+- **ACID Guarantees**: Atomicity, Consistency, Isolation, Durability across the cluster
+- **Multiple Patterns**: Explicit control vs automatic management via closures
+- **Async Support**: CompletableFuture-based non-blocking operations
+- **API Integration**: Works seamlessly with Table API and SQL API
+- **Resource Safety**: Automatic cleanup and proper exception handling
 
-### Basic Transaction Pattern
+## Getting Started: Your First Transaction
 
-```java
-// Explicit transaction management
-Transaction tx = client.transactions().begin();
-try {
-    // Use transaction with Table API
-    RecordView<Artist> artistView = client.tables().table("Artist").recordView(Artist.class);
-    Artist artist = new Artist(100, "Led Zeppelin");
-    artistView.upsert(tx, artist);
-    
-    // Use transaction with SQL API
-    client.sql().execute(tx, 
-        "INSERT INTO Album (AlbumId, Title, ArtistId) VALUES (?, ?, ?)",
-        200, "Led Zeppelin IV", 100);
-    
-    tx.commit();
-} catch (Exception e) {
-    tx.rollback();
-    throw e;
-}
-```
+Let's start with a simple scenario: creating a new artist and their debut album atomically. If creating the album fails, we don't want an orphaned artist record.
 
-### Closure-based Transactions
-
-The `runInTransaction()` method handles commit/rollback automatically:
-
-```java
-// Automatic transaction management
-boolean success = client.transactions().runInTransaction(tx -> {
-    RecordView<Artist> artistView = client.tables().table("Artist").recordView(Artist.class);
-    
-    Artist artist = new Artist(101, "The Beatles");
-    artistView.upsert(tx, artist);
-    
-    // Return true to commit, false to rollback
-    return true;
-});
-```
-
-## Synchronous Transaction Patterns
-
-### Using Transaction with Table API
-
-```java
-// Combine Table API operations in a transaction
-Transaction tx = client.transactions().begin();
-try {
-    RecordView<Artist> artistView = client.tables().table("Artist").recordView(Artist.class);
-    RecordView<Album> albumView = client.tables().table("Album").recordView(Album.class);
-    
-    // Insert artist
-    Artist artist = new Artist(102, "Pink Floyd");
-    artistView.upsert(tx, artist);
-    
-    // Insert related album
-    Album album = new Album(201, "The Dark Side of the Moon", 102);
-    albumView.upsert(tx, album);
-    
-    tx.commit();
-    System.out.println("Artist and album created");
-} catch (Exception e) {
-    tx.rollback();
-    throw e;
-}
-```
-
-### Using Transaction with SQL API
-
-```java
-// Execute multiple SQL statements in a transaction
-Transaction tx = client.transactions().begin();
-try {
-    client.sql().execute(tx, 
-        "UPDATE Track SET UnitPrice = UnitPrice * 1.1 WHERE AlbumId = ?", 
-        201);
-    
-    client.sql().execute(tx,
-        "INSERT INTO Playlist (PlaylistId, Name) VALUES (?, ?)", 
-        50, "Rock Classics");
-    
-    tx.commit();
-} catch (Exception e) {
-    tx.rollback();
-    throw e;
-}
-```
-
-### Mixing Table API and SQL API
-
-```java
-// Use both APIs within the same transaction
-client.transactions().runInTransaction(tx -> {
-    // Use Table API for object operations
-    RecordView<Customer> customerView = client.tables().table("Customer").recordView(Customer.class);
-    Customer customer = customerView.get(tx, createCustomerKey(1));
-    
-    if (customer != null) {
-        // Use SQL API for bulk operations
-        client.sql().execute(tx,
-            "UPDATE Invoice SET BillingCity = ? WHERE CustomerId = ?",
-            customer.getCity(), customer.getCustomerId());
-        
-        return true;
-    }
-    return false;
-});
-
-private static Customer createCustomerKey(Integer id) {
-    Customer key = new Customer();
-    key.setCustomerId(id);
-    return key;
-}
-```
-
-## Asynchronous Transaction Patterns
-
-### Basic Async Transaction
-
-```java
-// Begin transaction asynchronously
-CompletableFuture<Void> future = client.transactions().beginAsync()
-    .thenCompose(tx -> {
-        RecordView<Artist> artistView = client.tables().table("Artist").recordView(Artist.class);
-        Artist key = createArtistKey(103);
-        
-        return artistView.getAsync(tx, key)
-            .thenCompose(artist -> {
-                if (artist != null) {
-                    artist.setName(artist.getName() + " (Updated)");
-                    return artistView.upsertAsync(tx, artist);
-                } else {
-                    return CompletableFuture.failedFuture(
-                        new RuntimeException("Artist not found"));
-                }
-            })
-            .thenCompose(ignored -> tx.commitAsync())
-            .exceptionally(throwable -> {
-                tx.rollbackAsync();
-                throw new RuntimeException(throwable);
-            });
-    });
-
-future.join();
-```
-
-### Async runInTransaction Pattern
-
-```java
-// Async functional transaction pattern
-CompletableFuture<String> result = client.transactions().runInTransactionAsync(tx -> {
-    RecordView<Track> trackView = client.tables().table("Track").recordView(Track.class);
-    
-    return trackView.getAsync(tx, createTrackKey(1))
-        .thenCompose(track -> {
-            if (track != null) {
-                track.setName(track.getName() + " (Remastered)");
-                return trackView.upsertAsync(tx, track)
-                    .thenApply(ignored -> "Track updated: " + track.getName());
-            } else {
-                return CompletableFuture.completedFuture("Track not found");
-            }
-        });
-});
-
-String message = result.join();
-System.out.println(message);
-```
-
-### Chaining Async Operations
-
-```java
-// Chain multiple async operations within a transaction
-CompletableFuture<Void> chainedOps = client.transactions().beginAsync()
-    .thenCompose(tx -> {
-        RecordView<Artist> artistView = client.tables().table("Artist").recordView(Artist.class);
-        RecordView<Album> albumView = client.tables().table("Album").recordView(Album.class);
-        
-        // Chain operations: create artist then album
-        Artist artist = new Artist(104, "Queen");
-        
-        return artistView.upsertAsync(tx, artist)
-            .thenCompose(ignored -> {
-                Album album = new Album(202, "Bohemian Rhapsody", 104);
-                return albumView.upsertAsync(tx, album);
-            })
-            .thenCompose(ignored -> tx.commitAsync())
-            .exceptionally(throwable -> {
-                tx.rollbackAsync();
-                throw new RuntimeException(throwable);
-            });
-    });
-
-chainedOps.join();
-```
-
-### Parallel Async Operations
-
-```java
-// Execute multiple operations in parallel within a transaction
-CompletableFuture<Void> parallelOps = client.transactions().beginAsync()
-    .thenCompose(tx -> {
-        RecordView<Artist> artistView = client.tables().table("Artist").recordView(Artist.class);
-        
-        // Create multiple artists in parallel
-        List<CompletableFuture<Void>> operations = Arrays.asList(
-            artistView.upsertAsync(tx, new Artist(105, "The Rolling Stones")),
-            artistView.upsertAsync(tx, new Artist(106, "The Who")),
-            artistView.upsertAsync(tx, new Artist(107, "Led Zeppelin"))
-        );
-        
-        // Wait for all operations to complete
-        return CompletableFuture.allOf(operations.toArray(new CompletableFuture[0]))
-            .thenCompose(ignored -> tx.commitAsync())
-            .exceptionally(throwable -> {
-                tx.rollbackAsync();
-                throw new RuntimeException(throwable);
-            });
-    });
-
-parallelOps.join();
-```
-
-### Error Handling in Async Transactions
-
-```java
-// Async transaction with error handling
-CompletableFuture<String> asyncWithErrorHandling = client.transactions().beginAsync()
-    .thenCompose(tx -> {
-        RecordView<Artist> view = client.tables().table("Artist").recordView(Artist.class);
-        
-        return view.getAsync(tx, createArtistKey(108))
-            .thenCompose(artist -> {
-                if (artist != null) {
-                    artist.setName(artist.getName() + " (Updated)");
-                    return view.upsertAsync(tx, artist);
-                } else {
-                    return CompletableFuture.failedFuture(
-                        new RuntimeException("Artist not found"));
-                }
-            })
-            .thenCompose(ignored -> tx.commitAsync())
-            .thenApply(ignored -> "Artist updated successfully")
-            .exceptionally(throwable -> {
-                tx.rollbackAsync();
-                return "Transaction failed: " + throwable.getMessage();
-            });
-    });
-
-String result = asyncWithErrorHandling.join();
-System.out.println(result);
-```
-
-### Timeout Configuration
-
-```java
-// Set timeout for async transaction
-TransactionOptions options = new TransactionOptions()
-    .timeoutMillis(5000)  // 5 second timeout
-    .readOnly(false);
-
-CompletableFuture<Void> timedTransaction = client.transactions().beginAsync(options)
-    .thenCompose(tx -> {
-        RecordView<Artist> view = client.tables().table("Artist").recordView(Artist.class);
-        Artist artist = new Artist(109, "Tool");
-        
-        return view.upsertAsync(tx, artist)
-            .orTimeout(3, TimeUnit.SECONDS)  // Additional operation timeout
-            .thenCompose(ignored -> tx.commitAsync())
-            .exceptionally(throwable -> {
-                if (throwable instanceof TimeoutException) {
-                    System.err.println("Operation timed out");
-                }
-                tx.rollbackAsync();
-                throw new RuntimeException(throwable);
-            });
-    });
-
-timedTransaction.join();
-```
-
-## TransactionOptions Configuration
-
-### Read-Only Transactions
-
-Use `readOnly(true)` for transactions that only query data:
-
-```java
-// Configure read-only transaction
-TransactionOptions readOnlyOptions = new TransactionOptions()
-    .readOnly(true)
-    .timeoutMillis(30000);  // 30 second timeout
-
-client.transactions().runInTransaction(readOnlyOptions, tx -> {
-    // Read operations only
-    ResultSet<SqlRow> artistCount = client.sql().execute(tx, 
-        "SELECT COUNT(*) as count FROM Artist");
-    
-    ResultSet<SqlRow> albumCount = client.sql().execute(tx, 
-        "SELECT COUNT(*) as count FROM Album");
-    
-    long artists = artistCount.next().longValue("count");
-    long albums = albumCount.next().longValue("count");
-    
-    System.out.printf("Found %d artists and %d albums%n", artists, albums);
-    return true;
-});
-```
-
-### Timeout Configuration
-
-```java
-// Short timeout for quick operations
-TransactionOptions quickOptions = new TransactionOptions()
-    .timeoutMillis(5000)   // 5 seconds
-    .readOnly(false);
-
-client.transactions().runInTransaction(quickOptions, tx -> {
-    RecordView<Artist> view = client.tables().table("Artist").recordView(Artist.class);
-    Artist artist = view.get(tx, createArtistKey(110));
-    if (artist != null) {
-        artist.setName(artist.getName() + " (Updated)");
-        view.upsert(tx, artist);
-    }
-    return true;
-});
-
-// Long timeout for complex operations
-TransactionOptions complexOptions = new TransactionOptions()
-    .timeoutMillis(300000)  // 5 minutes
-    .readOnly(false);
-
-client.transactions().runInTransaction(complexOptions, tx -> {
-    // Perform complex multi-table operations
-    performBulkOperations(client, tx);
-    return true;
-});
-
-private static void performBulkOperations(IgniteClient client, Transaction tx) {
-    // Complex business logic implementation
-}
-```
-
-### Default vs Custom Options
-
-```java
-// Using default options
-Transaction defaultTx = client.transactions().begin();
-
-// Using custom options
-TransactionOptions customOptions = new TransactionOptions()
-    .timeoutMillis(15000)
-    .readOnly(false);
-
-Transaction customTx = client.transactions().begin(customOptions);
-
-// Options with functional pattern
-client.transactions().runInTransaction(
-    new TransactionOptions().timeoutMillis(10000).readOnly(true),
-    tx -> {
-        // Transaction operations
-        return true;
-    }
-);
-```
-
-## Exception Handling Patterns
-
-### Try-Catch with Explicit Transactions
-
-```java
-public static void explicitTransactionHandling(IgniteClient client) {
-    Transaction tx = null;
-    try {
-        TransactionOptions options = new TransactionOptions()
-            .timeoutMillis(30000)
-            .readOnly(false);
-        
-        tx = client.transactions().begin(options);
-        
-        RecordView<Artist> artistView = client.tables().table("Artist").recordView(Artist.class);
-        
-        // Perform operations
-        Artist artist = new Artist(111, "Metallica");
-        artistView.upsert(tx, artist);
-        
-        // Validate business rules
-        validateArtist(artist);
-        
-        // Commit on success
-        tx.commit();
-        System.out.println("Transaction committed");
-        
-    } catch (TransactionException e) {
-        System.err.println("Transaction error: " + e.getMessage());
-        if (tx != null) tx.rollback();
-    } catch (RuntimeException e) {
-        System.err.println("Business error: " + e.getMessage());
-        if (tx != null) tx.rollback();
-    } catch (Exception e) {
-        System.err.println("Unexpected error: " + e.getMessage());
-        if (tx != null) tx.rollback();
-        throw e;
-    }
-}
-
-private static void validateArtist(Artist artist) {
-    if (artist.getName() == null || artist.getName().trim().isEmpty()) {
-        throw new RuntimeException("Artist name cannot be empty");
-    }
-}
-```
-
-### Functional Error Handling
-
-```java
-// Use runInTransaction for automatic commit/rollback
-public static boolean functionalErrorHandling(IgniteClient client) {
-    return client.transactions().runInTransaction(tx -> {
-        try {
-            RecordView<Artist> artistView = client.tables().table("Artist").recordView(Artist.class);
-            RecordView<Album> albumView = client.tables().table("Album").recordView(Album.class);
-            
-            // Create artist
-            Artist artist = new Artist(112, "Iron Maiden");
-            artistView.upsert(tx, artist);
-            
-            // Create album
-            Album album = new Album(203, "The Number of the Beast", 112);
-            albumView.upsert(tx, album);
-            
-            // Validate data
-            if (artist.getName() != null && album.getTitle() != null) {
-                System.out.println("Artist and album created successfully");
-                return true; // Commit
-            } else {
-                System.err.println("Invalid data");
-                return false; // Rollback
-            }
-            
-        } catch (Exception e) {
-            System.err.println("Transaction failed: " + e.getMessage());
-            return false; // Rollback
-        }
-    });
-}
-```
-
-### Exception Types
-
-```java
-// Handle specific Ignite transaction exceptions
-public static void handleSpecificExceptions(IgniteClient client) {
-    try {
-        client.transactions().runInTransaction(tx -> {
-            RecordView<Artist> view = client.tables().table("Artist").recordView(Artist.class);
-            
-            Artist artist = new Artist(113, "AC/DC");
-            view.upsert(tx, artist);
-            
-            return true;
-        });
-    } catch (TransactionException e) {
-        // Handle transaction-specific errors
-        System.err.println("Transaction error: " + e.getMessage());
-    } catch (RuntimeException e) {
-        // Handle runtime errors
-        System.err.println("Runtime error: " + e.getMessage());
-    }
-}
-```
-
-### Transaction State Queries
-
-```java
-// Check transaction properties
-public static void queryTransactionState(IgniteClient client) {
-    TransactionOptions options = new TransactionOptions()
-        .timeoutMillis(30000)
-        .readOnly(true);
-    
-    Transaction tx = client.transactions().begin(options);
-    
-    try {
-        // Query transaction state
-        boolean isReadOnly = tx.isReadOnly();
-        System.out.println("Transaction is read-only: " + isReadOnly);
-        
-        // Perform operations based on state
-        if (isReadOnly) {
-            // Only query operations
-            ResultSet<SqlRow> result = client.sql().execute(tx, 
-                "SELECT COUNT(*) FROM Artist");
-            System.out.println("Artist count: " + result.next().longValue(0));
-        } else {
-            // Modify operations allowed
-            RecordView<Artist> view = client.tables().table("Artist").recordView(Artist.class);
-            Artist artist = new Artist(114, "The Beatles");
-            view.upsert(tx, artist);
-        }
-        
-        tx.commit();
-    } catch (Exception e) {
-        tx.rollback();
-        throw e;
-    }
-}
-```
-
-## Complete Example
+### Basic Transaction Lifecycle
 
 ```java
 /**
- * Demonstrates transaction patterns with music store data
+ * Demonstrates the fundamental transaction lifecycle in Ignite 3.
+ * This example shows explicit transaction management where you control
+ * the complete lifecycle: begin, operations, commit/rollback.
  */
-public class TransactionExamples {
+public class FirstTransaction {
     
-    // Update artist and create new album in a single transaction
-    public static boolean updateArtistAndCreateAlbum(IgniteClient client, 
-                                                    Integer artistId, 
-                                                    String albumTitle) {
-        TransactionOptions options = new TransactionOptions()
-            .timeoutMillis(10000)
-            .readOnly(false);
+    public void createArtistAndAlbum(IgniteClient client) {
+        // Step 1: Begin a transaction
+        Transaction tx = client.transactions().begin();
         
-        return client.transactions().runInTransaction(options, tx -> {
+        try {
+            // Step 2: Get table views within the transaction
+            RecordView<Tuple> artistTable = client.tables().table("Artist").recordView();
+            RecordView<Tuple> albumTable = client.tables().table("Album").recordView();
+            
+            // Step 3: Create artist record
+            Tuple artist = Tuple.create()
+                .set("ArtistId", 1000)
+                .set("Name", "Arctic Monkeys");
+            artistTable.upsert(tx, artist);
+            
+            // Step 4: Create album record (linked to artist)
+            Tuple album = Tuple.create()
+                .set("AlbumId", 2000)
+                .set("Title", "AM")
+                .set("ArtistId", 1000);  // Foreign key relationship
+            albumTable.upsert(tx, album);
+            
+            // Step 5: Commit the transaction
+            tx.commit();
+            System.out.println("✅ Artist and album created successfully");
+            
+        } catch (Exception e) {
+            // Step 6: Rollback on any error
+            tx.rollback();
+            System.err.println("❌ Transaction failed: " + e.getMessage());
+            throw e;
+        }
+    }
+}
+```
+
+**What's happening here?**
+
+1. **`begin()`** starts a new transaction context
+2. **All operations** use the same transaction (`tx`) parameter
+3. **`commit()`** makes all changes permanent across the cluster
+4. **`rollback()`** undoes all changes if anything fails
+
+This guarantees that either both records are created or neither exists—perfect for maintaining referential integrity.
+
+### The runInTransaction Pattern
+
+Most applications benefit from automatic transaction management. The `runInTransaction()` method handles commit/rollback based on your code's success or failure:
+
+```java
+/**
+ * Demonstrates automatic transaction management using runInTransaction().
+ * This pattern is recommended for most use cases as it handles lifecycle
+ * management and provides cleaner code structure.
+ */
+public class AutomaticTransactions {
+    
+    public void createArtistAndAlbum(IgniteClient client) {
+        boolean success = client.transactions().runInTransaction(tx -> {
             try {
-                RecordView<Artist> artistView = client.tables().table("Artist").recordView(Artist.class);
-                RecordView<Album> albumView = client.tables().table("Album").recordView(Album.class);
+                RecordView<Tuple> artistTable = client.tables().table("Artist").recordView();
+                RecordView<Tuple> albumTable = client.tables().table("Album").recordView();
                 
-                // Read and update artist
-                Artist artist = artistView.get(tx, createArtistKey(artistId));
-                if (artist == null) {
-                    System.err.println("Artist not found: " + artistId);
-                    return false;
-                }
+                // Create artist
+                Tuple artist = Tuple.create()
+                    .set("ArtistId", 1001)
+                    .set("Name", "Radiohead");
+                artistTable.upsert(tx, artist);
                 
-                // Update artist name
-                artist.setName(artist.getName() + " (Deluxe Edition)");
-                artistView.upsert(tx, artist);
+                // Create album
+                Tuple album = Tuple.create()
+                    .set("AlbumId", 2001)
+                    .set("Title", "OK Computer")
+                    .set("ArtistId", 1001);
+                albumTable.upsert(tx, album);
                 
-                // Create new album
-                Album album = new Album(generateAlbumId(), albumTitle, artistId);
-                albumView.upsert(tx, album);
-                
-                System.out.println("Updated artist and created album: " + albumTitle);
-                return true; // Commit
+                // Return true to commit
+                return true;
                 
             } catch (Exception e) {
-                System.err.println("Transaction failed: " + e.getMessage());
-                return false; // Rollback
+                System.err.println("Error in transaction: " + e.getMessage());
+                // Return false to rollback
+                return false;
+            }
+        });
+        
+        if (success) {
+            System.out.println("✅ Transaction completed successfully");
+        } else {
+            System.out.println("❌ Transaction was rolled back");
+        }
+    }
+}
+```
+
+**Key advantages of `runInTransaction()`:**
+
+- **Automatic lifecycle**: No need to manually call commit/rollback
+- **Exception safety**: Rollback happens automatically on uncaught exceptions
+- **Cleaner code**: Focus on business logic, not transaction plumbing
+- **Return values**: Can return computed results from the transaction
+
+## Real-World Scenario: Customer Purchase Workflow
+
+Let's implement a complete customer purchase transaction that demonstrates why transactions matter in distributed systems.
+
+### The Purchase Challenge
+
+When a customer buys tracks, multiple things must happen atomically:
+
+1. **Create invoice** with customer information
+2. **Add line items** for each purchased track
+3. **Calculate and set** the total amount
+4. **Update track sales counters** (if maintaining statistics)
+
+If any step fails, the entire purchase should be cancelled. No partial invoices, no orphaned line items.
+
+### Multi-Table Transaction Implementation
+
+```java
+/**
+ * Demonstrates a realistic business workflow requiring transactions.
+ * This example shows why ACID properties are crucial for maintaining
+ * data consistency in multi-table operations.
+ */
+public class CustomerPurchaseWorkflow {
+    
+    public Integer processPurchase(IgniteClient client, Integer customerId, List<Integer> trackIds) {
+        return client.transactions().runInTransaction(tx -> {
+            try {
+                // Get table access
+                RecordView<Tuple> invoiceTable = client.tables().table("Invoice").recordView();
+                RecordView<Tuple> invoiceLineTable = client.tables().table("InvoiceLine").recordView();
+                IgniteSql sql = client.sql();
+                
+                // Step 1: Create the invoice
+                Integer invoiceId = generateInvoiceId();
+                Tuple invoice = Tuple.create()
+                    .set("InvoiceId", invoiceId)
+                    .set("CustomerId", customerId)
+                    .set("InvoiceDate", LocalDate.now())
+                    .set("BillingAddress", "123 Music Street")
+                    .set("BillingCity", "Harmony")
+                    .set("BillingCountry", "USA")
+                    .set("Total", BigDecimal.ZERO);  // Will calculate later
+                
+                invoiceTable.upsert(tx, invoice);
+                System.out.println("📝 Created invoice " + invoiceId);
+                
+                // Step 2: Add line items and calculate total
+                BigDecimal totalAmount = BigDecimal.ZERO;
+                for (int i = 0; i < trackIds.size(); i++) {
+                    Integer trackId = trackIds.get(i);
+                    
+                    // Get track price using SQL in the same transaction
+                    ResultSet<SqlRow> trackResult = sql.execute(tx,
+                        "SELECT UnitPrice FROM Track WHERE TrackId = ?", trackId);
+                    
+                    if (!trackResult.hasNext()) {
+                        throw new IllegalArgumentException("Track not found: " + trackId);
+                    }
+                    
+                    BigDecimal unitPrice = trackResult.next().decimalValue("UnitPrice");
+                    
+                    // Create line item
+                    Tuple lineItem = Tuple.create()
+                        .set("InvoiceLineId", generateLineItemId(i))
+                        .set("InvoiceId", invoiceId)
+                        .set("TrackId", trackId)
+                        .set("UnitPrice", unitPrice)
+                        .set("Quantity", 1);
+                    
+                    invoiceLineTable.upsert(tx, lineItem);
+                    totalAmount = totalAmount.add(unitPrice);
+                    System.out.println("🎵 Added track " + trackId + " ($" + unitPrice + ")");
+                }
+                
+                // Step 3: Update invoice with calculated total
+                invoice = invoice.set("Total", totalAmount);
+                invoiceTable.upsert(tx, invoice);
+                
+                System.out.println("💰 Invoice total: $" + totalAmount);
+                System.out.println("✅ Purchase completed successfully");
+                
+                return invoiceId;
+                
+            } catch (Exception e) {
+                System.err.println("❌ Purchase failed: " + e.getMessage());
+                throw e;  // This will trigger rollback
             }
         });
     }
     
-    // Helper methods
-    private static Artist createArtistKey(Integer id) {
-        Artist key = new Artist();
-        key.setArtistId(id);
-        return key;
+    private Integer generateInvoiceId() {
+        return (int) (System.currentTimeMillis() % 100000);
     }
     
-    private static Integer generateAlbumId() {
+    private Integer generateLineItemId(int index) {
+        return (int) ((System.currentTimeMillis() + index) % 100000);
+    }
+}
+```
+
+**Transaction benefits demonstrated:**
+
+- **Atomicity**: All changes happen together or not at all
+- **Consistency**: Foreign key relationships are maintained
+- **Isolation**: Other transactions don't see partial state
+- **Durability**: Committed changes survive system failures
+
+## TransactionOptions: Controlling Transaction Behavior
+
+Different business scenarios require different transaction configurations. The `TransactionOptions` class provides fine-grained control over transaction behavior.
+
+### Timeout Configuration
+
+```java
+/**
+ * Demonstrates transaction timeout configuration for different scenarios.
+ * Proper timeout setting prevents long-running transactions from blocking
+ * system resources while allowing sufficient time for legitimate operations.
+ */
+public class TransactionTimeouts {
+    
+    public void quickUpdate(IgniteClient client) {
+        // Short timeout for simple operations
+        TransactionOptions quickOptions = new TransactionOptions()
+            .timeoutMillis(5000)  // 5 seconds
+            .readOnly(false);
+        
+        client.transactions().runInTransaction(quickOptions, tx -> {
+            RecordView<Tuple> artistTable = client.tables().table("Artist").recordView();
+            
+            Tuple artist = artistTable.get(tx, Tuple.create().set("ArtistId", 1));
+            if (artist != null) {
+                artist = artist.set("Name", artist.stringValue("Name") + " (Updated)");
+                artistTable.upsert(tx, artist);
+                System.out.println("Quick update completed");
+            }
+            return true;
+        });
+    }
+    
+    public void complexReport(IgniteClient client) {
+        // Longer timeout for complex operations
+        TransactionOptions reportOptions = new TransactionOptions()
+            .timeoutMillis(60000)  // 60 seconds
+            .readOnly(true);       // Read-only for better performance
+        
+        client.transactions().runInTransaction(reportOptions, tx -> {
+            IgniteSql sql = client.sql();
+            
+            // Complex multi-table analysis
+            ResultSet<SqlRow> stats = sql.execute(tx, """
+                SELECT 
+                    COUNT(DISTINCT a.ArtistId) as artist_count,
+                    COUNT(DISTINCT al.AlbumId) as album_count,
+                    COUNT(DISTINCT t.TrackId) as track_count,
+                    AVG(t.UnitPrice) as avg_price
+                FROM Artist a
+                JOIN Album al ON a.ArtistId = al.ArtistId
+                JOIN Track t ON al.AlbumId = t.AlbumId
+                """);
+            
+            if (stats.hasNext()) {
+                SqlRow row = stats.next();
+                System.out.printf("📊 Music Store Statistics:%n");
+                System.out.printf("   Artists: %d%n", row.longValue("artist_count"));
+                System.out.printf("   Albums: %d%n", row.longValue("album_count"));
+                System.out.printf("   Tracks: %d%n", row.longValue("track_count"));
+                System.out.printf("   Average Price: $%.2f%n", row.decimalValue("avg_price"));
+            }
+            
+            return true;
+        });
+    }
+}
+```
+
+### Read-Only Transactions
+
+Read-only transactions provide performance benefits for queries that don't modify data:
+
+```java
+/**
+ * Read-only transactions optimize performance for reporting and analytics.
+ * They can access multiple tables consistently without the overhead
+ * of write locks or conflict detection.
+ */
+public class ReadOnlyTransactions {
+    
+    public void generateMonthlySalesReport(IgniteClient client) {
+        TransactionOptions readOnlyOptions = new TransactionOptions()
+            .readOnly(true)
+            .timeoutMillis(120000);  // 2 minutes for complex reports
+        
+        client.transactions().runInTransaction(readOnlyOptions, tx -> {
+            IgniteSql sql = client.sql();
+            
+            // All queries in the same transaction see consistent data
+            System.out.println("📈 Generating Monthly Sales Report...");
+            
+            // Top selling tracks
+            ResultSet<SqlRow> topTracks = sql.execute(tx, """
+                SELECT t.Name, COUNT(*) as sales_count
+                FROM Track t
+                JOIN InvoiceLine il ON t.TrackId = il.TrackId
+                JOIN Invoice i ON il.InvoiceId = i.InvoiceId
+                WHERE i.InvoiceDate >= ?
+                GROUP BY t.TrackId, t.Name
+                ORDER BY sales_count DESC
+                LIMIT 10
+                """, LocalDate.now().minusMonths(1));
+            
+            System.out.println("🎵 Top Selling Tracks:");
+            while (topTracks.hasNext()) {
+                SqlRow track = topTracks.next();
+                System.out.printf("   %s: %d sales%n", 
+                    track.stringValue("Name"), 
+                    track.longValue("sales_count"));
+            }
+            
+            // Revenue by genre
+            ResultSet<SqlRow> genreRevenue = sql.execute(tx, """
+                SELECT g.Name, SUM(il.UnitPrice * il.Quantity) as revenue
+                FROM Genre g
+                JOIN Track t ON g.GenreId = t.GenreId
+                JOIN InvoiceLine il ON t.TrackId = il.TrackId
+                JOIN Invoice i ON il.InvoiceId = i.InvoiceId
+                WHERE i.InvoiceDate >= ?
+                GROUP BY g.GenreId, g.Name
+                ORDER BY revenue DESC
+                """, LocalDate.now().minusMonths(1));
+            
+            System.out.println("🎭 Revenue by Genre:");
+            while (genreRevenue.hasNext()) {
+                SqlRow genre = genreRevenue.next();
+                System.out.printf("   %s: $%.2f%n", 
+                    genre.stringValue("Name"), 
+                    genre.decimalValue("revenue"));
+            }
+            
+            return true;
+        });
+    }
+}
+```
+
+## Asynchronous Transactions: Non-Blocking Operations
+
+For high-throughput applications, asynchronous transactions prevent blocking threads while operations complete across the distributed cluster.
+
+### Basic Async Pattern
+
+```java
+/**
+ * Demonstrates asynchronous transaction patterns for non-blocking operations.
+ * Async transactions are crucial for high-throughput applications that need
+ * to handle many concurrent operations efficiently.
+ */
+public class AsyncTransactionPatterns {
+    
+    public CompletableFuture<Void> createArtistAsync(IgniteClient client, String artistName) {
+        return client.transactions().beginAsync()
+            .thenCompose(tx -> {
+                System.out.println("🚀 Starting async transaction for: " + artistName);
+                
+                RecordView<Tuple> artistTable = client.tables().table("Artist").recordView();
+                
+                Tuple artist = Tuple.create()
+                    .set("ArtistId", generateArtistId())
+                    .set("Name", artistName);
+                
+                return artistTable.upsertAsync(tx, artist)
+                    .thenCompose(ignored -> {
+                        System.out.println("✅ Artist created: " + artistName);
+                        return tx.commitAsync();
+                    })
+                    .exceptionally(throwable -> {
+                        System.err.println("❌ Failed to create artist: " + throwable.getMessage());
+                        tx.rollbackAsync();
+                        throw new RuntimeException(throwable);
+                    });
+            });
+    }
+    
+    public CompletableFuture<String> createMultipleArtistsAsync(IgniteClient client, List<String> artistNames) {
+        return client.transactions().runInTransactionAsync(tx -> {
+            RecordView<Tuple> artistTable = client.tables().table("Artist").recordView();
+            
+            // Create all artists in parallel within the same transaction
+            List<CompletableFuture<Void>> operations = artistNames.stream()
+                .map(name -> {
+                    Tuple artist = Tuple.create()
+                        .set("ArtistId", generateArtistId())
+                        .set("Name", name);
+                    return artistTable.upsertAsync(tx, artist);
+                })
+                .collect(Collectors.toList());
+            
+            // Wait for all operations to complete
+            return CompletableFuture.allOf(operations.toArray(new CompletableFuture[0]))
+                .thenApply(ignored -> {
+                    System.out.println("✅ Created " + artistNames.size() + " artists");
+                    return "Success: " + artistNames.size() + " artists created";
+                });
+        });
+    }
+    
+    private Integer generateArtistId() {
         return (int) (System.currentTimeMillis() % 100000);
     }
 }
 ```
 
-## Key Interface Methods
-
-### IgniteTransactions Methods
+### Async Error Handling
 
 ```java
-// Begin transactions
-Transaction begin()
-Transaction begin(TransactionOptions options)
-CompletableFuture<Transaction> beginAsync()
-CompletableFuture<Transaction> beginAsync(TransactionOptions options)
-
-// Functional transactions
-void runInTransaction(Consumer<Transaction> closure)
-void runInTransaction(Consumer<Transaction> closure, TransactionOptions options)
-<T> T runInTransaction(Function<Transaction, T> closure)
-<T> T runInTransaction(Function<Transaction, T> closure, TransactionOptions options)
-
-// Async functional transactions
-<T> CompletableFuture<T> runInTransactionAsync(Function<Transaction, CompletableFuture<T>> closure)
-<T> CompletableFuture<T> runInTransactionAsync(Function<Transaction, CompletableFuture<T>> closure, TransactionOptions options)
+/**
+ * Demonstrates proper error handling in asynchronous transactions.
+ * Error handling is crucial in async operations as exceptions
+ * propagate through CompletableFuture chains.
+ */
+public class AsyncErrorHandling {
+    
+    public CompletableFuture<String> safeAsyncOperation(IgniteClient client) {
+        return client.transactions().beginAsync()
+            .thenCompose(tx -> {
+                RecordView<Tuple> artistTable = client.tables().table("Artist").recordView();
+                
+                return artistTable.getAsync(tx, Tuple.create().set("ArtistId", 999))
+                    .thenCompose(artist -> {
+                        if (artist != null) {
+                            // Update existing artist
+                            Tuple updated = artist.set("Name", artist.stringValue("Name") + " (Updated)");
+                            return artistTable.upsertAsync(tx, updated);
+                        } else {
+                            // Create new artist
+                            Tuple newArtist = Tuple.create()
+                                .set("ArtistId", 999)
+                                .set("Name", "New Artist");
+                            return artistTable.upsertAsync(tx, newArtist);
+                        }
+                    })
+                    .thenCompose(ignored -> tx.commitAsync())
+                    .thenApply(ignored -> "Operation completed successfully")
+                    .exceptionally(throwable -> {
+                        // Handle any errors in the chain
+                        System.err.println("Transaction error: " + throwable.getMessage());
+                        tx.rollbackAsync();
+                        return "Operation failed: " + throwable.getMessage();
+                    });
+            })
+            .exceptionally(throwable -> {
+                // Handle transaction creation errors
+                return "Failed to begin transaction: " + throwable.getMessage();
+            });
+    }
+}
 ```
 
-### Transaction Methods
+## Exception Handling: Dealing with Failures
+
+In distributed systems, failures happen. Network partitions, node failures, and timeout issues require proper exception handling strategies.
+
+### Exception Types and Handling
 
 ```java
-// Synchronous operations
-void commit() throws TransactionException
-void rollback() throws TransactionException
-
-// Asynchronous operations
-CompletableFuture<Void> commitAsync()
-CompletableFuture<Void> rollbackAsync()
-
-// State queries
-boolean isReadOnly()
+/**
+ * Demonstrates comprehensive exception handling for transaction operations.
+ * Proper error handling ensures application stability and provides
+ * meaningful feedback when operations fail.
+ */
+public class TransactionExceptionHandling {
+    
+    public void handleTransactionExceptions(IgniteClient client) {
+        Transaction tx = null;
+        try {
+            TransactionOptions options = new TransactionOptions()
+                .timeoutMillis(10000)
+                .readOnly(false);
+            
+            tx = client.transactions().begin(options);
+            
+            // Perform business operations
+            performBusinessOperations(client, tx);
+            
+            tx.commit();
+            System.out.println("✅ Transaction completed successfully");
+            
+        } catch (TransactionException e) {
+            // Ignite-specific transaction errors
+            System.err.println("🔄 Transaction error: " + e.getMessage());
+            if (tx != null) tx.rollback();
+            
+            // Could implement retry logic here for transient failures
+            
+        } catch (IllegalArgumentException e) {
+            // Business logic validation errors
+            System.err.println("📋 Validation error: " + e.getMessage());
+            if (tx != null) tx.rollback();
+            
+        } catch (Exception e) {
+            // Unexpected system errors
+            System.err.println("⚠️ System error: " + e.getMessage());
+            if (tx != null) tx.rollback();
+            throw e;  // Re-throw if caller needs to handle
+        }
+    }
+    
+    public boolean handleWithRetry(IgniteClient client, int maxRetries) {
+        for (int attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                return client.transactions().runInTransaction(tx -> {
+                    // Simulate business logic that might fail
+                    if (Math.random() < 0.3) {  // 30% failure rate
+                        throw new RuntimeException("Simulated transient failure");
+                    }
+                    
+                    performBusinessOperations(client, tx);
+                    return true;
+                });
+                
+            } catch (Exception e) {
+                System.err.printf("❌ Attempt %d failed: %s%n", attempt, e.getMessage());
+                
+                if (attempt < maxRetries) {
+                    // Exponential backoff
+                    try {
+                        Thread.sleep(100 * (1L << (attempt - 1)));
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        return false;
+                    }
+                } else {
+                    System.err.println("🚫 All retry attempts exhausted");
+                    return false;
+                }
+            }
+        }
+        return false;
+    }
+    
+    private void performBusinessOperations(IgniteClient client, Transaction tx) {
+        // Placeholder for business logic
+        RecordView<Tuple> artistTable = client.tables().table("Artist").recordView();
+        
+        Tuple artist = Tuple.create()
+            .set("ArtistId", 12345)
+            .set("Name", "Test Artist");
+        
+        artistTable.upsert(tx, artist);
+    }
+}
 ```
 
-### TransactionOptions Properties
+## Performance Optimization: Transaction Best Practices
+
+Understanding when and how to use transactions optimally ensures your music store application performs well under load.
+
+### Batch Operations
 
 ```java
-// Configure timeout (in milliseconds)
-TransactionOptions timeoutMillis(long timeoutMillis)
-long timeoutMillis()
-
-// Configure read-only mode
-TransactionOptions readOnly(boolean readOnly)
-boolean readOnly()
+/**
+ * Demonstrates efficient batch operations within transactions.
+ * Batching reduces network round-trips and improves throughput
+ * for operations that affect multiple records.
+ */
+public class BatchTransactionOperations {
+    
+    public void importAlbumCatalog(IgniteClient client, List<AlbumData> albums) {
+        TransactionOptions batchOptions = new TransactionOptions()
+            .timeoutMillis(300000)  // 5 minutes for large batches
+            .readOnly(false);
+        
+        client.transactions().runInTransaction(batchOptions, tx -> {
+            RecordView<Tuple> albumTable = client.tables().table("Album").recordView();
+            RecordView<Tuple> trackTable = client.tables().table("Track").recordView();
+            
+            System.out.println("📦 Starting batch import of " + albums.size() + " albums");
+            
+            for (AlbumData albumData : albums) {
+                // Insert album
+                Tuple album = Tuple.create()
+                    .set("AlbumId", albumData.getAlbumId())
+                    .set("Title", albumData.getTitle())
+                    .set("ArtistId", albumData.getArtistId());
+                
+                albumTable.upsert(tx, album);
+                
+                // Insert all tracks for this album
+                for (TrackData trackData : albumData.getTracks()) {
+                    Tuple track = Tuple.create()
+                        .set("TrackId", trackData.getTrackId())
+                        .set("Name", trackData.getName())
+                        .set("AlbumId", albumData.getAlbumId())
+                        .set("GenreId", trackData.getGenreId())
+                        .set("UnitPrice", trackData.getUnitPrice());
+                    
+                    trackTable.upsert(tx, track);
+                }
+                
+                if (albumData.getAlbumId() % 100 == 0) {
+                    System.out.println("📀 Processed " + albumData.getAlbumId() + " albums...");
+                }
+            }
+            
+            System.out.println("✅ Batch import completed successfully");
+            return true;
+        });
+    }
+    
+    // Helper classes for demo
+    public static class AlbumData {
+        private Integer albumId;
+        private String title;
+        private Integer artistId;
+        private List<TrackData> tracks = new ArrayList<>();
+        
+        // Constructor and getters...
+        public AlbumData(Integer albumId, String title, Integer artistId) {
+            this.albumId = albumId;
+            this.title = title;
+            this.artistId = artistId;
+        }
+        
+        public Integer getAlbumId() { return albumId; }
+        public String getTitle() { return title; }
+        public Integer getArtistId() { return artistId; }
+        public List<TrackData> getTracks() { return tracks; }
+    }
+    
+    public static class TrackData {
+        private Integer trackId;
+        private String name;
+        private Integer genreId;
+        private BigDecimal unitPrice;
+        
+        public TrackData(Integer trackId, String name, Integer genreId, BigDecimal unitPrice) {
+            this.trackId = trackId;
+            this.name = name;
+            this.genreId = genreId;
+            this.unitPrice = unitPrice;
+        }
+        
+        public Integer getTrackId() { return trackId; }
+        public String getName() { return name; }
+        public Integer getGenreId() { return genreId; }
+        public BigDecimal getUnitPrice() { return unitPrice; }
+    }
+}
 ```
+
+### Transaction Scope Guidelines
+
+```java
+/**
+ * Demonstrates optimal transaction scoping for different scenarios.
+ * Proper transaction scope balances data consistency with system performance.
+ */
+public class TransactionScopeOptimization {
+    
+    // ✅ GOOD: Narrow scope for quick operations
+    public void updateSingleArtist(IgniteClient client, Integer artistId, String newName) {
+        client.transactions().runInTransaction(tx -> {
+            RecordView<Tuple> artistTable = client.tables().table("Artist").recordView();
+            
+            Tuple artist = artistTable.get(tx, Tuple.create().set("ArtistId", artistId));
+            if (artist != null) {
+                artist = artist.set("Name", newName);
+                artistTable.upsert(tx, artist);
+            }
+            return true;
+        });
+    }
+    
+    // ✅ GOOD: Wider scope for related operations
+    public void createAlbumWithTracks(IgniteClient client, AlbumData albumData) {
+        client.transactions().runInTransaction(tx -> {
+            RecordView<Tuple> albumTable = client.tables().table("Album").recordView();
+            RecordView<Tuple> trackTable = client.tables().table("Track").recordView();
+            
+            // Create album
+            Tuple album = Tuple.create()
+                .set("AlbumId", albumData.getAlbumId())
+                .set("Title", albumData.getTitle())
+                .set("ArtistId", albumData.getArtistId());
+            albumTable.upsert(tx, album);
+            
+            // Create all tracks (they belong together)
+            for (TrackData track : albumData.getTracks()) {
+                Tuple trackTuple = Tuple.create()
+                    .set("TrackId", track.getTrackId())
+                    .set("Name", track.getName())
+                    .set("AlbumId", albumData.getAlbumId())
+                    .set("UnitPrice", track.getUnitPrice());
+                trackTable.upsert(tx, trackTuple);
+            }
+            
+            return true;
+        });
+    }
+    
+    // ❌ AVOID: Transaction scope too wide
+    public void inefficientBulkUpdate(IgniteClient client) {
+        // DON'T DO THIS: Single transaction for unrelated operations
+        client.transactions().runInTransaction(tx -> {
+            updateArtistData(tx);     // Independent operation
+            updateAlbumData(tx);      // Independent operation  
+            generateReports(tx);      // Long-running operation
+            cleanupOldData(tx);       // Independent operation
+            return true;
+        });
+        
+        // INSTEAD: Use separate transactions for independent operations
+        updateArtistDataInTransaction(client);
+        updateAlbumDataInTransaction(client);
+        generateReportsInTransaction(client);
+        cleanupOldDataInTransaction(client);
+    }
+    
+    // Helper methods (implementation omitted for brevity)
+    private void updateArtistData(Transaction tx) { /* ... */ }
+    private void updateAlbumData(Transaction tx) { /* ... */ }
+    private void generateReports(Transaction tx) { /* ... */ }
+    private void cleanupOldData(Transaction tx) { /* ... */ }
+    
+    private void updateArtistDataInTransaction(IgniteClient client) { /* ... */ }
+    private void updateAlbumDataInTransaction(IgniteClient client) { /* ... */ }
+    private void generateReportsInTransaction(IgniteClient client) { /* ... */ }
+    private void cleanupOldDataInTransaction(IgniteClient client) { /* ... */ }
+}
+```
+
+## Integration with Table API and SQL API
+
+Transactions work seamlessly with both the Table API and SQL API, allowing you to mix operation types within the same transaction.
+
+### Mixed API Usage
+
+```java
+/**
+ * Demonstrates using both Table API and SQL API within the same transaction.
+ * This pattern is common in applications that need both object-oriented
+ * operations and complex SQL queries in the same business workflow.
+ */
+public class MixedAPITransactions {
+    
+    public void processCustomerOrder(IgniteClient client, Integer customerId, List<Integer> trackIds) {
+        client.transactions().runInTransaction(tx -> {
+            try {
+                // Use Table API for object-oriented operations
+                RecordView<Tuple> invoiceTable = client.tables().table("Invoice").recordView();
+                RecordView<Tuple> invoiceLineTable = client.tables().table("InvoiceLine").recordView();
+                
+                // Use SQL API for complex queries
+                IgniteSql sql = client.sql();
+                
+                // Step 1: Get customer info using SQL
+                ResultSet<SqlRow> customerResult = sql.execute(tx,
+                    "SELECT FirstName, LastName, Email FROM Customer WHERE CustomerId = ?", 
+                    customerId);
+                
+                if (!customerResult.hasNext()) {
+                    throw new IllegalArgumentException("Customer not found: " + customerId);
+                }
+                
+                SqlRow customer = customerResult.next();
+                String customerName = customer.stringValue("FirstName") + " " + customer.stringValue("LastName");
+                System.out.println("👤 Processing order for: " + customerName);
+                
+                // Step 2: Create invoice using Table API
+                Integer invoiceId = generateInvoiceId();
+                Tuple invoice = Tuple.create()
+                    .set("InvoiceId", invoiceId)
+                    .set("CustomerId", customerId)
+                    .set("InvoiceDate", LocalDate.now())
+                    .set("BillingAddress", "123 Music St")
+                    .set("BillingCity", "Harmony")
+                    .set("BillingCountry", "USA")
+                    .set("Total", BigDecimal.ZERO);
+                
+                invoiceTable.upsert(tx, invoice);
+                
+                // Step 3: Process each track using mixed APIs
+                BigDecimal totalAmount = BigDecimal.ZERO;
+                for (int i = 0; i < trackIds.size(); i++) {
+                    Integer trackId = trackIds.get(i);
+                    
+                    // Get track details using SQL (supports complex queries)
+                    ResultSet<SqlRow> trackResult = sql.execute(tx, """
+                        SELECT t.Name, t.UnitPrice, a.Name as ArtistName, al.Title as AlbumTitle
+                        FROM Track t
+                        JOIN Album al ON t.AlbumId = al.AlbumId
+                        JOIN Artist a ON al.ArtistId = a.ArtistId
+                        WHERE t.TrackId = ?
+                        """, trackId);
+                    
+                    if (!trackResult.hasNext()) {
+                        throw new IllegalArgumentException("Track not found: " + trackId);
+                    }
+                    
+                    SqlRow track = trackResult.next();
+                    BigDecimal unitPrice = track.decimalValue("UnitPrice");
+                    String trackName = track.stringValue("Name");
+                    
+                    // Create invoice line using Table API (simple object operations)
+                    Tuple invoiceLine = Tuple.create()
+                        .set("InvoiceLineId", generateLineItemId(i))
+                        .set("InvoiceId", invoiceId)
+                        .set("TrackId", trackId)
+                        .set("UnitPrice", unitPrice)
+                        .set("Quantity", 1);
+                    
+                    invoiceLineTable.upsert(tx, invoiceLine);
+                    totalAmount = totalAmount.add(unitPrice);
+                    
+                    System.out.printf("🎵 Added: %s - $%.2f%n", trackName, unitPrice);
+                }
+                
+                // Step 4: Update invoice total using Table API
+                invoice = invoice.set("Total", totalAmount);
+                invoiceTable.upsert(tx, invoice);
+                
+                System.out.printf("💰 Order total: $%.2f%n", totalAmount);
+                System.out.println("✅ Customer order processed successfully");
+                
+                return true;
+                
+            } catch (Exception e) {
+                System.err.println("❌ Order processing failed: " + e.getMessage());
+                throw e;  // Triggers rollback
+            }
+        });
+    }
+    
+    private Integer generateInvoiceId() {
+        return (int) (System.currentTimeMillis() % 100000);
+    }
+    
+    private Integer generateLineItemId(int index) {
+        return (int) ((System.currentTimeMillis() + index) % 100000);
+    }
+}
+```
+
+## Transaction State Management
+
+Understanding transaction state helps with debugging and monitoring your applications.
+
+### Monitoring Transaction Properties
+
+```java
+/**
+ * Demonstrates transaction state monitoring and conditional logic
+ * based on transaction properties. This is useful for debugging
+ * and implementing different behaviors based on transaction context.
+ */
+public class TransactionStateManagement {
+    
+    public void demonstrateTransactionStates(IgniteClient client) {
+        // Read-only transaction example
+        TransactionOptions readOnlyOptions = new TransactionOptions()
+            .readOnly(true)
+            .timeoutMillis(30000);
+        
+        Transaction readOnlyTx = client.transactions().begin(readOnlyOptions);
+        try {
+            boolean isReadOnly = readOnlyTx.isReadOnly();
+            System.out.println("🔍 Transaction is read-only: " + isReadOnly);
+            
+            if (isReadOnly) {
+                // Only perform read operations
+                IgniteSql sql = client.sql();
+                ResultSet<SqlRow> result = sql.execute(readOnlyTx, 
+                    "SELECT COUNT(*) as artist_count FROM Artist");
+                
+                if (result.hasNext()) {
+                    long count = result.next().longValue("artist_count");
+                    System.out.println("📊 Total artists: " + count);
+                }
+            }
+            
+            readOnlyTx.commit();
+            
+        } catch (Exception e) {
+            readOnlyTx.rollback();
+            System.err.println("Read-only transaction failed: " + e.getMessage());
+        }
+        
+        // Write transaction example
+        TransactionOptions writeOptions = new TransactionOptions()
+            .readOnly(false)
+            .timeoutMillis(15000);
+        
+        Transaction writeTx = client.transactions().begin(writeOptions);
+        try {
+            boolean isReadOnly = writeTx.isReadOnly();
+            System.out.println("✏️ Transaction is read-only: " + isReadOnly);
+            
+            if (!isReadOnly) {
+                // Can perform write operations
+                RecordView<Tuple> artistTable = client.tables().table("Artist").recordView();
+                
+                Tuple artist = Tuple.create()
+                    .set("ArtistId", 99999)
+                    .set("Name", "State Demo Artist");
+                
+                artistTable.upsert(writeTx, artist);
+                System.out.println("✅ Artist created in write transaction");
+            }
+            
+            writeTx.commit();
+            
+        } catch (Exception e) {
+            writeTx.rollback();
+            System.err.println("Write transaction failed: " + e.getMessage());
+        }
+    }
+}
+```
+
+## Summary: Transaction Patterns for Music Store Success
+
+Transactions in Ignite 3 provide the foundation for building reliable, consistent music store applications. Here's what we've learned:
+
+### Key Patterns to Remember
+
+1. **Use `runInTransaction()`** for most scenarios—it's safer and cleaner
+2. **Keep transactions focused**—group related operations, avoid long-running workflows
+3. **Use read-only transactions** for reporting and analytics
+4. **Handle exceptions properly**—always have rollback strategies
+5. **Consider async patterns** for high-throughput scenarios
+
+### Business Scenarios Covered
+
+- **Artist and Album Creation**: Maintaining referential integrity
+- **Customer Purchases**: Multi-table workflows with calculations
+- **Inventory Management**: Batch operations with proper scoping
+- **Sales Reporting**: Read-only transactions for analytics
+- **Data Import**: Large batch operations with timeouts
+
+### Production Readiness
+
+The patterns demonstrated here provide a solid foundation for production music store applications. They handle:
+
+- **Network failures** through proper exception handling
+- **Performance optimization** via read-only transactions and batching
+- **Data consistency** through proper transaction scoping
+- **Monitoring capabilities** via transaction state management
+
+Your music store application can now ensure that every customer purchase, every inventory update, and every playlist modification maintains perfect data consistency across your distributed Ignite cluster.
+
+The next module explores the **Compute API**, where we'll learn to process this transactionally-consistent data using distributed computing patterns.
