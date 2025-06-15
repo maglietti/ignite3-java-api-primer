@@ -93,13 +93,9 @@ ignite3-reference-apps/
 ├── 05-sql-api-app/                 # SQL operations and queries
 ├── 06-transactions-app/            # Transaction patterns
 ├── 07-compute-api-app/             # Distributed computing
-├── 08-data-streaming-app/          # High-throughput data loading ✅
+├── 08-data-streaming-app/          # High-throughput data loading
 ├── 09-caching-patterns-app/        # Caching strategies
-├── 10-catalog-management-app/      # Schema and zone management
-├── 11-advanced-topics-app/         # Error handling, monitoring
-├── 12-integration-patterns-app/    # Spring Boot, JPA integration
-├── 13-best-practices-app/          # Performance and testing
-└── 14-troubleshooting-app/         # Diagnostics and debugging
+└── 10-catalog-management-app/      # Schema and zone management
 ```
 
 ## Sample Dataset
@@ -211,10 +207,15 @@ client.transactions().runInTransaction(tx -> {
 **Purpose**: High-throughput data loading and processing  
 **Features**: DataStreamer API, Flow control, bulk ingestion, backpressure handling
 
-### 9. Integration Patterns
+### 9. Caching Patterns
 
-**Purpose**: Integration with popular Java frameworks  
-**Features**: Spring Boot auto-configuration, JPA integration, microservices
+**Purpose**: Caching pattern implementations with Ignite 3  
+**Features**: Cache-aside, write-through, write-behind patterns, high-performance data access
+
+### 10. Catalog Management
+
+**Purpose**: Schema and zone management operations  
+**Features**: Dynamic schema evolution, zone configuration, table administration
 
 ## Building and Running
 
@@ -300,10 +301,8 @@ mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.setup.app.SchemaCreat
 6. **transactions-app** - ACID transactions and consistency
 7. **compute-api-app** - Distributed processing
 8. **data-streaming-app** - High-throughput operations
-9. **integration-patterns-app** - Framework integration
-10. **advanced-topics-app** - Production patterns
-11. **best-practices-app** - Performance optimization
-12. **troubleshooting-app** - Monitoring and debugging
+9. **caching-patterns-app** - Caching strategies and patterns
+10. **catalog-management-app** - Schema and zone management
 
 ## Documentation
 

@@ -47,16 +47,10 @@
         <module>04-table-api-app</module>
         <module>05-sql-api-app</module>
         <module>06-transactions-app</module>
-        <!-- Uncomment as modules are implemented:
         <module>07-compute-api-app</module>
         <module>08-data-streaming-app</module>
         <module>09-caching-patterns-app</module>
         <module>10-catalog-management-app</module>
-        <module>11-advanced-topics-app</module>
-        <module>12-integration-patterns-app</module>
-        <module>13-best-practices-app</module>
-        <module>14-troubleshooting-app</module>
-        -->
     </modules>
 
     <dependencyManagement>

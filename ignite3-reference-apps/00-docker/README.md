@@ -137,4 +137,4 @@ docker-compose up -d    # Start fresh
 
 ---
 
-**⚠️ Important**: Keep this cluster running while working with any reference applications in modules 01-14.
+**⚠️ Important**: Keep this cluster running while working with any reference applications in modules 01-10.
