@@ -79,7 +79,7 @@
                     <execution>
                         <id>default</id>
                         <configuration>
-                            <mainClass>com.apache.ignite.examples.setup.app.ProjectInitializationApp</mainClass>
+                            <mainClass>com.apache.ignite.examples.setup.MusicStoreSetup</mainClass>
                         </configuration>
                     </execution>
                 </executions>
