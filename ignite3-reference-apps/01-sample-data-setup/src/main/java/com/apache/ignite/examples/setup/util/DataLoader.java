@@ -38,19 +38,26 @@ public class DataLoader {
      * @param client Connected Ignite client
      */
     public static void loadCoreData(IgniteClient client) {
-        logger.info("Loading core sample data...");
+        logger.info("   -> Loading essential sample data for development and testing...");
+        logger.info("   -> Using transactional batch operations for data consistency");
         
         try {
             client.transactions().runInTransaction(tx -> {
+                logger.info("      Step 1: Loading reference data (genres, media types)");
                 loadReferenceData(client, tx);
+                
+                logger.info("      Step 2: Loading music entities (artists, albums, tracks)");
                 loadMusicData(client, tx);
+                
+                logger.info("      Step 3: Loading business entities (customers, employees, invoices)");
                 loadBusinessData(client, tx);
             });
             
-            logger.info("Core sample data loaded successfully");
+            logger.info("   -> Core sample data committed successfully");
+            logger.info("   -> Loaded: 5 artists, 5 albums, 5 tracks, 3 customers, sample transactions");
             
         } catch (Exception e) {
-            logger.error("Failed to load core data: {}", e.getMessage());
+            logger.error("   -> Core data loading failed: {}", e.getMessage());
             throw new RuntimeException("Core data loading failed", e);
         }
     }
@@ -61,16 +68,22 @@ public class DataLoader {
      * @param client Connected Ignite client
      */
     public static void loadExtendedData(IgniteClient client) {
-        logger.info("Loading complete music store dataset...");
+        logger.info("   -> Processing complete music store catalog (15,866-line SQL script)...");
+        logger.info("   -> This includes 275+ artists, 347+ albums, 3,500+ tracks");
+        logger.info("   -> Plus complete customer database and transaction history");
+        logger.info("   -> Using optimized batch processing for performance");
         
         try {
             int executedStatements = SqlScriptLoader.loadFromScript(client, "music-store-complete.sql");
-            logger.info("Complete dataset loaded successfully, executed {} statements", executedStatements);
+            logger.info("   -> Bulk loading completed successfully!");
+            logger.info("   -> Executed {} SQL statements with batch optimization", executedStatements);
             
+            logger.info("   -> Verifying complete dataset integrity...");
             SqlScriptLoader.verifyDataLoad(client);
+            logger.info("   -> All data verified - complete music store catalog is ready!");
             
         } catch (Exception e) {
-            logger.error("Failed to load complete dataset: {}", e.getMessage());
+            logger.error("   -> Extended dataset loading failed: {}", e.getMessage());
             throw new RuntimeException("Complete dataset loading failed", e);
         }
     }

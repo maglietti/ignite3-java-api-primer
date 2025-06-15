@@ -36,30 +36,38 @@ public class SchemaUtils {
      * @param client Connected Ignite client
      */
     public static void createSchema(IgniteClient client) {
-        logger.info("Creating music store schema...");
+        logger.info("   -> Building comprehensive music store database schema...");
+        logger.info("   -> Step 1: Creating distribution zones for data placement optimization");
         
         try {
             createDistributionZones(client);
+            logger.info("   -> Distribution zones configured successfully");
             
-            createTableIfNotExists(client, Genre.class, "Genre");
-            createTableIfNotExists(client, MediaType.class, "MediaType");
+            logger.info("   -> Step 2: Creating reference tables (lookup data)");
+            createTableIfNotExists(client, Genre.class, "Genre", "Music genre classifications", 1, 2);
+            createTableIfNotExists(client, MediaType.class, "MediaType", "Audio/video format types", 2, 2);
             
-            createTableIfNotExists(client, Artist.class, "Artist");
-            createTableIfNotExists(client, Album.class, "Album");
-            createTableIfNotExists(client, Track.class, "Track");
+            logger.info("   -> Step 3: Creating core music entities");
+            createTableIfNotExists(client, Artist.class, "Artist", "Music artists and bands (root entity)", 3, 11);
+            createTableIfNotExists(client, Album.class, "Album", "Albums (colocated by ArtistId)", 4, 11);
+            createTableIfNotExists(client, Track.class, "Track", "Individual songs (colocated by AlbumId)", 5, 11);
             
-            createTableIfNotExists(client, Customer.class, "Customer");
-            createTableIfNotExists(client, Employee.class, "Employee");
-            createTableIfNotExists(client, Invoice.class, "Invoice");
-            createTableIfNotExists(client, InvoiceLine.class, "InvoiceLine");
+            logger.info("   -> Step 4: Creating business entities");
+            createTableIfNotExists(client, Customer.class, "Customer", "Store customers (root entity)", 6, 11);
+            createTableIfNotExists(client, Employee.class, "Employee", "Staff with hierarchy", 7, 11);
+            createTableIfNotExists(client, Invoice.class, "Invoice", "Purchase transactions (colocated by CustomerId)", 8, 11);
+            createTableIfNotExists(client, InvoiceLine.class, "InvoiceLine", "Purchase line items (colocated by InvoiceId)", 9, 11);
             
-            createTableIfNotExists(client, Playlist.class, "Playlist");
-            createTableIfNotExists(client, PlaylistTrack.class, "PlaylistTrack");
+            logger.info("   -> Step 5: Creating playlist entities");
+            createTableIfNotExists(client, Playlist.class, "Playlist", "User-created playlists", 10, 11);
+            createTableIfNotExists(client, PlaylistTrack.class, "PlaylistTrack", "Playlist-track associations (colocated by PlaylistId)", 11, 11);
             
-            logger.info("Music store schema created successfully");
+            logger.info("   -> All tables created with proper structure and indexes");
+            logger.info("   -> Schema includes: 2 zones, 11 tables, multiple indexes");
+            logger.info("   -> Optimized for: colocation, replication, and query performance");
             
         } catch (Exception e) {
-            logger.error("Failed to create schema: {}", e.getMessage());
+            logger.error("   -> Schema creation failed: {}", e.getMessage());
             throw new RuntimeException("Schema creation failed", e);
         }
     }
@@ -70,24 +78,28 @@ public class SchemaUtils {
      * @param client Connected Ignite client
      */
     public static void dropSchema(IgniteClient client) {
-        logger.info("Dropping music store schema...");
+        logger.info("   -> Removing existing music store schema...");
+        logger.info("   -> Dropping tables in dependency order (child tables first)");
         
         String[] tables = {"PlaylistTrack", "InvoiceLine", "Track", "Invoice", 
                           "Playlist", "Album", "Employee", "Customer", "Artist", 
                           "MediaType", "Genre"};
         
+        int count = 0;
         for (String tableName : tables) {
             try {
                 client.sql().execute(null, "DROP TABLE IF EXISTS " + tableName);
-                logger.debug("Dropped table: {}", tableName);
+                count++;
+                logger.info("      * Dropped table: {} ({}/{})", tableName, count, tables.length);
             } catch (Exception e) {
-                logger.warn("Failed to drop table {}: {}", tableName, e.getMessage());
+                logger.warn("      * Failed to drop table {}: {}", tableName, e.getMessage());
             }
         }
         
+        logger.info("   -> Dropping distribution zones");
         dropDistributionZones(client);
         
-        logger.info("Music store schema dropped");
+        logger.info("   -> Schema cleanup completed ({} tables processed)", tables.length);
     }
     
     /**
@@ -98,17 +110,28 @@ public class SchemaUtils {
      */
     public static boolean checkSchemaAndPromptUser(IgniteClient client) {
         if (schemaExists(client)) {
-            logger.warn("Music store schema already exists in the cluster");
-            System.out.println("\nExisting music store schema detected!");
-            System.out.println("Options:");
-            System.out.println("  1. Continue (may cause errors if schema conflicts)");
-            System.out.println("  2. Remove existing schema and recreate");
-            System.out.println("  3. Exit");
+            logger.info("   -> Found existing music store tables in the cluster");
+            logger.info("   -> This may indicate a previous setup or conflicting data");
+            
+            System.out.println("\n=================================================================");
+            System.out.println("  EXISTING SCHEMA DETECTED                                       ");
+            System.out.println("                                                               ");
+            System.out.println("  Found music store tables already in your Ignite cluster.    ");
+            System.out.println("  How would you like to proceed?                              ");
+            System.out.println("                                                               ");
+            System.out.println("  Options:                                                     ");
+            System.out.println("    1. Continue (skip table creation, load data only)         ");
+            System.out.println("    2. Clean slate (remove existing tables and recreate)      ");
+            System.out.println("    3. Exit (cancel setup)                                    ");
+            System.out.println("                                                               ");
+            System.out.println("  Tip: Option 2 is recommended for clean development         ");
+            System.out.println("=================================================================");
             System.out.print("Please choose an option (1/2/3): ");
             
             try (Scanner scanner = new Scanner(System.in)) {
                 if (!scanner.hasNextLine()) {
-                    logger.warn("No interactive input available, defaulting to continue with existing schema");
+                    logger.warn("   -> No interactive input available, continuing with existing schema");
+                    logger.info("   -> This may cause conflicts if schema structure differs");
                     return true;
                 }
                 
@@ -116,21 +139,25 @@ public class SchemaUtils {
                 
                 switch (choice) {
                     case "1":
-                        logger.info("Continuing with existing schema");
+                        logger.info("   -> Continuing with existing schema");
+                        logger.info("   -> Will attempt to load data into existing tables");
                         return true;
                     case "2":
-                        logger.info("Removing existing schema and recreating");
+                        logger.info("   -> Starting clean slate setup...");
+                        logger.info("   -> Removing existing schema for complete recreation");
                         dropSchema(client);
                         return true;
                     case "3":
-                        logger.info("Exiting without changes");
+                        logger.info("   -> Setup cancelled by user choice");
                         return false;
                     default:
-                        logger.warn("Invalid choice '{}', exiting", choice);
+                        logger.warn("   -> Invalid choice '{}', cancelling setup for safety", choice);
+                        logger.info("   -> Run again and choose 1, 2, or 3");
                         return false;
                 }
             } catch (Exception e) {
-                logger.warn("Error reading user input: {}, defaulting to continue with existing schema", e.getMessage());
+                logger.warn("   -> Error reading user input: {}", e.getMessage());
+                logger.info("   -> Defaulting to continue with existing schema");
                 return true;
             }
         }
@@ -181,16 +208,17 @@ public class SchemaUtils {
         }
     }
     
-    private static void createTableIfNotExists(IgniteClient client, Class<?> entityClass, String tableName) {
+    private static void createTableIfNotExists(IgniteClient client, Class<?> entityClass, String tableName, String description, int current, int total) {
         try {
             if (!ConnectionUtils.tableExists(client, tableName)) {
+                logger.info("      Creating table: {} - {} ({}/{})", tableName, description, current, total);
                 client.catalog().createTable(entityClass);
-                logger.info("Created table: {}", tableName);
+                logger.info("      -> Created table: {}", tableName);
             } else {
-                logger.debug("Table already exists: {}", tableName);
+                logger.info("      -> Table already exists: {} ({}/{})", tableName, current, total);
             }
         } catch (Exception e) {
-            logger.error("Failed to create table {}: {}", tableName, e.getMessage());
+            logger.error("      -> Failed to create table {}: {}", tableName, e.getMessage());
             throw new RuntimeException("Failed to create table " + tableName, e);
         }
     }

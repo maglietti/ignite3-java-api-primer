@@ -40,7 +40,7 @@ public class SqlScriptLoader {
      * @return Number of successfully executed statements
      */
     public static int loadFromScript(IgniteClient client, String scriptPath) {
-        logger.info("Loading data from SQL script: {}", scriptPath);
+        logger.info("      -> Reading SQL script: {}", scriptPath);
         
         try {
             InputStream scriptStream = SqlScriptLoader.class.getResourceAsStream("/" + scriptPath);
@@ -48,17 +48,19 @@ public class SqlScriptLoader {
                 throw new RuntimeException("SQL script not found: " + scriptPath);
             }
             
+            logger.info("      -> Parsing SQL statements and handling complex syntax...");
             List<String> statements;
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(scriptStream, StandardCharsets.UTF_8))) {
                 statements = parseSqlStatementsFromReader(reader);
             }
             
-            logger.info("Parsed {} SQL statements from script", statements.size());
+            logger.info("      -> Parsed {} SQL statements successfully", statements.size());
+            logger.info("      -> Beginning optimized batch execution...");
             
             return executeSqlStatements(client, statements);
             
         } catch (Exception e) {
-            logger.error("Failed to load SQL script {}: {}", scriptPath, e.getMessage());
+            logger.error("      -> SQL script loading failed: {}", e.getMessage());
             throw new RuntimeException("SQL script loading failed", e);
         }
     }
@@ -69,23 +71,30 @@ public class SqlScriptLoader {
      * @param client Connected Ignite client
      */
     public static void verifyDataLoad(IgniteClient client) {
-        logger.info("Verifying data load...");
+        logger.info("      -> Running comprehensive data verification...");
         
         String[] tables = {"Artist", "Album", "Track", "Genre", "MediaType", 
                           "Customer", "Employee", "Invoice", "InvoiceLine", 
                           "Playlist", "PlaylistTrack"};
+        
+        long totalRecords = 0;
+        int tablesVerified = 0;
         
         for (String table : tables) {
             try {
                 var result = client.sql().execute(null, "SELECT COUNT(*) as cnt FROM " + table);
                 if (result.hasNext()) {
                     long count = result.next().longValue("cnt");
-                    logger.info("{}: {} rows", table, count);
+                    totalRecords += count;
+                    tablesVerified++;
+                    logger.info("         * {}: {} rows", table, count);
                 }
             } catch (Exception e) {
-                logger.debug("{}: Table not available", table);
+                logger.debug("         * {}: Table not available", table);
             }
         }
+        
+        logger.info("      -> Verification complete: {} tables, {} total records", tablesVerified, totalRecords);
     }
     
     private static List<String> parseSqlStatementsFromReader(BufferedReader reader) throws IOException {
@@ -161,7 +170,13 @@ public class SqlScriptLoader {
         int currentStatement = 0;
         int totalStatements = statements.size();
         
-        logger.info("Processing schema statements");
+        // Count different types of statements
+        long schemaStatements = statements.stream().filter(s -> isSchemaStatement(s)).count();
+        long dataStatements = statements.stream().filter(s -> !isSchemaStatement(s)).count();
+        
+        logger.info("      -> Statement breakdown: {} schema, {} data", schemaStatements, dataStatements);
+        logger.info("      -> Phase 1: Executing schema statements...");
+        
         for (String statement : statements) {
             currentStatement++;
             
@@ -171,21 +186,24 @@ public class SqlScriptLoader {
             
             try {
                 String stmtType = getSchemaStatementType(statement);
-                logger.debug("[{}/{}] Executing: {}", currentStatement, totalStatements, stmtType);
+                logger.debug("         [{}/{}] Executing: {}", currentStatement, totalStatements, stmtType);
                 
                 client.sql().execute(null, statement);
                 successCount++;
             } catch (Exception e) {
                 if (isCreateZoneStatement(statement) || isDropStatement(statement)) {
-                    logger.debug("Schema operation note: {}", e.getMessage());
+                    logger.debug("         Schema operation note: {}", e.getMessage());
                 } else {
-                    logger.warn("Error executing schema statement: {}", e.getMessage());
+                    logger.warn("         * Error executing schema statement: {}", e.getMessage());
                 }
             }
         }
         
-        logger.info("Loading data statements");
+        logger.info("      -> Schema phase completed ({} statements)", schemaStatements);
+        logger.info("      -> Phase 2: Loading data with batch optimization...");
+        
         currentStatement = 0;
+        int dataStatementsProcessed = 0;
         
         for (String statement : statements) {
             currentStatement++;
@@ -194,17 +212,23 @@ public class SqlScriptLoader {
                 continue;
             }
             
+            dataStatementsProcessed++;
+            
             try {
                 String statementType = getStatementType(statement);
                 String targetTable = getTargetTable(statement);
                 
                 if (statementType.equals("INSERT")) {
                     int approxRows = countInsertRows(statement);
-                    logger.debug("[{}/{}] {} for table {} with {} rows", 
-                               currentStatement, totalStatements, statementType, targetTable, approxRows);
+                    
+                    // Show progress for data loading
+                    if (dataStatementsProcessed % 10 == 0 || dataStatementsProcessed <= 5) {
+                        logger.info("         -> Loading {} records into {} table ({}/{})", 
+                                   approxRows, targetTable, dataStatementsProcessed, dataStatements);
+                    }
                     
                     if (approxRows > MAX_BATCH_SIZE) {
-                        logger.debug("Splitting large INSERT into smaller batches");
+                        logger.debug("         Splitting large INSERT ({} rows) into batches", approxRows);
                         List<String> batches = splitLargeInsert(statement, MAX_BATCH_SIZE);
                         
                         for (String batch : batches) {
@@ -219,9 +243,11 @@ public class SqlScriptLoader {
                 client.sql().execute(null, statement);
                 successCount++;
             } catch (Exception e) {
-                logger.warn("Error executing data statement: {}", e.getMessage());
+                logger.warn("         * Error executing data statement: {}", e.getMessage());
             }
         }
+        
+        logger.info("      -> Data loading phase completed ({} statements)", dataStatements);
         
         return successCount;
     }

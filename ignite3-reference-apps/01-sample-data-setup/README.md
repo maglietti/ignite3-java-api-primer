@@ -44,30 +44,36 @@ MusicStore Zone (2 replicas)          MusicStoreReplicated Zone (3 replicas)
 
 > **Cluster Requirement**: All reference applications require the 3-node Ignite cluster from `00-docker` to be running. Start it with `docker-compose up -d` before proceeding.
 
-### Basic Setup
+### Basic Setup (Core Dataset)
 
 ```bash
 mvn compile exec:java
-# Creates schema and loads core sample data
-# If schema exists, prompts user for action (continue/recreate/exit)
+# Interactive setup with progress tracking
+# Creates schema with 11 tables and 2 distribution zones
+# Loads core sample data (5 artists, 5 albums, 5 tracks)
+# If schema exists, presents friendly options menu
 ```
 
 ### Extended Setup (Complete Dataset)
 
 ```bash
 mvn compile exec:java -Dexec.args="--extended"
-# Creates schema and loads complete music store dataset from SQL script
-# Includes thousands of tracks, albums, artists, customers, and transactions
+# Complete music store catalog setup
+# Loads 15,866-line SQL script with 275+ artists, 3,500+ tracks
+# Uses optimized batch processing for performance
+# Takes 2-3 minutes with detailed progress reporting
 ```
 
-### Reset Setup
+### Reset Setup (Clean Slate)
 
 ```bash
 mvn compile exec:java -Dexec.args="--reset"
 # Drops existing schema and recreates with core data
+# Perfect for clean development environment
 
 mvn compile exec:java -Dexec.args="--reset --extended"
-# Drops existing schema and recreates with complete dataset
+# Complete clean slate with full dataset
+# Recommended for comprehensive learning environment
 ```
 
 ### Custom Cluster Address
@@ -77,6 +83,27 @@ mvn compile exec:java -Dexec.args="192.168.1.100:10800"
 mvn compile exec:java -Dexec.args="192.168.1.100:10800 --extended"
 mvn compile exec:java -Dexec.args="192.168.1.100:10800 --reset"
 ```
+
+### What You'll See
+
+The application provides comprehensive progress tracking and status updates:
+
+- **Welcome Banner**: Overview of what the setup will accomplish
+- **Connection Status**: Clear connection feedback and troubleshooting tips
+- **Schema Progress**: Step-by-step table creation with descriptions
+- **Data Loading**: Transactional batch operations with progress indicators
+- **Bulk Loading**: Real-time progress for extended dataset processing
+- **Verification**: Complete data validation with record counts
+- **Success Summary**: Final status with next steps and available tables
+
+### User-Friendly Features
+
+- **Checkpoint System**: 5 clear checkpoints with progress indicators
+- **Error Guidance**: Helpful troubleshooting tips for common issues
+- **Interactive Prompts**: Friendly menus for existing schema conflicts
+- **Progress Reporting**: Real-time updates during long-running operations
+- **Comfort Noise**: Reassuring messages about normal Ignite behavior
+- **Visual Feedback**: Clear formatting for easy scanning
 
 ## Sample Dataset
 
