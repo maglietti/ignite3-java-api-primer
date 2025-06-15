@@ -107,6 +107,11 @@ public class SchemaUtils {
             System.out.print("Please choose an option (1/2/3): ");
             
             try (Scanner scanner = new Scanner(System.in)) {
+                if (!scanner.hasNextLine()) {
+                    logger.warn("No interactive input available, defaulting to continue with existing schema");
+                    return true;
+                }
+                
                 String choice = scanner.nextLine().trim();
                 
                 switch (choice) {
@@ -124,6 +129,9 @@ public class SchemaUtils {
                         logger.warn("Invalid choice '{}', exiting", choice);
                         return false;
                 }
+            } catch (Exception e) {
+                logger.warn("Error reading user input: {}, defaulting to continue with existing schema", e.getMessage());
+                return true;
             }
         }
         return true;

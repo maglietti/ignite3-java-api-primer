@@ -86,7 +86,7 @@ public class MusicStoreZoneConfiguration {
     public static boolean zoneExists(IgniteClient client, String zoneName) {
         try {
             var resultSet = client.sql().execute(null, 
-                "SELECT name FROM SYSTEM.ZONES WHERE name = ?", zoneName);
+                "SELECT name FROM SYSTEM.ZONES WHERE name = ?", zoneName.toUpperCase());
             return resultSet.hasNext();
         } catch (Exception e) {
             logger.warn("Error checking if zone exists {}: {}", zoneName, e.getMessage());

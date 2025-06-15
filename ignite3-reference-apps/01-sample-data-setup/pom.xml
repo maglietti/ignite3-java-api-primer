@@ -75,7 +75,6 @@
                 <version>3.4.1</version>
                 <configuration>
                     <mainClass>com.apache.ignite.examples.setup.MusicStoreSetup</mainClass>
-                    <commandlineArgs>127.0.0.1:10800</commandlineArgs>
                     <includeProjectDependencies>true</includeProjectDependencies>
                     <includePluginDependencies>false</includePluginDependencies>
                 </configuration>
