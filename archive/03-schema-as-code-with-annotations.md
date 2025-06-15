@@ -1,26 +1,4 @@
-# 3. Designing for Scale - Schema-as-Code with Annotations
-
-## Building on Your Success
-
-In [Module 2](02-getting-started.md), you created your first distributed table using a simple Book entity:
-
-```java
-@Table(zone = @Zone(value = "QuickStart", storageProfiles = "default"))
-public class Book {
-    @Id private Integer id;
-    @Column(length = 100) private String title;
-}
-```
-
-This worked perfectly for learning the basics. Now you're ready to design production-ready schemas that handle complex relationships, optimize performance, and scale across distributed environments.
-
-### From Simple to Sophisticated: The Schema Evolution Journey
-
-Your Book entity demonstrated the fundamental pattern. Now we'll explore how that same pattern scales to handle:
-
-- **Related Entities**: Artist → Album → Track hierarchies that mirror real business relationships
-- **Performance Optimization**: Colocation strategies that keep related data together for efficient joins
-- **Production Concerns**: Indexing, distribution zones, and query patterns that support high-performance applications
+# 3. Schema-as-Code with Annotations
 
 ## 3.1 Understanding Schema-as-Code
 

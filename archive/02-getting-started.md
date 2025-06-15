@@ -1,4 +1,4 @@
-# 2. Your First Success - Getting Started with Distributed Applications
+# 2. Getting Started
 
 ## 2.1 Your First Steps with Apache Ignite 3
 
@@ -6,11 +6,7 @@
 
 Apache Ignite 3 represents a fundamental shift in distributed database architecture. Unlike traditional databases that separate storage and compute, Ignite 3 co-locates data with processing power, enabling applications that think and act at memory speed while maintaining the durability and consistency of persistent storage.
 
-This module provides your first success experience with Ignite 3. Whether you're coming from [Module 1's infrastructure setup](01-introduction-overview.md) or jumping straight into hands-on development, you'll master the essential patterns every Ignite 3 developer needs. By the end, you'll understand how to connect, store, and query data in a distributed environment that scales from development to production.
-
-### Learning Strategy: Simple to Complete
-
-This module demonstrates core concepts through a simplified Book entity that mirrors the music store dataset used throughout this primer. The patterns you learn here apply directly to the Artist, Album, and Track entities introduced in [Module 1](01-introduction-overview.md) and used extensively in later modules.
+This module introduces you to the essential patterns every Ignite 3 developer needs to master. By the end, you'll understand how to connect, store, and query data in a distributed environment that scales effortlessly from development to production.
 
 ## 2.2 Environment Setup
 
@@ -26,7 +22,7 @@ For any Ignite 3 application, you need just one dependency:
 </dependency>
 ```
 
-The client library includes everything needed to connect, define schemas, and perform operations.
+That's it! The client library includes everything needed to connect, define schemas, and perform operations.
 
 ### Running Cluster Setup
 
@@ -42,16 +38,7 @@ docker-compose up -d
 ./init-cluster.sh
 ```
 
-This creates a 3-node cluster perfect for development and learning.
-
-### Complete vs. Simple Setup
-
-This module works with either setup approach:
-
-**Simple Setup** (this module only): Uses the basic cluster above with our Book entity
-**Complete Setup** (recommended): Follow [Module 1's infrastructure setup](01-introduction-overview.md) to get the full music store dataset and sample applications
-
-The complete setup provides a richer learning experience, but this module works independently for immediate hands-on practice.
+This gives you a 3-node cluster perfect for development and learning.
 
 ## 2.3 Core Concepts in Action
 
@@ -290,36 +277,10 @@ var result = client.sql().execute(null, "SELECT * FROM Book");
 
 ## 2.6 Building from Here
 
-The patterns you've mastered form the foundation for everything that follows. Your learning journey continues with:
+Now that you understand the basics, you're ready to explore:
 
-### **Phase 1: Foundation** (Next Steps)
+**[Module 3: Schema Annotations](03-schema-as-code-with-annotations.md)** - Advanced table design patterns
+**[Module 4: Table API](04-table-api-object-oriented-data-access.md)** - Object-oriented data operations  
+**[Module 5: SQL API](05-sql-api-relational-data-access.md)** - Relational query patterns
 
-**[Module 3: Designing for Scale](03-schema-as-code-with-annotations.md)** - Distributed schema patterns with annotations and colocation
-- Build on the Book example to understand Artist → Album → Track hierarchies
-- Learn when simple schemas need distribution optimization
-
-### **Phase 2: Core Operations** (Building Skills)
-
-**[Module 4: Managing Your Data](04-table-api-object-oriented-data-access.md)** - Object-oriented data access patterns
-- Scale the RecordView patterns shown here to complex business entities
-
-**[Module 5: Analyzing Your Business](05-sql-api-relational-data-access.md)** - SQL analytics and reporting  
-- Move beyond simple queries to complex joins and analytics
-
-**[Module 6: Ensuring Consistency](06-transactions.md)** - ACID guarantees for business processes
-- Learn when the simple operations here need transactional protection
-
-### **Phase 3: Advanced Capabilities** (Scaling Applications)
-
-**[Module 7: Intelligence at Scale](07-compute-api-distributed-processing.md)** - Distributed processing jobs
-**[Module 8: Real-Time Responsiveness](08-data-streaming-high-throughput-ingestion.md)** - High-velocity data ingestion
-**[Module 9: Performance Optimization](09-caching-patterns-java-implementations.md)** - Caching strategies
-**[Module 10: Operational Excellence](10-schema-and-catalog-management.md)** - Schema evolution and management
-
-### **Immediate Next Steps**
-
-**Continue Learning**: Start with [Module 3](03-schema-as-code-with-annotations.md) to understand how the simple Book table scales to distributed music store schemas
-
-**Practice Immediately**: The [reference applications](../ignite3-reference-apps/) provide working examples using the complete music store dataset, showing how these basic patterns scale to production scenarios
-
-**Quick Success**: Run the `getting-started-app` to see today's concepts in a larger context
+**Hands-on Practice:** The [reference applications](../ignite3-reference-apps/) provide working examples of every concept, from simple getting started patterns through complex production scenarios using the complete music store dataset.

@@ -1,10 +1,4 @@
-# 5. Analyzing Your Business - SQL API for Music Analytics and Reporting
-
-## Beyond Simple Operations: Advanced Music Analytics
-
-While [Module 4](04-table-api-object-oriented-data-access.md) handles direct catalog operations using the Table API, music platforms require sophisticated reporting and analytics. The SQL API bridges the gap between object-oriented access and complex relational queries—enabling everything from sales reports to recommendation algorithms.
-
-These analytics operations often require [transactions](06-transactions.md) for consistency, [compute jobs](07-compute-api-distributed-processing.md) for distributed processing, and [streaming integration](08-data-streaming-high-throughput-ingestion.md) for real-time metrics.
+# 5. SQL API - Java Interface for Relational Data Access
 
 The Ignite 3 SQL API delivers relational database operations through Java interfaces designed for distributed environments. This module teaches developers to use the `IgniteSql` interface and related classes for database operations, result handling, and transaction integration.
 

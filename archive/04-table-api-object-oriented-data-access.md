@@ -1,10 +1,4 @@
-# 4. Managing Your Data - Table API for Music Catalog Operations
-
-## From Schema to Operations: Building Your Music Catalog
-
-In [Module 3](03-schema-as-code-with-annotations.md), we designed our music store entities with proper annotations and colocation strategies. Now we move from schema definition to data operations—the daily interactions that bring your music catalog to life.
-
-The Table API provides the foundation for all catalog operations, from adding new artists to updating track metadata. While [Module 5](05-sql-api-relational-data-access.md) handles complex analytics queries and [Module 6](06-transactions.md) ensures multi-step operations remain consistent, the Table API serves as your primary interface for object-oriented data access.
+# 4. Table API - Object-Oriented Data Access
 
 ## 4.1 Understanding Object-Oriented Data Access
 

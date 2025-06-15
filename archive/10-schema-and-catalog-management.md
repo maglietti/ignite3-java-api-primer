@@ -1,10 +1,4 @@
-# 10. Operational Excellence - Schema and Catalog Management
-
-## Platform Evolution: Managing Growth and Change
-
-Your music platform now integrates multiple APIs: [Table operations](04-table-api-object-oriented-data-access.md) for catalog management, [SQL analytics](05-sql-api-relational-data-access.md) for reporting, [distributed transactions](06-transactions.md) for consistency, [compute processing](07-compute-api-distributed-processing.md) for analytics, [data streaming](08-data-streaming-high-throughput-ingestion.md) for events, and [caching patterns](09-caching-patterns-java-implementations.md) for performance.
-
-Schema management provides the foundation that supports this entire architecture, enabling programmatic evolution as your platform scales from startup to global music service.
+# 10. Schema and Catalog Management
 
 Building a music streaming platform requires managing complex database schemas that evolve over time. As your catalog grows from thousands to millions of tracks, artists, and customer interactions, the schema must adapt to changing business requirements. Apache Ignite 3's catalog management APIs provide programmatic control over schema evolution, enabling automated deployments and runtime flexibility.
 

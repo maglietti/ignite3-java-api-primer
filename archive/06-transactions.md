@@ -16,11 +16,6 @@ If any step fails—network issues, insufficient inventory, payment decline—th
 
 This is exactly what Ignite 3's Transaction API delivers: **atomic operations across multiple tables and nodes** with full ACID guarantees.
 
-These transaction patterns become essential building blocks for:
-- **[Compute operations](07-compute-api-distributed-processing.md)**: Ensuring distributed job consistency across multiple data modifications
-- **[Data streaming](08-data-streaming-high-throughput-ingestion.md)**: Managing high-throughput transaction boundaries for event processing
-- **[Caching patterns](09-caching-patterns-java-implementations.md)**: Coordinating cache and data store updates atomically
-
 ## Overview: Transaction API Architecture
 
 The Transaction API is built around interfaces that provide both explicit control and automatic management:

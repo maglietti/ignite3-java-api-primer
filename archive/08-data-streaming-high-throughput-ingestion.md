@@ -1,14 +1,8 @@
-# 8. Real-Time Responsiveness - Data Streaming for High-Throughput Ingestion
+# 8. Data Streaming - High-Throughput Ingestion
 
 When a music streaming service releases a new album from a major artist, millions of users immediately begin streaming tracks. Each play generates events: track started, track completed, rating given, playlist added. Processing these events one-by-one through traditional database operations creates bottlenecks that prevent real-time analytics and recommendations. The solution lies in **streaming data directly into Ignite tables** at high throughput.
 
 Consider this scenario: A popular band releases their new album at midnight. Within the first hour, 500,000 listeners generate 2.5 million track events. Traditional INSERT statements would require 2.5 million individual database operations. Instead, Ignite 3's Data Streaming API **batches these events into optimized chunks**, routes them to appropriate cluster nodes based on data locality, and **ingests thousands of records per second** with built-in backpressure handling.
-
-## High-Throughput Operations: Scaling Beyond Traditional APIs
-
-While [Table API operations](04-table-api-object-oriented-data-access.md) handle individual record management and [SQL operations](05-sql-api-relational-data-access.md) process analytical queries, music platforms generate millions of events requiring specialized ingestion patterns.
-
-Data streaming builds on [transaction principles](06-transactions.md) for consistency boundaries, integrates with [compute operations](07-compute-api-distributed-processing.md) for real-time processing, and coordinates with [caching patterns](09-caching-patterns-java-implementations.md) for optimal performance.
 
 This is exactly what Ignite 3's Data Streaming API delivers: **high-throughput data ingestion with intelligent batching and flow control**.
 

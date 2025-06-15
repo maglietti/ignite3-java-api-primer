@@ -1,14 +1,8 @@
-# 7. Intelligence at Scale - Compute API for Distributed Processing
+# 7. Compute API - Distributed Job Execution
 
 In any music streaming platform, compute-intensive operations become inevitable. When a customer requests playlist recommendations for their 10,000-song library, or when the system needs to analyze listening patterns across millions of tracks, running these operations on a single node creates bottlenecks. The answer lies in distributed job execution—sending compute work to the data rather than pulling data to compute.
 
 Consider this scenario: A music store wants to analyze which artists have the highest album sales across all customer purchases. Instead of pulling invoice data from all nodes to a central location for processing, Ignite 3's Compute API allows you to **send the analysis job directly to each node** where customer and invoice data resides. Each node processes its local data partition, then results aggregate back to the caller. This pattern—**code to data, not data to code**—defines efficient distributed computing.
-
-## Distributed Analytics: Beyond Single-Node Processing
-
-Music analytics operations often exceed single-node capabilities. Building on the [transaction patterns](06-transactions.md) that ensure data consistency, the Compute API distributes processing across your cluster while maintaining the data locality principles established in [Module 3](03-schema-as-code-with-annotations.md).
-
-These compute patterns integrate with [data streaming](08-data-streaming-high-throughput-ingestion.md) for real-time analytics and [caching strategies](09-caching-patterns-java-implementations.md) for performance optimization.
 
 This is exactly what Ignite 3's Compute API delivers: **distributed job execution with data locality awareness** and comprehensive management capabilities.
 
