@@ -290,7 +290,7 @@ Each module includes concepts, working examples, and reference applications you 
 2. **Practice immediately**: Run the `02-getting-started-app` to see concepts in action
 3. **Explore the dataset**: Use `SampleAnalyticsApp` to understand music store relationships
 
-**Need help?** Check the [Troubleshooting Guide](14-troubleshooting-guide.md) or verify cluster setup in `00-docker/`.
+**Need help?** Check the reference applications or verify cluster setup in `00-docker/`.
 
 ---
 
