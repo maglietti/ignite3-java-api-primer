@@ -32,9 +32,6 @@ public class MusicStoreZoneConfiguration {
                 );
                 
                 client.sql().execute(null, createZoneSQL);
-                logger.info("Created distribution zone: {}", MUSIC_STORE_ZONE);
-            } else {
-                logger.info("Distribution zone already exists: {}", MUSIC_STORE_ZONE);
             }
         } catch (Exception e) {
             logger.error("Failed to create distribution zone {}: {}", MUSIC_STORE_ZONE, e.getMessage());
@@ -54,9 +51,6 @@ public class MusicStoreZoneConfiguration {
                 );
                 
                 client.sql().execute(null, createZoneSQL);
-                logger.info("Created distribution zone: {}", MUSIC_STORE_REPLICATED_ZONE);
-            } else {
-                logger.info("Distribution zone already exists: {}", MUSIC_STORE_REPLICATED_ZONE);
             }
         } catch (Exception e) {
             logger.error("Failed to create distribution zone {}: {}", MUSIC_STORE_REPLICATED_ZONE, e.getMessage());

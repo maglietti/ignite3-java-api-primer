@@ -38,26 +38,41 @@ public class DataLoader {
      * @param client Connected Ignite client
      */
     public static void loadCoreData(IgniteClient client) {
-        logger.info("    >>> Loading essential sample data for development and testing");
-        logger.info("        Using transactional batch operations for data consistency");
-        
         try {
             client.transactions().runInTransaction(tx -> {
-                logger.info("        Step 1: Loading reference data (genres, media types)");
-                loadReferenceData(client, tx);
+                logger.info("    --- Step 1: Loading reference data (genres, media types)");
+                logger.info("    >>> Loading: genres");
+                loadGenres(client, tx);
+                logger.info("    <<< Loaded: 5 genres");
+                logger.info("    >>> Loading: media types");
+                loadMediaTypes(client, tx);
+                logger.info("    <<< Loaded: 3 media types");
                 
-                logger.info("        Step 2: Loading music entities (artists, albums, tracks)");
-                loadMusicData(client, tx);
+                logger.info("    --- Step 2: Loading music entities (artists, albums, tracks)");
+                logger.info("    >>> Loading: artists");
+                loadArtists(client, tx);
+                logger.info("    <<< Loaded: 5 artists");
+                logger.info("    >>> Loading: albums");
+                loadAlbums(client, tx);
+                logger.info("    <<< Loaded: 5 albums");
+                logger.info("    >>> Loading: tracks");
+                loadTracks(client, tx);
+                logger.info("    <<< Loaded: 5 tracks");
                 
-                logger.info("        Step 3: Loading business entities (customers, employees, invoices)");
-                loadBusinessData(client, tx);
+                logger.info("    --- Step 3: Loading business entities (customers, employees, invoices)");
+                logger.info("    >>> Loading: customers");
+                loadCustomers(client, tx);
+                logger.info("    <<< Loaded: 3 customers");
+                logger.info("    >>> Loading: employees");
+                loadEmployees(client, tx);
+                logger.info("    <<< Loaded: 3 employees");
+                logger.info("    >>> Loading: invoices");
+                loadInvoices(client, tx);
+                logger.info("    <<< Loaded: 2 invoices");
             });
             
-            logger.info("    <<< Core sample data committed successfully");
-            logger.info("        Loaded: 5 artists, 5 albums, 5 tracks, 3 customers, sample transactions");
-            
         } catch (Exception e) {
-            logger.error("    <<< Core data loading failed: {}", e.getMessage());
+            logger.error("Core data loading failed: {}", e.getMessage());
             throw new RuntimeException("Core data loading failed", e);
         }
     }
@@ -68,27 +83,27 @@ public class DataLoader {
      * @param client Connected Ignite client
      */
     public static void loadExtendedData(IgniteClient client) {
-        logger.info("    >>> Processing complete music store catalog (15,866-line SQL script)");
-        logger.info("        This includes 275+ artists, 347+ albums, 3,500+ tracks");
-        logger.info("        Plus complete customer database and transaction history");
-        logger.info("        Using optimized batch processing for performance");
+        logger.info("Processing complete music store catalog (15,866-line SQL script)");
+        logger.info("This includes 275+ artists, 347+ albums, 3,500+ tracks");
+        logger.info("Plus complete customer database and transaction history");
+        logger.info("Using optimized batch processing for performance");
         
         try {
             int executedStatements = SqlScriptLoader.loadFromScript(client, "music-store-complete.sql");
-            logger.info("    <<< Bulk loading completed successfully");
-            logger.info("        Executed {} SQL statements with batch optimization", executedStatements);
+            logger.info("Bulk loading completed successfully");
+            logger.info("Executed {} SQL statements with batch optimization", executedStatements);
             
-            logger.info("    >>> Verifying complete dataset integrity");
+            logger.info("Verifying complete dataset integrity");
             SqlScriptLoader.verifyDataLoad(client);
-            logger.info("    <<< All data verified - complete music store catalog is ready");
+            logger.info("All data verified - complete music store catalog is ready");
             
         } catch (Exception e) {
-            logger.error("    <<< Extended dataset loading failed: {}", e.getMessage());
+            logger.error("Extended dataset loading failed: {}", e.getMessage());
             throw new RuntimeException("Complete dataset loading failed", e);
         }
     }
     
-    private static void loadReferenceData(IgniteClient client, Transaction tx) {
+    private static void loadGenres(IgniteClient client, Transaction tx) {
         Table genreTable = client.tables().table("Genre");
         RecordView<Genre> genreView = genreTable.recordView(Genre.class);
         
@@ -97,7 +112,9 @@ public class DataLoader {
         genreView.upsert(tx, new Genre(3, "Metal"));
         genreView.upsert(tx, new Genre(4, "Alternative & Punk"));
         genreView.upsert(tx, new Genre(5, "Blues"));
-        
+    }
+    
+    private static void loadMediaTypes(IgniteClient client, Transaction tx) {
         Table mediaTypeTable = client.tables().table("MediaType");
         RecordView<MediaType> mediaTypeView = mediaTypeTable.recordView(MediaType.class);
         
@@ -106,7 +123,7 @@ public class DataLoader {
         mediaTypeView.upsert(tx, new MediaType(3, "Protected MPEG-4 video file"));
     }
     
-    private static void loadMusicData(IgniteClient client, Transaction tx) {
+    private static void loadArtists(IgniteClient client, Transaction tx) {
         Table artistTable = client.tables().table("Artist");
         RecordView<Artist> artistView = artistTable.recordView(Artist.class);
         
@@ -115,7 +132,9 @@ public class DataLoader {
         artistView.upsert(tx, new Artist(3, "Aerosmith"));
         artistView.upsert(tx, new Artist(4, "Black Sabbath"));
         artistView.upsert(tx, new Artist(5, "Led Zeppelin"));
-        
+    }
+    
+    private static void loadAlbums(IgniteClient client, Transaction tx) {
         Table albumTable = client.tables().table("Album");
         RecordView<Album> albumView = albumTable.recordView(Album.class);
         
@@ -124,7 +143,9 @@ public class DataLoader {
         albumView.upsert(tx, new Album(3, 2, "Restless and Wild"));
         albumView.upsert(tx, new Album(4, 3, "Big Ones"));
         albumView.upsert(tx, new Album(5, 4, "Paranoid"));
-        
+    }
+    
+    private static void loadTracks(IgniteClient client, Transaction tx) {
         Table trackTable = client.tables().table("Track");
         RecordView<Track> trackView = trackTable.recordView(Track.class);
         
@@ -135,21 +156,25 @@ public class DataLoader {
         trackView.upsert(tx, new Track(5, 5, "Paranoid", 3, 1, "Anthony Iommi, William Ward, John Osbourne, Terence Butler", 162562, 2611465, new BigDecimal("0.99")));
     }
     
-    private static void loadBusinessData(IgniteClient client, Transaction tx) {
+    private static void loadCustomers(IgniteClient client, Transaction tx) {
         Table customerTable = client.tables().table("Customer");
         RecordView<Customer> customerView = customerTable.recordView(Customer.class);
         
         customerView.upsert(tx, new Customer(1, "Luís", "Gonçalves", "Embraer - Empresa Brasileira de Aeronáutica S.A.", "Av. Brigadeiro Faria Lima, 2170", "São José dos Campos", "SP", "Brazil", "12227-000", "+55 (12) 3923-5555", "+55 (12) 3923-5566", "luisg@embraer.com.br", 3));
         customerView.upsert(tx, new Customer(2, "Leonie", "Köhler", null, "Theodor-Heuss-Straße 34", "Stuttgart", null, "Germany", "70174", "+49 0711 2842222", null, "leonekohler@surfeu.de", 5));
         customerView.upsert(tx, new Customer(3, "François", "Tremblay", null, "1498 rue Bélanger", "Montréal", "QC", "Canada", "H2G 1A7", "+1 (514) 721-4711", null, "ftremblay@gmail.com", 3));
-        
+    }
+    
+    private static void loadEmployees(IgniteClient client, Transaction tx) {
         Table employeeTable = client.tables().table("Employee");
         RecordView<Employee> employeeView = employeeTable.recordView(Employee.class);
         
         employeeView.upsert(tx, new Employee(1, "Adams", "Andrew", "General Manager", null, LocalDate.of(1962, 2, 18), LocalDate.of(2002, 8, 14), "11120 Jasper Ave NW", "Edmonton", "AB", "Canada", "T5K 2N1", "+1 (780) 428-9482", "+1 (780) 428-3457", "andrew@chinookcorp.com"));
         employeeView.upsert(tx, new Employee(2, "Edwards", "Nancy", "Sales Manager", 1, LocalDate.of(1958, 12, 8), LocalDate.of(2002, 5, 1), "825 8 Ave SW", "Calgary", "AB", "Canada", "T2P 2T3", "+1 (403) 262-3443", "+1 (403) 262-3322", "nancy@chinookcorp.com"));
         employeeView.upsert(tx, new Employee(3, "Peacock", "Jane", "Sales Support Agent", 2, LocalDate.of(1973, 8, 29), LocalDate.of(2002, 4, 1), "1111 6 Ave SW", "Calgary", "AB", "Canada", "T2P 5M5", "+1 (403) 262-3443", "+1 (403) 262-6712", "jane@chinookcorp.com"));
-        
+    }
+    
+    private static void loadInvoices(IgniteClient client, Transaction tx) {
         Table invoiceTable = client.tables().table("Invoice");
         RecordView<Invoice> invoiceView = invoiceTable.recordView(Invoice.class);
         

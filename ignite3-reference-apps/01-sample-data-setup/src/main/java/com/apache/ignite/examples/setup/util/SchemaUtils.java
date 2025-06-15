@@ -37,30 +37,27 @@ public class SchemaUtils {
      */
     public static void createSchema(IgniteClient client) {
         try {
-            logger.info("    >>> Creating distribution zones");
+            logger.info("    --- Distribution Zones");
             createDistributionZones(client);
-            logger.info("    <<< Distribution zones created");
             
-            logger.info("    >>> Creating reference tables");
+            logger.info("    --- Reference Tables");
             createTableIfNotExists(client, Genre.class, "Genre", "Music genre classifications", 1, 11);
             createTableIfNotExists(client, MediaType.class, "MediaType", "Audio/video format types", 2, 11);
             
-            logger.info("    >>> Creating core music entities");
+            logger.info("    --- Core Music Entities");
             createTableIfNotExists(client, Artist.class, "Artist", "Music artists and bands (root entity)", 3, 11);
             createTableIfNotExists(client, Album.class, "Album", "Albums (colocated by ArtistId)", 4, 11);
             createTableIfNotExists(client, Track.class, "Track", "Individual songs (colocated by AlbumId)", 5, 11);
             
-            logger.info("    >>> Creating business entities");
+            logger.info("    --- Business Entities");
             createTableIfNotExists(client, Customer.class, "Customer", "Store customers (root entity)", 6, 11);
             createTableIfNotExists(client, Employee.class, "Employee", "Staff with hierarchy", 7, 11);
             createTableIfNotExists(client, Invoice.class, "Invoice", "Purchase transactions (colocated by CustomerId)", 8, 11);
             createTableIfNotExists(client, InvoiceLine.class, "InvoiceLine", "Purchase line items (colocated by InvoiceId)", 9, 11);
             
-            logger.info("    >>> Creating playlist entities");
+            logger.info("    --- Playlist Entities");
             createTableIfNotExists(client, Playlist.class, "Playlist", "User-created playlists", 10, 11);
             createTableIfNotExists(client, PlaylistTrack.class, "PlaylistTrack", "Playlist-track associations (colocated by PlaylistId)", 11, 11);
-            
-            logger.info("    <<< Schema created: 2 zones, 11 tables, optimized for colocation");
             
         } catch (Exception e) {
             logger.error("Schema creation failed: {}", e.getMessage());
@@ -106,8 +103,9 @@ public class SchemaUtils {
      */
     public static boolean checkSchemaAndPromptUser(IgniteClient client) {
         if (schemaExists(client)) {
-            logger.info("    >>> Found existing music store tables in the cluster");
-            logger.info("        This may indicate a previous setup or conflicting data");
+            logger.info(">>> Checking for existing music store tables");
+            logger.info("    Found existing music store tables in the cluster");
+            logger.info("    This may indicate a previous setup or conflicting data");
             
             System.out.println("\n=================================================================");
             System.out.println("  EXISTING SCHEMA DETECTED                                       ");
@@ -126,8 +124,8 @@ public class SchemaUtils {
             
             try (Scanner scanner = new Scanner(System.in)) {
                 if (!scanner.hasNextLine()) {
-                    logger.warn("    <<< No interactive input available, continuing with existing schema");
-                    logger.info("        This may cause conflicts if schema structure differs");
+                    logger.warn("    No interactive input available, continuing with existing schema");
+                    logger.info("    This may cause conflicts if schema structure differs");
                     return true;
                 }
                 
@@ -135,27 +133,29 @@ public class SchemaUtils {
                 
                 switch (choice) {
                     case "1":
-                        logger.info("    <<< Continuing with existing schema");
-                        logger.info("        Will attempt to load data into existing tables");
+                        logger.info("    Continuing with existing schema");
+                        logger.info("    Will attempt to load data into existing tables");
                         return true;
                     case "2":
-                        logger.info("    >>> Starting clean slate setup");
-                        logger.info("        Removing existing schema for complete recreation");
+                        logger.info("    Starting clean slate setup");
+                        logger.info("    Removing existing schema for complete recreation");
                         dropSchema(client);
                         return true;
                     case "3":
-                        logger.info("    <<< Setup cancelled by user choice");
+                        logger.info("    Setup cancelled by user choice");
                         return false;
                     default:
-                        logger.warn("    <<< Invalid choice '{}', cancelling setup for safety", choice);
-                        logger.info("        Run again and choose 1, 2, or 3");
+                        logger.warn("    Invalid choice '{}', cancelling setup for safety", choice);
+                        logger.info("    Run again and choose 1, 2, or 3");
                         return false;
                 }
             } catch (Exception e) {
-                logger.warn("    <<< Error reading user input: {}", e.getMessage());
-                logger.info("        Defaulting to continue with existing schema");
+                logger.warn("    Error reading user input: {}", e.getMessage());
+                logger.info("    Defaulting to continue with existing schema");
                 return true;
             }
+        } else {
+            logger.info(">>> Checking for existing music store tables");
         }
         return true;
     }
@@ -179,7 +179,13 @@ public class SchemaUtils {
      */
     private static void createDistributionZones(IgniteClient client) {
         try {
-            MusicStoreZoneConfiguration.createDistributionZones(client);
+            logger.info("    >>> Creating distribution zone: MusicStore");
+            MusicStoreZoneConfiguration.createMusicStoreZone(client);
+            logger.info("    <<< Created distribution zone: MusicStore");
+            
+            logger.info("    >>> Creating distribution zone: MusicStoreReplicated");
+            MusicStoreZoneConfiguration.createMusicStoreReplicatedZone(client);
+            logger.info("    <<< Created distribution zone: MusicStoreReplicated");
         } catch (Exception e) {
             if (e.getMessage() != null && e.getMessage().contains("already exists")) {
                 logger.debug("Distribution zones already exist, continuing");
@@ -207,14 +213,14 @@ public class SchemaUtils {
     private static void createTableIfNotExists(IgniteClient client, Class<?> entityClass, String tableName, String description, int current, int total) {
         try {
             if (!ConnectionUtils.tableExists(client, tableName)) {
-                logger.info("        Creating table: {} - {} ({}/{})", tableName, description, current, total);
+                logger.info("    >>> Creating table: {} - {} ({}/{})", tableName, description, current, total);
                 client.catalog().createTable(entityClass);
-                logger.info("        <<< Created table: {}", tableName);
+                logger.info("    <<< Created table: {}", tableName);
             } else {
-                logger.info("        Table already exists: {} ({}/{})", tableName, current, total);
+                logger.info("    Table already exists: {} ({}/{})", tableName, current, total);
             }
         } catch (Exception e) {
-            logger.error("        <<< Failed to create table {}: {}", tableName, e.getMessage());
+            logger.error("    Failed to create table {}: {}", tableName, e.getMessage());
             throw new RuntimeException("Failed to create table " + tableName, e);
         }
     }

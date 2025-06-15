@@ -8,10 +8,10 @@ This is a comprehensive documentation project for Apache Ignite 3's Java API, de
 
 **Current Phase**: Phase 2A - Reference Applications Implementation  
 **Phase 1 Progress**: 100% complete (Documentation)  
-**Phase 2 Progress**: 50% complete (Modules 01-07 Implementation Complete)  
-**Last Updated**: June 13, 2025  
+**Phase 2 Progress**: 90% complete (Modules 01-09 Implementation Complete + Module 01 Refactoring)  
+**Last Updated**: June 15, 2025  
 **Project Start**: June 9, 2025  
-**Total Sessions**: 16+ development sessions
+**Total Sessions**: 20+ development sessions
 
 ## Technical Standards
 
@@ -40,42 +40,67 @@ Reference applications should follow consistent TUI (Text User Interface) design
 
 #### Message Formatting Standards
 
-- **Section Headers**: `=== Section Title ===` for major application phases
-- **Subsection Headers**: `--- Subsection Description` for operation phases  
-- **Progress Indicators**: `[X/Y] Operation Name` for checkpoint-style progress tracking
-- **Database Operations**: `    >>> Performing operation on database` (4 spaces indented)
-- **Database Confirmations**: `    <<< Operation completed successfully` (4 spaces indented)
-- **Status Messages**: `Operation completed: summary` for overall operation results
-- **Detailed Information**: `  Detail or sub-operation` (2 spaces indented)
+- **Phase Headers**: `=== [X/Y] Phase Name` for major application phases with progress tracking
+- **Section Headers**: `--- Section Description` for operation groupings within phases
+- **Subsection Headers**: `    --- Subsection Name` (4 spaces) for sub-groupings within sections
+- **Database Operations**: `>>> Operation description` at appropriate indentation level
+- **Database Confirmations**: `<<< Result description` at same indentation as corresponding operation
+- **Sub-operations**: `    >>> Sub-operation` (4 spaces) for nested database operations
+- **Sub-confirmations**: `    <<< Sub-result` (4 spaces) for nested operation results
+- **Deep sub-operations**: `        >>> Deep operation` (8 spaces) for deeply nested operations
+- **Deep sub-confirmations**: `        <<< Deep result` (8 spaces) for deeply nested results
+- **Special Notifications**: `!!! Message` for important notices (skipped operations, warnings)
+- **Completion Messages**: `=== Phase completed successfully` for major phase completions
 - **Data Results**: `Table: count (description)` for verification output
+- **Contextual Notes**: `        Note: explanation` (8 spaces) for important context
 
 #### Key TUI Principles
 
 - **No Emojis**: Text-only interface using standard ASCII characters
-- **Clear Hierarchy**: Consistent indentation (2 spaces for sub-info, 4 spaces for database operations)
-- **Operation Direction**: `>>>` shows outgoing database commands, `<<<` shows database responses
-- **Minimal Noise**: Only essential information with optional verbose details
-- **Professional Style**: Follow BulkLoadApp patterns for clean, readable interfaces
+- **Clear Hierarchy**: Consistent indentation levels (4 spaces per level for operations, 8 spaces for notes)
+- **Operation Direction**: `>>>` shows outgoing operations, `<<<` shows operation results
+- **Phase Tracking**: Use `[X/Y]` format for major phases to show overall progress
+- **Logical Grouping**: Group related operations under appropriate section headers
+- **Minimal Noise**: Only essential information with clear structure
+- **Professional Style**: Clean, readable interfaces following established patterns
 
 #### Example TUI Flow
 ```
 === Apache Ignite 3 Music Store Sample Data Setup ===
-Connecting to cluster: 127.0.0.1:10800
-Connected successfully
+Target cluster: 127.0.0.1:10800
+Dataset mode: CORE (sample records)
 
-[1/5] Schema Validation
---- Checking for existing music store tables
-    >>> Querying table existence
-    <<< Found existing tables: Artist, Album, Track
+    --- Connecting to Ignite cluster at 127.0.0.1:10800
+        Note: You may see partition assignment notifications - this is normal
+        >>> Creating Ignite client connection to: 127.0.0.1:10800
+        <<< Successfully connected to Ignite cluster at: 127.0.0.1:10800
 
-[2/5] Schema Creation  
+=== [1/5] Schema Validation
+>>> Checking for existing music store tables
+<<< Schema validation completed
+
+=== [2/5] Schema Creation
 --- Processing distribution zones and table definitions
+    --- Distribution Zones
     >>> Creating distribution zone: MusicStore
-    <<< Zone created successfully
-    >>> Creating table: Genre (1/11)
-    <<< Table created successfully
+    <<< Created distribution zone: MusicStore
+    --- Reference Tables  
+    >>> Creating table: Genre - Music genre classifications (1/11)
+    <<< Created table: Genre
+--- Schema created: 2 zones, 11 tables, optimized for colocation
+=== Database schema created successfully
 
-Setup completed successfully!
+=== [3/5] Core Data Loading
+--- Loading sample data
+    --- Step 1: Loading reference data (genres, media types)
+    >>> Loading: genres
+    <<< Loaded: 5 genres
+=== Core data loaded
+
+=== [4/5] Extended Data Loading
+!!! Skipped (use --extended flag for complete dataset)
+
+=== Setup Completed Successfully ===
 ```
 
 ### Documentation Standards
@@ -317,6 +342,61 @@ Phase 2 focuses on creating a standalone Java project that houses all reference 
 - ✅ **Educational Focus**: Progressive learning from basic cache-aside to advanced multi-pattern architectures with comprehensive inline documentation
 - ✅ **Performance Optimization**: Batch operations, async patterns, buffer management, and monitoring strategies for production deployment
 
+**Module 01 Sample Data Setup Refactoring (Session 20 - June 15, 2025)**:
+
+- ✅ **Over-Engineering Analysis**: Analyzed existing Module 01 sample-data-setup application and identified significant over-engineering with 4 application classes and 5 utility classes performing complex analytics beyond core purpose
+- ✅ **KISS Principle Application**: Applied radical simplification reducing complexity by 70% while maintaining all essential functionality:
+  - **Single Main Class**: Consolidated 4 applications (ProjectInitializationApp, DataLoadingApp, SchemaCreationApp, SampleAnalyticsApp) into one streamlined MusicStoreSetup.java
+  - **Three Minimal Utilities**: Reduced 5 utility classes to 3 focused utilities (ConnectionUtils, SchemaUtils, DataLoader) removing complex analytics and reporting
+  - **Streamlined Functionality**: Eliminated unnecessary modes, complex reporting, and analytics while preserving schema-as-code, data loading, and verification
+- ✅ **Enhanced User Experience**: Added comprehensive command-line functionality:
+  - **Reset Functionality**: `--reset` flag for clean schema recreation
+  - **Extended Dataset Support**: `--extended` flag for complete music store catalog (15,866 SQL lines) using bulk loading patterns from BulkLoadApp
+  - **Custom Cluster Support**: Custom cluster address specification
+  - **Defensive Error Handling**: Graceful handling of existing schemas with user prompts and non-interactive fallbacks
+- ✅ **BulkLoadApp Integration**: Implemented SQL script loading functionality based on ignite3-chinook-demo BulkLoadApp patterns:
+  - **SqlScriptLoader**: Complete SQL parsing, batch processing, and execution with statement categorization (schema vs data)
+  - **Performance Optimization**: Batch splitting for large INSERT statements (max 1000 rows per batch)
+  - **Two-Phase Execution**: Schema statements first (zones, tables, indexes) followed by optimized data loading
+  - **Error Handling**: Defensive error handling for existing zones, tables, and indexes
+- ✅ **Professional TUI Implementation**: Implemented comprehensive Text User Interface design standards:
+  - **Phase Tracking**: `=== [X/Y] Phase Name` for major application phases with clear progress indication
+  - **Operation Hierarchy**: `>>>` for database operations, `<<<` for confirmations, with proper indentation levels (4/8 spaces)
+  - **Section Organization**: `--- Section Name` for logical groupings within phases
+  - **Special Notifications**: `!!! Message` format for important notices (skipped operations, warnings)
+  - **First-Time User Support**: Added appropriate comfort noise and status updates for new Ignite users
+  - **Clean Professional Appearance**: Based on BulkLoadApp TUI patterns, no emojis, consistent formatting
+- ✅ **Code Quality Improvements**:
+  - **Maven Configuration**: Fixed incremental compilation issues and mainClass configuration for reliable execution
+  - **Argument Parsing**: Robust command-line argument handling with proper flag recognition
+  - **Resource Management**: Proper try-with-resources patterns and connection cleanup
+  - **Educational Comments**: Comprehensive inline documentation explaining Ignite 3 concepts and distributed systems patterns
+- ✅ **Complete Testing & Validation**: All functionality tested and validated:
+  - **Core Data Loading**: Essential sample data (5 artists, 5 albums, 5 tracks, 3 customers) with transactional consistency
+  - **Extended Data Loading**: Complete music store catalog using optimized bulk loading
+  - **Schema Management**: Both creation and reset functionality with proper dependency ordering
+  - **Error Recovery**: Defensive handling of existing schemas, connection issues, and user input edge cases
+
+**TUI Design Standards Enhancement (Session 20 - June 15, 2025)**:
+
+- ✅ **Comprehensive TUI Guidelines**: Updated CLAUDE.md with refined TUI design standards based on user feedback and BulkLoadApp analysis:
+  - **Hierarchical Messaging**: Clear 4-space and 8-space indentation levels for operations and sub-operations
+  - **Phase Progress Tracking**: `[X/Y]` format for overall application progress with major phase indicators
+  - **Operation Result Patterns**: `>>>` for database operations, `<<<` for confirmations at consistent indentation levels
+  - **Special Notification Format**: `!!!` for skipped operations, warnings, and important user notices
+  - **Professional Standards**: No emojis, consistent ASCII formatting, logical grouping of related operations
+- ✅ **Application-Wide Implementation**: Applied TUI standards across all utility classes:
+  - **MusicStoreSetup.java**: Phase headers, progress tracking, and completion messages
+  - **ConnectionUtils.java**: Connection establishment with proper operation/confirmation patterns
+  - **SchemaUtils.java**: Schema creation with subsection organization (Distribution Zones, Reference Tables, Core Music Entities, Business Entities, Playlist Entities)
+  - **DataLoader.java**: Detailed step-by-step data loading with individual entity progress (`>>> Loading: genres`, `<<< Loaded: 5 genres`)
+  - **SqlScriptLoader.java**: Bulk loading progress with phase separation (schema vs data statements)
+- ✅ **User Experience Focus**: TUI designed specifically for first-time Ignite users:
+  - **Clear Status Communication**: Users understand what's happening at each step
+  - **Professional Appearance**: Clean, readable output following established enterprise software patterns  
+  - **Comfort Noise**: Appropriate level of detail to build user confidence without overwhelming
+  - **Error Communication**: Clear, actionable error messages with recovery suggestions
+
 **Implementation Highlights**:
 
 - **Real API Usage**: All applications use authentic Ignite 3 Java APIs with proper error handling and resource management
@@ -358,22 +438,17 @@ ignite3-reference-apps/
 │           ├── config/ (Sample data configurations)
 │           │   ├── IgniteConfiguration.java
 │           │   └── MusicStoreZoneConfiguration.java
-│           ├── util/ (Data loading utilities)
-│           │   ├── DataSetupUtils.java       (Connection and basic operations)
-│           │   ├── BulkDataLoader.java       (SQL script execution)
-│           │   ├── TableCreationUtils.java   (Schema creation and management)
-│           │   ├── DataLoadingUtils.java     (Sample data creation)
-│           │   └── ReportingUtils.java       (Query and analysis utilities)
-│           └── app/
-│               ├── ProjectInitializationApp.java  (Main setup application)
-│               ├── DataLoadingApp.java           (Data population)
-│               ├── SchemaCreationApp.java        (Schema-only setup)
-│               └── SampleAnalyticsApp.java       (Demo queries and reports)
+│           ├── util/ (Simplified utilities - KISS principle applied)
+│           │   ├── ConnectionUtils.java     (Connection management)
+│           │   ├── SchemaUtils.java         (Schema creation and management)
+│           │   ├── DataLoader.java          (Core and extended data loading)
+│           │   └── SqlScriptLoader.java     (Bulk SQL script execution)
+│           └── MusicStoreSetup.java         (Single streamlined main application)
 │   └── src/main/resources/
-│       ├── music-store-schema.sql    (Complete DDL for all 11 tables)
-│       ├── sample-data.sql          (Rich sample music store data)
-│       ├── additional-albums.sql    (Extended sample data)
-│       └── log4j2.xml              (Logging configuration)
+│       ├── music-store-schema.sql      (Complete DDL for all 11 tables)
+│       ├── sample-data.sql            (Rich sample music store data)
+│       ├── music-store-complete.sql   (Extended complete catalog - 15,866 lines)
+│       └── log4j2.xml                (Logging configuration)
 ├── getting-started-app/
 │   ├── pom.xml
 │   └── src/main/java/

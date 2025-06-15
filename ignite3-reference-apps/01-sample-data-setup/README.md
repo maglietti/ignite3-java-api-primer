@@ -47,33 +47,34 @@ MusicStore Zone (2 replicas)          MusicStoreReplicated Zone (3 replicas)
 ### Basic Setup (Core Dataset)
 
 ```bash
-mvn compile exec:java
 # Interactive setup with progress tracking
 # Creates schema with 11 tables and 2 distribution zones
 # Loads core sample data (5 artists, 5 albums, 5 tracks)
 # If schema exists, presents friendly options menu
+mvn compile exec:java
 ```
 
 ### Extended Setup (Complete Dataset)
 
 ```bash
-mvn compile exec:java -Dexec.args="--extended"
 # Complete music store catalog setup
-# Loads 15,866-line SQL script with 275+ artists, 3,500+ tracks
+# Skips core sample data and loads complete 15,866-line SQL script instead
+# Includes 275+ artists, 3,500+ tracks - everything you need
 # Uses optimized batch processing for performance
 # Takes 2-3 minutes with detailed progress reporting
+mvn compile exec:java -Dexec.args="--extended"
 ```
 
 ### Reset Setup (Clean Slate)
 
 ```bash
-mvn compile exec:java -Dexec.args="--reset"
 # Drops existing schema and recreates with core data
 # Perfect for clean development environment
+mvn compile exec:java -Dexec.args="--reset"
 
-mvn compile exec:java -Dexec.args="--reset --extended"
 # Complete clean slate with full dataset
 # Recommended for comprehensive learning environment
+mvn compile exec:java -Dexec.args="--reset --extended"
 ```
 
 ### Custom Cluster Address
@@ -107,9 +108,12 @@ The application provides comprehensive progress tracking and status updates:
 
 ## Sample Dataset
 
+> **Data Loading Logic**: The application uses **exclusive data loading** - either core sample data OR complete dataset, never both. The `--extended` flag replaces the sample data with the complete catalog.
+
 ### Core Data (Default)
 
 **Music Entities**:
+
 - **5 Artists**: AC/DC, Accept, Aerosmith, Black Sabbath, Led Zeppelin
 - **5 Albums**: Representative albums from various artists
 - **5 Tracks**: Individual songs with metadata (duration, composer, price)
@@ -117,6 +121,7 @@ The application provides comprehensive progress tracking and status updates:
 - **3 Media Types**: MPEG, AAC, MPEG-4 video
 
 **Business Entities**:
+
 - **3 Customers**: International customer base
 - **3 Employees**: Hierarchical organization structure
 - **2 Invoices**: Purchase transactions with line items
@@ -124,6 +129,7 @@ The application provides comprehensive progress tracking and status updates:
 ### Complete Dataset (--extended)
 
 **Full Music Store Dataset**:
+
 - **275+ Artists**: Complete music artist catalog
 - **347+ Albums**: Full album collection across genres
 - **3,503+ Tracks**: Complete track library with metadata

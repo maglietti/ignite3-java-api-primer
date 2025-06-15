@@ -53,53 +53,60 @@ public class MusicStoreSetup {
         logger.info("Schema action: {}", resetSchema ? "RESET (drop and recreate)" : "CREATE (preserve existing)");
         logger.info("");
         
+        logger.info("    --- Connecting to Ignite cluster at {}", clusterAddress);
+        logger.info("        Note: You may see partition assignment notifications - this is normal");
+        
         try (IgniteClient client = ConnectionUtils.connectToCluster(clusterAddress)) {
             
             if (resetSchema) {
-                logger.info("[1/5] Schema Reset");
+                logger.info("=== [1/5] Schema Reset");
                 logger.info("--- Removing existing tables and zones to start fresh");
                 SchemaUtils.dropSchema(client);
-                logger.info("Schema reset completed");
+                logger.info("=== Schema reset completed");
                 logger.info("");
             } else {
-                logger.info("[1/5] Schema Validation");
-                logger.info("--- Checking for existing music store tables");
+                logger.info("=== [1/5] Schema Validation");
                 if (!SchemaUtils.checkSchemaAndPromptUser(client)) {
                     logger.info("Setup cancelled by user");
                     return;
                 }
-                logger.info("Schema validation completed");
+                logger.info("<<< Schema validation completed");
                 logger.info("");
             }
             
-            logger.info("[2/5] Schema Creation");
+            logger.info("=== [2/5] Schema Creation");
             logger.info("--- Processing distribution zones and table definitions");
             logger.info("This may take 30-60 seconds as Ignite configures the distributed schema");
             SchemaUtils.createSchema(client);
-            logger.info("Database schema created successfully");
-            logger.info("");
-            
-            logger.info("[3/5] Core Data Loading");
-            logger.info("--- Loading essential sample data");
-            DataLoader.loadCoreData(client);
-            logger.info("Core data loaded: 5 artists, 5 albums, 5 tracks, 3 customers");
+            logger.info("--- Schema created: 2 zones, 11 tables, optimized for colocation");
+            logger.info("=== Database schema created successfully");
             logger.info("");
             
             if (loadExtended) {
-                logger.info("[4/5] Extended Data Loading");
+                logger.info("=== [3/5] Extended Data Loading");
                 logger.info("--- Loading complete music store dataset");
                 logger.info("Processing 15,866-line SQL script with full music catalog");
                 logger.info("Expected completion time: 2-3 minutes depending on system performance");
                 DataLoader.loadExtendedData(client);
-                logger.info("Extended data loaded successfully");
+                logger.info("=== Extended data loaded successfully");
+                logger.info("");
+                
+                logger.info("=== [4/5] Core Data Loading");
+                logger.info("!!! Skipped (using complete dataset instead)");
                 logger.info("");
             } else {
-                logger.info("[4/5] Extended Data Loading");
-                logger.info("--- Skipped (use --extended flag for complete dataset)");
+                logger.info("=== [3/5] Extended Data Loading");
+                logger.info("!!! Skipped (use --extended flag for complete dataset)");
+                logger.info("");
+                
+                logger.info("=== [4/5] Core Data Loading");
+                logger.info("--- Loading sample data");
+                DataLoader.loadCoreData(client);
+                logger.info("=== Core data loaded");
                 logger.info("");
             }
             
-            logger.info("[5/5] Verification");
+            logger.info("=== [5/5] Verification");
             logger.info("--- Verifying data load");
             verifySetup(client, loadExtended);
             

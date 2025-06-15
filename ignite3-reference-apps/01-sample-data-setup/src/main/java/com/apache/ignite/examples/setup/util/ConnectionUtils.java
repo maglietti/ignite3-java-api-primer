@@ -33,12 +33,11 @@ public class ConnectionUtils {
      * @return IgniteClient instance connected to the specified address
      */
     public static IgniteClient connectToCluster(String address) {
-        logger.info("    >>> Connecting to Ignite cluster at {}", address);
-        logger.info("        Note: You may see partition assignment notifications - this is normal");
+        logger.info("        >>> Creating Ignite client connection to: {}", address);
         
         IgniteClient client = IgniteConfiguration.createClient(address);
         
-        logger.info("    <<< Connected successfully");
+        logger.info("        <<< Successfully connected to Ignite cluster at: {}", address);
         logger.info("");
         
         return client;
