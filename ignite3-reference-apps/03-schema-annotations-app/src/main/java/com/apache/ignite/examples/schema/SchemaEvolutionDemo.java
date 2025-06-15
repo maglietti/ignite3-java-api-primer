@@ -254,7 +254,7 @@ public class SchemaEvolutionDemo {
      * Demonstrates automatic DDL generation from annotations.
      */
     private void demonstrateDDLGeneration(IgniteClient client) {
-        System.out.println("\n--- DDL Generation from Annotations ---");
+        System.out.println("\n--- DDL Generation from Annotations    ---");
         
         System.out.println("Creating tables from annotated POJOs:");
         System.out.println("- Ignite 3 automatically generates SQL DDL");
@@ -288,7 +288,7 @@ public class SchemaEvolutionDemo {
      * Demonstrates schema validation and error handling.
      */
     private void demonstrateSchemaValidation(IgniteClient client) {
-        System.out.println("\n--- Schema Validation ---");
+        System.out.println("\n--- Schema Validation    ---");
         
         List<String> validationResults = new ArrayList<>();
         
@@ -343,7 +343,7 @@ public class SchemaEvolutionDemo {
      * Demonstrates entity evolution from V1 to V2.
      */
     private void demonstrateEntityEvolution(IgniteClient client) {
-        System.out.println("\n--- Entity Evolution: V1 → V2 ---");
+        System.out.println("\n--- Entity Evolution: V1 → V2    ---");
         
         System.out.println("Evolution approach in Ignite 3:");
         System.out.println("- Create new table with enhanced schema");
@@ -399,7 +399,7 @@ public class SchemaEvolutionDemo {
      * Demonstrates complex schema creation with multiple indexes and constraints.
      */
     private void demonstrateComplexSchemaCreation(IgniteClient client) {
-        System.out.println("\n--- Complex Schema Creation ---");
+        System.out.println("\n--- Complex Schema Creation    ---");
         
         try {
             System.out.println("Creating UserProfile table with complex schema:");
@@ -450,7 +450,7 @@ public class SchemaEvolutionDemo {
      * Demonstrates schema inspection and metadata operations.
      */
     private void demonstrateSchemaInspection(IgniteClient client) {
-        System.out.println("\n--- Schema Inspection ---");
+        System.out.println("\n--- Schema Inspection    ---");
         
         String[] demoTables = {"PlaylistV1", "PlaylistV2", "UserProfile"};
         
@@ -499,7 +499,7 @@ public class SchemaEvolutionDemo {
      * Cleans up demonstration tables.
      */
     private void cleanupDemoTables(IgniteClient client) {
-        System.out.println("\n--- Cleaning Up Demo Tables ---");
+        System.out.println("\n--- Cleaning Up Demo Tables    ---");
         
         String[] tablesToCleanup = {"UserProfile", "PlaylistV2", "PlaylistV1"};
         

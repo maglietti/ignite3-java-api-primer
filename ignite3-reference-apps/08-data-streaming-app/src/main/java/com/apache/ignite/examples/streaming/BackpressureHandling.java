@@ -90,7 +90,7 @@ public class BackpressureHandling {
      * Shows how to coordinate between data production and consumption rates.
      */
     private static void demonstrateCustomPublisher(IgniteClient ignite) {
-        System.out.println("\n--- Custom Publisher with Backpressure ---");
+        System.out.println("\n--- Custom Publisher with Backpressure    ---");
         
         RecordView<Tuple> backpressureView = ignite.tables()
             .table("BackpressureTest")
@@ -154,7 +154,7 @@ public class BackpressureHandling {
      * Shows how to slow down producers when the system is under load.
      */
     private static void demonstrateAdaptiveRateLimiting(IgniteClient ignite) {
-        System.out.println("\n--- Adaptive Rate Limiting ---");
+        System.out.println("\n--- Adaptive Rate Limiting    ---");
         
         RecordView<Tuple> rateLimitView = ignite.tables()
             .table("RateLimitTest")
@@ -230,7 +230,7 @@ public class BackpressureHandling {
      * Shows strategies for dealing with memory pressure during high-volume streaming.
      */
     private static void demonstrateBufferOverflowHandling(IgniteClient ignite) {
-        System.out.println("\n--- Buffer Overflow Handling ---");
+        System.out.println("\n--- Buffer Overflow Handling    ---");
         
         RecordView<Tuple> overflowView = ignite.tables()
             .table("OverflowTest")

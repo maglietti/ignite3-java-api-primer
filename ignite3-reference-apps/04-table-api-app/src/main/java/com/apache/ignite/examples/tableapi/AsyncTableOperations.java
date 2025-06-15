@@ -83,7 +83,7 @@ public class AsyncTableOperations {
      * - Error propagation through chains
      */
     private static void demonstrateAsyncChaining(IgniteClient client) {
-        System.out.println("\n--- Advanced Async Operation Chaining ---");
+        System.out.println("\n--- Advanced Async Operation Chaining    ---");
         
         RecordView<Artist> artists = client.tables().table("Artist").recordView(Artist.class);
         RecordView<Album> albums = client.tables().table("Album").recordView(Album.class);
@@ -189,7 +189,7 @@ public class AsyncTableOperations {
      * - Performance measurement
      */
     private static void demonstrateParallelExecution(IgniteClient client) {
-        System.out.println("\n--- Parallel Async Execution Patterns ---");
+        System.out.println("\n--- Parallel Async Execution Patterns    ---");
         
         RecordView<Artist> artists = client.tables().table("Artist").recordView(Artist.class);
         
@@ -305,7 +305,7 @@ public class AsyncTableOperations {
      * - Logging and monitoring for async errors
      */
     private static void demonstrateErrorHandlingPatterns(IgniteClient client) {
-        System.out.println("\n--- Comprehensive Error Handling Patterns ---");
+        System.out.println("\n--- Comprehensive Error Handling Patterns    ---");
         
         RecordView<Artist> artists = client.tables().table("Artist").recordView(Artist.class);
         
@@ -409,7 +409,7 @@ public class AsyncTableOperations {
      * - Fast-fail behavior
      */
     private static void demonstrateCircuitBreakerPattern(IgniteClient client) {
-        System.out.println("\n--- Circuit Breaker Pattern ---");
+        System.out.println("\n--- Circuit Breaker Pattern    ---");
         
         RecordView<Artist> artists = client.tables().table("Artist").recordView(Artist.class);
         
@@ -492,7 +492,7 @@ public class AsyncTableOperations {
      * - Retry on specific error types
      */
     private static void demonstrateRetryWithBackoff(IgniteClient client) {
-        System.out.println("\n--- Retry Logic with Exponential Backoff ---");
+        System.out.println("\n--- Retry Logic with Exponential Backoff    ---");
         
         RecordView<Artist> artists = client.tables().table("Artist").recordView(Artist.class);
         
@@ -567,7 +567,7 @@ public class AsyncTableOperations {
      * - Resource cleanup on timeout
      */
     private static void demonstrateTimeoutHandling(IgniteClient client) {
-        System.out.println("\n--- Timeout Handling Patterns ---");
+        System.out.println("\n--- Timeout Handling Patterns    ---");
         
         RecordView<Artist> artists = client.tables().table("Artist").recordView(Artist.class);
         
@@ -660,7 +660,7 @@ public class AsyncTableOperations {
      * - Performance monitoring
      */
     private static void demonstrateComplexAsyncWorkflows(IgniteClient client) {
-        System.out.println("\n--- Complex Async Workflows ---");
+        System.out.println("\n--- Complex Async Workflows    ---");
         
         RecordView<Artist> artists = client.tables().table("Artist").recordView(Artist.class);
         RecordView<Album> albums = client.tables().table("Album").recordView(Album.class);
@@ -799,7 +799,7 @@ public class AsyncTableOperations {
      * - Performance monitoring
      */
     private static void demonstratePerformanceOptimizations(IgniteClient client) {
-        System.out.println("\n--- Performance Optimization Techniques ---");
+        System.out.println("\n--- Performance Optimization Techniques    ---");
         
         RecordView<Artist> artists = client.tables().table("Artist").recordView(Artist.class);
         

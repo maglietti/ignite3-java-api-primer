@@ -40,7 +40,7 @@ public class SqlScriptLoader {
      * @return Number of successfully executed statements
      */
     public static int loadFromScript(IgniteClient client, String scriptPath) {
-        logger.info("        >>> Reading SQL script: {}", scriptPath);
+        logger.info("    >>> Reading SQL script: {}", scriptPath);
         
         try {
             InputStream scriptStream = SqlScriptLoader.class.getResourceAsStream("/" + scriptPath);
@@ -48,19 +48,19 @@ public class SqlScriptLoader {
                 throw new RuntimeException("SQL script not found: " + scriptPath);
             }
             
-            logger.info("        >>> Parsing SQL statements and handling complex syntax");
+            logger.info("    >>> Parsing SQL statements and handling complex syntax");
             List<String> statements;
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(scriptStream, StandardCharsets.UTF_8))) {
                 statements = parseSqlStatementsFromReader(reader);
             }
             
-            logger.info("        <<< Parsed {} SQL statements successfully", statements.size());
-            logger.info("        >>> Beginning optimized batch execution");
+            logger.info("    <<< Parsed {} SQL statements successfully", statements.size());
+            logger.info("    >>> Beginning optimized batch execution");
             
             return executeSqlStatements(client, statements);
             
         } catch (Exception e) {
-            logger.error("        <<< SQL script loading failed: {}", e.getMessage());
+            logger.error("    <<< SQL script loading failed: {}", e.getMessage());
             throw new RuntimeException("SQL script loading failed", e);
         }
     }
@@ -71,7 +71,7 @@ public class SqlScriptLoader {
      * @param client Connected Ignite client
      */
     public static void verifyDataLoad(IgniteClient client) {
-        logger.info("        >>> Running comprehensive data verification");
+        logger.info("    >>> Running comprehensive data verification");
         
         String[] tables = {"Artist", "Album", "Track", "Genre", "MediaType", 
                           "Customer", "Employee", "Invoice", "InvoiceLine", 
@@ -94,7 +94,7 @@ public class SqlScriptLoader {
             }
         }
         
-        logger.info("        <<< Verification complete: {} tables, {} total records", tablesVerified, totalRecords);
+        logger.info("    <<< Verification complete: {} tables, {} total records", tablesVerified, totalRecords);
     }
     
     private static List<String> parseSqlStatementsFromReader(BufferedReader reader) throws IOException {
@@ -174,8 +174,8 @@ public class SqlScriptLoader {
         long schemaStatements = statements.stream().filter(s -> isSchemaStatement(s)).count();
         long dataStatements = statements.stream().filter(s -> !isSchemaStatement(s)).count();
         
-        logger.info("        >>> Statement breakdown: {} schema, {} data", schemaStatements, dataStatements);
-        logger.info("        >>> Phase 1: Executing schema statements");
+        logger.info("    >>> Statement breakdown: {} schema, {} data", schemaStatements, dataStatements);
+        logger.info("    >>> Phase 1: Executing schema statements");
         
         for (String statement : statements) {
             currentStatement++;
@@ -199,8 +199,8 @@ public class SqlScriptLoader {
             }
         }
         
-        logger.info("        <<< Schema phase completed ({} statements)", schemaStatements);
-        logger.info("        >>> Phase 2: Loading data with batch optimization");
+        logger.info("    <<< Schema phase completed ({} statements)", schemaStatements);
+        logger.info("    >>> Phase 2: Loading data with batch optimization");
         
         currentStatement = 0;
         int dataStatementsProcessed = 0;
@@ -223,7 +223,7 @@ public class SqlScriptLoader {
                     
                     // Show progress for data loading
                     if (dataStatementsProcessed % 10 == 0 || dataStatementsProcessed <= 5) {
-                        logger.info("            >>> Loading {} records into {} table ({}/{})", 
+                        logger.info("    >>> Loading {} records into {} table ({}/{})", 
                                    approxRows, targetTable, dataStatementsProcessed, dataStatements);
                     }
                     
@@ -243,11 +243,11 @@ public class SqlScriptLoader {
                 client.sql().execute(null, statement);
                 successCount++;
             } catch (Exception e) {
-                logger.warn("            * Error executing data statement: {}", e.getMessage());
+                logger.warn("        * Error executing data statement: {}", e.getMessage());
             }
         }
         
-        logger.info("        <<< Data loading phase completed ({} statements)", dataStatements);
+        logger.info("    <<< Data loading phase completed ({} statements)", dataStatements);
         
         return successCount;
     }

@@ -70,7 +70,7 @@ public class AnnotatedEntitiesDemo {
      * Shows how Ignite 3 generates DDL from annotations.
      */
     private void demonstrateTableCreation(IgniteClient client) {
-        System.out.println("\n--- Table Creation from Annotations ---");
+        System.out.println("\n--- Table Creation from Annotations    ---");
         
         try {
             // Try to create tables from annotated classes
@@ -119,7 +119,7 @@ public class AnnotatedEntitiesDemo {
      * Artist table: @Table + @Zone + @Id + @Column
      */
     private void demonstrateSimpleEntity(IgniteClient client) {
-        System.out.println("\n--- Simple Entity Pattern: Artist ---");
+        System.out.println("\n--- Simple Entity Pattern: Artist    ---");
         
         try {
             Table artistTable = client.tables().table("Artist");
@@ -156,7 +156,7 @@ public class AnnotatedEntitiesDemo {
      * Album table: @Id on multiple fields for composite key
      */
     private void demonstrateCompositeKeyEntity(IgniteClient client) {
-        System.out.println("\n--- Composite Key Entity Pattern: Album ---");
+        System.out.println("\n--- Composite Key Entity Pattern: Album    ---");
         
         try {
             Table albumTable = client.tables().table("Album");
@@ -199,7 +199,7 @@ public class AnnotatedEntitiesDemo {
      * Track table: @ColumnRef colocation with Album
      */
     private void demonstrateColocationEntity(IgniteClient client) {
-        System.out.println("\n--- Colocation Entity Pattern: Track ---");
+        System.out.println("\n--- Colocation Entity Pattern: Track    ---");
         
         try {
             Table trackTable = client.tables().table("Track");
@@ -255,7 +255,7 @@ public class AnnotatedEntitiesDemo {
      * Genre table: High replication for read-heavy reference data
      */
     private void demonstrateReferenceDataEntity(IgniteClient client) {
-        System.out.println("\n--- Reference Data Entity Pattern: Genre ---");
+        System.out.println("\n--- Reference Data Entity Pattern: Genre    ---");
         
         try {
             Table genreTable = client.tables().table("Genre");
@@ -293,7 +293,7 @@ public class AnnotatedEntitiesDemo {
      * Customer table: Many fields, indexes, foreign key relationships
      */
     private void demonstrateComplexEntity(IgniteClient client) {
-        System.out.println("\n--- Complex Entity Pattern: Customer ---");
+        System.out.println("\n--- Complex Entity Pattern: Customer    ---");
         
         try {
             Table customerTable = client.tables().table("Customer");

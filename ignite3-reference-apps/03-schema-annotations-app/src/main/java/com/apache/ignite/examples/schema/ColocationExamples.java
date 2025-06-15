@@ -74,7 +74,7 @@ public class ColocationExamples {
      * Sets up demonstration data showing colocation hierarchies.
      */
     private void setupDemoData(IgniteClient client) {
-        System.out.println("\n--- Setting Up Colocation Demo Data ---");
+        System.out.println("\n--- Setting Up Colocation Demo Data    ---");
         
         try {
             // Setup Artist → Album → Track hierarchy
@@ -171,7 +171,7 @@ public class ColocationExamples {
      * Demonstrates music catalog colocation: Artist → Album → Track
      */
     private void demonstrateMusicCatalogColocation(IgniteClient client) {
-        System.out.println("\n--- Music Catalog Colocation Hierarchy ---");
+        System.out.println("\n--- Music Catalog Colocation Hierarchy    ---");
         
         System.out.println("Colocation chain: Artist (1000) → Album (2000) → Tracks (3001-3003)");
         System.out.println("- Albums colocated with Artists by ArtistId");
@@ -216,7 +216,7 @@ public class ColocationExamples {
      * Demonstrates sales transaction colocation: Customer → Invoice → InvoiceLine
      */
     private void demonstrateSalesTransactionColocation(IgniteClient client) {
-        System.out.println("\n--- Sales Transaction Colocation Hierarchy ---");
+        System.out.println("\n--- Sales Transaction Colocation Hierarchy    ---");
         
         System.out.println("Colocation chain: Customer (5000) → Invoice (6000) → InvoiceLines (7001-7003)");
         System.out.println("- Invoices colocated with Customers by CustomerId");
@@ -271,7 +271,7 @@ public class ColocationExamples {
      * Demonstrates performance benefits of colocated queries vs non-colocated queries.
      */
     private void demonstrateColocatedQueryPerformance(IgniteClient client) {
-        System.out.println("\n--- Colocation Performance Benefits ---");
+        System.out.println("\n--- Colocation Performance Benefits    ---");
         
         try {
             // Colocated query - all data on same nodes
@@ -325,7 +325,7 @@ public class ColocationExamples {
      * Demonstrates colocation best practices and common patterns.
      */
     private void demonstrateColocationBestPractices(IgniteClient client) {
-        System.out.println("\n--- Colocation Best Practices ---");
+        System.out.println("\n--- Colocation Best Practices    ---");
         
         System.out.println("Best Practice 1: Colocation Key in Primary Key");
         System.out.println("  ✓ Album.ArtistId is both @Id and colocation key");
@@ -394,7 +394,7 @@ public class ColocationExamples {
      * Cleans up demonstration data.
      */
     private void cleanupDemoData(IgniteClient client) {
-        System.out.println("\n--- Cleaning Up Demo Data ---");
+        System.out.println("\n--- Cleaning Up Demo Data    ---");
         
         try {
             // Clean up in reverse dependency order

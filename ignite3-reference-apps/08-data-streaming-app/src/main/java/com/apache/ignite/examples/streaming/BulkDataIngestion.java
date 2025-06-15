@@ -88,7 +88,7 @@ public class BulkDataIngestion {
      * Uses large batches and high parallelism for bulk loading scenarios.
      */
     private static void demonstrateHighThroughputStreaming(IgniteClient ignite) {
-        System.out.println("\n--- High-Throughput Bulk Streaming ---");
+        System.out.println("\n--- High-Throughput Bulk Streaming    ---");
         
         RecordView<Tuple> bulkDataView = ignite.tables()
             .table("BulkLoadTest")
@@ -164,7 +164,7 @@ public class BulkDataIngestion {
      * Shows how to handle large files without loading everything into memory.
      */
     private static void demonstrateFileBulkLoading(IgniteClient ignite) {
-        System.out.println("\n--- File-Based Bulk Loading ---");
+        System.out.println("\n--- File-Based Bulk Loading    ---");
         
         RecordView<Tuple> fileDataView = ignite.tables()
             .table("FileLoadTest")
@@ -257,7 +257,7 @@ public class BulkDataIngestion {
      * Shows how to adjust performance parameters during streaming.
      */
     private static void demonstrateAdaptiveBatching(IgniteClient ignite) {
-        System.out.println("\n--- Adaptive Batch Sizing ---");
+        System.out.println("\n--- Adaptive Batch Sizing    ---");
         
         RecordView<Tuple> adaptiveView = ignite.tables()
             .table("AdaptiveLoadTest")

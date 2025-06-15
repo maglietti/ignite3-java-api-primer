@@ -42,23 +42,24 @@ Reference applications should follow consistent TUI (Text User Interface) design
 
 - **Phase Headers**: `=== [X/Y] Phase Name` for major application phases with progress tracking
 - **Section Headers**: `--- Section Description` for operation groupings within phases
-- **Subsection Headers**: `    --- Subsection Name` (4 spaces) for sub-groupings within sections
+- **Subsection Headers**: `--- Subsection Name` (4 spaces) for sub-groupings within sections
 - **Database Operations**: `>>> Operation description` at appropriate indentation level
 - **Database Confirmations**: `<<< Result description` at same indentation as corresponding operation
-- **Sub-operations**: `    >>> Sub-operation` (4 spaces) for nested database operations
-- **Sub-confirmations**: `    <<< Sub-result` (4 spaces) for nested operation results
-- **Deep sub-operations**: `        >>> Deep operation` (8 spaces) for deeply nested operations
-- **Deep sub-confirmations**: `        <<< Deep result` (8 spaces) for deeply nested results
+- **Sub-operations**: `>>> Sub-operation` (4 spaces) for nested database operations
+- **Sub-confirmations**: `<<< Sub-result` (4 spaces) for nested operation results
+- **Deep sub-operations**: `>>> Deep operation` (4 spaces) for deeply nested operations
+- **Deep sub-confirmations**: `<<< Deep result` (4 spaces) for deeply nested results
 - **Special Notifications**: `!!! Message` for important notices (skipped operations, warnings)
 - **Completion Messages**: `=== Phase completed successfully` for major phase completions
 - **Data Results**: `Table: count (description)` for verification output
-- **Contextual Notes**: `        Note: explanation` (8 spaces) for important context
+- **Contextual Notes**: `     Note: explanation` (4 spaces) for important context
 
 #### Key TUI Principles
 
 - **No Emojis**: Text-only interface using standard ASCII characters
-- **Clear Hierarchy**: Consistent indentation levels (4 spaces per level for operations, 8 spaces for notes)
+- **Clear Hierarchy**: Consistent indentation levels (4 spaces per level for operations, 4 spaces for notes)
 - **Operation Direction**: `>>>` shows outgoing operations, `<<<` shows operation results
+- **Notifications**: `!!!` shows errors, warnings, or important notices
 - **Phase Tracking**: Use `[X/Y]` format for major phases to show overall progress
 - **Logical Grouping**: Group related operations under appropriate section headers
 - **Minimal Noise**: Only essential information with clear structure
@@ -72,8 +73,8 @@ Dataset mode: CORE (sample records)
 
     --- Connecting to Ignite cluster at 127.0.0.1:10800
         Note: You may see partition assignment notifications - this is normal
-        >>> Creating Ignite client connection to: 127.0.0.1:10800
-        <<< Successfully connected to Ignite cluster at: 127.0.0.1:10800
+    >>> Creating Ignite client connection to: 127.0.0.1:10800
+    <<< Successfully connected to Ignite cluster at: 127.0.0.1:10800
 
 === [1/5] Schema Validation
 >>> Checking for existing music store tables

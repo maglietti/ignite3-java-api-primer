@@ -87,7 +87,7 @@ public class BasicDataStreamerDemo {
      * Streams a series of track listening events using PUT operations.
      */
     private static void demonstrateBasicStreaming(RecordView<Tuple> trackEventsView) {
-        System.out.println("\n--- Basic Streaming with Default Options ---");
+        System.out.println("\n--- Basic Streaming with Default Options    ---");
         
         try {
             // Create publisher for streaming track events
@@ -133,7 +133,7 @@ public class BasicDataStreamerDemo {
      * Shows how to tune batch sizes, parallelism, and timing for optimal throughput.
      */
     private static void demonstratePerformanceTuning(RecordView<Tuple> trackEventsView) {
-        System.out.println("\n--- Performance-Tuned Streaming ---");
+        System.out.println("\n--- Performance-Tuned Streaming    ---");
         
         // Configure options for high-throughput streaming
         DataStreamerOptions highThroughputOptions = DataStreamerOptions.builder()
@@ -193,7 +193,7 @@ public class BasicDataStreamerDemo {
      * Shows how to handle different operation types in a single streaming session.
      */
     private static void demonstrateMixedOperations(RecordView<Tuple> trackEventsView) {
-        System.out.println("\n--- Mixed Operations (PUT/REMOVE) Streaming ---");
+        System.out.println("\n--- Mixed Operations (PUT/REMOVE) Streaming    ---");
         
         // Configure for mixed operations with balanced settings
         DataStreamerOptions mixedOptions = DataStreamerOptions.builder()

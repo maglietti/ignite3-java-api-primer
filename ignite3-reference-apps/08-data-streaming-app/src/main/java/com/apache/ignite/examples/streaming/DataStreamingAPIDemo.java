@@ -97,7 +97,7 @@ public class DataStreamingAPIDemo {
      * Creates tables if they don't exist to prevent demo failures.
      */
     private static void ensureTablesExist(IgniteClient ignite) {
-        System.out.println("--- Preparing Demo Environment ---");
+        System.out.println("--- Preparing Demo Environment    ---");
         
         try {
             // List of tables required for streaming demos

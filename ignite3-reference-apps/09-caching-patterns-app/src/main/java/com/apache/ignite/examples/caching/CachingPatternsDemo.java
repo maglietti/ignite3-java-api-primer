@@ -191,7 +191,7 @@ public class CachingPatternsDemo {
      * catalog browsing with cache-aside pattern.
      */
     private void demonstrateCacheAsidePattern() {
-        System.out.println("\n--- Cache-Aside Pattern Demonstration ---");
+        System.out.println("\n--- Cache-Aside Pattern Demonstration    ---");
         
         try {
             // Simulate popular artist lookups
@@ -236,7 +236,7 @@ public class CachingPatternsDemo {
      * across cache and external data stores.
      */
     private void demonstrateWriteThroughPattern() {
-        System.out.println("\n--- Write-Through Pattern Demonstration ---");
+        System.out.println("\n--- Write-Through Pattern Demonstration    ---");
         
         try {
             // Create new customer
@@ -293,7 +293,7 @@ public class CachingPatternsDemo {
      * in cache with background processing to external analytics systems.
      */
     private void demonstrateWriteBehindPattern() {
-        System.out.println("\n--- Write-Behind Pattern Demonstration ---");
+        System.out.println("\n--- Write-Behind Pattern Demonstration    ---");
         
         try {
             // Single play event recording
@@ -364,7 +364,7 @@ public class CachingPatternsDemo {
      * together for comprehensive data management.
      */
     private void demonstrateCombinedPatterns() {
-        System.out.println("\n--- Combined Caching Patterns Demonstration ---");
+        System.out.println("\n--- Combined Caching Patterns Demonstration    ---");
         
         try {
             System.out.println("Simulating music streaming request processing:");
@@ -424,7 +424,7 @@ public class CachingPatternsDemo {
      * and minimum latency in production environments.
      */
     private void demonstratePerformanceOptimization() {
-        System.out.println("\n--- Performance Optimization Demonstration ---");
+        System.out.println("\n--- Performance Optimization Demonstration    ---");
         
         try {
             System.out.println("Demonstrating async pattern orchestration:");
@@ -493,7 +493,7 @@ public class CachingPatternsDemo {
      * maintaining service availability.
      */
     private void demonstrateErrorHandling() {
-        System.out.println("\n--- Error Handling Demonstration ---");
+        System.out.println("\n--- Error Handling Demonstration    ---");
         
         try {
             System.out.println("Simulating cache failure scenarios:");

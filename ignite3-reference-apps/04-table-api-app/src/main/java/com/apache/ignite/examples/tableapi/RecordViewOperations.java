@@ -76,7 +76,7 @@ public class RecordViewOperations {
      * - Conditional operations
      */
     private static void demonstrateBasicRecordOperations(IgniteClient client) {
-        System.out.println("\n--- Basic RecordView CRUD Operations ---");
+        System.out.println("\n--- Basic RecordView CRUD Operations    ---");
         
         // Get table and create strongly-typed RecordView
         Table artistTable = client.tables().table("Artist");
@@ -143,7 +143,7 @@ public class RecordViewOperations {
      * - Complex entity CRUD patterns
      */
     private static void demonstrateComplexEntityOperations(IgniteClient client) {
-        System.out.println("\n--- Complex Entity Operations (Albums & Tracks) ---");
+        System.out.println("\n--- Complex Entity Operations (Albums & Tracks)    ---");
         
         // First, ensure we have an artist to work with
         Table artistTable = client.tables().table("Artist");
@@ -234,7 +234,7 @@ public class RecordViewOperations {
      * - Order preservation in bulk operations
      */
     private static void demonstrateBulkOperations(IgniteClient client) {
-        System.out.println("\n--- Bulk Operations for High Performance ---");
+        System.out.println("\n--- Bulk Operations for High Performance    ---");
         
         Table artistTable = client.tables().table("Artist");
         RecordView<Artist> artists = artistTable.recordView(Artist.class);
@@ -313,7 +313,7 @@ public class RecordViewOperations {
      * - Distributed transaction coordination
      */
     private static void demonstrateTransactionIntegration(IgniteClient client) {
-        System.out.println("\n--- Transaction Integration ---");
+        System.out.println("\n--- Transaction Integration    ---");
         
         // Get RecordViews for multiple tables
         RecordView<Artist> artists = client.tables().table("Artist").recordView(Artist.class);
@@ -386,7 +386,7 @@ public class RecordViewOperations {
      * - Error handling in async contexts
      */
     private static void demonstrateAsyncOperations(IgniteClient client) {
-        System.out.println("\n--- Asynchronous Operations ---");
+        System.out.println("\n--- Asynchronous Operations    ---");
         
         RecordView<Artist> artists = client.tables().table("Artist").recordView(Artist.class);
         

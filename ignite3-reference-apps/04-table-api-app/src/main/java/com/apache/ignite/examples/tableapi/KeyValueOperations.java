@@ -77,7 +77,7 @@ public class KeyValueOperations {
      * - Key-value separation benefits
      */
     private static void demonstrateBasicKeyValueOperations(IgniteClient client) {
-        System.out.println("\n--- Basic KeyValueView Operations ---");
+        System.out.println("\n--- Basic KeyValueView Operations    ---");
         
         // Create KeyValueView for Artist table: Integer → String
         Table artistTable = client.tables().table("Artist");
@@ -132,7 +132,7 @@ public class KeyValueOperations {
      * - Difference between missing and null values
      */
     private static void demonstrateNullValueHandling(IgniteClient client) {
-        System.out.println("\n--- Null Value Handling ---");
+        System.out.println("\n--- Null Value Handling    ---");
         
         Table artistTable = client.tables().table("Artist");
         KeyValueView<Integer, String> artistNames = 
@@ -202,7 +202,7 @@ public class KeyValueOperations {
      * - Use cases for conditional operations
      */
     private static void demonstrateConditionalOperations(IgniteClient client) {
-        System.out.println("\n--- Conditional Operations ---");
+        System.out.println("\n--- Conditional Operations    ---");
         
         Table artistTable = client.tables().table("Artist");
         KeyValueView<Integer, String> artistNames = 
@@ -268,7 +268,7 @@ public class KeyValueOperations {
      * - Atomicity guarantees in distributed environment
      */
     private static void demonstrateAtomicOperations(IgniteClient client) {
-        System.out.println("\n--- Atomic Get-and-Modify Operations ---");
+        System.out.println("\n--- Atomic Get-and-Modify Operations    ---");
         
         Table artistTable = client.tables().table("Artist");
         KeyValueView<Integer, String> artistNames = 
@@ -332,7 +332,7 @@ public class KeyValueOperations {
      * - Performance benefits of batching
      */
     private static void demonstrateBulkKeyValueOperations(IgniteClient client) {
-        System.out.println("\n--- Bulk KeyValueView Operations ---");
+        System.out.println("\n--- Bulk KeyValueView Operations    ---");
         
         Table artistTable = client.tables().table("Artist");
         KeyValueView<Integer, String> artistNames = 
@@ -403,7 +403,7 @@ public class KeyValueOperations {
      * - Flexible schema handling
      */
     private static void demonstrateTupleOperations(IgniteClient client) {
-        System.out.println("\n--- Tuple-based Operations ---");
+        System.out.println("\n--- Tuple-based Operations    ---");
         
         // Use Album table for composite key demonstration
         Table albumTable = client.tables().table("Album");
@@ -497,7 +497,7 @@ public class KeyValueOperations {
      * - Performance benefits of async operations
      */
     private static void demonstrateAsyncKeyValueOperations(IgniteClient client) {
-        System.out.println("\n--- Asynchronous KeyValueView Operations ---");
+        System.out.println("\n--- Asynchronous KeyValueView Operations    ---");
         
         Table artistTable = client.tables().table("Artist");
         KeyValueView<Integer, String> artistNames = 
