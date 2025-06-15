@@ -49,6 +49,7 @@ MusicStore Zone (2 replicas)          MusicStoreReplicated Zone (3 replicas)
 ```bash
 mvn compile exec:java
 # Creates schema and loads core sample data
+# If schema exists, prompts user for action (continue/recreate/exit)
 ```
 
 ### Extended Setup

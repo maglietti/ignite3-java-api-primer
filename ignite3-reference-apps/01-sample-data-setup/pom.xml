@@ -59,6 +59,9 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <useIncrementalCompilation>false</useIncrementalCompilation>
+                </configuration>
             </plugin>
 
             <plugin>
@@ -71,6 +74,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.4.1</version>
                 <configuration>
+                    <mainClass>com.apache.ignite.examples.setup.MusicStoreSetup</mainClass>
                     <commandlineArgs>127.0.0.1:10800</commandlineArgs>
                     <includeProjectDependencies>true</includeProjectDependencies>
                     <includePluginDependencies>false</includePluginDependencies>

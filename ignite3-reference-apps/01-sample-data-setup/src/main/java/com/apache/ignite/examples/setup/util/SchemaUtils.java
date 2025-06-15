@@ -1,5 +1,7 @@
 package com.apache.ignite.examples.setup.util;
 
+import java.util.Scanner;
+
 import org.apache.ignite.client.IgniteClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +39,7 @@ public class SchemaUtils {
         logger.info("Creating music store schema...");
         
         try {
-            MusicStoreZoneConfiguration.createDistributionZones(client);
+            createDistributionZones(client);
             
             createTableIfNotExists(client, Genre.class, "Genre");
             createTableIfNotExists(client, MediaType.class, "MediaType");
@@ -83,7 +85,92 @@ public class SchemaUtils {
             }
         }
         
+        dropDistributionZones(client);
+        
         logger.info("Music store schema dropped");
+    }
+    
+    /**
+     * Checks if schema exists and prompts user for action if it does.
+     * 
+     * @param client Connected Ignite client
+     * @return true if should proceed with schema creation, false if should exit
+     */
+    public static boolean checkSchemaAndPromptUser(IgniteClient client) {
+        if (schemaExists(client)) {
+            logger.warn("Music store schema already exists in the cluster");
+            System.out.println("\nExisting music store schema detected!");
+            System.out.println("Options:");
+            System.out.println("  1. Continue (may cause errors if schema conflicts)");
+            System.out.println("  2. Remove existing schema and recreate");
+            System.out.println("  3. Exit");
+            System.out.print("Please choose an option (1/2/3): ");
+            
+            try (Scanner scanner = new Scanner(System.in)) {
+                String choice = scanner.nextLine().trim();
+                
+                switch (choice) {
+                    case "1":
+                        logger.info("Continuing with existing schema");
+                        return true;
+                    case "2":
+                        logger.info("Removing existing schema and recreating");
+                        dropSchema(client);
+                        return true;
+                    case "3":
+                        logger.info("Exiting without changes");
+                        return false;
+                    default:
+                        logger.warn("Invalid choice '{}', exiting", choice);
+                        return false;
+                }
+            }
+        }
+        return true;
+    }
+    
+    /**
+     * Checks if music store schema exists by looking for key tables.
+     * 
+     * @param client Connected Ignite client
+     * @return true if schema exists
+     */
+    private static boolean schemaExists(IgniteClient client) {
+        return ConnectionUtils.tableExists(client, "Artist") || 
+               ConnectionUtils.tableExists(client, "Album") ||
+               ConnectionUtils.tableExists(client, "Track");
+    }
+    
+    /**
+     * Creates distribution zones with defensive error handling.
+     * 
+     * @param client Connected Ignite client
+     */
+    private static void createDistributionZones(IgniteClient client) {
+        try {
+            MusicStoreZoneConfiguration.createDistributionZones(client);
+        } catch (Exception e) {
+            if (e.getMessage() != null && e.getMessage().contains("already exists")) {
+                logger.debug("Distribution zones already exist, continuing");
+            } else {
+                throw e;
+            }
+        }
+    }
+    
+    /**
+     * Drops distribution zones.
+     * 
+     * @param client Connected Ignite client
+     */
+    private static void dropDistributionZones(IgniteClient client) {
+        try {
+            client.sql().execute(null, "DROP ZONE IF EXISTS MusicStore");
+            client.sql().execute(null, "DROP ZONE IF EXISTS MusicStoreReplicated");
+            logger.debug("Dropped distribution zones");
+        } catch (Exception e) {
+            logger.warn("Failed to drop distribution zones: {}", e.getMessage());
+        }
     }
     
     private static void createTableIfNotExists(IgniteClient client, Class<?> entityClass, String tableName) {

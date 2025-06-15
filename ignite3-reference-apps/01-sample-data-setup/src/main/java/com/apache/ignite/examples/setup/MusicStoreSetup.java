@@ -57,6 +57,12 @@ public class MusicStoreSetup {
             if (resetSchema) {
                 logger.info("=== Resetting Schema ===");
                 SchemaUtils.dropSchema(client);
+            } else {
+                // Check if schema exists and prompt user for action
+                if (!SchemaUtils.checkSchemaAndPromptUser(client)) {
+                    logger.info("Setup cancelled by user");
+                    return;
+                }
             }
             
             logger.info("=== Creating Schema ===");
