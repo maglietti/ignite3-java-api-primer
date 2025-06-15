@@ -34,6 +34,50 @@ This is a comprehensive documentation project for Apache Ignite 3's Java API, de
   - **Inline Comments**: Distributed systems concepts, colocation strategies, performance considerations
   - **Learning Context**: Why certain approaches are recommended for production Ignite 3 applications
 
+### TUI Design Standards
+
+Reference applications should follow consistent TUI (Text User Interface) design patterns for professional, readable output:
+
+#### Message Formatting Standards
+
+- **Section Headers**: `=== Section Title ===` for major application phases
+- **Subsection Headers**: `--- Subsection Description` for operation phases  
+- **Progress Indicators**: `[X/Y] Operation Name` for checkpoint-style progress tracking
+- **Database Operations**: `    >>> Performing operation on database` (4 spaces indented)
+- **Database Confirmations**: `    <<< Operation completed successfully` (4 spaces indented)
+- **Status Messages**: `Operation completed: summary` for overall operation results
+- **Detailed Information**: `  Detail or sub-operation` (2 spaces indented)
+- **Data Results**: `Table: count (description)` for verification output
+
+#### Key TUI Principles
+
+- **No Emojis**: Text-only interface using standard ASCII characters
+- **Clear Hierarchy**: Consistent indentation (2 spaces for sub-info, 4 spaces for database operations)
+- **Operation Direction**: `>>>` shows outgoing database commands, `<<<` shows database responses
+- **Minimal Noise**: Only essential information with optional verbose details
+- **Professional Style**: Follow BulkLoadApp patterns for clean, readable interfaces
+
+#### Example TUI Flow
+```
+=== Apache Ignite 3 Music Store Sample Data Setup ===
+Connecting to cluster: 127.0.0.1:10800
+Connected successfully
+
+[1/5] Schema Validation
+--- Checking for existing music store tables
+    >>> Querying table existence
+    <<< Found existing tables: Artist, Album, Track
+
+[2/5] Schema Creation  
+--- Processing distribution zones and table definitions
+    >>> Creating distribution zone: MusicStore
+    <<< Zone created successfully
+    >>> Creating table: Genre (1/11)
+    <<< Table created successfully
+
+Setup completed successfully!
+```
+
 ### Documentation Standards
 
 - **Concise Writing**: Avoid subjective quality statements
