@@ -47,8 +47,7 @@ public class MusicStoreSetup {
             }
         }
         
-        printWelcomeBanner();
-        logger.info("Apache Ignite 3 Music Store Sample Data Setup");
+        logger.info("=== Apache Ignite 3 Music Store Sample Data Setup ===");
         logger.info("Target cluster: {}", clusterAddress);
         logger.info("Dataset mode: {}", loadExtended ? "COMPLETE (15,000+ records)" : "CORE (sample records)");
         logger.info("Schema action: {}", resetSchema ? "RESET (drop and recreate)" : "CREATE (preserve existing)");
@@ -57,61 +56,60 @@ public class MusicStoreSetup {
         try (IgniteClient client = ConnectionUtils.connectToCluster(clusterAddress)) {
             
             if (resetSchema) {
-                logger.info("CHECKPOINT 1/5: Resetting Schema");
-                logger.info("   -> Removing existing tables and zones to start fresh...");
+                logger.info("[1/5] Schema Reset");
+                logger.info("--- Removing existing tables and zones to start fresh");
                 SchemaUtils.dropSchema(client);
-                logger.info("   -> Schema reset completed successfully");
+                logger.info("Schema reset completed");
                 logger.info("");
             } else {
-                logger.info("CHECKPOINT 1/5: Schema Validation");
-                logger.info("   -> Checking for existing music store tables...");
+                logger.info("[1/5] Schema Validation");
+                logger.info("--- Checking for existing music store tables");
                 if (!SchemaUtils.checkSchemaAndPromptUser(client)) {
-                    logger.info("   -> Setup cancelled by user");
+                    logger.info("Setup cancelled by user");
                     return;
                 }
-                logger.info("   -> Schema validation completed");
+                logger.info("Schema validation completed");
                 logger.info("");
             }
             
-            logger.info("CHECKPOINT 2/5: Building Database Schema");
-            logger.info("   -> Creating distribution zones for optimal data placement...");
-            logger.info("   -> Creating 11 tables with proper relationships and indexes...");
-            logger.info("   -> This may take 30-60 seconds as Ignite configures the distributed schema...");
+            logger.info("[2/5] Schema Creation");
+            logger.info("--- Processing distribution zones and table definitions");
+            logger.info("This may take 30-60 seconds as Ignite configures the distributed schema");
             SchemaUtils.createSchema(client);
-            logger.info("   -> Database schema created successfully!");
+            logger.info("Database schema created successfully");
             logger.info("");
             
-            logger.info("CHECKPOINT 3/5: Loading Core Sample Data");
-            logger.info("   -> Adding essential music store data for development and testing...");
+            logger.info("[3/5] Core Data Loading");
+            logger.info("--- Loading essential sample data");
             DataLoader.loadCoreData(client);
-            logger.info("   -> Core sample data loaded (5 artists, 5 albums, 5 tracks, 3 customers)");
+            logger.info("Core data loaded: 5 artists, 5 albums, 5 tracks, 3 customers");
             logger.info("");
             
             if (loadExtended) {
-                logger.info("CHECKPOINT 4/5: Loading Complete Music Store Dataset");
-                logger.info("   -> Processing 15,866-line SQL script with full music catalog...");
-                logger.info("   -> This creates a realistic dataset for learning and development...");
-                logger.info("   -> Expected completion time: 2-3 minutes depending on system performance...");
+                logger.info("[4/5] Extended Data Loading");
+                logger.info("--- Loading complete music store dataset");
+                logger.info("Processing 15,866-line SQL script with full music catalog");
+                logger.info("Expected completion time: 2-3 minutes depending on system performance");
                 DataLoader.loadExtendedData(client);
-                logger.info("   -> Complete dataset loaded successfully!");
+                logger.info("Extended data loaded successfully");
                 logger.info("");
             } else {
-                logger.info("CHECKPOINT 4/5: Skipped Extended Data");
-                logger.info("   -> Run with --extended flag to load the complete 15,000+ record dataset");
+                logger.info("[4/5] Extended Data Loading");
+                logger.info("--- Skipped (use --extended flag for complete dataset)");
                 logger.info("");
             }
             
-            logger.info("CHECKPOINT 5/5: Final Verification");
-            logger.info("   -> Validating all tables and counting records...");
+            logger.info("[5/5] Verification");
+            logger.info("--- Verifying data load");
             verifySetup(client, loadExtended);
             
             printSuccessBanner(loadExtended);
             
         } catch (Exception e) {
-            logger.error("Setup failed with error: {}", e.getMessage());
-            logger.error("   -> Check that your Ignite cluster is running and accessible");
-            logger.error("   -> Verify network connectivity to: {}", clusterAddress);
-            logger.error("   -> Review the full error details below:");
+            logger.error("Setup failed: {}", e.getMessage());
+            logger.error("  Check that your Ignite cluster is running and accessible");
+            logger.error("  Verify network connectivity to: {}", clusterAddress);
+            logger.error("  Review the full error details below:");
             logger.error("", e);
             System.exit(1);
         }
@@ -122,20 +120,18 @@ public class MusicStoreSetup {
                           "Customer", "Employee", "Invoice", "InvoiceLine", 
                           "Playlist", "PlaylistTrack"};
         
-        logger.info("   -> Verifying table creation and data loading:");
         long totalRecords = 0;
         
         for (String table : tables) {
             long count = ConnectionUtils.getTableRowCount(client, table);
             totalRecords += count;
             
-            // Add context about what each table contains
             String description = getTableDescription(table, count, loadExtended);
-            logger.info("      * {}: {} rows {}", table, count, description);
+            logger.info("{}: {} {}", table, count, description);
         }
         
-        logger.info("   -> Total records across all tables: {}", totalRecords);
-        logger.info("   -> All tables verified successfully!");
+        logger.info("Total: {} records across {} tables", totalRecords, tables.length);
+        logger.info("All tables verified successfully");
         logger.info("");
     }
     
@@ -156,54 +152,31 @@ public class MusicStoreSetup {
         }
     }
     
-    private static void printWelcomeBanner() {
-        logger.info("=========================================================================");
-        logger.info("                                                                         ");
-        logger.info("    Apache Ignite 3 Music Store Sample Data Setup                      ");
-        logger.info("                                                                         ");
-        logger.info("  This application creates a complete music store dataset for          ");
-        logger.info("  learning Apache Ignite 3 distributed database concepts.             ");
-        logger.info("                                                                         ");
-        logger.info("  Features:                                                            ");
-        logger.info("  * Schema-as-code using annotated POJOs                              ");
-        logger.info("  * Distribution zones for optimal data placement                     ");
-        logger.info("  * Realistic sample data for development and testing                 ");
-        logger.info("  * Complete music catalog with 15,000+ records (--extended)          ");
-        logger.info("                                                                         ");
-        logger.info("=========================================================================");
-        logger.info("");
-    }
-    
     private static void printSuccessBanner(boolean loadExtended) {
-        logger.info("=========================================================================");
-        logger.info("                                                                         ");
-        logger.info("                        SETUP COMPLETED!                               ");
-        logger.info("                                                                         ");
-        logger.info("  Your Apache Ignite 3 music store dataset is ready for use!          ");
-        logger.info("                                                                         ");
+        logger.info("");
+        logger.info("=== Setup Completed Successfully ===");
+        logger.info("");
         
         if (loadExtended) {
-            logger.info("  Complete Dataset Loaded:                                           ");
-            logger.info("     * 275+ Artists * 347+ Albums * 3,500+ Tracks                   ");
-            logger.info("     * 59 Customers * 412+ Invoices * 18 Playlists                  ");
-            logger.info("     * Full business relationships and realistic data                ");
+            logger.info("Complete Dataset Summary:");
+            logger.info("  275+ Artists, 347+ Albums, 3,500+ Tracks");
+            logger.info("  59 Customers, 412+ Invoices, 18 Playlists");
+            logger.info("  Full business relationships and realistic data");
         } else {
-            logger.info("  Core Dataset Loaded:                                               ");
-            logger.info("     * 5 Artists * 5 Albums * 5 Tracks * 3 Customers                ");
-            logger.info("     * Perfect for development and API learning                     ");
-            logger.info("     * Run with --extended for the complete dataset                 ");
+            logger.info("Core Dataset Summary:");
+            logger.info("  5 Artists, 5 Albums, 5 Tracks, 3 Customers");
+            logger.info("  Perfect for development and API learning");
+            logger.info("  Run with --extended for the complete dataset");
         }
         
-        logger.info("                                                                         ");
-        logger.info("  Next Steps:                                                          ");
-        logger.info("     * Explore data with SQL queries                                   ");
-        logger.info("     * Study the annotated POJOs in model/ directory                  ");
-        logger.info("     * Try other reference application modules                        ");
-        logger.info("                                                                         ");
-        logger.info("  Available Tables:                                                    ");
-        logger.info("     Artist, Album, Track, Genre, MediaType, Customer,                ");
-        logger.info("     Employee, Invoice, InvoiceLine, Playlist, PlaylistTrack          ");
-        logger.info("                                                                         ");
-        logger.info("=========================================================================");
+        logger.info("");
+        logger.info("Next Steps:");
+        logger.info("  * Explore data with SQL queries");
+        logger.info("  * Study the annotated POJOs in model/ directory");
+        logger.info("  * Try other reference application modules");
+        logger.info("");
+        logger.info("Available Tables:");
+        logger.info("  Artist, Album, Track, Genre, MediaType, Customer,");
+        logger.info("  Employee, Invoice, InvoiceLine, Playlist, PlaylistTrack");
     }
 }
