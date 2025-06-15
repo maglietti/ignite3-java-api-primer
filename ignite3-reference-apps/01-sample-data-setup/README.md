@@ -58,11 +58,22 @@ mvn compile exec:java -Dexec.args="--extended"
 # Creates schema and loads core + extended sample data
 ```
 
+### Reset Setup
+
+```bash
+mvn compile exec:java -Dexec.args="--reset"
+# Drops existing schema and recreates with core data
+
+mvn compile exec:java -Dexec.args="--reset --extended"
+# Drops existing schema and recreates with extended data
+```
+
 ### Custom Cluster Address
 
 ```bash
 mvn compile exec:java -Dexec.args="192.168.1.100:10800"
 mvn compile exec:java -Dexec.args="192.168.1.100:10800 --extended"
+mvn compile exec:java -Dexec.args="192.168.1.100:10800 --reset"
 ```
 
 ## Sample Dataset

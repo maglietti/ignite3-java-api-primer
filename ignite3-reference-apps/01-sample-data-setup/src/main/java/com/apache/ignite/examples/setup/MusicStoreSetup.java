@@ -23,6 +23,8 @@ import com.apache.ignite.examples.setup.util.DataLoader;
  * Usage:
  *   mvn exec:java                                    # Default setup
  *   mvn exec:java -Dexec.args="--extended"          # Include extended data
+ *   mvn exec:java -Dexec.args="--reset"             # Drop existing schema and recreate
+ *   mvn exec:java -Dexec.args="--reset --extended"  # Reset with extended data
  *   mvn exec:java -Dexec.args="192.168.1.100:10800" # Custom cluster address
  *   mvn exec:java -Dexec.args="192.168.1.100:10800 --extended" # Both options
  */
@@ -33,10 +35,13 @@ public class MusicStoreSetup {
     public static void main(String[] args) {
         String clusterAddress = "127.0.0.1:10800";
         boolean loadExtended = false;
+        boolean resetSchema = false;
         
         for (String arg : args) {
             if (arg.equals("--extended")) {
                 loadExtended = true;
+            } else if (arg.equals("--reset")) {
+                resetSchema = true;
             } else if (!arg.startsWith("--")) {
                 clusterAddress = arg;
             }
@@ -45,8 +50,14 @@ public class MusicStoreSetup {
         logger.info("Starting Apache Ignite 3 Music Store Setup");
         logger.info("Cluster address: {}", clusterAddress);
         logger.info("Extended data: {}", loadExtended ? "enabled" : "disabled");
+        logger.info("Reset schema: {}", resetSchema ? "enabled" : "disabled");
         
         try (IgniteClient client = ConnectionUtils.connectToCluster(clusterAddress)) {
+            
+            if (resetSchema) {
+                logger.info("=== Resetting Schema ===");
+                SchemaUtils.dropSchema(client);
+            }
             
             logger.info("=== Creating Schema ===");
             SchemaUtils.createSchema(client);
