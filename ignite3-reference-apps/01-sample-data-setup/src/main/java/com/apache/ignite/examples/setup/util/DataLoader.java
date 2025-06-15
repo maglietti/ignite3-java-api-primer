@@ -56,24 +56,22 @@ public class DataLoader {
     }
     
     /**
-     * Loads extended sample data including playlists and additional content.
+     * Loads complete music store dataset from SQL script.
      * 
      * @param client Connected Ignite client
      */
     public static void loadExtendedData(IgniteClient client) {
-        logger.info("Loading extended sample data...");
+        logger.info("Loading complete music store dataset...");
         
         try {
-            client.transactions().runInTransaction(tx -> {
-                loadPlaylistData(client, tx);
-                loadAdditionalTracks(client, tx);
-            });
+            int executedStatements = SqlScriptLoader.loadFromScript(client, "music-store-complete.sql");
+            logger.info("Complete dataset loaded successfully, executed {} statements", executedStatements);
             
-            logger.info("Extended sample data loaded successfully");
+            SqlScriptLoader.verifyDataLoad(client);
             
         } catch (Exception e) {
-            logger.error("Failed to load extended data: {}", e.getMessage());
-            throw new RuntimeException("Extended data loading failed", e);
+            logger.error("Failed to load complete dataset: {}", e.getMessage());
+            throw new RuntimeException("Complete dataset loading failed", e);
         }
     }
     
@@ -154,30 +152,4 @@ public class DataLoader {
         invoiceLineView.upsert(tx, new InvoiceLine(4, 2, 3, new BigDecimal("0.99"), 1));
     }
     
-    private static void loadPlaylistData(IgniteClient client, Transaction tx) {
-        Table playlistTable = client.tables().table("Playlist");
-        RecordView<Playlist> playlistView = playlistTable.recordView(Playlist.class);
-        
-        playlistView.upsert(tx, new Playlist(1, "Music"));
-        playlistView.upsert(tx, new Playlist(2, "Movies"));
-        playlistView.upsert(tx, new Playlist(3, "TV Shows"));
-        playlistView.upsert(tx, new Playlist(8, "Heavy Metal Classic"));
-        
-        Table playlistTrackTable = client.tables().table("PlaylistTrack");
-        RecordView<PlaylistTrack> playlistTrackView = playlistTrackTable.recordView(PlaylistTrack.class);
-        
-        playlistTrackView.upsert(tx, new PlaylistTrack(1, 1));
-        playlistTrackView.upsert(tx, new PlaylistTrack(1, 2));
-        playlistTrackView.upsert(tx, new PlaylistTrack(1, 3));
-        playlistTrackView.upsert(tx, new PlaylistTrack(8, 5));
-    }
-    
-    private static void loadAdditionalTracks(IgniteClient client, Transaction tx) {
-        Table trackTable = client.tables().table("Track");
-        RecordView<Track> trackView = trackTable.recordView(Track.class);
-        
-        trackView.upsert(tx, new Track(6, 1, "Put The Finger On You", 1, 1, "Angus Young, Malcolm Young, Brian Johnson", 205662, 6713451, new BigDecimal("0.99")));
-        trackView.upsert(tx, new Track(7, 1, "Let's Get It Up", 1, 1, "Angus Young, Malcolm Young, Brian Johnson", 233926, 7636561, new BigDecimal("0.99")));
-        trackView.upsert(tx, new Track(8, 2, "Love Child", 1, 1, null, 225543, 4128558, new BigDecimal("0.99")));
-    }
 }

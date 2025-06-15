@@ -75,17 +75,7 @@
                 <version>3.4.1</version>
                 <configuration>
                     <mainClass>com.apache.ignite.examples.setup.MusicStoreSetup</mainClass>
-                    <includeProjectDependencies>true</includeProjectDependencies>
-                    <includePluginDependencies>false</includePluginDependencies>
                 </configuration>
-                <executions>
-                    <execution>
-                        <id>default</id>
-                        <configuration>
-                            <mainClass>com.apache.ignite.examples.setup.MusicStoreSetup</mainClass>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>

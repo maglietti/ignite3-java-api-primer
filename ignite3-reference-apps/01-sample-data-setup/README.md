@@ -52,11 +52,12 @@ mvn compile exec:java
 # If schema exists, prompts user for action (continue/recreate/exit)
 ```
 
-### Extended Setup
+### Extended Setup (Complete Dataset)
 
 ```bash
 mvn compile exec:java -Dexec.args="--extended"
-# Creates schema and loads core + extended sample data
+# Creates schema and loads complete music store dataset from SQL script
+# Includes thousands of tracks, albums, artists, customers, and transactions
 ```
 
 ### Reset Setup
@@ -66,7 +67,7 @@ mvn compile exec:java -Dexec.args="--reset"
 # Drops existing schema and recreates with core data
 
 mvn compile exec:java -Dexec.args="--reset --extended"
-# Drops existing schema and recreates with extended data
+# Drops existing schema and recreates with complete dataset
 ```
 
 ### Custom Cluster Address
@@ -79,20 +80,34 @@ mvn compile exec:java -Dexec.args="192.168.1.100:10800 --reset"
 
 ## Sample Dataset
 
-### Music Entities (11 tables total)
+### Core Data (Default)
 
+**Music Entities**:
 - **5 Artists**: AC/DC, Accept, Aerosmith, Black Sabbath, Led Zeppelin
 - **5 Albums**: Representative albums from various artists
-- **8 Tracks**: Individual songs with metadata (duration, composer, price)
+- **5 Tracks**: Individual songs with metadata (duration, composer, price)
 - **5 Genres**: Rock, Jazz, Metal, Alternative & Punk, Blues
 - **3 Media Types**: MPEG, AAC, MPEG-4 video
 
-### Business Entities  
-
+**Business Entities**:
 - **3 Customers**: International customer base
 - **3 Employees**: Hierarchical organization structure
 - **2 Invoices**: Purchase transactions with line items
-- **4 Playlists**: User-created music collections
+
+### Complete Dataset (--extended)
+
+**Full Music Store Dataset**:
+- **275+ Artists**: Complete music artist catalog
+- **347+ Albums**: Full album collection across genres
+- **3,503+ Tracks**: Complete track library with metadata
+- **25 Genres**: Full genre classification
+- **5 Media Types**: All supported media formats
+- **59 Customers**: Complete customer database
+- **8 Employees**: Full organizational structure
+- **412+ Invoices**: Complete transaction history
+- **2,240+ Invoice Lines**: Detailed purchase records
+- **18 Playlists**: User-generated playlists
+- **8,715+ Playlist Tracks**: Complete playlist associations
 
 ## Key Concepts Demonstrated
 
