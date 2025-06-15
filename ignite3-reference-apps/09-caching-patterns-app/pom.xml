@@ -15,7 +15,7 @@
     <packaging>jar</packaging>
 
     <name>Caching Patterns App</name>
-    <description>Apache Ignite 3 caching patterns and strategies reference application</description>
+    <description>Apache Ignite 3 caching patterns reference application demonstrating cache-aside, write-through, and write-behind patterns</description>
 
     <dependencies>
         <!-- Apache Ignite 3 Dependencies -->

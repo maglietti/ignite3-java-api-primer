@@ -9,13 +9,9 @@
 5. [SQL API - Relational Data Access](./docs/05-sql-api-relational-data-access.md)
 6. [Transactions](./docs/06-transactions.md)
 7. [Compute API - Distributed Processing](./docs/07-compute-api-distributed-processing.md)
-8. [Data Streaming](./docs/08-data-streaming.md)
-9. [Caching Patterns](./docs/09-caching-patterns.md)
+8. [Data Streaming](./docs/08-data-streaming-high-throughput-ingestion.md)
+9. [Caching Patterns](./docs/09-caching-patterns-java-implementations.md)
 10. [Schema and Catalog Management](./docs/10-schema-and-catalog-management.md)
-11. [Advanced Topics](./docs/11-advanced-topics.md)
-12. [Integration Patterns](./docs/12-integration-patterns.md)
-13. [Best Practices & Common Patterns](./docs/13-best-practices-common-patterns.md)
-14. [Troubleshooting Guide](./docs/14-troubleshooting-guide.md)
 
 ---
 
