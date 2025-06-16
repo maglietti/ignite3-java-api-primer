@@ -1,111 +1,74 @@
 package com.apache.ignite.examples.transactions;
 
-import org.apache.ignite.client.IgniteClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Main demonstration application for Ignite 3 Transaction API patterns.
+ * Transaction API Demo - Apache Ignite 3 transaction learning progression.
  * 
- * This application runs all transaction examples in sequence to demonstrate
- * the full range of transaction capabilities in Ignite 3, following the 
- * narrative structure from the documentation:
+ * This demo orchestrates focused, educational examples that each demonstrate
+ * one core transaction concept clearly. Each example is self-contained and 
+ * can be run independently.
  * 
- * 1. BasicTransactionDemo - Your first transaction patterns
- * 2. AsyncTransactionDemo - Non-blocking operations for high-throughput
- * 3. TransactionPatterns - Advanced real-world production scenarios
+ * Learning Progression:
+ * 1. BasicTransactions - Transaction lifecycle and CRUD operations
+ * 2. TransactionIsolation - Isolation levels and concurrent behavior
+ * 3. AsyncTransactions - Asynchronous transaction patterns
+ * 4. BatchTransactions - Bulk operations and performance patterns
  * 
- * Each demo tells the story of ensuring data consistency in music store
- * operations, from simple artist creation to complex customer workflows.
- * 
- * Prerequisites:
- * - Ignite cluster running (see 00-docker module)
- * - Music store tables created (Artist, Album, Track, Customer, Invoice, InvoiceLine)
- * 
- * Usage:
- *   mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.transactions.TransactionAPIDemo"
+ * Each class focuses on demonstrating specific transaction capabilities
+ * in a clear, educational manner with practical examples.
  */
 public class TransactionAPIDemo {
+
     private static final Logger logger = LoggerFactory.getLogger(TransactionAPIDemo.class);
-    
+
     public static void main(String[] args) {
-        logger.info("🎵 Starting Ignite 3 Transaction API Demo");
-        logger.info("=========================================");
-        logger.info("Demonstrating data consistency in music store operations");
+        String clusterAddress = args.length > 0 ? args[0] : "127.0.0.1:10800";
         
-        try (IgniteClient client = IgniteClient.builder()
-                .addresses("localhost:10800")
-                .build()) {
+        System.out.println("==================================================");
+        System.out.println("  Apache Ignite 3 Transaction API - Learning Demo");
+        System.out.println("==================================================");
+        System.out.println("Target cluster: " + clusterAddress);
+        System.out.println();
+        
+        try {
+            // Run each demo in learning progression
+            runDemo("Basic Transactions", 
+                () -> BasicTransactions.main(new String[]{clusterAddress}));
+                
+            runDemo("Transaction Isolation", 
+                () -> TransactionIsolation.main(new String[]{clusterAddress}));
+                
+            runDemo("Async Transactions", 
+                () -> AsyncTransactions.main(new String[]{clusterAddress}));
+                
+            runDemo("Batch Transactions", 
+                () -> BatchTransactions.main(new String[]{clusterAddress}));
             
-            logger.info("🔗 Connected to Ignite cluster at localhost:10800");
-            
-            // Demo 1: Basic Transaction Patterns (following documentation narrative)
-            logger.info("\n" + "=".repeat(70));
-            logger.info("📚 DEMO 1: Basic Transaction Patterns");
-            logger.info("Following the documentation narrative from 'Your First Transaction'");
-            logger.info("=".repeat(70));
-            
-            try {
-                BasicTransactionDemo.main(new String[0]);
-                logger.info("✅ Basic Transaction Demo completed successfully");
-            } catch (Exception e) {
-                logger.error("❌ Basic Transaction Demo failed", e);
-            }
-            
-            // Small delay between demos for better readability
-            Thread.sleep(2000);
-            
-            // Demo 2: Async Transaction Patterns
-            logger.info("\n" + "=".repeat(70));
-            logger.info("🚀 DEMO 2: Async Transaction Patterns");
-            logger.info("Non-blocking operations for high-throughput music store applications");
-            logger.info("=".repeat(70));
-            
-            try {
-                AsyncTransactionDemo.main(new String[0]);
-                logger.info("✅ Async Transaction Demo completed successfully");
-            } catch (Exception e) {
-                logger.error("❌ Async Transaction Demo failed", e);
-            }
-            
-            // Small delay between demos
-            Thread.sleep(2000);
-            
-            // Demo 3: Advanced Transaction Patterns
-            logger.info("\n" + "=".repeat(70));
-            logger.info("🎯 DEMO 3: Advanced Transaction Patterns");
-            logger.info("Production-ready patterns for complex business workflows");
-            logger.info("=".repeat(70));
-            
-            try {
-                TransactionPatterns.main(new String[0]);
-                logger.info("✅ Advanced Transaction Patterns completed successfully");
-            } catch (Exception e) {
-                logger.error("❌ Advanced Transaction Patterns failed", e);
-            }
-            
-            // Summary
-            logger.info("\n" + "=".repeat(70));
-            logger.info("🎉 TRANSACTION API DEMO COMPLETE");
-            logger.info("=".repeat(70));
-            logger.info("You've seen how transactions ensure data consistency in:");
-            logger.info("  • Artist and Album creation (referential integrity)");
-            logger.info("  • Customer purchase workflows (multi-table operations)");
-            logger.info("  • Batch operations (performance optimization)");
-            logger.info("  • Async patterns (high-throughput scenarios)");
-            logger.info("  • Error handling (production reliability)");
-            logger.info("");
-            logger.info("Your music store application can now handle:");
-            logger.info("  ✓ Customer purchases with perfect consistency");
-            logger.info("  ✓ Inventory updates without data loss");
-            logger.info("  ✓ Playlist modifications with rollback safety");
-            logger.info("  ✓ High-throughput operations with async patterns");
-            logger.info("");
-            logger.info("Next: Explore the Compute API for distributed processing!");
+            System.out.println("\n==================================================");
+            System.out.println("✓ All Transaction API examples completed successfully!");
+            System.out.println("==================================================");
             
         } catch (Exception e) {
-            logger.error("❌ Transaction API Demo failed", e);
-            System.exit(1);
+            logger.error("Demo execution failed", e);
+            System.err.println("\nDemo failed: " + e.getMessage());
+            System.err.println("Make sure Ignite cluster is running and sample data is loaded.");
         }
+    }
+
+    private static void runDemo(String name, Runnable demo) {
+        System.out.println("\n" + "=".repeat(50));
+        System.out.println("Running: " + name);
+        System.out.println("=".repeat(50));
+        
+        try {
+            demo.run();
+        } catch (Exception e) {
+            logger.error("Failed to run demo: " + name, e);
+            throw new RuntimeException("Demo failed: " + name, e);
+        }
+        
+        System.out.println("\n✓ " + name + " completed");
     }
 }
