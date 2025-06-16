@@ -352,7 +352,7 @@ public class RecordViewOperations {
         System.out.println("\n2. Transaction Rollback Demonstration:");
         
         try {
-            client.transactions().runInTransaction(tx -> {
+            client.transactions().runInTransaction((tx) -> {
                 // This operation will succeed
                 Artist testArtist = new Artist(4001, "Test Artist");
                 artists.upsert(tx, testArtist);

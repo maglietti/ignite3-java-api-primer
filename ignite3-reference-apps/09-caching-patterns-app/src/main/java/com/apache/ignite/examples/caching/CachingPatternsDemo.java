@@ -1,7 +1,7 @@
 package com.apache.ignite.examples.caching;
 
 import org.apache.ignite.client.IgniteClient;
-import org.apache.ignite.client.IgniteClientBuilder;
+import org.apache.ignite.client.IgniteClient.builder();
 import org.apache.ignite.table.KeyValueView;
 import org.apache.ignite.table.RecordView;
 import org.apache.ignite.table.Table;
@@ -74,7 +74,7 @@ public class CachingPatternsDemo {
         System.out.println("=== Initializing Caching Patterns Demo ===");
         
         // Initialize Ignite client
-        client = IgniteClientBuilder.builder()
+        client = IgniteClient.builder().builder()
             .addresses(CLUSTER_URL)
             .build();
         

@@ -209,7 +209,7 @@ public class AsyncTableOperations {
             new Artist(7109, "Ozzy Osbourne")
         );
         
-        long startTime = System.currentTimeMillis();
+        final long startTime1 = System.currentTimeMillis();
         
         // Create parallel async operations
         List<CompletableFuture<Void>> insertFutures = metalArtists.stream()
@@ -223,7 +223,7 @@ public class AsyncTableOperations {
         allInserts.thenRun(() -> {
             long endTime = System.currentTimeMillis();
             System.out.println("   ✓ Parallel loading of " + metalArtists.size() + 
-                             " artists completed in " + (endTime - startTime) + "ms");
+                             " artists completed in " + (endTime - startTime1) + "ms");
         }).join();  // Wait for completion in demo
         
         System.out.println("\n2. Parallel Retrieval with Processing:");
@@ -231,7 +231,7 @@ public class AsyncTableOperations {
         // Prepare keys for parallel retrieval
         List<Integer> artistIds = Arrays.asList(7100, 7101, 7102, 7103, 7104);
         
-        startTime = System.currentTimeMillis();
+        final long startTime2 = System.currentTimeMillis();
         
         // Create parallel get operations with processing
         List<CompletableFuture<String>> processingFutures = artistIds.stream()
@@ -339,8 +339,8 @@ public class AsyncTableOperations {
                 }
             });
         
-        String result = errorHandlingDemo.join();
-        System.out.println("   ✓ Error handling result: " + result);
+        String errorResult = errorHandlingDemo.join();
+        System.out.println("   ✓ Error handling result: " + errorResult);
         
         System.out.println("\n2. Fallback Strategy Pattern:");
         

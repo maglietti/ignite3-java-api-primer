@@ -18,7 +18,7 @@
 package com.apache.ignite.examples.catalog;
 
 import org.apache.ignite.client.IgniteClient;
-import org.apache.ignite.client.IgniteClientBuilder;
+import org.apache.ignite.client.IgniteClient.builder();
 import org.apache.ignite.catalog.IgniteCatalog;
 import org.apache.ignite.catalog.definitions.TableDefinition;
 import org.apache.ignite.catalog.definitions.ColumnDefinition;
@@ -59,7 +59,7 @@ public class SchemaOperations {
         logger.info("Starting Schema Operations demonstration...");
         
         // Connect to the Ignite cluster
-        try (IgniteClient client = IgniteClientBuilder.builder()
+        try (IgniteClient client = IgniteClient.builder().builder()
                 .addresses(IGNITE_HOST + ":" + IGNITE_PORT)
                 .build()) {
             

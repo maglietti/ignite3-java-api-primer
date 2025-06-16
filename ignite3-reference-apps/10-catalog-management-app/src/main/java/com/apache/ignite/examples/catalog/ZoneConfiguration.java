@@ -18,7 +18,7 @@
 package com.apache.ignite.examples.catalog;
 
 import org.apache.ignite.client.IgniteClient;
-import org.apache.ignite.client.IgniteClientBuilder;
+import org.apache.ignite.client.IgniteClient.builder();
 import org.apache.ignite.catalog.IgniteCatalog;
 import org.apache.ignite.catalog.definitions.ZoneDefinition;
 import org.slf4j.Logger;
@@ -82,7 +82,7 @@ public class ZoneConfiguration {
     public static void main(String[] args) {
         logger.info("Starting Zone Configuration demonstration...");
         
-        try (IgniteClient client = IgniteClientBuilder.builder()
+        try (IgniteClient client = IgniteClient.builder().builder()
                 .addresses(IGNITE_HOST + ":" + IGNITE_PORT)
                 .build()) {
             

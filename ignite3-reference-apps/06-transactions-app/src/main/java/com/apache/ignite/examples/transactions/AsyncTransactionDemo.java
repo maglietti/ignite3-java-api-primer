@@ -1,9 +1,9 @@
 package com.apache.ignite.examples.transactions;
 
-import com.apache.ignite.client.IgniteClient;
-import com.apache.ignite.table.RecordView;
-import com.apache.ignite.table.Tuple;
-import com.apache.ignite.tx.TransactionOptions;
+import org.apache.ignite.client.IgniteClient;
+import org.apache.ignite.table.RecordView;
+import org.apache.ignite.table.Tuple;
+import org.apache.ignite.tx.TransactionOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

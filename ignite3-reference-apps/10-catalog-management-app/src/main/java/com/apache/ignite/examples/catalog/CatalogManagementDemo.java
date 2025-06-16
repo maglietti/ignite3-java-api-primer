@@ -18,7 +18,7 @@
 package com.apache.ignite.examples.catalog;
 
 import org.apache.ignite.client.IgniteClient;
-import org.apache.ignite.client.IgniteClientBuilder;
+import org.apache.ignite.client.IgniteClient.builder();
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,7 +69,7 @@ public class CatalogManagementDemo {
             logger.info("Running in non-interactive mode");
         }
         
-        try (IgniteClient client = IgniteClientBuilder.builder()
+        try (IgniteClient client = IgniteClient.builder().builder()
                 .addresses(IGNITE_HOST + ":" + IGNITE_PORT)
                 .build()) {
             

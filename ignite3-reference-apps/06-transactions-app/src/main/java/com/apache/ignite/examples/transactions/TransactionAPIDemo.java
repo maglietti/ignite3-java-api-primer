@@ -1,6 +1,6 @@
 package com.apache.ignite.examples.transactions;
 
-import com.apache.ignite.client.IgniteClient;
+import org.apache.ignite.client.IgniteClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
