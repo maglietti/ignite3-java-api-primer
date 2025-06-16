@@ -1,7 +1,6 @@
 package com.apache.ignite.examples.caching;
 
 import org.apache.ignite.client.IgniteClient;
-import org.apache.ignite.client.IgniteClient.builder();
 import org.apache.ignite.table.KeyValueView;
 import org.apache.ignite.table.RecordView;
 import org.apache.ignite.table.Table;

@@ -18,7 +18,7 @@
 package com.apache.ignite.examples.catalog;
 
 import org.apache.ignite.client.IgniteClient;
-import org.apache.ignite.client.IgniteClient.builder();
+
 import org.apache.ignite.catalog.IgniteCatalog;
 import org.apache.ignite.catalog.definitions.TableDefinition;
 import org.apache.ignite.catalog.definitions.ColumnDefinition;

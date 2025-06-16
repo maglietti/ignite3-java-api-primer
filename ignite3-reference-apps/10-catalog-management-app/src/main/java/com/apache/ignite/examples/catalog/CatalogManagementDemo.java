@@ -18,7 +18,7 @@
 package com.apache.ignite.examples.catalog;
 
 import org.apache.ignite.client.IgniteClient;
-import org.apache.ignite.client.IgniteClient.builder();
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

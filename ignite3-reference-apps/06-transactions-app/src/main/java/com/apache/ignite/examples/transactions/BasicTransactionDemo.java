@@ -239,7 +239,7 @@ public class BasicTransactionDemo {
             .timeoutMillis(5000)  // 5 seconds
             .readOnly(false);
         
-        client.transactions().runInTransaction(quickOptions, tx -> {
+        client.transactions().runInTransaction(tx -> {
             RecordView<Tuple> artistTable = client.tables().table("Artist").recordView();
             
             Tuple artist = artistTable.get(tx, Tuple.create().set("ArtistId", 1));
@@ -258,7 +258,7 @@ public class BasicTransactionDemo {
             .timeoutMillis(60000)  // 60 seconds
             .readOnly(true);       // Read-only for better performance
         
-        client.transactions().runInTransaction(reportOptions, tx -> {
+        client.transactions().runInTransaction(tx -> {
             IgniteSql sql = client.sql();
             
             // Complex multi-table analysis

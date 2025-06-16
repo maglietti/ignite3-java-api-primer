@@ -178,7 +178,7 @@ public class TransactionPatterns {
             .timeoutMillis(300000)  // 5 minutes for large batches
             .readOnly(false);
         
-        client.transactions().runInTransaction(batchOptions, tx -> {
+        client.transactions().runInTransaction(tx -> {
             RecordView<Tuple> albumTable = client.tables().table("Album").recordView();
             RecordView<Tuple> trackTable = client.tables().table("Track").recordView();
             
