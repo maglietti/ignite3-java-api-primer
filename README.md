@@ -35,7 +35,7 @@ mvn compile exec:java
 
 **Import Project**:
 
-1. File → Open → Select project root directory
+1. File → New → Select project root directory
 2. Choose "Import project from external model" → Maven
 3. Accept default Maven settings and wait for indexing to complete
 
@@ -96,17 +96,18 @@ mvn compile exec:java
 
 **Recommended Path**: Follow this sequence for optimal learning progression
 
-**Phase 1: Foundations** *(Start here for systematic learning)*
+**Phase 1: Foundations** _(Start here for systematic learning)_
 
 - **[Module 01: Foundation](./docs/01-foundation/)** - Essential distributed systems concepts
+
   - Introduction and Architecture → Getting Started → Data Fundamentals
   - **Reference App**: [`02-getting-started-app/`](./ignite3-reference-apps/02-getting-started-app/)
 
-- **[Module 02: Schema Design](./docs/02-schema-design/)** - Schema-as-code mastery  
+- **[Module 02: Schema Design](./docs/02-schema-design/)** - Schema-as-code mastery
   - Basic Annotations → Relationships → Advanced Patterns → Evolution
   - **Reference App**: [`03-schema-annotations-app/`](./ignite3-reference-apps/03-schema-annotations-app/)
 
-**Phase 2: Core APIs** *(Build on foundations)*
+**Phase 2: Core APIs** _(Build on foundations)_
 -. **[Module 03: Data Access APIs](./docs/03-data-access-apis/)** - Data manipulation patterns
 
 - Table API → SQL API → Selection Guide
@@ -116,7 +117,7 @@ mvn compile exec:java
   - Transaction Fundamentals → Advanced Patterns → Compute API
   - **Reference Apps**: [`06-transactions-app/`](./ignite3-reference-apps/06-transactions-app/), [`07-compute-api-app/`](./ignite3-reference-apps/07-compute-api-app/)
 
-**Phase 3: Performance** *(Optimize and scale)*
+**Phase 3: Performance** _(Optimize and scale)_
 
 - **[Module 05: Performance & Scalability](./docs/05-performance-scalability/)** - Production patterns
   - Data Streaming → Caching Strategies → Query Performance
@@ -124,15 +125,15 @@ mvn compile exec:java
 
 ### Alternative Paths
 
-**Problem-Focused** *(Jump to your immediate need)*
+**Problem-Focused** _(Jump to your immediate need)_
 
 - **Need to connect and store data?** → [Module 01: Foundation](./docs/01-foundation/)
-- **Building data models?** → [Module 02: Schema Design](./docs/02-schema-design/)  
+- **Building data models?** → [Module 02: Schema Design](./docs/02-schema-design/)
 - **Querying data efficiently?** → [Module 03: Data Access APIs](./docs/03-data-access-apis/)
 - **Managing consistency?** → [Module 04: Distributed Operations](./docs/04-distributed-operations/)
 - **Optimizing performance?** → [Module 05: Performance & Scalability](./docs/05-performance-scalability/)
 
-**Reference Materials** *(Architectural context)*
+**Reference Materials** _(Architectural context)_
 
 - **[Technical Reference](./docs/00-reference/)** - Architecture patterns and API design principles
 
@@ -140,7 +141,7 @@ mvn compile exec:java
 
 All reference applications are located in [`ignite3-reference-apps/`](./ignite3-reference-apps/) and use a consistent music store dataset. Each application demonstrates the concepts from its corresponding documentation module through working, runnable code.
 
-- **Docker Setup**: [`00-docker/`](./ignite3-reference-apps/00-docker/) - 3-node cluster with initialization scripts  
+- **Docker Setup**: [`00-docker/`](./ignite3-reference-apps/00-docker/) - 3-node cluster with initialization scripts
 - **Foundation Data**: [`01-sample-data-setup/`](./ignite3-reference-apps/01-sample-data-setup/) - Sample data and schema setup
 
 ## Key Concepts Demonstrated
@@ -149,7 +150,7 @@ All reference applications are located in [`ignite3-reference-apps/`](./ignite3-
 
 ```java
 // Album data colocates with Artist data for efficient joins
-@Table(zone = @Zone(value = "MusicStore"), 
+@Table(zone = @Zone(value = "MusicStore"),
        colocateBy = @ColumnRef("ArtistId"))
 public class Album {
     @Id Integer AlbumId;
@@ -218,7 +219,7 @@ All examples use a music store dataset with:
 - **Artist** → **Album** → **Track** (hierarchical with colocation)
 - **Genre**, **MediaType** (reference data)
 
-### Business Entities  
+### Business Entities
 
 - **Customer** → **Invoice** → **InvoiceLine** (business workflow)
 - **Employee** (organizational hierarchy)
