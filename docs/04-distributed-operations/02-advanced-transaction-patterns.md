@@ -1,0 +1,626 @@
+# Chapter 4.2: Advanced Transaction Patterns
+
+## Learning Objectives
+
+By completing this chapter, you will:
+
+- Master functional transaction patterns for cleaner code organization
+- Implement asynchronous transactions for high-throughput applications
+- Configure transaction options for different performance requirements
+- Handle complex multi-step business workflows with proper error recovery
+
+## The runInTransaction Pattern
+
+Most applications benefit from automatic transaction management. The `runInTransaction()` method handles commit/rollback based on your code's success or failure:
+
+```java
+/**
+ * Demonstrates automatic transaction management using runInTransaction().
+ * This pattern is recommended for most use cases as it handles lifecycle
+ * management and provides cleaner code structure.
+ */
+public class AutomaticTransactions {
+    
+    public void createArtistAndAlbum(IgniteClient client) {
+        boolean success = client.transactions().runInTransaction(tx -> {
+            try {
+                RecordView<Artist> artistTable = client.tables().table("Artist").recordView(Artist.class);
+                RecordView<Album> albumTable = client.tables().table("Album").recordView(Album.class);
+                
+                // Create artist
+                Artist artist = new Artist(1001, "Radiohead");
+                artistTable.upsert(tx, artist);
+                
+                // Create album
+                Album album = new Album(2001, 1001, "OK Computer");
+                albumTable.upsert(tx, album);
+                
+                // Return true to commit
+                return true;
+                
+            } catch (Exception e) {
+                System.err.println("Error in transaction: " + e.getMessage());
+                // Return false to rollback
+                return false;
+            }
+        });
+        
+        if (success) {
+            System.out.println("✓ Transaction completed successfully");
+        } else {
+            System.out.println("✗ Transaction was rolled back");
+        }
+    }
+}
+```
+
+**Key advantages of `runInTransaction()`:**
+
+- **Automatic lifecycle**: No need to manually call commit/rollback
+- **Exception safety**: Rollback happens automatically on uncaught exceptions
+- **Cleaner code**: Focus on business logic, not transaction plumbing
+- **Return values**: Can return computed results from the transaction
+
+## Real-World Scenario: Customer Purchase Workflow
+
+Let's implement a complete customer purchase transaction that demonstrates why transactions matter in distributed systems.
+
+### The Purchase Challenge
+
+When a customer buys tracks, multiple things must happen atomically:
+
+1. **Create invoice** with customer information
+2. **Add line items** for each purchased track
+3. **Calculate and set** the total amount
+4. **Update track sales counters** (if maintaining statistics)
+
+If any step fails, the entire purchase should be cancelled. No partial invoices, no orphaned line items.
+
+### Multi-Table Transaction Implementation
+
+```java
+/**
+ * Demonstrates a realistic business workflow requiring transactions.
+ * This example shows why ACID properties are crucial for maintaining
+ * data consistency in multi-table operations.
+ */
+public class CustomerPurchaseWorkflow {
+    
+    public Integer processPurchase(IgniteClient client, Integer customerId, List<Integer> trackIds) {
+        return client.transactions().runInTransaction(tx -> {
+            try {
+                // Get table access
+                RecordView<Invoice> invoiceTable = client.tables().table("Invoice").recordView(Invoice.class);
+                RecordView<InvoiceLine> invoiceLineTable = client.tables().table("InvoiceLine").recordView(InvoiceLine.class);
+                IgniteSql sql = client.sql();
+                
+                // Step 1: Create the invoice
+                Integer invoiceId = generateInvoiceId();
+                Invoice invoice = new Invoice();
+                invoice.setInvoiceId(invoiceId);
+                invoice.setCustomerId(customerId);
+                invoice.setInvoiceDate(LocalDate.now());
+                invoice.setBillingAddress("123 Music Street");
+                invoice.setBillingCity("Harmony");
+                invoice.setBillingCountry("USA");
+                invoice.setTotal(BigDecimal.ZERO);  // Will calculate later
+                
+                invoiceTable.upsert(tx, invoice);
+                System.out.println("📝 Created invoice " + invoiceId);
+                
+                // Step 2: Add line items and calculate total
+                BigDecimal totalAmount = BigDecimal.ZERO;
+                for (int i = 0; i < trackIds.size(); i++) {
+                    Integer trackId = trackIds.get(i);
+                    
+                    // Get track price using SQL in the same transaction
+                    ResultSet<SqlRow> trackResult = sql.execute(tx,
+                        "SELECT UnitPrice FROM Track WHERE TrackId = ?", trackId);
+                    
+                    if (!trackResult.hasNext()) {
+                        throw new IllegalArgumentException("Track not found: " + trackId);
+                    }
+                    
+                    BigDecimal unitPrice = trackResult.next().decimalValue("UnitPrice");
+                    
+                    // Create line item
+                    InvoiceLine lineItem = new InvoiceLine();
+                    lineItem.setInvoiceLineId(generateLineItemId(i));
+                    lineItem.setInvoiceId(invoiceId);
+                    lineItem.setTrackId(trackId);
+                    lineItem.setUnitPrice(unitPrice);
+                    lineItem.setQuantity(1);
+                    
+                    invoiceLineTable.upsert(tx, lineItem);
+                    totalAmount = totalAmount.add(unitPrice);
+                    System.out.println("🎵 Added track " + trackId + " ($" + unitPrice + ")");
+                }
+                
+                // Step 3: Update invoice with calculated total
+                invoice.setTotal(totalAmount);
+                invoiceTable.upsert(tx, invoice);
+                
+                System.out.println("💰 Invoice total: $" + totalAmount);
+                System.out.println("✓ Purchase completed successfully");
+                
+                return invoiceId;
+                
+            } catch (Exception e) {
+                System.err.println("✗ Purchase failed: " + e.getMessage());
+                throw e;  // This will trigger rollback
+            }
+        });
+    }
+    
+    private Integer generateInvoiceId() {
+        return (int) (System.currentTimeMillis() % 100000);
+    }
+    
+    private Integer generateLineItemId(int index) {
+        return (int) ((System.currentTimeMillis() + index) % 100000);
+    }
+}
+```
+
+**Transaction benefits demonstrated:**
+
+- **Atomicity**: All changes happen together or not at all
+- **Consistency**: Foreign key relationships are maintained
+- **Isolation**: Other transactions don't see partial state
+- **Durability**: Committed changes survive system failures
+
+## TransactionOptions: Controlling Transaction Behavior
+
+Different business scenarios require different transaction configurations. The `TransactionOptions` class provides fine-grained control over transaction behavior.
+
+### Timeout Configuration
+
+```java
+/**
+ * Demonstrates transaction timeout configuration for different scenarios.
+ * Proper timeout setting prevents long-running transactions from blocking
+ * system resources while allowing sufficient time for legitimate operations.
+ */
+public class TransactionTimeouts {
+    
+    public void quickUpdate(IgniteClient client) {
+        // Short timeout for simple operations
+        TransactionOptions quickOptions = TransactionOptions.readWrite()
+            .timeout(5, TimeUnit.SECONDS);
+        
+        client.transactions().runInTransaction(quickOptions, tx -> {
+            RecordView<Artist> artistTable = client.tables().table("Artist").recordView(Artist.class);
+            
+            Artist key = new Artist();
+            key.setArtistId(1);
+            Artist artist = artistTable.get(tx, key);
+            
+            if (artist != null) {
+                artist.setName(artist.getName() + " (Updated)");
+                artistTable.upsert(tx, artist);
+                System.out.println("Quick update completed");
+            }
+            return true;
+        });
+    }
+    
+    public void complexReport(IgniteClient client) {
+        // Longer timeout for complex operations
+        TransactionOptions reportOptions = TransactionOptions.readOnly()
+            .timeout(60, TimeUnit.SECONDS);
+        
+        client.transactions().runInTransaction(reportOptions, tx -> {
+            IgniteSql sql = client.sql();
+            
+            // Complex multi-table analysis
+            ResultSet<SqlRow> stats = sql.execute(tx, """
+                SELECT 
+                    COUNT(DISTINCT a.ArtistId) as artist_count,
+                    COUNT(DISTINCT al.AlbumId) as album_count,
+                    COUNT(DISTINCT t.TrackId) as track_count,
+                    AVG(t.UnitPrice) as avg_price
+                FROM Artist a
+                JOIN Album al ON a.ArtistId = al.ArtistId
+                JOIN Track t ON al.AlbumId = t.AlbumId
+                """);
+            
+            if (stats.hasNext()) {
+                SqlRow row = stats.next();
+                System.out.printf("📊 Music Store Statistics:%n");
+                System.out.printf("   Artists: %d%n", row.longValue("artist_count"));
+                System.out.printf("   Albums: %d%n", row.longValue("album_count"));
+                System.out.printf("   Tracks: %d%n", row.longValue("track_count"));
+                System.out.printf("   Average Price: $%.2f%n", row.decimalValue("avg_price"));
+            }
+            
+            return true;
+        });
+    }
+}
+```
+
+### Read-Only Transactions
+
+Read-only transactions provide performance benefits for queries that don't modify data:
+
+```java
+/**
+ * Read-only transactions optimize performance for reporting and analytics.
+ * They can access multiple tables consistently without the overhead
+ * of write locks or conflict detection.
+ */
+public class ReadOnlyTransactions {
+    
+    public void generateMonthlySalesReport(IgniteClient client) {
+        TransactionOptions readOnlyOptions = TransactionOptions.readOnly()
+            .timeout(120, TimeUnit.SECONDS);
+        
+        client.transactions().runInTransaction(readOnlyOptions, tx -> {
+            IgniteSql sql = client.sql();
+            
+            // All queries in the same transaction see consistent data
+            System.out.println("📈 Generating Monthly Sales Report...");
+            
+            // Top selling tracks
+            ResultSet<SqlRow> topTracks = sql.execute(tx, """
+                SELECT t.Name, COUNT(*) as sales_count
+                FROM Track t
+                JOIN InvoiceLine il ON t.TrackId = il.TrackId
+                JOIN Invoice i ON il.InvoiceId = i.InvoiceId
+                WHERE i.InvoiceDate >= ?
+                GROUP BY t.TrackId, t.Name
+                ORDER BY sales_count DESC
+                LIMIT 10
+                """, LocalDate.now().minusMonths(1));
+            
+            System.out.println("🎵 Top Selling Tracks:");
+            while (topTracks.hasNext()) {
+                SqlRow track = topTracks.next();
+                System.out.printf("   %s: %d sales%n", 
+                    track.stringValue("Name"), 
+                    track.longValue("sales_count"));
+            }
+            
+            // Revenue by genre
+            ResultSet<SqlRow> genreRevenue = sql.execute(tx, """
+                SELECT g.Name, SUM(il.UnitPrice * il.Quantity) as revenue
+                FROM Genre g
+                JOIN Track t ON g.GenreId = t.GenreId
+                JOIN InvoiceLine il ON t.TrackId = il.TrackId
+                JOIN Invoice i ON il.InvoiceId = i.InvoiceId
+                WHERE i.InvoiceDate >= ?
+                GROUP BY g.GenreId, g.Name
+                ORDER BY revenue DESC
+                """, LocalDate.now().minusMonths(1));
+            
+            System.out.println("🎭 Revenue by Genre:");
+            while (genreRevenue.hasNext()) {
+                SqlRow genre = genreRevenue.next();
+                System.out.printf("   %s: $%.2f%n", 
+                    genre.stringValue("Name"), 
+                    genre.decimalValue("revenue"));
+            }
+            
+            return true;
+        });
+    }
+}
+```
+
+## Asynchronous Transactions: Non-Blocking Operations
+
+For high-throughput applications, asynchronous transactions prevent blocking threads while operations complete across the distributed cluster.
+
+### Basic Async Pattern
+
+```java
+/**
+ * Demonstrates asynchronous transaction patterns for non-blocking operations.
+ * Async transactions are crucial for high-throughput applications that need
+ * to handle many concurrent operations efficiently.
+ */
+public class AsyncTransactionPatterns {
+    
+    public CompletableFuture<Void> createArtistAsync(IgniteClient client, String artistName) {
+        return client.transactions().beginAsync()
+            .thenCompose(tx -> {
+                System.out.println("🚀 Starting async transaction for: " + artistName);
+                
+                RecordView<Artist> artistTable = client.tables().table("Artist").recordView(Artist.class);
+                
+                Artist artist = new Artist(generateArtistId(), artistName);
+                
+                return artistTable.upsertAsync(tx, artist)
+                    .thenCompose(ignored -> {
+                        System.out.println("✓ Artist created: " + artistName);
+                        return tx.commitAsync();
+                    })
+                    .exceptionally(throwable -> {
+                        System.err.println("✗ Failed to create artist: " + throwable.getMessage());
+                        tx.rollbackAsync();
+                        throw new RuntimeException(throwable);
+                    });
+            });
+    }
+    
+    public CompletableFuture<String> createMultipleArtistsAsync(IgniteClient client, List<String> artistNames) {
+        return client.transactions().runInTransactionAsync(tx -> {
+            RecordView<Artist> artistTable = client.tables().table("Artist").recordView(Artist.class);
+            
+            // Create all artists in parallel within the same transaction
+            List<CompletableFuture<Void>> operations = artistNames.stream()
+                .map(name -> {
+                    Artist artist = new Artist(generateArtistId(), name);
+                    return artistTable.upsertAsync(tx, artist);
+                })
+                .collect(Collectors.toList());
+            
+            // Wait for all operations to complete
+            return CompletableFuture.allOf(operations.toArray(new CompletableFuture[0]))
+                .thenApply(ignored -> {
+                    System.out.println("✓ Created " + artistNames.size() + " artists");
+                    return "Success: " + artistNames.size() + " artists created";
+                });
+        });
+    }
+    
+    private Integer generateArtistId() {
+        return (int) (System.currentTimeMillis() % 100000);
+    }
+}
+```
+
+### Advanced Async Patterns
+
+```java
+/**
+ * Advanced asynchronous transaction patterns for complex workflows.
+ */
+public class AdvancedAsyncPatterns {
+    
+    public CompletableFuture<PurchaseResult> processAsyncPurchase(
+            IgniteClient client, Integer customerId, List<PurchaseItem> items) {
+        
+        return client.transactions().runInTransactionAsync(tx -> {
+            return validateCustomerAsync(client, tx, customerId)
+                .thenCompose(customer -> createInvoiceAsync(client, tx, customer, items))
+                .thenCompose(invoice -> processPaymentAsync(client, tx, invoice))
+                .thenCompose(payment -> updateInventoryAsync(client, tx, items))
+                .thenApply(inventory -> new PurchaseResult(true, "Purchase completed successfully"))
+                .exceptionally(throwable -> {
+                    System.err.println("Purchase failed: " + throwable.getMessage());
+                    return new PurchaseResult(false, "Purchase failed: " + throwable.getMessage());
+                });
+        });
+    }
+    
+    private CompletableFuture<Customer> validateCustomerAsync(
+            IgniteClient client, Transaction tx, Integer customerId) {
+        RecordView<Customer> customers = client.tables().table("Customer").recordView(Customer.class);
+        
+        Customer key = new Customer();
+        key.setCustomerId(customerId);
+        
+        return customers.getAsync(tx, key)
+            .thenApply(customer -> {
+                if (customer == null) {
+                    throw new IllegalArgumentException("Customer not found: " + customerId);
+                }
+                return customer;
+            });
+    }
+    
+    private CompletableFuture<Invoice> createInvoiceAsync(
+            IgniteClient client, Transaction tx, Customer customer, List<PurchaseItem> items) {
+        RecordView<Invoice> invoices = client.tables().table("Invoice").recordView(Invoice.class);
+        
+        Invoice invoice = new Invoice();
+        invoice.setInvoiceId(generateInvoiceId());
+        invoice.setCustomerId(customer.getCustomerId());
+        invoice.setInvoiceDate(LocalDate.now());
+        invoice.setTotal(calculateTotal(items));
+        
+        return invoices.upsertAsync(tx, invoice)
+            .thenApply(ignored -> invoice);
+    }
+    
+    private CompletableFuture<Payment> processPaymentAsync(
+            IgniteClient client, Transaction tx, Invoice invoice) {
+        // Simulate async payment processing
+        return CompletableFuture.supplyAsync(() -> {
+            // In real implementation, this would call payment gateway
+            try {
+                Thread.sleep(100); // Simulate network call
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
+            }
+            
+            return new Payment(invoice.getInvoiceId(), invoice.getTotal(), "SUCCESS");
+        });
+    }
+    
+    private CompletableFuture<Void> updateInventoryAsync(
+            IgniteClient client, Transaction tx, List<PurchaseItem> items) {
+        IgniteSql sql = client.sql();
+        
+        List<CompletableFuture<Void>> updates = items.stream()
+            .map(item -> CompletableFuture.runAsync(() -> {
+                sql.execute(tx, 
+                    "UPDATE Inventory SET QuantityAvailable = QuantityAvailable - ? WHERE ProductId = ?",
+                    item.getQuantity(), item.getProductId());
+            }))
+            .collect(Collectors.toList());
+        
+        return CompletableFuture.allOf(updates.toArray(new CompletableFuture[0]));
+    }
+    
+    private Integer generateInvoiceId() {
+        return (int) (System.currentTimeMillis() % 100000);
+    }
+    
+    private BigDecimal calculateTotal(List<PurchaseItem> items) {
+        return items.stream()
+            .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+}
+
+// Helper classes
+class PurchaseResult {
+    private final boolean success;
+    private final String message;
+    
+    public PurchaseResult(boolean success, String message) {
+        this.success = success;
+        this.message = message;
+    }
+    
+    // Getters...
+}
+
+class PurchaseItem {
+    private String productId;
+    private int quantity;
+    private BigDecimal price;
+    
+    // Constructors, getters, setters...
+}
+
+class Payment {
+    private Integer invoiceId;
+    private BigDecimal amount;
+    private String status;
+    
+    public Payment(Integer invoiceId, BigDecimal amount, String status) {
+        this.invoiceId = invoiceId;
+        this.amount = amount;
+        this.status = status;
+    }
+    
+    // Getters...
+}
+```
+
+## Error Handling and Recovery Patterns
+
+### Retry Strategies
+
+```java
+/**
+ * Demonstrates retry strategies for handling transient transaction failures.
+ */
+public class TransactionRetryPatterns {
+    
+    public <T> CompletableFuture<T> executeWithRetry(
+            IgniteClient client, 
+            Function<Transaction, T> operation,
+            int maxRetries) {
+        
+        return executeWithRetryInternal(client, operation, maxRetries, 0);
+    }
+    
+    private <T> CompletableFuture<T> executeWithRetryInternal(
+            IgniteClient client,
+            Function<Transaction, T> operation,
+            int maxRetries,
+            int currentAttempt) {
+        
+        return client.transactions().runInTransactionAsync(operation)
+            .exceptionallyCompose(throwable -> {
+                if (currentAttempt >= maxRetries) {
+                    return CompletableFuture.failedFuture(throwable);
+                }
+                
+                if (isRetryableException(throwable)) {
+                    long delay = calculateBackoffDelay(currentAttempt);
+                    
+                    return CompletableFuture
+                        .delayedExecutor(delay, TimeUnit.MILLISECONDS)
+                        .thenCompose(ignored -> 
+                            executeWithRetryInternal(client, operation, maxRetries, currentAttempt + 1));
+                } else {
+                    return CompletableFuture.failedFuture(throwable);
+                }
+            });
+    }
+    
+    private boolean isRetryableException(Throwable throwable) {
+        // Retry on transaction conflicts and temporary network issues
+        return throwable instanceof TransactionException ||
+               throwable.getMessage().contains("timeout") ||
+               throwable.getMessage().contains("connection");
+    }
+    
+    private long calculateBackoffDelay(int attempt) {
+        // Exponential backoff with jitter
+        long baseDelay = 100; // 100ms
+        long exponentialDelay = baseDelay * (long) Math.pow(2, attempt);
+        long jitter = (long) (Math.random() * 50); // 0-50ms jitter
+        return Math.min(exponentialDelay + jitter, 5000); // Max 5 seconds
+    }
+}
+```
+
+### Circuit Breaker Pattern
+
+```java
+/**
+ * Circuit breaker pattern for transaction operations.
+ */
+public class TransactionCircuitBreaker {
+    private enum State { CLOSED, OPEN, HALF_OPEN }
+    
+    private State state = State.CLOSED;
+    private int failureCount = 0;
+    private long lastFailureTime = 0;
+    private final int failureThreshold = 5;
+    private final long timeoutDuration = 10000; // 10 seconds
+    
+    public <T> CompletableFuture<T> executeTransaction(
+            IgniteClient client,
+            Function<Transaction, T> operation) {
+        
+        if (state == State.OPEN) {
+            if (System.currentTimeMillis() - lastFailureTime > timeoutDuration) {
+                state = State.HALF_OPEN;
+            } else {
+                return CompletableFuture.failedFuture(
+                    new RuntimeException("Circuit breaker is OPEN"));
+            }
+        }
+        
+        return client.transactions().runInTransactionAsync(operation)
+            .thenApply(result -> {
+                onSuccess();
+                return result;
+            })
+            .exceptionally(throwable -> {
+                onFailure();
+                throw new RuntimeException(throwable);
+            });
+    }
+    
+    private synchronized void onSuccess() {
+        failureCount = 0;
+        state = State.CLOSED;
+    }
+    
+    private synchronized void onFailure() {
+        failureCount++;
+        lastFailureTime = System.currentTimeMillis();
+        
+        if (failureCount >= failureThreshold) {
+            state = State.OPEN;
+        }
+    }
+}
+```
+
+Advanced transaction patterns enable robust, high-performance distributed applications that handle complex business workflows while maintaining data consistency and providing excellent user experiences.
+
+## Next Steps
+
+Understanding advanced transaction patterns prepares you for distributed processing and compute operations:
+
+- **[Chapter 4.3: Compute API for Distributed Processing](03-compute-api-processing.md)** - Learn how transaction consistency enables reliable distributed job execution, data processing, and analytics across your cluster

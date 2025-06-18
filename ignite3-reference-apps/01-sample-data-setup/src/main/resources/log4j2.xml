@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{HH:mm:ss} %-5level %msg%n"/>
+        </Console>
+        
+        <File name="FileAppender" fileName="logs/music-store-setup.log">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+        </File>
+    </Appenders>
+    
+    <Loggers>
+        <!-- Apache Ignite 3 Loggers -->
+        <Logger name="org.apache.ignite" level="INFO" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="FileAppender"/>
+        </Logger>
+        
+        <!-- Music Store Application Loggers -->
+        <Logger name="com.apache.ignite.examples.setup" level="INFO" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="FileAppender"/>
+        </Logger>
+        
+        <!-- Reduce verbosity of network and I/O operations -->
+        <Logger name="io.netty" level="WARN"/>
+        <Logger name="org.apache.ignite.internal.network" level="WARN"/>
+        <Logger name="org.apache.ignite.internal.client" level="WARN"/>
+        
+        <!-- SQL execution logging (set to DEBUG for detailed SQL logs) -->
+        <Logger name="org.apache.ignite.sql" level="INFO"/>
+        
+        <!-- Transaction logging -->
+        <Logger name="org.apache.ignite.tx" level="INFO"/>
+        
+        <!-- Table operations logging -->
+        <Logger name="org.apache.ignite.table" level="INFO"/>
+        
+        <!-- Root logger -->
+        <Root level="INFO">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="FileAppender"/>
+        </Root>
+    </Loggers>
+</Configuration>

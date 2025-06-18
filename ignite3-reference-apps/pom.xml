@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.apache.ignite.examples</groupId>
+    <artifactId>ignite3-reference-apps</artifactId>
+    <version>1.0.0</version>
+    <packaging>pom</packaging>
+
+    <name>Apache Ignite 3 Reference Applications</name>
+    <description>Comprehensive reference applications demonstrating Apache Ignite 3 Java API usage patterns</description>
+
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        
+        <!-- Apache Ignite 3 -->
+        <ignite.version>3.0.0</ignite.version>
+        
+        <!-- Logging -->
+        <slf4j.version>2.0.17</slf4j.version>
+        <log4j.version>2.24.3</log4j.version>
+        
+        <!-- Testing -->
+        <junit.version>5.11.3</junit.version>
+        <assertj.version>3.26.3</assertj.version>
+        <testcontainers.version>1.20.4</testcontainers.version>
+        
+        <!-- Integration -->
+        <spring.boot.version>3.2.11</spring.boot.version>
+        
+        <!-- Build plugins -->
+        <maven.compiler.plugin.version>3.13.0</maven.compiler.plugin.version>
+        <maven.surefire.plugin.version>3.5.2</maven.surefire.plugin.version>
+        <maven.failsafe.plugin.version>3.5.2</maven.failsafe.plugin.version>
+        <spring.boot.maven.plugin.version>3.2.11</spring.boot.maven.plugin.version>
+    </properties>
+
+    <modules>
+        <module>01-sample-data-setup</module>
+        <module>02-getting-started-app</module>
+        <module>03-schema-annotations-app</module>
+        <module>04-table-api-app</module>
+        <module>05-sql-api-app</module>
+        <module>06-transactions-app</module>
+        <module>07-compute-api-app</module>
+        <module>08-data-streaming-app</module>
+        <module>09-caching-patterns-app</module>
+        <module>10-catalog-management-app</module>
+    </docs>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Apache Ignite 3 Core Dependencies -->
+            <dependency>
+                <groupId>org.apache.ignite</groupId>
+                <artifactId>ignite-client</artifactId>
+                <version>${ignite.version}</version>
+            </dependency>
+            
+            <dependency>
+                <groupId>org.apache.ignite</groupId>
+                <artifactId>ignite-api</artifactId>
+                <version>${ignite.version}</version>
+            </dependency>
+            
+            <dependency>
+                <groupId>org.apache.ignite</groupId>
+                <artifactId>ignite-jdbc</artifactId>
+                <version>${ignite.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.ignite</groupId>
+                <artifactId>ignite-runner</artifactId>
+                <version>${ignite.version}</version>
+            </dependency>
+
+            <!-- Logging Dependencies -->
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
+            
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-slf4j2-impl</artifactId>
+                <version>${log4j.version}</version>
+            </dependency>
+            
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-core</artifactId>
+                <version>${log4j.version}</version>
+            </dependency>
+
+            <!-- Testing Dependencies -->
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>${junit.version}</version>
+                <scope>test</scope>
+            </dependency>
+            
+            <dependency>
+                <groupId>org.assertj</groupId>
+                <artifactId>assertj-core</artifactId>
+                <version>${assertj.version}</version>
+                <scope>test</scope>
+            </dependency>
+            
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>${testcontainers.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!-- Spring Boot Dependencies -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter</artifactId>
+                <version>${spring.boot.version}</version>
+            </dependency>
+            
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-web</artifactId>
+                <version>${spring.boot.version}</version>
+            </dependency>
+            
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-test</artifactId>
+                <version>${spring.boot.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <!-- Internal Module Dependencies -->
+            <dependency>
+                <groupId>com.apache.ignite.examples</groupId>
+                <artifactId>01-sample-data-setup</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>${maven.compiler.plugin.version}</version>
+                    <configuration>
+                        <source>${maven.compiler.source}</source>
+                        <target>${maven.compiler.target}</target>
+                        <compilerArgs>
+                            <arg>--add-opens=java.base/java.lang=ALL-UNNAMED</arg>
+                            <arg>--add-opens=java.base/java.lang.invoke=ALL-UNNAMED</arg>
+                            <arg>--add-opens=java.base/java.nio=ALL-UNNAMED</arg>
+                            <arg>--add-opens=java.base/sun.nio.ch=ALL-UNNAMED</arg>
+                        </compilerArgs>
+                    </configuration>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${maven.surefire.plugin.version}</version>
+                    <configuration>
+                        <argLine>
+                            --add-opens=java.base/java.lang=ALL-UNNAMED
+                            --add-opens=java.base/java.lang.invoke=ALL-UNNAMED
+                            --add-opens=java.base/java.nio=ALL-UNNAMED
+                            --add-opens=java.base/sun.nio.ch=ALL-UNNAMED
+                            -Dio.netty.tryReflectionSetAccessible=true
+                        </argLine>
+                    </configuration>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>${maven.failsafe.plugin.version}</version>
+                    <configuration>
+                        <argLine>
+                            --add-opens=java.base/java.lang=ALL-UNNAMED
+                            --add-opens=java.base/java.lang.invoke=ALL-UNNAMED
+                            --add-opens=java.base/java.nio=ALL-UNNAMED
+                            --add-opens=java.base/sun.nio.ch=ALL-UNNAMED
+                            -Dio.netty.tryReflectionSetAccessible=true
+                        </argLine>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>integration-test</goal>
+                                <goal>verify</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <version>${spring.boot.maven.plugin.version}</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+
+</project>
