@@ -126,24 +126,38 @@ try (IgniteClient client = IgniteClient.builder()
 
 ### The Distribution Zone Concept
 
-Before creating tables, you need a distribution zone - think of it as a "container" that controls how your data is distributed:
+Distribution zones control how your data is distributed across cluster nodes. Ignite 3 automatically creates a "Default" zone, but understanding when to use default vs custom zones is important:
+
+#### Default Zone vs Custom Zones
+
+**Default Zone Characteristics:**
+- **Name**: "Default" (created automatically)
+- **Replicas**: 1 (no fault tolerance)
+- **Partitions**: 25
+- **Use Case**: Development, testing, simple scenarios
+
+**When to Create Custom Zones:**
 
 ```java
-// Create a zone for our application data
+// Create a zone for production data requiring fault tolerance
 ZoneDefinition zone = ZoneDefinition.builder("QuickStart")
     .ifNotExists()
-    .replicas(2)        // Keep 2 copies of each piece of data
+    .replicas(2)        // Keep 2 copies for fault tolerance
+    .partitions(25)     // Distribute data across partitions
     .storageProfiles("default")
     .build();
 
 client.catalog().createZone(zone);
 ```
 
-**Zone Benefits:**
+**Custom Zone Benefits:**
 
-- **Fault Tolerance**: Multiple replicas protect against node failures
-- **Performance Control**: Choose optimal replica count for your workload
-- **Storage Selection**: Pick storage engines optimized for your access patterns
+- **Fault Tolerance**: Multiple replicas protect against node failures  
+- **Performance Tuning**: Optimize partition and replica counts for your workload
+- **Data Isolation**: Separate different data types into appropriate zones
+
+> [!TIP]
+> **Best Practice**: Use the default zone for quick development and testing. Create custom zones for production workloads requiring fault tolerance (2+ replicas) or specific performance characteristics.
 
 ### Creating Your First Table
 
@@ -166,11 +180,20 @@ public class Book {
 }
 ```
 
+**Alternative - Using Default Zone:**
+```java
+// For simple scenarios, you can omit zone specification to use the default zone
+@Table
+public class Book {
+    // Same field definitions...
+}
+```
+
 **What This Achieves:**
 
 - **Type Safety**: Your schema is validated at compile time
 - **Automatic DDL**: Ignite generates the table structure
-- **Zone Assignment**: Data goes to the "QuickStart" distribution zone
+- **Zone Assignment**: Data goes to specified zone (or "Default" if omitted)
 - **Performance**: Annotations drive indexing and partitioning strategies
 
 ## Your First Complete Application

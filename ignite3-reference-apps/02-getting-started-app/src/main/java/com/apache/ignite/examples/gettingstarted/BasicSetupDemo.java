@@ -73,7 +73,7 @@ public class BasicSetupDemo {
         System.out.println("=== Basic Setup: Related Tables ===");
         
         try (IgniteClient client = IgniteClient.builder()
-                .addresses("localhost:10800")
+                .addresses("localhost:10800", "localhost:10801", "localhost:10802")
                 .build()) {
             
             // Create zone
