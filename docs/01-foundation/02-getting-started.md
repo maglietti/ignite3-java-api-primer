@@ -47,6 +47,8 @@ Before your first application, you need an Ignite 3 cluster running. The simples
 - Docker 20.10.0 or newer and Docker Compose 2.23.1 or newer
 - See [Apache Ignite 3 Docker Installation Guide](https://ignite.apache.org/docs/ignite3/latest/installation/installing-using-docker) for setup instructions
 
+#### Unix-based Systems (Linux, macOS)
+
 ```bash
 # Clone and start the reference cluster
 git clone <this-repo>
@@ -57,6 +59,37 @@ cd ignite3-reference-apps/00-docker
 ```
 
 The `init-cluster.sh` script automatically detects your Docker Compose environment and creates a 3-node cluster perfect for development and learning.
+
+#### Windows and Other Systems
+
+**Option 1: Manual Docker Setup**
+
+```bash
+# Clone and navigate to Docker setup
+git clone <this-repo>
+cd ignite3-reference-apps/00-docker
+
+# Start the cluster (use docker-compose or docker compose based on your installation)
+docker-compose up -d
+# OR: docker compose up -d
+```
+
+Wait 30-60 seconds for containers to start, then initialize using PowerShell:
+
+```powershell
+# Initialize cluster using PowerShell (Windows 10+)
+$body = @{
+    metaStorageNodes = @("node1", "node2", "node3")
+    cmgNodes = @("node1", "node2", "node3")
+    clusterName = "ignite3-reference-cluster"
+} | ConvertTo-Json
+
+Invoke-RestMethod -Uri "http://localhost:10300/management/v1/cluster/init" -Method POST -Body $body -ContentType "application/json"
+```
+
+**Option 2: Alternative Installation**
+
+For non-Docker setups, follow the platform-specific installation instructions at [https://ignite.apache.org/docs/ignite3/latest/installation/](https://ignite.apache.org/docs/ignite3/latest/installation/).
 
 ## Core Concepts in Action
 

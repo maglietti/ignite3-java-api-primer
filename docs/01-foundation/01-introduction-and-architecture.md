@@ -186,7 +186,11 @@ var topTracks = client.sql().execute(null,
 > [!NOTE]
 > Docker installation is preferred but not required.
 
-For Docker setup instructions, see the [Apache Ignite 3 Docker Installation Guide](https://ignite.apache.org/docs/ignite3/latest/installation/installing-using-docker). Alternative installation methods are available for environments where Docker is not suitable.
+**For Unix-based systems (Linux, macOS)**: Use the Docker setup instructions at [Apache Ignite 3 Docker Installation Guide](https://ignite.apache.org/docs/ignite3/latest/installation/installing-using-docker).
+
+**For Windows and other systems**: Follow the comprehensive installation instructions at [https://ignite.apache.org/docs/ignite3/latest/installation/](https://ignite.apache.org/docs/ignite3/latest/installation/) which covers all supported platforms and installation methods.
+
+Alternative installation methods are available for environments where Docker is not suitable.
 
 **Knowledge Assumptions**:
 
