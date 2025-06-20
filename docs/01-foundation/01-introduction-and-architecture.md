@@ -178,7 +178,15 @@ var topTracks = client.sql().execute(null,
 
 - **Java 17+**: Modern JDK
 - **Maven 3.8+**: Build and dependency management
-- **Docker**: Cluster infrastructure (12GB RAM recommended)
+- **Docker**: Version 20.10.0 or newer (12GB RAM recommended)
+- **Docker Compose**: Version 2.23.1 or newer
+
+**Installation**:
+
+> [!NOTE]
+> Docker installation is preferred but not required.
+
+For Docker setup instructions, see the [Apache Ignite 3 Docker Installation Guide](https://ignite.apache.org/docs/ignite3/latest/installation/installing-using-docker). Alternative installation methods are available for environments where Docker is not suitable.
 
 **Knowledge Assumptions**:
 

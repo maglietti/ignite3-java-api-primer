@@ -42,17 +42,21 @@ The client library includes everything needed to connect, define schemas, and pe
 
 Before your first application, you need an Ignite 3 cluster running. The simplest approach uses Docker:
 
+**Prerequisites**:
+
+- Docker 20.10.0 or newer and Docker Compose 2.23.1 or newer
+- See [Apache Ignite 3 Docker Installation Guide](https://ignite.apache.org/docs/ignite3/latest/installation/installing-using-docker) for setup instructions
+
 ```bash
 # Clone and start the reference cluster
 git clone <this-repo>
 cd ignite3-reference-apps/00-docker
-docker-compose up -d
 
-# Initialize the cluster (one-time setup)
+# Automated setup (recommended)
 ./init-cluster.sh
 ```
 
-This creates a 3-node cluster perfect for development and learning.
+The `init-cluster.sh` script automatically detects your Docker Compose environment and creates a 3-node cluster perfect for development and learning.
 
 ## Core Concepts in Action
 

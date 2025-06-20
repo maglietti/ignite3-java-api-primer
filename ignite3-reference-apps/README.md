@@ -20,7 +20,11 @@ This multi-module Maven project provides practical, runnable examples for all ma
 
 - Java 17+
 - Maven 3.8+
-- Docker & Docker Compose
+- Docker 20.10.0 or newer & Docker Compose 2.23.1 or newer
+
+> [!NOTE]
+> For Docker installation instructions, see the [Apache Ignite 3 Docker Installation Guide](https://ignite.apache.org/docs/ignite3/latest/installation/installing-using-docker).
+> Docker installation is preferred but not required.
 
 ### 1. Start Ignite 3 Cluster
 
@@ -35,22 +39,15 @@ cd 00-docker
 **Manual setup**:
 ```bash
 cd 00-docker
-docker-compose up -d
+# The init-cluster.sh script automatically detects docker-compose vs docker compose
+./init-cluster.sh
 ```
 
-Wait for containers to be healthy, then initialize the cluster:
+**Alternative manual steps** (if needed):
 ```bash
-# Wait 30-60 seconds for startup
-docker-compose ps
-
-# Initialize cluster (required before first use)
-curl -X POST http://localhost:10300/management/v1/cluster/init \
-  -H "Content-Type: application/json" \
-  -d '{
-    "metaStorageNodes": ["node1", "node2", "node3"],
-    "cmgNodes": ["node1", "node2", "node3"],
-    "clusterName": "ignite3-reference-cluster"
-  }'
+cd 00-docker
+# Note: Use docker-compose or docker compose as detected by your system
+docker-compose up -d  # or: docker compose up -d
 ```
 
 Verify cluster is initialized and ready:

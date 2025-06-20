@@ -2,6 +2,11 @@
 
 **Docker-based 3-node Ignite cluster for reference applications**
 
+## Prerequisites
+
+- Docker 20.10.0 or newer and Docker Compose 2.23.1 or newer
+- For installation instructions, see the [Apache Ignite 3 Docker Installation Guide](https://ignite.apache.org/docs/ignite3/latest/installation/installing-using-docker)
+
 ## Quick Start
 
 ### Option 1: Automated Setup (Recommended)
