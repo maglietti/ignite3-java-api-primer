@@ -123,14 +123,14 @@ public class HelloWorldApp {
             
             // Demonstrate SQL access across both zones
             System.out.println("\n=== SQL Query Across Zones ===");
-            var bookResult = client.sql().execute(null, "SELECT COUNT(*) as count FROM SimpleBook");
+            var bookResult = client.sql().execute(null, "SELECT COUNT(*) as record_count FROM SimpleBook");
             if (bookResult.hasNext()) {
-                System.out.println(">>> Books in custom zone: " + bookResult.next().intValue("count"));
+                System.out.println(">>> Books in custom zone: " + bookResult.next().longValue("record_count"));
             }
             
-            var noteResult = client.sql().execute(null, "SELECT COUNT(*) as count FROM SimpleNote");  
+            var noteResult = client.sql().execute(null, "SELECT COUNT(*) as record_count FROM SimpleNote");  
             if (noteResult.hasNext()) {
-                System.out.println(">>> Notes in default zone: " + noteResult.next().intValue("count"));
+                System.out.println(">>> Notes in default zone: " + noteResult.next().longValue("record_count"));
             }
             
             System.out.println("\n=== Zone Best Practices Summary ===");

@@ -162,6 +162,13 @@ mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.gettingstarte
 
 **Connection refused**: Make sure the Docker cluster is running
 **Tables already exist**: This is normal - applications handle existing tables gracefully
+**ClassNotFoundException after build success**: If you see compilation success but ClassNotFoundException, check for stray .class files in source directories:
+
+```bash
+# Remove any .class files from source directories
+find src -name "*.class" -delete
+mvn clean compile
+```
 
 ## Next Steps
 

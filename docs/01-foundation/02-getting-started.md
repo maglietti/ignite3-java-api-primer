@@ -240,40 +240,96 @@ public class HelloIgnite {
         }
     }
     
+    // Example 2: Table using default zone for simple development scenarios
+    @org.apache.ignite.catalog.annotations.Table(value = "Note")
+    public static class Note {
+        @Id
+        private Integer id;
+        
+        @Column(length = 200)
+        private String content;
+        
+        public Note() {}
+        public Note(Integer id, String content) {
+            this.id = id;
+            this.content = content;
+        }
+        
+        public Integer getId() { return id; }
+        public void setId(Integer id) { this.id = id; }
+        public String getContent() { return content; }
+        public void setContent(String content) { this.content = content; }
+        
+        public String toString() {
+            return "Note{id=" + id + ", content='" + content + "'}";
+        }
+    }
+    
     public static void main(String[] args) {
         try (IgniteClient client = IgniteClient.builder()
                 .addresses("localhost:10800", "localhost:10801", "localhost:10802")
                 .build()) {
             
-            // 1. Create zone
+            System.out.println(">>> Connected to all cluster nodes for optimal performance");
+            
+            // Example 1: Custom Zone for Production Scenarios
+            System.out.println("\n=== Custom Zone Example (Production Pattern) ===");
+            
             client.catalog().createZone(
                 ZoneDefinition.builder("QuickStart")
                     .ifNotExists()
-                    .replicas(2)
+                    .replicas(2)  // Fault tolerance with 2 replicas
+                    .partitions(25)
                     .storageProfiles("default")
                     .build()
             );
+            System.out.println(">>> Custom zone 'QuickStart' created (2 replicas for fault tolerance)");
             
-            // 2. Create table
             client.catalog().createTable(Book.class);
+            System.out.println(">>> Table 'Book' created in custom zone");
             
-            // 3. Insert data
             RecordView<Book> books = client.tables()
                 .table("Book")
                 .recordView(Book.class);
             
             books.upsert(null, new Book(1, "1984"));
+            System.out.println(">>> Books inserted into custom zone");
             
-            // 4. Read data
             Book book = books.get(null, new Book(1, null));
-            System.out.println("Found: " + book);
+            System.out.println(">>> Retrieved from custom zone: " + book);
             
-            // 5. Query with SQL
-            var result = client.sql().execute(null, "SELECT * FROM Book");
-            while (result.hasNext()) {
-                var row = result.next();
-                System.out.println("SQL result: " + row.stringValue("title"));
+            // Example 2: Default Zone for Development Scenarios  
+            System.out.println("\n=== Default Zone Example (Development Pattern) ===");
+            
+            client.catalog().createTable(Note.class);
+            System.out.println(">>> Table 'Note' created in default zone (no zone creation needed)");
+            
+            RecordView<Note> notes = client.tables()
+                .table("Note")
+                .recordView(Note.class);
+            
+            notes.upsert(null, new Note(1, "Remember to use multiple addresses for production"));
+            System.out.println(">>> Notes inserted into default zone");
+            
+            Note note = notes.get(null, new Note(1, null));
+            System.out.println(">>> Retrieved from default zone: " + note);
+            
+            // Demonstrate SQL access across both zones
+            System.out.println("\n=== SQL Query Across Zones ===");
+            var bookResult = client.sql().execute(null, "SELECT COUNT(*) as record_count FROM Book");
+            if (bookResult.hasNext()) {
+                System.out.println(">>> Books in custom zone: " + bookResult.next().longValue("record_count"));
             }
+            
+            var noteResult = client.sql().execute(null, "SELECT COUNT(*) as record_count FROM Note");  
+            if (noteResult.hasNext()) {
+                System.out.println(">>> Notes in default zone: " + noteResult.next().longValue("record_count"));
+            }
+            
+            System.out.println("\n=== Zone Best Practices Summary ===");
+            System.out.println(">>> Default Zone: Use for development, testing, simple scenarios (1 replica)");
+            System.out.println(">>> Custom Zones: Use for production workloads requiring fault tolerance (2+ replicas)");
+            System.out.println(">>> Performance: Always specify all cluster addresses for partition awareness");
             
         } catch (Exception e) {
             e.printStackTrace();
@@ -284,13 +340,14 @@ public class HelloIgnite {
 
 ### What This Example Shows
 
-**In just 40 lines**, this application demonstrates:
+This application demonstrates essential Ignite 3 patterns:
 
-1. **Connection**: Simple client setup with automatic resource management
-2. **Schema**: Table creation from Java classes using annotations
-3. **Distribution**: Zone configuration controls data placement
-4. **Storage**: Insert and retrieve operations using type-safe APIs  
-5. **Querying**: SQL access to the same data
+1. **Multi-node Connection**: Connect to all cluster nodes for optimal performance and partition awareness
+2. **Zone Patterns**: Both custom zone (production) and default zone (development) approaches
+3. **Schema Definition**: Table creation from Java classes using annotations with zone specifications
+4. **Data Operations**: Insert and retrieve operations across different zones
+5. **SQL Querying**: Query data across tables in different zones
+6. **Best Practices**: Clear guidance on when to use each zone approach
 
 ### Running the Example
 
@@ -306,31 +363,71 @@ java -cp .:ignite-client-3.0.0.jar HelloIgnite
 **Expected Output:**
 
 ```text
-Found: Book{id=1, title='1984'}
-SQL result: 1984
+>>> Connected to all cluster nodes for optimal performance
+
+=== Custom Zone Example (Production Pattern) ===
+>>> Custom zone 'QuickStart' created (2 replicas for fault tolerance)
+>>> Table 'Book' created in custom zone
+>>> Books inserted into custom zone
+>>> Retrieved from custom zone: Book{id=1, title='1984'}
+
+=== Default Zone Example (Development Pattern) ===
+>>> Table 'Note' created in default zone (no zone creation needed)
+>>> Notes inserted into default zone
+>>> Retrieved from default zone: Note{id=1, content='Remember to use multiple addresses for production'}
+
+=== SQL Query Across Zones ===
+>>> Books in custom zone: 1
+>>> Notes in default zone: 1
+
+=== Zone Best Practices Summary ===
+>>> Default Zone: Use for development, testing, simple scenarios (1 replica)
+>>> Custom Zones: Use for production workloads requiring fault tolerance (2+ replicas)
+>>> Performance: Always specify all cluster addresses for partition awareness
 ```
 
 ## Understanding What Happened
 
-### The Distribution Zone
+### Multi-Zone Architecture
 
-When you created the "QuickStart" zone, Ignite 3 configured how your data spreads across cluster nodes:
+The example demonstrates two different approaches to zone management:
+
+**Custom Zone ("QuickStart")**:
+
+- Created explicitly with 2 replicas for fault tolerance
+- Configured with 25 partitions for optimal distribution
+- Used for production scenarios requiring high availability
+
+**Default Zone**:
+
+- Created automatically by Ignite 3 during cluster initialization
+- Configured with 1 replica (no fault tolerance)
+- Used for development and testing scenarios
+
+### Zone Data Distribution
+
+Here's how your data spreads across cluster nodes:
 
 ```mermaid
 flowchart TD
-    A["QuickStart Zone"] --> B["Node 1: Replica 1"]
-    A --> C["Node 2: Replica 2"] 
-    A --> D["Node 3: Backup"]
+    subgraph "Custom Zone (QuickStart)"
+        A["Book Table"] --> B["Node 1: Replica 1"]
+        A --> C["Node 2: Replica 2"] 
+        A --> D["Node 3: Available"]
+    end
     
-    B --> E["Book table partition"]
-    C --> F["Book table partition"]
+    subgraph "Default Zone"
+        E["Note Table"] --> F["Node 1: Only Copy"]
+        E --> G["Node 2: Available"]
+        E --> H["Node 3: Available"]
+    end
 ```
 
-**Why This Matters:**
+**Zone Comparison:**
 
-- **Fault Tolerance**: With 2 replicas, your data survives node failures
-- **Load Distribution**: Reads and writes spread across multiple nodes
-- **Scalability**: Add more nodes to handle more data and traffic
+- **Custom Zone**: 2 replicas provide fault tolerance, data survives single node failure
+- **Default Zone**: 1 replica, simpler but no fault tolerance
+- **Performance**: Both zones benefit from multi-node client connections for partition awareness
 
 ### The Table Creation Process
 
@@ -349,24 +446,31 @@ sequenceDiagram
     Client->>App: Success
 ```
 
-### Type Safety in Action
+### Type Safety and Zone Flexibility
 
-Notice how the same `Book` class works for both object operations and SQL queries:
+Notice how the same programming patterns work across different zones:
 
 ```java
-// Object API - type safe
+// Custom Zone - Object API
+RecordView<Book> books = client.tables().table("Book").recordView(Book.class);
 books.upsert(null, new Book(1, "1984"));
 Book book = books.get(null, new Book(1, null));
 
-// SQL API - same data, different access pattern
-var result = client.sql().execute(null, "SELECT * FROM Book");
+// Default Zone - Object API  
+RecordView<Note> notes = client.tables().table("Note").recordView(Note.class);
+notes.upsert(null, new Note(1, "Development note"));
+
+// SQL API - works across both zones
+var bookResult = client.sql().execute(null, "SELECT COUNT(*) as record_count FROM Book");
+var noteResult = client.sql().execute(null, "SELECT COUNT(*) as record_count FROM Note");
 ```
 
-**This dual API approach means:**
+**This unified approach means:**
 
-- Use objects when you know exact keys and want type safety
-- Use SQL for complex queries, joins, and analytical operations
-- Both APIs access the same underlying distributed data
+- Same programming patterns work regardless of zone configuration
+- Use objects for type-safe operations with known keys
+- Use SQL for complex queries and analytics across any zone
+- Zone choice becomes a deployment decision, not a programming constraint
 
 ## Building Confidence
 
