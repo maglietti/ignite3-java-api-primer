@@ -78,13 +78,25 @@ This setup provides a **3-node Apache Ignite cluster** with the following config
 
 **Prerequisites**: The cluster must be running before executing any reference applications.
 
-### Default Connection
-Most reference applications connect to: `127.0.0.1:10800` (Node 1)
+### Recommended Connection Pattern
 
-### Alternative Connections
-For load balancing or failover testing:
-- Node 2: `127.0.0.1:10801`
-- Node 3: `127.0.0.1:10802`
+**Best Practice**: Connect to all cluster nodes for optimal performance:
+```java
+IgniteClient client = IgniteClient.builder()
+    .addresses("127.0.0.1:10800", "127.0.0.1:10801", "127.0.0.1:10802")
+    .build();
+```
+
+This enables direct partition mapping and eliminates extra network hops.
+
+### Individual Node Access
+For testing or specific scenarios:
+- **Node 1**: `127.0.0.1:10800` 
+- **Node 2**: `127.0.0.1:10801`
+- **Node 3**: `127.0.0.1:10802`
+
+> [!WARNING]
+> Connecting to a single node results in poor performance due to lack of direct partition mapping.
 
 ## Troubleshooting
 

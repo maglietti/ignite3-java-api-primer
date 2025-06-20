@@ -95,11 +95,11 @@ For non-Docker setups, follow the platform-specific installation instructions at
 
 ### Your First Connection
 
-Connecting to Ignite 3 is straightforward. The client automatically handles connection pooling, failover, and resource management:
+Connecting to Ignite 3 requires understanding how client connections work with cluster topology:
 
 ```java
 try (IgniteClient client = IgniteClient.builder()
-        .addresses("localhost:10800")
+        .addresses("localhost:10800", "localhost:10801", "localhost:10802")
         .build()) {
     
     System.out.println("Connected to: " + client.connections());
@@ -109,11 +109,20 @@ try (IgniteClient client = IgniteClient.builder()
 // Client automatically closes and cleans up resources
 ```
 
-**Why This Works:**
+**Why Multiple Addresses Matter:**
 
-- **Try-with-resources**: Ensures proper cleanup even if exceptions occur
-- **Single address**: For development; production uses multiple addresses for failover
-- **Default timeouts**: Reasonable defaults for most applications
+- **Partition Awareness**: Client needs all node addresses for direct partition mapping and optimal performance
+- **Try-with-resources**: Ensures proper cleanup even if exceptions occur  
+- **Failover**: Multiple addresses provide redundancy if individual nodes are unavailable
+- **Performance**: Single address connections cannot use direct partition mapping, resulting in poor performance
+
+> [!IMPORTANT]
+> **Best Practice**: Always specify all cluster node addresses in production. Connecting to a single address means the client won't discover other nodes automatically and will have degraded performance due to lack of direct partition mapping.
+
+**Current Limitations:**
+
+- **No Automatic Discovery**: Ignite 3 clients do not automatically discover cluster nodes beyond those specified in `.addresses()`
+- **Topology Changes**: When nodes are added/removed, applications must be updated with new address lists or use DNS-based addressing
 
 ### The Distribution Zone Concept
 
@@ -210,7 +219,7 @@ public class HelloIgnite {
     
     public static void main(String[] args) {
         try (IgniteClient client = IgniteClient.builder()
-                .addresses("localhost:10800")
+                .addresses("localhost:10800", "localhost:10801", "localhost:10802")
                 .build()) {
             
             // 1. Create zone

@@ -103,9 +103,11 @@ The thin client provides optimal separation between application and storage tier
 
 ```java
 IgniteClient client = IgniteClient.builder()
-    .addresses("127.0.0.1:10800")
+    .addresses("127.0.0.1:10800", "127.0.0.1:10801", "127.0.0.1:10802")
     .build();
 ```
+
+**Best Practice**: Specify all cluster node addresses for optimal performance. This enables direct partition mapping and eliminates extra network hops for data operations.
 
 This approach scales applications independently from storage and simplifies deployment in containerized environments.
 

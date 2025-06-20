@@ -239,7 +239,7 @@ mvn exec:java -Dexec.args="192.168.1.100:10800"
 
 ### Default Settings
 
-- **Cluster Address**: `127.0.0.1:10800`
+- **Cluster Addresses**: `127.0.0.1:10800`, `127.0.0.1:10801`, `127.0.0.1:10802` (all nodes recommended)
 - **Connection Timeout**: 30 seconds
 - **Zone Replicas**: 2 (MusicStore), 3 (MusicStoreReplicated)
 - **Partitions**: 25 per zone
