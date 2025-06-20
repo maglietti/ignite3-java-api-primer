@@ -126,11 +126,11 @@ mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.gettingstarte
 
 ## Key Patterns
 
-**Connection**: Always use try-with-resources for automatic cleanup
-**Zones**: Control how data is distributed across nodes  
-**Tables**: Define using simple POJO classes with annotations
-**Transactions**: Use for operations that must succeed or fail together
-**SQL**: Standard SQL works alongside object operations
+- **Connection**: Always use try-with-resources for automatic cleanup
+- **Zones**: Control how data is distributed across nodes  
+- **Tables**: Define using simple POJO classes with annotations
+- **Transactions**: Use for operations that must succeed or fail together
+- **SQL**: Standard SQL works alongside object operations
 
 ## Running the Examples
 
