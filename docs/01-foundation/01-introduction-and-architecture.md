@@ -28,15 +28,15 @@ Apache Ignite 3 addresses these challenges through a unified platform that combi
 
 ### Core Capabilities
 
-**In-Memory Data Grid**: Data resides in memory across cluster nodes, delivering microsecond access times with optional persistence for durability.
+- **In-Memory Data Grid**: Data resides in memory across cluster nodes, delivering microsecond access times with optional persistence for durability.
 
-**Distributed SQL Engine**: Execute ANSI-compliant SQL queries across distributed datasets with automatic join optimization and parallel execution.
+- **Distributed SQL Engine**: Execute ANSI-compliant SQL queries across distributed datasets with automatic join optimization and parallel execution.
 
-**NoSQL Key-Value Store**: Access data through type-safe object-oriented APIs optimized for high-performance single-record and batch operations.
+- **NoSQL Key-Value Store**: Access data through type-safe object-oriented APIs optimized for high-performance single-record and batch operations.
 
-**Compute Engine**: Execute business logic directly on data nodes, eliminating network overhead and maximizing performance through colocation.
+- **Compute Engine**: Execute business logic directly on data nodes, eliminating network overhead and maximizing performance through colocation.
 
-**Streaming Engine**: Ingest and process high-velocity data streams with built-in backpressure handling and flow control.
+- **Streaming Engine**: Ingest and process high-velocity data streams with built-in backpressure handling and flow control.
 
 ### Evolution from Ignite 2
 
@@ -51,7 +51,7 @@ If you have worked with version 2 of Ignite in the past, Ignite 3 represents a f
 
 Ignite 3 provides two primary connection approaches, each suited for different architectural patterns:
 
-### Thin Client Pattern (Recommended)
+### Remote Client Pattern (Recommended)
 
 The **IgniteClient** provides optimal separation between application and storage tiers. Applications connect to cluster nodes without becoming part of the cluster topology.
 
@@ -99,19 +99,19 @@ The Ignite 3 Java API follows three core design principles that simplify distrib
 
 Choose the appropriate API for each use case:
 
-**Table API**: Object-oriented access through strongly-typed RecordView interfaces handles structured data operations efficiently with compile-time type safety.
+- **Table API**: Object-oriented access through strongly-typed RecordView interfaces handles structured data operations efficiently with compile-time type safety.
 
-**SQL API**: Relational access handles complex queries, joins, and analytics using standard ANSI SQL syntax with automatic query optimization.
+- **SQL API**: Relational access handles complex queries, joins, and analytics using standard ANSI SQL syntax with automatic query optimization.
 
-**Key-Value API**: Cache-like operations for basic get/put scenarios with minimal overhead and maximum performance.
+- **Key-Value API**: Cache-like operations for basic get/put scenarios with minimal overhead and maximum performance.
 
 ### Async-First Design
 
 Every operation supports both synchronous and asynchronous execution patterns:
 
-**Synchronous Operations**: Use for straightforward scenarios where blocking is acceptable and code readability is prioritized.
+- **Synchronous Operations**: Use for straightforward scenarios where blocking is acceptable and code readability is prioritized.
 
-**Asynchronous Operations**: Use CompletableFuture-based operations for high-throughput scenarios, reactive programming, and when you need to compose multiple operations efficiently.
+- **Asynchronous Operations**: Use CompletableFuture-based operations for high-throughput scenarios, reactive programming, and when you need to compose multiple operations efficiently.
 
 ### Strong Type Safety
 
@@ -198,9 +198,9 @@ Distribution zones control how your data is distributed, replicated, and managed
 | Analytics workload | Custom (optimized partitions) | Performance tuning for large datasets |
 | Multi-tenant SaaS | Custom (per tenant) | Data isolation and security |
 
-## Connection Performance Framework
+## Connection Framework
 
-For optimal performance, Ignite 3 clients should connect to all cluster nodes to enable direct partition mapping and eliminate unnecessary network hops.
+For optimal performance, Ignite 3 remote clients should connect to all cluster nodes to enable direct partition mapping and eliminate unnecessary network hops.
 
 ### Single-Node Connection Limitations
 
