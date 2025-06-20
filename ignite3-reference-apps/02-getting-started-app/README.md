@@ -6,16 +6,16 @@
 
 ## Overview
 
-This module teaches Apache Ignite 3 fundamentals through simple, focused examples. Each application demonstrates one key concept using minimal code, following the KISS principle for educational clarity.
+This module teaches Apache Ignite 3 fundamentals through focused examples. Each application demonstrates one key concept using minimal code.
 
 ## What You'll Learn
 
-- **Client Connection Management**: Connect to all cluster nodes for optimal performance
-- **Distribution Zones**: Understand default zone vs custom zone creation patterns
-- **Table Creation**: Define tables using POJO annotations with zone specifications
-- **CRUD Operations**: Insert, read, update, and delete data efficiently
-- **SQL Integration**: Query data using standard SQL across different zones
-- **Transaction Patterns**: Ensure data consistency across operations
+- **Client Connection Management**: Connect to all cluster nodes for optimal performance  
+- **Default Zone Usage**: Apply Chapter 1.1 concepts using the default zone for development
+- **Table Creation**: Define tables using POJO annotations with automatic zone assignment
+- **CRUD Operations**: Insert, read, update, and delete data efficiently using type-safe APIs
+- **SQL Integration**: Query data using standard SQL with the same data model
+- **Multi-modal APIs**: Use both Table and SQL APIs on the same underlying data
 - **Error Handling**: Handle common connection and operation errors
 - **Resource Management**: Properly manage client resources and cleanup
 
@@ -35,15 +35,15 @@ cd ../00-docker && docker-compose up -d
 
 ### 1. HelloWorldApp
 
-**Zone patterns and connection best practices**
+**Default zone pattern and multi-modal API usage**
 
-Demonstrates two approaches to zone management:
+Demonstrates the essential Ignite 3 patterns from Chapter 1.2:
 
-1. **Custom Zone Pattern**: For production scenarios requiring fault tolerance (2+ replicas)
-2. **Default Zone Pattern**: For development and testing scenarios (1 replica)
-3. **Multi-node Connection**: Connect to all cluster nodes for optimal performance
-4. **Data Operations**: Insert and read data across different zones
-5. **SQL Queries**: Query across both custom and default zones
+1. **Multi-node Connection**: Connect to all cluster nodes for partition awareness
+2. **Default Zone Usage**: Zero-configuration development pattern from Chapter 1.1
+3. **Table API Operations**: Type-safe CRUD operations with automatic schema creation
+4. **SQL API Integration**: Query the same data using standard SQL
+5. **Resource Management**: Proper connection and cleanup patterns
 
 ```bash
 mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.gettingstarted.HelloWorldApp"
@@ -53,25 +53,14 @@ mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.gettingstarte
 
 ```
 === Hello World: Apache Ignite 3 ===
->>> Connected to all cluster nodes for optimal performance
-
-=== Custom Zone Example (Production Pattern) ===
->>> Custom zone 'QuickStart' created (2 replicas for fault tolerance)
->>> Table 'SimpleBook' created in custom zone
->>> Books inserted into custom zone
->>> Retrieved from custom zone: Book{id=1, title='1984'}
-
-=== Default Zone Example (Development Pattern) ===
->>> Table 'SimpleNote' created in default zone (no zone creation needed)
->>> Notes inserted into default zone
->>> Retrieved from default zone: Note{id=1, content='Remember to use multiple addresses for production'}
-
-=== Zone Best Practices Summary ===
->>> Default Zone: Use for development, testing, simple scenarios (1 replica)
->>> Custom Zones: Use for production workloads requiring fault tolerance (2+ replicas)
->>> Performance: Always specify all cluster addresses for partition awareness
-
-Success!
+>>> Connected with partition awareness
+>>> Table created in default zone
+>>> Books inserted using Table API
+>>> Retrieved: Book{id=1, title='1984', author='George Orwell'}
+>>> All books via SQL:
+    1: 1984 by George Orwell
+    2: Brave New World by Aldous Huxley
+>>> Success! Default zone pattern working perfectly.
 ```
 
 ### 2. BasicSetupDemo
@@ -138,11 +127,11 @@ mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.gettingstarte
 ## Key Patterns
 
 - **Connection**: Always specify all cluster node addresses for optimal performance and partition awareness
-- **Default Zone**: Use for development and testing scenarios (automatically created with 1 replica)
-- **Custom Zones**: Create for production workloads requiring fault tolerance (2+ replicas)  
-- **Tables**: Define using simple POJO classes with @Table annotations (with or without zone specification)
-- **Transactions**: Use for operations that must succeed or fail together
-- **SQL**: Standard SQL works across tables in any zone
+- **Default Zone**: Perfect for development and learning - zero configuration required
+- **Table API**: Type-safe operations for known-key scenarios with compile-time validation
+- **SQL API**: Flexible queries and analytics using standard ANSI SQL syntax  
+- **Unified Model**: Same POJO classes work across Table API and SQL API seamlessly
+- **Resource Management**: Use try-with-resources for automatic cleanup and connection management
 
 ## Running the Examples
 

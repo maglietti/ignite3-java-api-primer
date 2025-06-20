@@ -2,22 +2,21 @@ package com.apache.ignite.examples.gettingstarted;
 
 import org.apache.ignite.client.IgniteClient;
 import org.apache.ignite.catalog.annotations.*;
-import org.apache.ignite.catalog.definitions.ZoneDefinition;
 import org.apache.ignite.table.RecordView;
 
 /**
- * Simple Hello World application showing the basics of Ignite 3.
+ * Hello World application showing the basics of Ignite 3.
  * 
- * Demonstrates the essential patterns every developer needs:
+ * Demonstrates the essential patterns from Chapter 1.2:
  * - Connecting to a cluster with all node addresses for optimal performance
- * - Understanding default zone vs custom zone creation
- * - Creating tables and storing/retrieving data
- * - Querying with SQL
+ * - Using the default zone for development scenarios
+ * - Creating tables and performing CRUD operations
+ * - Querying with SQL using the same data model
  */
 public class HelloWorldApp {
     
-    // Example 1: Table using custom zone for production scenarios requiring fault tolerance
-    @org.apache.ignite.catalog.annotations.Table(value = "SimpleBook", zone = @Zone(value = "QuickStart", storageProfiles = "default"))
+    // Uses default zone - perfect for learning and development scenarios
+    @org.apache.ignite.catalog.annotations.Table(value = "Book")
     public static class Book {
         @Id
         private Integer id;
@@ -25,120 +24,68 @@ public class HelloWorldApp {
         @Column(length = 100)
         private String title;
         
+        @Column(length = 50)
+        private String author;
+        
         public Book() {}
-        public Book(Integer id, String title) {
+        public Book(Integer id, String title, String author) {
             this.id = id;
             this.title = title;
+            this.author = author;
         }
         
         public Integer getId() { return id; }
         public void setId(Integer id) { this.id = id; }
         public String getTitle() { return title; }
         public void setTitle(String title) { this.title = title; }
+        public String getAuthor() { return author; }
+        public void setAuthor(String author) { this.author = author; }
         
         public String toString() {
-            return "Book{id=" + id + ", title='" + title + "'}";
-        }
-    }
-    
-    // Example 2: Table using default zone for simple development scenarios
-    @org.apache.ignite.catalog.annotations.Table(value = "SimpleNote")
-    public static class Note {
-        @Id
-        private Integer id;
-        
-        @Column(length = 200)
-        private String content;
-        
-        public Note() {}
-        public Note(Integer id, String content) {
-            this.id = id;
-            this.content = content;
-        }
-        
-        public Integer getId() { return id; }
-        public void setId(Integer id) { this.id = id; }
-        public String getContent() { return content; }
-        public void setContent(String content) { this.content = content; }
-        
-        public String toString() {
-            return "Note{id=" + id + ", content='" + content + "'}";
+            return "Book{id=" + id + ", title='" + title + "', author='" + author + "'}";
         }
     }
     
     public static void main(String[] args) {
         System.out.println("=== Hello World: Apache Ignite 3 ===");
         
+        // Implement multi-node connection strategy from Chapter 1.1
         try (IgniteClient client = IgniteClient.builder()
                 .addresses("localhost:10800", "localhost:10801", "localhost:10802")
                 .build()) {
             
-            System.out.println(">>> Connected to all cluster nodes for optimal performance");
+            System.out.println(">>> Connected with partition awareness");
             
-            // Example 1: Custom Zone for Production Scenarios
-            System.out.println("\n=== Custom Zone Example (Production Pattern) ===");
-            
-            client.catalog().createZone(
-                ZoneDefinition.builder("QuickStart")
-                    .ifNotExists()
-                    .replicas(2)  // Fault tolerance with 2 replicas
-                    .partitions(25)
-                    .storageProfiles("default")
-                    .build()
-            );
-            System.out.println(">>> Custom zone 'QuickStart' created (2 replicas for fault tolerance)");
-            
-            client.catalog().dropTable("SimpleBook");
+            // 1. Create table (uses default zone automatically)
+            client.catalog().dropTable("Book"); // Clean slate for repeated runs
             client.catalog().createTable(Book.class);
-            System.out.println(">>> Table 'SimpleBook' created in custom zone");
+            System.out.println(">>> Table created in default zone");
             
+            // 2. Get table view using Table API
             RecordView<Book> books = client.tables()
-                .table("SimpleBook")
+                .table("Book")
                 .recordView(Book.class);
             
-            books.upsert(null, new Book(1, "1984"));
-            books.upsert(null, new Book(2, "Brave New World"));
-            System.out.println(">>> Books inserted into custom zone");
+            // 3. Insert data using type-safe operations
+            books.upsert(null, new Book(1, "1984", "George Orwell"));
+            books.upsert(null, new Book(2, "Brave New World", "Aldous Huxley"));
+            System.out.println(">>> Books inserted using Table API");
             
-            Book book = books.get(null, new Book(1, null));
-            System.out.println(">>> Retrieved from custom zone: " + book);
+            // 4. Read data using type-safe operations
+            Book book = books.get(null, new Book(1, null, null));
+            System.out.println(">>> Retrieved: " + book);
             
-            // Example 2: Default Zone for Development Scenarios  
-            System.out.println("\n=== Default Zone Example (Development Pattern) ===");
-            
-            client.catalog().dropTable("SimpleNote");
-            client.catalog().createTable(Note.class);
-            System.out.println(">>> Table 'SimpleNote' created in default zone (no zone creation needed)");
-            
-            RecordView<Note> notes = client.tables()
-                .table("SimpleNote")
-                .recordView(Note.class);
-            
-            notes.upsert(null, new Note(1, "Remember to use multiple addresses for production"));
-            notes.upsert(null, new Note(2, "Default zone good for development and testing"));
-            System.out.println(">>> Notes inserted into default zone");
-            
-            Note note = notes.get(null, new Note(1, null));
-            System.out.println(">>> Retrieved from default zone: " + note);
-            
-            // Demonstrate SQL access across both zones
-            System.out.println("\n=== SQL Query Across Zones ===");
-            var bookResult = client.sql().execute(null, "SELECT COUNT(*) as record_count FROM SimpleBook");
-            if (bookResult.hasNext()) {
-                System.out.println(">>> Books in custom zone: " + bookResult.next().longValue("record_count"));
+            // 5. Query with SQL API - same data, different access pattern
+            var result = client.sql().execute(null, "SELECT id, title, author FROM Book ORDER BY id");
+            System.out.println(">>> All books via SQL:");
+            while (result.hasNext()) {
+                var row = result.next();
+                System.out.println("    " + row.intValue("id") + ": " + 
+                                 row.stringValue("title") + " by " + 
+                                 row.stringValue("author"));
             }
             
-            var noteResult = client.sql().execute(null, "SELECT COUNT(*) as record_count FROM SimpleNote");  
-            if (noteResult.hasNext()) {
-                System.out.println(">>> Notes in default zone: " + noteResult.next().longValue("record_count"));
-            }
-            
-            System.out.println("\n=== Zone Best Practices Summary ===");
-            System.out.println(">>> Default Zone: Use for development, testing, simple scenarios (1 replica)");
-            System.out.println(">>> Custom Zones: Use for production workloads requiring fault tolerance (2+ replicas)");
-            System.out.println(">>> Performance: Always specify all cluster addresses for partition awareness");
-            
-            System.out.println("\nSuccess!");
+            System.out.println(">>> Success! Default zone pattern working perfectly.");
             
         } catch (Exception e) {
             System.err.println("Error: " + e.getMessage());
