@@ -164,9 +164,6 @@ public class Book {
 
 ## Your First Complete Application
 
-> [!TIP]
-> **Learning Pattern**: This example demonstrates the essential Ignite 3 patterns using the default zone strategy from Chapter 1.1. It shows how architectural concepts translate into working code.
-
 ### Complete Working Example
 
 Here's a complete Ignite 3 application that implements the concepts from Chapter 1.1:
