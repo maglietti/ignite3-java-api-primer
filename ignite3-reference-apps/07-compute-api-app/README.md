@@ -28,6 +28,7 @@ This module provides compute demonstrations:
 ### 1. BasicComputeOperations - Job Submission Fundamentals (314 lines)
 
 Core compute patterns:
+
 - **HelloWorldJob**: Simple distributed job execution
 - **NodeInfoJob**: Execution context access and node information
 - **ArtistSearchJob**: Parameterized jobs with SQL queries
@@ -38,6 +39,7 @@ Core compute patterns:
 ### 2. AdvancedComputeOperations - Data Locality Patterns (264 lines)
 
 Distributed performance optimization:
+
 - **Data Colocation**: Jobs execute where data resides for optimal performance
 - **Broadcast Execution**: Cluster-wide operations for health monitoring
 - **Performance Comparison**: Timing colocated vs any-node execution
@@ -47,6 +49,7 @@ Distributed performance optimization:
 ### 3. AdvancedComputeJobs - Job Implementations (223 lines)
 
 Job implementations for data locality patterns:
+
 - **ArtistAnalysisJob**: Colocated artist data analysis
 - **CustomerAnalysisJob**: Customer data processing with data locality
 - **ArtistSalesAnalysisJob**: Revenue analysis for performance comparison
@@ -57,6 +60,7 @@ Job implementations for data locality patterns:
 ### 4. ComputeJobWorkflows - Business Process Automation (129 lines)
 
 Multi-step workflow demonstrations:
+
 - **CustomerAnalyticsWorkflow**: Customer segmentation analysis
 - **String-based Serialization**: Compatible data exchange patterns
 - **Key Concepts**: Job coordination, workflow orchestration
@@ -64,6 +68,7 @@ Multi-step workflow demonstrations:
 ### 5. ComputeJobDeployment - Deployment Utilities (189 lines)
 
 Deployment utilities for cluster management:
+
 - **REST API Integration**: Automated JAR deployment via HTTP
 - **Error Handling**: Comprehensive fallback options
 - **Development Support**: Automatic deployment detection
