@@ -204,6 +204,11 @@ check_dependencies() {
     if [[ "$VALIDATE_CLUSTER" == true || "$MONITOR_JOBS" == true ]] && ! command -v jq >/dev/null 2>&1; then
         print_warning "jq not found - some advanced features will be limited"
     fi
+    
+    # Check for javap for JAR analysis
+    if [[ "$VALIDATE_CLUSTER" == true ]] && ! command -v javap >/dev/null 2>&1; then
+        print_warning "javap not found - JAR version validation will be limited"
+    fi
 }
 
 # Validate cluster state before deployment
@@ -253,7 +258,87 @@ validate_cluster() {
         print_success "Cluster API accessible (detailed validation requires jq)"
     fi
     
+    # Validate Java version compatibility
+    validate_java_compatibility
+    
     return 0
+}
+
+# Validate Java version compatibility between JAR and cluster
+validate_java_compatibility() {
+    print_info "Checking Java version compatibility..."
+    
+    # Get cluster Java version
+    local node_response
+    node_response=$(curl -s "http://${CLUSTER_HOST}:${REST_PORT}/management/v1/node/version" 2>/dev/null)
+    
+    if [[ -n "$node_response" && -n "$JAR_FILE" && -f "$JAR_FILE" ]]; then
+        # Extract cluster Java version
+        local cluster_java_version=""
+        if command -v jq >/dev/null 2>&1; then
+            cluster_java_version=$(echo "$node_response" | jq -r '.jvm' 2>/dev/null | grep -o '[0-9][0-9]*' | head -1)
+        fi
+        
+        # Analyze JAR file class version
+        local jar_class_version=""
+        if command -v javap >/dev/null 2>&1 && command -v unzip >/dev/null 2>&1; then
+            # Extract a class file and check its version
+            local temp_dir=$(mktemp -d)
+            unzip -q "$JAR_FILE" "*.class" -d "$temp_dir" 2>/dev/null || true
+            local sample_class=$(find "$temp_dir" -name "*.class" | head -1)
+            
+            if [[ -n "$sample_class" ]]; then
+                local class_info
+                class_info=$(javap -verbose "$sample_class" 2>/dev/null | grep "major version" | head -1)
+                local major_version=$(echo "$class_info" | grep -o '[0-9][0-9]*' | head -1)
+                
+                case $major_version in
+                    52) jar_class_version="8" ;;
+                    53) jar_class_version="9" ;;
+                    54) jar_class_version="10" ;;
+                    55) jar_class_version="11" ;;
+                    56) jar_class_version="12" ;;
+                    57) jar_class_version="13" ;;
+                    58) jar_class_version="14" ;;
+                    59) jar_class_version="15" ;;
+                    60) jar_class_version="16" ;;
+                    61) jar_class_version="17" ;;
+                    62) jar_class_version="18" ;;
+                    63) jar_class_version="19" ;;
+                    64) jar_class_version="20" ;;
+                    65) jar_class_version="21" ;;
+                    *) jar_class_version="unknown (major version $major_version)" ;;
+                esac
+            fi
+            
+            rm -rf "$temp_dir"
+        fi
+        
+        # Compare versions
+        if [[ -n "$cluster_java_version" && -n "$jar_class_version" ]]; then
+            print_info "Cluster Java version: $cluster_java_version"
+            print_info "JAR compiled for Java: $jar_class_version"
+            
+            if [[ "$jar_class_version" =~ ^[0-9]+$ && "$cluster_java_version" =~ ^[0-9]+$ ]]; then
+                if [[ "$jar_class_version" -gt "$cluster_java_version" ]]; then
+                    print_warning "Java version mismatch detected!"
+                    print_warning "JAR compiled for Java $jar_class_version, cluster running Java $cluster_java_version"
+                    print_warning "Compute jobs may fail with 'unsupported class file version' errors"
+                    print_info "Solutions:"
+                    print_info "  1. Upgrade cluster to Java $jar_class_version"
+                    print_info "  2. Recompile JAR targeting Java $cluster_java_version"
+                    print_info "  3. Use --release $cluster_java_version in Maven compiler plugin"
+                    echo
+                else
+                    print_success "Java versions compatible (JAR: $jar_class_version, Cluster: $cluster_java_version)"
+                fi
+            fi
+        else
+            print_info "Java version compatibility check limited (missing tools or info)"
+        fi
+    else
+        print_info "Skipping Java version check (cluster info or JAR unavailable)"
+    fi
 }
 
 # Enable compute metrics for monitoring

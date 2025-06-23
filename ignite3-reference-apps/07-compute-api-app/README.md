@@ -125,30 +125,35 @@ This module includes `deploy-jar.sh`, a reference script for deploying JAR files
 ### Advanced Features
 
 **Cluster Validation (`--validate`):**
+
 - Verifies cluster initialization status
 - Checks CMG (Cluster Management Group) nodes
 - Validates cluster topology and node availability
 - Prevents deployment to unhealthy clusters
 
 **Enhanced Status Checking (`--check`):**
+
 - Cluster-wide deployment status verification
 - Per-node deployment verification
 - Version-specific status tracking
 - Deployment consistency validation
 
 **Compute Job Monitoring (`--monitor`):**
+
 - Lists all active compute jobs
 - Shows job status, ID, and creation time
 - Monitors job execution after deployment
 - Helps troubleshoot job execution issues
 
 **Metrics Enablement (`--metrics`):**
+
 - Enables compute-specific cluster metrics
 - Supports performance monitoring and diagnostics
 - Prepares cluster for job execution monitoring
 - Facilitates troubleshooting and optimization
 
 **Complete Workflow Example:**
+
 ```bash
 # Full deployment with all features
 ./deploy-jar.sh \
@@ -171,16 +176,19 @@ This module includes `deploy-jar.sh`, a reference script for deploying JAR files
 The script can be integrated into various workflows:
 
 **Development Workflow:**
+
 ```bash
 mvn package && ./deploy-jar.sh compute-jobs 1.0.0 target/app.jar
 ```
 
 **CI/CD Pipeline:**
+
 ```bash
 ./deploy-jar.sh -h $CLUSTER_HOST -c production-jobs $BUILD_VERSION $JAR_PATH
 ```
 
 **Multi-Environment Deployment:**
+
 ```bash
 for env in dev staging prod; do
   ./deploy-jar.sh -h ${env}-cluster.company.com my-jobs 1.0.0 app.jar
@@ -247,6 +255,7 @@ This module includes a deployment script that handles REST API deployment with f
 ```
 
 **Script Features:**
+
 - **Automatic REST API deployment** with comprehensive error handling
 - **Cluster validation** with topology verification and health checks
 - **Enhanced status checking** with per-node deployment verification
@@ -292,6 +301,63 @@ mvn compile exec:java
 
 **Note**: The application automatically builds deployment instructions when job deployment is required. Development environments may work with empty deployment units if the cluster has classpath access to job classes.
 
+## Java Version Compatibility
+
+If you encounter **"unsupported class file version"** errors:
+
+```text
+!!! Job execution failed: com/apache/ignite/examples/compute/BasicComputeOperations$NodeInfoJob 
+    has been compiled by a more recent version of the Java Runtime 
+    (class file version 61.0), this version of the Java Runtime only recognizes 
+    class file versions up to 55.0
+```
+
+This indicates a Java version mismatch between your application and cluster:
+
+### Quick Solutions
+
+**Option 1: Upgrade Cluster to Java 17** (Recommended)
+
+```bash
+# Ensure cluster runs on Java 17
+export JAVA_HOME=/path/to/java-17
+./ignite node start
+
+# Or use Java 17 Docker image
+docker run -p 10800:10800 -p 10300:10300 apacheignite/ignite:3.0.0-jdk17
+```
+
+**Option 2: Compile Application for Java 11**
+
+```xml
+<!-- In pom.xml -->
+<properties>
+    <maven.compiler.source>11</maven.compiler.source>
+    <maven.compiler.target>11</maven.compiler.target>
+</properties>
+```
+
+**Option 3: Use Maven Release Flag**
+
+```xml
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-compiler-plugin</artifactId>
+    <configuration>
+        <release>11</release>
+    </configuration>
+</plugin>
+```
+
+### Automatic Detection
+
+The deployment script can detect version mismatches:
+
+```bash
+# Use --validate to check Java compatibility
+./deploy-jar.sh --validate compute-jobs 1.0.0 target/07-compute-api-app-1.0.0.jar
+```
+
 **Run individual demos:**
 
 ```bash
@@ -308,8 +374,9 @@ mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.compute.ComputeJobWor
 ## Development Status
 
 ✅ **ALIGNED WITH CHAPTER 4.3** - Fully functional implementation demonstrating:
+
 - ✅ Correct Apache Ignite 3 Compute API usage (`ComputeJob<T,R>`, `executeAsync`)
-- ✅ Data colocation patterns with `JobTarget.colocated()` 
+- ✅ Data colocation patterns with `JobTarget.colocated()`
 - ✅ Broadcast execution with `BroadcastJobTarget.nodes()`
 - ✅ MapReduce patterns with proper map/reduce phases
 - ✅ Job coordination and workflow orchestration
