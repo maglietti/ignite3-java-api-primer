@@ -76,11 +76,51 @@ Main orchestrator that runs all compute patterns in educational progression with
 
 ## Quick Start
 
-**Run all demos:**
+**Build and run all demos:**
+
+```bash
+mvn package
+mvn compile exec:java
+```
+
+## Job Deployment Requirements
+
+For standalone Ignite clusters, job classes must be deployed before execution. If you encounter "Deployment units list is empty" errors:
+
+### 1. Build JAR with Job Classes
+
+```bash
+mvn package
+```
+
+This creates `target/07-compute-api-app-1.0.0.jar` containing all job implementations.
+
+### 2. Deploy JAR to Cluster
+
+**Using Docker CLI (Recommended):**
+
+```bash
+# Start containerized Ignite CLI
+docker run --rm -it --network=host -e LANG=C.UTF-8 -e LC_ALL=C.UTF-8 apacheignite/ignite:3.0.0 cli
+
+# Deploy job classes (inside container)
+deployment deploy compute-jobs /path/to/target/07-compute-api-app-1.0.0.jar
+```
+
+**Using Local CLI:**
+
+```bash
+# Deploy using local Ignite CLI installation
+ignite deployment deploy compute-jobs target/07-compute-api-app-1.0.0.jar
+```
+
+### 3. Run Application
 
 ```bash
 mvn compile exec:java
 ```
+
+**Note**: The application automatically builds deployment instructions when job deployment is required. Development environments may work with empty deployment units if the cluster has classpath access to job classes.
 
 **Run individual demos:**
 

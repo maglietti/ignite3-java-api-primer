@@ -17,7 +17,17 @@ The **`07-compute-api-app`** demonstrates all Compute API patterns covered in th
 
 ```bash
 cd ignite3-reference-apps/07-compute-api-app
+mvn package
 mvn compile exec:java
+```
+
+**Job Deployment Requirement**: Standalone Ignite clusters require job classes to be deployed before execution. The application will build a JAR containing job classes and provide deployment instructions if jobs fail with "Deployment units list is empty" errors.
+
+**Using Docker CLI for Deployment** (when needed):
+```bash
+# Deploy job classes using containerized Ignite CLI
+docker run --rm -it --network=host -e LANG=C.UTF-8 -e LC_ALL=C.UTF-8 apacheignite/ignite:3.0.0 cli
+deployment deploy compute-jobs /path/to/target/07-compute-api-app-1.0.0.jar
 ```
 
 The reference app shows how the data consistency from [Chapter 4.1](01-transaction-fundamentals.md) enables reliable distributed processing workflows, building on the schema and data access patterns from previous modules.
@@ -128,6 +138,65 @@ try (IgniteClient ignite = IgniteClient.builder()
 - **JobExecutionContext**: Provides access to the full Ignite API within the job
 - **Type Safety**: Strong typing ensures compile-time correctness for inputs and outputs
 - **Resource Access**: Jobs can execute SQL queries, access tables, and use other Ignite features
+
+### Deployment Units and Job Class Management
+
+For standalone Ignite clusters, job classes must be deployed before execution using deployment units:
+
+```java
+import org.apache.ignite.deployment.DeploymentUnit;
+
+public class ComputeExample {
+    
+    // Deployment unit configuration
+    private static final String DEPLOYMENT_UNIT_NAME = "compute-jobs";
+    private static final String DEPLOYMENT_UNIT_VERSION = "1.0.0";
+    
+    private static List<DeploymentUnit> getDeploymentUnits() {
+        // For standalone clusters with proper deployment
+        return List.of(new DeploymentUnit(DEPLOYMENT_UNIT_NAME, DEPLOYMENT_UNIT_VERSION));
+        
+        // For development with empty deployment units (jobs load from classpath)
+        // return List.of();
+    }
+    
+    public void executeJobWithDeployment(IgniteClient ignite) {
+        // Create job descriptor with deployment units
+        JobDescriptor<String, String> job = JobDescriptor.builder(MessageProcessingJob.class)
+                .units(getDeploymentUnits())
+                .build();
+        
+        JobTarget target = JobTarget.anyNode(ignite.clusterNodes());
+        String result = ignite.compute().execute(target, job, "Hello World");
+        System.out.println("Result: " + result);
+    }
+}
+```
+
+**Deployment Workflow for Standalone Clusters:**
+
+1. **Build JAR**: Package job classes into a JAR file
+   ```bash
+   mvn package
+   ```
+
+2. **Deploy JAR**: Use Ignite CLI to deploy the JAR to the cluster
+   ```bash
+   # Using local CLI
+   ignite deployment deploy compute-jobs target/app-1.0.0.jar
+   
+   # Using Docker CLI
+   docker run --rm -it --network=host -e LANG=C.UTF-8 -e LC_ALL=C.UTF-8 apacheignite/ignite:3.0.0 cli
+   deployment deploy compute-jobs /path/to/target/app-1.0.0.jar
+   ```
+
+3. **Execute Jobs**: Run application using deployment units that reference the deployed JAR
+
+**Development vs Production Deployment:**
+
+- **Development**: Use empty deployment units `List.of()` when cluster has classpath access to job classes
+- **Production**: Use proper deployment units with deployed JARs for isolation and versioning
+- **Error Handling**: Applications should provide clear deployment instructions when jobs fail
 
 ### Job Targeting Strategies
 

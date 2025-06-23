@@ -2,6 +2,7 @@ package com.apache.ignite.examples.compute;
 
 import org.apache.ignite.client.IgniteClient;
 import org.apache.ignite.compute.*;
+import org.apache.ignite.deployment.DeploymentUnit;
 import org.apache.ignite.sql.IgniteSql;
 import org.apache.ignite.sql.ResultSet;
 import org.apache.ignite.sql.SqlRow;
@@ -32,6 +33,22 @@ import java.util.concurrent.CompletableFuture;
 public class ComputeJobWorkflows {
 
     private static final Logger logger = LoggerFactory.getLogger(ComputeJobWorkflows.class);
+
+    // Deployment unit configuration
+    private static final String DEPLOYMENT_UNIT_NAME = "compute-jobs";
+    private static final String DEPLOYMENT_UNIT_VERSION = "1.0.0";
+
+    /**
+     * Get deployment units for this application.
+     */
+    private static List<DeploymentUnit> getDeploymentUnits() {
+        // For standalone clusters, jobs must be deployed externally via CLI
+        // Using empty list will attempt to load classes from the classpath
+        return List.of();
+        
+        // When properly deployed via CLI, use:
+        // return List.of(new DeploymentUnit(DEPLOYMENT_UNIT_NAME, DEPLOYMENT_UNIT_VERSION));
+    }
 
     public static void main(String[] args) {
         String clusterAddress = args.length > 0 ? args[0] : "127.0.0.1:10800";
@@ -78,7 +95,9 @@ public class ComputeJobWorkflows {
         
         try {
             // Step 1: Get customer segments
-            JobDescriptor<Void, List<String>> segmentJob = JobDescriptor.builder(CustomerSegmentJob.class).build();
+            JobDescriptor<Void, List<String>> segmentJob = JobDescriptor.builder(CustomerSegmentJob.class)
+                    .units(getDeploymentUnits())
+                    .build();
             List<String> segments = client.compute()
                     .execute(JobTarget.anyNode(client.clusterNodes()), segmentJob, null);
             
@@ -87,7 +106,9 @@ public class ComputeJobWorkflows {
             // Step 2: Analyze each segment in parallel
             List<CompletableFuture<String>> futures = new ArrayList<>();
             for (String segment : segments) {
-                JobDescriptor<String, String> analysisJob = JobDescriptor.builder(SegmentAnalysisJob.class).build();
+                JobDescriptor<String, String> analysisJob = JobDescriptor.builder(SegmentAnalysisJob.class)
+                        .units(getDeploymentUnits())
+                        .build();
                 
                 CompletableFuture<String> future = client.compute()
                         .executeAsync(JobTarget.anyNode(client.clusterNodes()), analysisJob, segment);
@@ -116,7 +137,9 @@ public class ComputeJobWorkflows {
         
         try {
             // Step 1: Analyze listening patterns
-            JobDescriptor<Void, Map<String, Integer>> patternJob = JobDescriptor.builder(ListeningPatternJob.class).build();
+            JobDescriptor<Void, Map<String, Integer>> patternJob = JobDescriptor.builder(ListeningPatternJob.class)
+                    .units(getDeploymentUnits())
+                    .build();
             Map<String, Integer> patterns = client.compute()
                     .execute(JobTarget.anyNode(client.clusterNodes()), patternJob, null);
             
@@ -128,7 +151,9 @@ public class ComputeJobWorkflows {
                     .map(Map.Entry::getKey)
                     .orElse("Rock");
             
-            JobDescriptor<String, List<String>> recommendationJob = JobDescriptor.builder(RecommendationJob.class).build();
+            JobDescriptor<String, List<String>> recommendationJob = JobDescriptor.builder(RecommendationJob.class)
+                    .units(getDeploymentUnits())
+                    .build();
             
             List<String> recommendations = client.compute()
                     .execute(JobTarget.anyNode(client.clusterNodes()), recommendationJob, topGenre);
@@ -136,7 +161,9 @@ public class ComputeJobWorkflows {
             System.out.println("    >>> Step 2: Generated " + recommendations.size() + " recommendations");
             
             // Step 3: Rank and filter recommendations
-            JobDescriptor<List<String>, List<String>> rankingJob = JobDescriptor.builder(RankingJob.class).build();
+            JobDescriptor<List<String>, List<String>> rankingJob = JobDescriptor.builder(RankingJob.class)
+                    .units(getDeploymentUnits())
+                    .build();
             
             List<String> rankedRecommendations = client.compute()
                     .execute(JobTarget.anyNode(client.clusterNodes()), rankingJob, recommendations);
@@ -158,14 +185,18 @@ public class ComputeJobWorkflows {
         
         try {
             // Step 1: Calculate current metrics
-            JobDescriptor<Void, Map<String, Double>> metricsJob = JobDescriptor.builder(RevenueMetricsJob.class).build();
+            JobDescriptor<Void, Map<String, Double>> metricsJob = JobDescriptor.builder(RevenueMetricsJob.class)
+                    .units(getDeploymentUnits())
+                    .build();
             Map<String, Double> metrics = client.compute()
                     .execute(JobTarget.anyNode(client.clusterNodes()), metricsJob, null);
             
             System.out.println("    >>> Step 1: Current revenue metrics calculated");
             
             // Step 2: Identify optimization opportunities
-            JobDescriptor<Map<String, Double>, List<String>> opportunityJob = JobDescriptor.builder(OptimizationOpportunityJob.class).build();
+            JobDescriptor<Map<String, Double>, List<String>> opportunityJob = JobDescriptor.builder(OptimizationOpportunityJob.class)
+                    .units(getDeploymentUnits())
+                    .build();
             
             List<String> opportunities = client.compute()
                     .execute(JobTarget.anyNode(client.clusterNodes()), opportunityJob, metrics);
@@ -173,7 +204,9 @@ public class ComputeJobWorkflows {
             System.out.println("    >>> Step 2: Identified " + opportunities.size() + " optimization opportunities");
             
             // Step 3: Generate action plan
-            JobDescriptor<List<String>, String> actionPlanJob = JobDescriptor.builder(ActionPlanJob.class).build();
+            JobDescriptor<List<String>, String> actionPlanJob = JobDescriptor.builder(ActionPlanJob.class)
+                    .units(getDeploymentUnits())
+                    .build();
             
             String actionPlan = client.compute()
                     .execute(JobTarget.anyNode(client.clusterNodes()), actionPlanJob, opportunities);

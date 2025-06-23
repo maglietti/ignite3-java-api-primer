@@ -2,6 +2,7 @@ package com.apache.ignite.examples.compute;
 
 import org.apache.ignite.client.IgniteClient;
 import org.apache.ignite.compute.*;
+import org.apache.ignite.deployment.DeploymentUnit;
 import org.apache.ignite.sql.IgniteSql;
 import org.apache.ignite.sql.ResultSet;
 import org.apache.ignite.sql.SqlRow;
@@ -34,6 +35,22 @@ import java.util.stream.Collectors;
 public class AdvancedComputeOperations {
 
     private static final Logger logger = LoggerFactory.getLogger(AdvancedComputeOperations.class);
+
+    // Deployment unit configuration
+    private static final String DEPLOYMENT_UNIT_NAME = "compute-jobs";
+    private static final String DEPLOYMENT_UNIT_VERSION = "1.0.0";
+
+    /**
+     * Get deployment units for this application.
+     */
+    private static List<DeploymentUnit> getDeploymentUnits() {
+        // For standalone clusters, jobs must be deployed externally via CLI
+        // Using empty list will attempt to load classes from the classpath
+        return List.of();
+        
+        // When properly deployed via CLI, use:
+        // return List.of(new DeploymentUnit(DEPLOYMENT_UNIT_NAME, DEPLOYMENT_UNIT_VERSION));
+    }
 
     public static void main(String[] args) {
         String clusterAddress = args.length > 0 ? args[0] : "127.0.0.1:10800";
@@ -82,7 +99,9 @@ public class AdvancedComputeOperations {
         System.out.println("    >>> Running jobs close to data for optimal performance");
         
         // Artist-specific analytics (colocated by ArtistId)
-        JobDescriptor<Integer, String> artistJob = JobDescriptor.builder(ArtistAnalysisJob.class).build();
+        JobDescriptor<Integer, String> artistJob = JobDescriptor.builder(ArtistAnalysisJob.class)
+                .units(getDeploymentUnits())
+                .build();
         
         try {
             // Execute on node where Artist with ArtistId=1 data resides for optimal performance
@@ -98,7 +117,9 @@ public class AdvancedComputeOperations {
         }
         
         // Customer-specific processing colocated with customer data
-        JobDescriptor<Integer, String> customerJob = JobDescriptor.builder(CustomerAnalysisJob.class).build();
+        JobDescriptor<Integer, String> customerJob = JobDescriptor.builder(CustomerAnalysisJob.class)
+                .units(getDeploymentUnits())
+                .build();
         
         try {
             // Execute on node where Customer with CustomerId=1 data resides
@@ -123,7 +144,9 @@ public class AdvancedComputeOperations {
     private void demonstrateColocationPerformance(IgniteClient client) {
         System.out.println("\n        --- Colocation Performance Comparison");
         
-        JobDescriptor<Integer, String> salesJob = JobDescriptor.builder(ArtistSalesAnalysisJob.class).build();
+        JobDescriptor<Integer, String> salesJob = JobDescriptor.builder(ArtistSalesAnalysisJob.class)
+                .units(getDeploymentUnits())
+                .build();
         
         try {
             // Time execution with colocation
@@ -156,7 +179,9 @@ public class AdvancedComputeOperations {
         System.out.println("    >>> Running jobs across all cluster nodes");
         
         // Cluster health check
-        JobDescriptor<Void, String> healthJob = JobDescriptor.builder(ClusterHealthJob.class).build();
+        JobDescriptor<Void, String> healthJob = JobDescriptor.builder(ClusterHealthJob.class)
+                .units(getDeploymentUnits())
+                .build();
         
         try {
             Collection<String> results = client.compute()
@@ -172,7 +197,9 @@ public class AdvancedComputeOperations {
         }
         
         // Data distribution analysis
-        JobDescriptor<Void, Integer> dataJob = JobDescriptor.builder(LocalDataCountJob.class).build();
+        JobDescriptor<Void, Integer> dataJob = JobDescriptor.builder(LocalDataCountJob.class)
+                .units(getDeploymentUnits())
+                .build();
         
         try {
             Collection<Integer> dataCounts = client.compute()
@@ -199,7 +226,9 @@ public class AdvancedComputeOperations {
         System.out.println("    >>> Implementing distributed map-reduce operations");
         
         // Genre popularity analysis using MapReduce
-        JobDescriptor<Void, Map<String, Integer>> mapJob = JobDescriptor.builder(GenreMapJob.class).build();
+        JobDescriptor<Void, Map<String, Integer>> mapJob = JobDescriptor.builder(GenreMapJob.class)
+                .units(getDeploymentUnits())
+                .build();
         
         try {
             // Map phase: collect genre data from each node
@@ -234,7 +263,9 @@ public class AdvancedComputeOperations {
         
         try {
             // Step 1: Analyze top artists
-            JobDescriptor<Void, List<String>> topArtistsJob = JobDescriptor.builder(TopArtistsJob.class).build();
+            JobDescriptor<Void, List<String>> topArtistsJob = JobDescriptor.builder(TopArtistsJob.class)
+                    .units(getDeploymentUnits())
+                    .build();
             List<String> topArtists = client.compute()
                     .execute(JobTarget.anyNode(client.clusterNodes()), topArtistsJob, null);
             
@@ -243,7 +274,9 @@ public class AdvancedComputeOperations {
             // Step 2: Analyze each artist in parallel
             List<CompletableFuture<String>> futures = new ArrayList<>();
             for (String artistName : topArtists) {
-                JobDescriptor<String, String> artistDetailJob = JobDescriptor.builder(ArtistDetailJob.class).build();
+                JobDescriptor<String, String> artistDetailJob = JobDescriptor.builder(ArtistDetailJob.class)
+                        .units(getDeploymentUnits())
+                        .build();
                 
                 CompletableFuture<String> future = client.compute()
                         .executeAsync(JobTarget.anyNode(client.clusterNodes()), artistDetailJob, artistName);

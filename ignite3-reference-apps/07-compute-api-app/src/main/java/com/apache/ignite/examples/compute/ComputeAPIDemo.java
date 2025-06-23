@@ -5,7 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Comprehensive demonstration of Apache Ignite 3 Compute API patterns.
+ * Demonstration of Apache Ignite 3 Compute API patterns.
  * 
  * This orchestrator runs all compute examples in educational progression,
  * demonstrating distributed job execution capabilities for music store analytics.
@@ -28,7 +28,7 @@ public class ComputeAPIDemo {
         
         System.out.println("=== Apache Ignite 3 Compute API Demo ===");
         System.out.println("Target cluster: " + clusterAddress);
-        System.out.println("Comprehensive distributed job execution demonstrations");
+        System.out.println("Distributed job execution demonstrations");
 
         try (IgniteClient client = IgniteClient.builder()
                 .addresses(clusterAddress)

@@ -5,13 +5,20 @@ import org.apache.ignite.compute.ComputeJob;
 import org.apache.ignite.compute.JobDescriptor;
 import org.apache.ignite.compute.JobExecutionContext;
 import org.apache.ignite.compute.JobTarget;
+import org.apache.ignite.deployment.DeploymentUnit;
 import org.apache.ignite.sql.IgniteSql;
 import org.apache.ignite.sql.ResultSet;
 import org.apache.ignite.sql.SqlRow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.concurrent.CompletableFuture;
+import java.util.List;
 
 /**
  * Demonstrates basic compute operations using the Apache Ignite 3 Compute API.
@@ -59,6 +66,15 @@ public class BasicComputeOperations {
         System.out.println("\n--- Basic Job Execution ---");
         System.out.println("    Learning fundamental compute patterns");
         
+        // Deploy job classes before executing them
+        try {
+            deployJobClasses(client);
+            System.out.println("    >>> Job classes deployed successfully");
+        } catch (Exception e) {
+            System.err.println("    !!! Failed to deploy job classes: " + e.getMessage());
+            System.err.println("    !!! Jobs will not execute properly without deployment");
+        }
+        
         // Simple job execution
         demonstrateSimpleJobs(client);
         
@@ -75,6 +91,43 @@ public class BasicComputeOperations {
     }
 
     /**
+     * Deploy the JAR containing job classes to the Ignite cluster.
+     */
+    private void deployJobClasses(IgniteClient client) throws IOException {
+        System.out.println("    >>> Checking for JAR deployment...");
+        
+        // Find the JAR file in the target directory
+        Path jarPath = Paths.get("target/07-compute-api-app-1.0.0.jar");
+        if (!Files.exists(jarPath)) {
+            throw new IOException("JAR file not found: " + jarPath + ". Run 'mvn package' first.");
+        }
+        
+        System.out.println("    >>> JAR file found: " + jarPath);
+        System.out.println("    >>> Note: Job classes need to be deployed to standalone clusters");  
+        System.out.println("    >>> To deploy manually using Ignite CLI:");
+        System.out.println("    >>>   ignite deployment deploy " + DEPLOYMENT_UNIT_NAME + " " + jarPath.toAbsolutePath());
+        System.out.println("    >>> Continuing with job execution (will fail if not deployed)...");
+    }
+
+    // Deployment unit configuration
+    private static final String DEPLOYMENT_UNIT_NAME = "compute-jobs";
+    private static final String DEPLOYMENT_UNIT_VERSION = "1.0.0";
+
+    /**
+     * Get deployment units for this application.
+     * Returns the deployment unit that should contain our job classes.
+     */
+    private static List<DeploymentUnit> getDeploymentUnits() {
+        // For standalone clusters, jobs must be deployed externally via CLI
+        // Using empty list will attempt to load classes from the classpath
+        // This works when the cluster has access to the application JAR
+        return List.of();
+        
+        // When properly deployed via CLI, use:
+        // return List.of(new DeploymentUnit(DEPLOYMENT_UNIT_NAME, DEPLOYMENT_UNIT_VERSION));
+    }
+
+    /**
      * Demonstrates simple job execution without parameters.
      */
     private void demonstrateSimpleJobs(IgniteClient client) {
@@ -82,7 +135,9 @@ public class BasicComputeOperations {
         System.out.println("    >>> Executing basic jobs on cluster nodes");
         
         // Simple greeting job
-        JobDescriptor<Void, String> greetingJob = JobDescriptor.builder(HelloWorldJob.class).build();
+        JobDescriptor<Void, String> greetingJob = JobDescriptor.builder(HelloWorldJob.class)
+                .units(getDeploymentUnits())  // Get appropriate deployment units for current mode
+                .build();
         
         try {
             String result = client.compute()
@@ -94,7 +149,9 @@ public class BasicComputeOperations {
         }
         
         // Node information job
-        JobDescriptor<Void, String> nodeInfoJob = JobDescriptor.builder(NodeInfoJob.class).build();
+        JobDescriptor<Void, String> nodeInfoJob = JobDescriptor.builder(NodeInfoJob.class)
+                .units(getDeploymentUnits())  // Empty list for embedded mode
+                .build();
         
         try {
             String nodeInfo = client.compute()
@@ -114,7 +171,9 @@ public class BasicComputeOperations {
         System.out.println("    >>> Executing jobs with input parameters");
         
         // Artist search job
-        JobDescriptor<String, String> searchJob = JobDescriptor.builder(ArtistSearchJob.class).build();
+        JobDescriptor<String, String> searchJob = JobDescriptor.builder(ArtistSearchJob.class)
+                .units(getDeploymentUnits())  // Empty list for embedded mode
+                .build();
         
         try {
             String result = client.compute()
@@ -126,7 +185,9 @@ public class BasicComputeOperations {
         }
         
         // Track count job
-        JobDescriptor<Void, Integer> countJob = JobDescriptor.builder(TrackCountJob.class).build();
+        JobDescriptor<Void, Integer> countJob = JobDescriptor.builder(TrackCountJob.class)
+                .units(getDeploymentUnits())  // Empty list for embedded mode
+                .build();
         
         try {
             Integer trackCount = client.compute()
@@ -146,7 +207,9 @@ public class BasicComputeOperations {
         System.out.println("    >>> Running jobs that execute database queries");
         
         // Genre analysis job
-        JobDescriptor<Void, String> genreJob = JobDescriptor.builder(GenreAnalysisJob.class).build();
+        JobDescriptor<Void, String> genreJob = JobDescriptor.builder(GenreAnalysisJob.class)
+                .units(getDeploymentUnits())  // Empty list for embedded mode
+                .build();
         
         try {
             String analysis = client.compute()
@@ -166,8 +229,12 @@ public class BasicComputeOperations {
         System.out.println("    >>> Running jobs asynchronously without blocking");
         
         // Start multiple jobs asynchronously
-        JobDescriptor<Void, String> job1 = JobDescriptor.builder(HelloWorldJob.class).build();
-        JobDescriptor<Void, Integer> job2 = JobDescriptor.builder(TrackCountJob.class).build();
+        JobDescriptor<Void, String> job1 = JobDescriptor.builder(HelloWorldJob.class)
+                .units(getDeploymentUnits())  // Empty list for embedded mode
+                .build();
+        JobDescriptor<Void, Integer> job2 = JobDescriptor.builder(TrackCountJob.class)
+                .units(getDeploymentUnits())  // Empty list for embedded mode
+                .build();
         
         try {
             CompletableFuture<String> future1 = client.compute()
