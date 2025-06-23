@@ -74,11 +74,89 @@ Main orchestrator that runs all compute patterns in educational progression with
 - Progress monitoring and cancellation
 - Resource management
 
+## Deployment Script Reference
+
+This module includes `deploy-jar.sh`, a reference script for deploying JAR files to Ignite clusters via REST API.
+
+### Script Features
+
+- **REST API Integration**: Automatically deploys JARs using Ignite 3 management API
+- **Error Handling**: Graceful handling of connection and deployment errors
+- **Status Validation**: Check deployment progress and final status
+- **Fallback Options**: Provides CLI alternatives when REST API fails
+- **Cluster Configuration**: Support for different hosts, ports, and deployment modes
+- **User-Friendly Output**: Colored output with clear progress indication
+
+### Usage Examples
+
+```bash
+# Basic deployment
+./deploy-jar.sh my-jobs 1.0.0 target/my-jobs.jar
+
+# Deploy with all options
+./deploy-jar.sh \
+  --host 192.168.1.100 \
+  --port 10300 \
+  --mode ALL \
+  --check \
+  --remove \
+  --verbose \
+  data-processors 2.1.0 processors.jar
+
+# Status check only
+./deploy-jar.sh --check my-jobs 1.0.0 ""
+```
+
+### Script Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `-h, --host` | Cluster hostname | localhost |
+| `-p, --port` | REST API port | 10300 |
+| `-m, --mode` | Deploy mode (MAJORITY/ALL) | MAJORITY |
+| `-c, --check` | Check deployment status | false |
+| `-r, --remove` | Remove existing before deploy | false |
+| `-v, --verbose` | Enable detailed output | false |
+| `--help` | Show complete usage | - |
+
+### Integration Patterns
+
+The script can be integrated into various workflows:
+
+**Development Workflow:**
+```bash
+mvn package && ./deploy-jar.sh compute-jobs 1.0.0 target/app.jar
+```
+
+**CI/CD Pipeline:**
+```bash
+./deploy-jar.sh -h $CLUSTER_HOST -c production-jobs $BUILD_VERSION $JAR_PATH
+```
+
+**Multi-Environment Deployment:**
+```bash
+for env in dev staging prod; do
+  ./deploy-jar.sh -h ${env}-cluster.company.com my-jobs 1.0.0 app.jar
+done
+```
+
 ## Quick Start
 
 **Build and run all demos:**
 
 ```bash
+# Build JAR and deploy to cluster
+mvn package
+./deploy-jar.sh compute-jobs 1.0.0 target/07-compute-api-app-1.0.0.jar
+
+# Run demos
+mvn compile exec:java
+```
+
+**Alternative - automatic deployment:**
+
+```bash
+# Build and run (application attempts automatic deployment)
 mvn package
 mvn compile exec:java
 ```
@@ -97,9 +175,39 @@ This creates `target/07-compute-api-app-1.0.0.jar` containing all job implementa
 
 ### 2. Deploy JAR to Cluster
 
-**Using REST API (Automated - Recommended):**
+**Using Deployment Script (Recommended):**
 
-The application automatically attempts REST API deployment. You can also deploy manually:
+This module includes a deployment script that handles REST API deployment with fallback options:
+
+```bash
+# Deploy compute jobs JAR (automatic REST API deployment)
+./deploy-jar.sh compute-jobs 1.0.0 target/07-compute-api-app-1.0.0.jar
+
+# Deploy with status check
+./deploy-jar.sh -c compute-jobs 1.0.0 target/07-compute-api-app-1.0.0.jar
+
+# Deploy to specific cluster
+./deploy-jar.sh -h 192.168.1.100 -p 10300 compute-jobs 1.0.0 target/07-compute-api-app-1.0.0.jar
+
+# Replace existing deployment
+./deploy-jar.sh -r compute-jobs 1.0.0 target/07-compute-api-app-1.0.0.jar
+
+# Check deployment status only
+./deploy-jar.sh -c compute-jobs 1.0.0 ""
+
+# Show all options
+./deploy-jar.sh --help
+```
+
+**Script Features:**
+- Automatic REST API deployment with error handling
+- Status checking and validation
+- Colored output for clear feedback
+- Fallback instructions when deployment fails
+- Support for different cluster configurations
+- Verbose mode for troubleshooting
+
+**Manual REST API (Alternative):**
 
 ```bash
 # Deploy via HTTP REST API (port 10300)
@@ -109,7 +217,7 @@ curl -X POST \
   -F "unitContent=@target/07-compute-api-app-1.0.0.jar"
 ```
 
-**Using Docker CLI:**
+**Using Docker CLI (Fallback):**
 
 ```bash
 # Start containerized Ignite CLI
@@ -119,7 +227,7 @@ docker run --rm -it --network=host -e LANG=C.UTF-8 -e LC_ALL=C.UTF-8 apacheignit
 deployment deploy compute-jobs /path/to/target/07-compute-api-app-1.0.0.jar
 ```
 
-**Using Local CLI:**
+**Using Local CLI (Fallback):**
 
 ```bash
 # Deploy using local Ignite CLI installation
