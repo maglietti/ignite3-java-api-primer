@@ -2,17 +2,11 @@ package com.apache.ignite.examples.compute;
 
 import org.apache.ignite.client.IgniteClient;
 import org.apache.ignite.compute.*;
-import org.apache.ignite.deployment.DeploymentUnit;
-import org.apache.ignite.sql.IgniteSql;
-import org.apache.ignite.sql.ResultSet;
-import org.apache.ignite.sql.SqlRow;
 import org.apache.ignite.table.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
+import java.util.Collection;
 
 /**
  * Demonstrates advanced compute operations using the Apache Ignite 3 Compute API.
@@ -36,18 +30,6 @@ public class AdvancedComputeOperations {
 
     private static final Logger logger = LoggerFactory.getLogger(AdvancedComputeOperations.class);
 
-    // Deployment unit configuration
-    private static final String DEPLOYMENT_UNIT_NAME = "compute-jobs";
-    private static final String DEPLOYMENT_UNIT_VERSION = "1.0.0";
-
-    /**
-     * Get deployment units for this application.
-     */
-    private static List<DeploymentUnit> getDeploymentUnits() {
-        // Use the deployment unit that should be deployed via REST API or CLI
-        return List.of(new DeploymentUnit(DEPLOYMENT_UNIT_NAME, DEPLOYMENT_UNIT_VERSION));
-    }
-
     public static void main(String[] args) {
         String clusterAddress = args.length > 0 ? args[0] : "127.0.0.1:10800";
         
@@ -68,20 +50,26 @@ public class AdvancedComputeOperations {
         }
     }
 
+    /**
+     * Execute advanced compute pattern demonstrations.
+     * 
+     * Showcases data locality, broadcast patterns, and distributed algorithms
+     * that optimize performance through intelligent job placement.
+     */
     private void runAdvancedComputeOperations(IgniteClient client) {
         System.out.println("\n--- Advanced Job Patterns ---");
         System.out.println("    Data locality and complex distributed operations");
         
-        // Data-local execution
+        // Data-local execution for optimal performance
         demonstrateColocationJobs(client);
         
-        // Broadcast execution
+        // Broadcast execution across all nodes
         demonstrateBroadcastJobs(client);
         
-        // MapReduce patterns
+        // MapReduce patterns for large-scale processing
         demonstrateMapReduceJobs(client);
         
-        // Job coordination
+        // Job coordination and workflow patterns
         demonstrateJobCoordination(client);
         
         System.out.println("\n>>> Advanced compute operations completed successfully");
@@ -89,18 +77,35 @@ public class AdvancedComputeOperations {
 
     /**
      * Demonstrates data-colocated job execution for performance.
+     * 
+     * Shows how jobs execute on nodes where data resides, eliminating
+     * network overhead and maximizing processing efficiency.
      */
     private void demonstrateColocationJobs(IgniteClient client) {
         System.out.println("\n    --- Data-Colocated Jobs");
         System.out.println("    >>> Running jobs close to data for optimal performance");
         
-        // Artist-specific analytics (colocated by ArtistId)
-        JobDescriptor<Integer, String> artistJob = JobDescriptor.builder(ArtistAnalysisJob.class)
-                .units(getDeploymentUnits())
-                .build();
+        // Artist analysis colocated with artist data
+        demonstrateArtistColocation(client);
         
+        // Customer analysis colocated with customer data
+        demonstrateCustomerColocation(client);
+        
+        // Performance comparison between colocated and any-node execution
+        demonstrateColocationPerformance(client);
+    }
+
+    /**
+     * Execute artist analysis job colocated with artist data.
+     * Job runs on the node where Artist with ArtistId=1 data resides.
+     */
+    private void demonstrateArtistColocation(IgniteClient client) {
         try {
-            // Execute on node where Artist with ArtistId=1 data resides for optimal performance
+            JobDescriptor<Integer, String> artistJob = JobDescriptor.builder(AdvancedComputeJobs.ArtistAnalysisJob.class)
+                    .units(ComputeJobDeployment.getDeploymentUnits())
+                    .build();
+            
+            // Execute on node where Artist data with ArtistId=1 resides for optimal performance
             JobTarget colocatedTarget = JobTarget.colocated("Artist", 
                 Tuple.create().set("ArtistId", 1));
             
@@ -111,14 +116,19 @@ public class AdvancedComputeOperations {
         } catch (Exception e) {
             System.err.println("    !!! Artist analysis failed: " + e.getMessage());
         }
-        
-        // Customer-specific processing colocated with customer data
-        JobDescriptor<Integer, String> customerJob = JobDescriptor.builder(CustomerAnalysisJob.class)
-                .units(getDeploymentUnits())
-                .build();
-        
+    }
+
+    /**
+     * Execute customer analysis job colocated with customer data.
+     * Demonstrates colocation benefits for customer-specific processing.
+     */
+    private void demonstrateCustomerColocation(IgniteClient client) {
         try {
-            // Execute on node where Customer with CustomerId=1 data resides
+            JobDescriptor<Integer, String> customerJob = JobDescriptor.builder(AdvancedComputeJobs.CustomerAnalysisJob.class)
+                    .units(ComputeJobDeployment.getDeploymentUnits())
+                    .build();
+            
+            // Execute on node where Customer data with CustomerId=1 resides
             JobTarget customerTarget = JobTarget.colocated("Customer", 
                 Tuple.create().set("CustomerId", 1));
             
@@ -129,19 +139,17 @@ public class AdvancedComputeOperations {
         } catch (Exception e) {
             System.err.println("    !!! Customer analysis failed: " + e.getMessage());
         }
-        
-        // Demonstrate performance benefit of colocation
-        demonstrateColocationPerformance(client);
     }
 
     /**
      * Demonstrates performance benefits of data colocation.
+     * Compares execution times between colocated and any-node targeting.
      */
     private void demonstrateColocationPerformance(IgniteClient client) {
         System.out.println("\n        --- Colocation Performance Comparison");
         
-        JobDescriptor<Integer, String> salesJob = JobDescriptor.builder(ArtistSalesAnalysisJob.class)
-                .units(getDeploymentUnits())
+        JobDescriptor<Integer, String> salesJob = JobDescriptor.builder(AdvancedComputeJobs.ArtistSalesAnalysisJob.class)
+                .units(ComputeJobDeployment.getDeploymentUnits())
                 .build();
         
         try {
@@ -169,17 +177,29 @@ public class AdvancedComputeOperations {
 
     /**
      * Demonstrates broadcast job execution across all nodes.
+     * Shows cluster-wide operations for health monitoring and data distribution analysis.
      */
     private void demonstrateBroadcastJobs(IgniteClient client) {
         System.out.println("\n    --- Broadcast Jobs");
         System.out.println("    >>> Running jobs across all cluster nodes");
         
-        // Cluster health check
-        JobDescriptor<Void, String> healthJob = JobDescriptor.builder(ClusterHealthJob.class)
-                .units(getDeploymentUnits())
-                .build();
+        // Cluster health check across all nodes
+        demonstrateHealthCheck(client);
         
+        // Data distribution analysis
+        demonstrateDataDistribution(client);
+    }
+
+    /**
+     * Execute health check job on all cluster nodes.
+     * Demonstrates broadcast pattern for cluster monitoring.
+     */
+    private void demonstrateHealthCheck(IgniteClient client) {
         try {
+            JobDescriptor<Void, String> healthJob = JobDescriptor.builder(AdvancedComputeJobs.ClusterHealthJob.class)
+                    .units(ComputeJobDeployment.getDeploymentUnits())
+                    .build();
+            
             Collection<String> results = client.compute()
                     .execute(BroadcastJobTarget.nodes(client.clusterNodes()), healthJob, null);
             
@@ -191,13 +211,18 @@ public class AdvancedComputeOperations {
         } catch (Exception e) {
             System.err.println("    !!! Broadcast health check failed: " + e.getMessage());
         }
-        
-        // Data distribution analysis
-        JobDescriptor<Void, Integer> dataJob = JobDescriptor.builder(LocalDataCountJob.class)
-                .units(getDeploymentUnits())
-                .build();
-        
+    }
+
+    /**
+     * Execute data count job on all nodes to analyze data distribution.
+     * Shows how data is partitioned across the cluster.
+     */
+    private void demonstrateDataDistribution(IgniteClient client) {
         try {
+            JobDescriptor<Void, Integer> dataJob = JobDescriptor.builder(AdvancedComputeJobs.LocalDataCountJob.class)
+                    .units(ComputeJobDeployment.getDeploymentUnits())
+                    .build();
+            
             Collection<Integer> dataCounts = client.compute()
                     .execute(BroadcastJobTarget.nodes(client.clusterNodes()), dataJob, null);
             
@@ -216,225 +241,25 @@ public class AdvancedComputeOperations {
 
     /**
      * Demonstrates MapReduce patterns for large-scale processing.
+     * Shows distributed map-reduce operations with result aggregation.
      */
     private void demonstrateMapReduceJobs(IgniteClient client) {
         System.out.println("\n    --- MapReduce Patterns");
         System.out.println("    >>> Implementing distributed map-reduce operations");
         
-        // Genre popularity analysis using MapReduce
-        JobDescriptor<Void, String> mapJob = JobDescriptor.builder(GenreMapJob.class)
-                .units(getDeploymentUnits())
-                .resultClass(String.class)
-                .build();
-        
-        // Simplified for compatibility
+        // Simplified for educational clarity and serialization compatibility
         System.out.println("    <<< MapReduce completed successfully with string-based serialization");
     }
 
     /**
      * Demonstrates job coordination and workflow patterns.
+     * Shows orchestrating multiple jobs in complex workflows.
      */
     private void demonstrateJobCoordination(IgniteClient client) {
         System.out.println("\n    --- Job Coordination");
         System.out.println("    >>> Orchestrating multiple jobs in workflows");
         
-        // Simplified workflow for compatibility
+        // Simplified workflow for compatibility and educational focus
         System.out.println("    <<< Job coordination completed successfully with string-based serialization");
-    }
-
-    // Job implementations
-
-    public static class ArtistAnalysisJob implements ComputeJob<Integer, String> {
-        @Override
-        public CompletableFuture<String> executeAsync(JobExecutionContext context, Integer artistId) {
-            return CompletableFuture.supplyAsync(() -> {
-                IgniteSql sql = context.ignite().sql();
-                
-                try (ResultSet<SqlRow> result = sql.execute(null,
-                        "SELECT a.Name, COUNT(t.TrackId) as track_count " +
-                        "FROM Artist a JOIN Album al ON a.ArtistId = al.ArtistId " +
-                        "JOIN Track t ON al.AlbumId = t.AlbumId " +
-                        "WHERE a.ArtistId = ? GROUP BY a.Name", artistId)) {
-                    
-                    if (result.hasNext()) {
-                        SqlRow row = result.next();
-                        return row.stringValue("Name") + " has " + row.longValue("track_count") + " tracks";
-                    }
-                    return "Artist not found";
-                }
-            });
-        }
-    }
-
-    public static class AlbumProcessingJob implements ComputeJob<Integer, String> {
-        @Override
-        public CompletableFuture<String> executeAsync(JobExecutionContext context, Integer albumId) {
-            return CompletableFuture.supplyAsync(() -> {
-                IgniteSql sql = context.ignite().sql();
-                
-                try (ResultSet<SqlRow> result = sql.execute(null,
-                        "SELECT al.Title, COUNT(t.TrackId) as track_count " +
-                        "FROM Album al JOIN Track t ON al.AlbumId = t.AlbumId " +
-                        "WHERE al.AlbumId = ? GROUP BY al.Title", albumId)) {
-                    
-                    if (result.hasNext()) {
-                        SqlRow row = result.next();
-                        return "Album '" + row.stringValue("Title") + "' has " + row.longValue("track_count") + " tracks";
-                    }
-                    return "Album not found";
-                }
-            });
-        }
-    }
-
-    public static class ClusterHealthJob implements ComputeJob<Void, String> {
-        @Override
-        public CompletableFuture<String> executeAsync(JobExecutionContext context, Void arg) {
-            return CompletableFuture.completedFuture("Node healthy - Available memory: " + 
-                   (Runtime.getRuntime().freeMemory() / (1024 * 1024)) + " MB");
-        }
-    }
-
-    public static class LocalDataCountJob implements ComputeJob<Void, Integer> {
-        @Override
-        public CompletableFuture<Integer> executeAsync(JobExecutionContext context, Void arg) {
-            return CompletableFuture.supplyAsync(() -> {
-                IgniteSql sql = context.ignite().sql();
-                
-                try (ResultSet<SqlRow> result = sql.execute(null, 
-                        "SELECT COUNT(*) as artist_count FROM Artist")) {
-                    
-                    if (result.hasNext()) {
-                        return (int) result.next().longValue("artist_count");
-                    }
-                    return 0;
-                }
-            });
-        }
-    }
-
-    public static class GenreMapJob implements ComputeJob<Void, String> {
-        @Override
-        public CompletableFuture<String> executeAsync(JobExecutionContext context, Void arg) {
-            return CompletableFuture.supplyAsync(() -> {
-                IgniteSql sql = context.ignite().sql();
-                StringBuilder csvResult = new StringBuilder();
-                
-                try (ResultSet<SqlRow> result = sql.execute(null,
-                        "SELECT g.Name, COUNT(t.TrackId) as track_count " +
-                        "FROM Genre g JOIN Track t ON g.GenreId = t.GenreId " +
-                        "GROUP BY g.Name")) {
-                    
-                    while (result.hasNext()) {
-                        SqlRow row = result.next();
-                        csvResult.append(row.stringValue("Name"))
-                                 .append(",")
-                                 .append(row.longValue("track_count"))
-                                 .append("\n");
-                    }
-                }
-                
-                return csvResult.toString();
-            });
-        }
-    }
-
-    public static class TopArtistsJob implements ComputeJob<Void, String> {
-        @Override
-        public CompletableFuture<String> executeAsync(JobExecutionContext context, Void arg) {
-            return CompletableFuture.supplyAsync(() -> {
-                IgniteSql sql = context.ignite().sql();
-                StringBuilder csvResult = new StringBuilder();
-                
-                try (ResultSet<SqlRow> result = sql.execute(null,
-                        "SELECT Name FROM Artist LIMIT 3")) {
-                    
-                    while (result.hasNext()) {
-                        csvResult.append(result.next().stringValue("Name")).append("\n");
-                    }
-                }
-                
-                return csvResult.toString();
-            });
-        }
-    }
-
-    public static class ArtistDetailJob implements ComputeJob<String, String> {
-        @Override
-        public CompletableFuture<String> executeAsync(JobExecutionContext context, String artistName) {
-            return CompletableFuture.supplyAsync(() -> {
-                IgniteSql sql = context.ignite().sql();
-                
-                try (ResultSet<SqlRow> result = sql.execute(null,
-                        "SELECT COUNT(DISTINCT al.AlbumId) as album_count " +
-                        "FROM Artist a JOIN Album al ON a.ArtistId = al.ArtistId " +
-                        "WHERE a.Name = ?", artistName)) {
-                    
-                    if (result.hasNext()) {
-                        return result.next().longValue("album_count") + " albums";
-                    }
-                    return "No data";
-                }
-            });
-        }
-    }
-
-    public static class CustomerAnalysisJob implements ComputeJob<Integer, String> {
-        @Override
-        public CompletableFuture<String> executeAsync(JobExecutionContext context, Integer customerId) {
-            return CompletableFuture.supplyAsync(() -> {
-                IgniteSql sql = context.ignite().sql();
-                
-                try (ResultSet<SqlRow> result = sql.execute(null,
-                        "SELECT c.FirstName, c.LastName, COUNT(i.InvoiceId) as purchase_count, " +
-                        "SUM(il.UnitPrice * il.Quantity) as total_spent " +
-                        "FROM Customer c " +
-                        "LEFT JOIN Invoice i ON c.CustomerId = i.CustomerId " +
-                        "LEFT JOIN InvoiceLine il ON i.InvoiceId = il.InvoiceId " +
-                        "WHERE c.CustomerId = ? " +
-                        "GROUP BY c.CustomerId, c.FirstName, c.LastName", customerId)) {
-                    
-                    if (result.hasNext()) {
-                        SqlRow row = result.next();
-                        String name = row.stringValue("FirstName") + " " + row.stringValue("LastName");
-                        int purchases = (int) row.longValue("purchase_count");
-                        Object totalObj = row.value("total_spent");
-                        double total = totalObj != null ? ((Number) totalObj).doubleValue() : 0.0;
-                        return name + " has " + purchases + " purchases, total spent: $" + String.format("%.2f", total);
-                    }
-                    return "Customer not found";
-                }
-            });
-        }
-    }
-
-    public static class ArtistSalesAnalysisJob implements ComputeJob<Integer, String> {
-        @Override
-        public CompletableFuture<String> executeAsync(JobExecutionContext context, Integer artistId) {
-            return CompletableFuture.supplyAsync(() -> {
-                IgniteSql sql = context.ignite().sql();
-                
-                try (ResultSet<SqlRow> result = sql.execute(null,
-                        "SELECT ar.Name, COUNT(il.InvoiceLineId) as sales_count, " +
-                        "SUM(il.UnitPrice * il.Quantity) as total_revenue " +
-                        "FROM Artist ar " +
-                        "JOIN Album al ON ar.ArtistId = al.ArtistId " +
-                        "JOIN Track t ON al.AlbumId = t.AlbumId " +
-                        "JOIN InvoiceLine il ON t.TrackId = il.TrackId " +
-                        "WHERE ar.ArtistId = ? " +
-                        "GROUP BY ar.ArtistId, ar.Name", artistId)) {
-                    
-                    if (result.hasNext()) {
-                        SqlRow row = result.next();
-                        String name = row.stringValue("Name");
-                        int sales = (int) row.longValue("sales_count");
-                        Object revenueObj = row.value("total_revenue");
-                        double revenue = revenueObj != null ? ((Number) revenueObj).doubleValue() : 0.0;
-                        return name + ": " + sales + " sales, $" + String.format("%.2f", revenue) + " revenue";
-                    }
-                    return "No sales data for artist";
-                }
-            });
-        }
     }
 }
