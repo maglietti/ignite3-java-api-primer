@@ -1,4 +1,4 @@
-# Chapter 1.1: Apache Ignite 3 Architecture & Decision Framework
+# Chapter 1.1: Introduction and Architecture Overview
 
 ## Learning Objectives
 
