@@ -17,6 +17,11 @@
     <name>Compute API App</name>
     <description>Apache Ignite 3 compute API distributed processing reference application</description>
 
+    <properties>
+      <maven.compiler.source>17</maven.compiler.source>
+      <maven.compiler.target>17</maven.compiler.target>
+    </properties>
+
     <dependencies>
         <!-- Apache Ignite 3 Dependencies -->
         <dependency>

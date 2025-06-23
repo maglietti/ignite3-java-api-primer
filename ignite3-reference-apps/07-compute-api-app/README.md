@@ -283,14 +283,14 @@ curl -X POST \
 docker run --rm -it --network=host -e LANG=C.UTF-8 -e LC_ALL=C.UTF-8 apacheignite/ignite:3.0.0 cli
 
 # Deploy job classes (inside container)
-deployment deploy compute-jobs /path/to/target/07-compute-api-app-1.0.0.jar
+cluster unit deploy compute-jobs /path/to/target/07-compute-api-app-1.0.0.jar
 ```
 
 **Using Local CLI (Fallback):**
 
 ```bash
 # Deploy using local Ignite CLI installation
-ignite deployment deploy compute-jobs target/07-compute-api-app-1.0.0.jar
+ignite cluster unit deploy compute-jobs target/07-compute-api-app-1.0.0.jar
 ```
 
 ### 3. Run Application

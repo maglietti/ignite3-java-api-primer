@@ -27,7 +27,7 @@ mvn compile exec:java
 ```bash
 # Deploy job classes using containerized Ignite CLI
 docker run --rm -it --network=host -e LANG=C.UTF-8 -e LC_ALL=C.UTF-8 apacheignite/ignite:3.0.0 cli
-deployment deploy compute-jobs /path/to/target/07-compute-api-app-1.0.0.jar
+cluster unit deploy compute-jobs /path/to/target/07-compute-api-app-1.0.0.jar
 ```
 
 The reference app shows how the data consistency from [Chapter 4.1](01-transaction-fundamentals.md) enables reliable distributed processing workflows, building on the schema and data access patterns from previous modules.
@@ -194,11 +194,11 @@ public class ComputeExample {
    **CLI Options:**
    ```bash
    # Using local CLI
-   ignite deployment deploy compute-jobs target/app-1.0.0.jar
+   ignite cluster unit deploy compute-jobs target/app-1.0.0.jar
    
    # Using Docker CLI
    docker run --rm -it --network=host -e LANG=C.UTF-8 -e LC_ALL=C.UTF-8 apacheignite/ignite:3.0.0 cli
-   deployment deploy compute-jobs /path/to/target/app-1.0.0.jar
+   cluster unit  deploy compute-jobs /path/to/target/app-1.0.0.jar
    ```
 
 3. **Execute Jobs**: Run application using deployment units that reference the deployed JAR
