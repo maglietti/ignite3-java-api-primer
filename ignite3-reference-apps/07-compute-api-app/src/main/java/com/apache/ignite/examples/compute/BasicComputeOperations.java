@@ -14,6 +14,11 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -94,7 +99,7 @@ public class BasicComputeOperations {
      * Deploy the JAR containing job classes to the Ignite cluster.
      */
     private void deployJobClasses(IgniteClient client) throws IOException {
-        System.out.println("    >>> Checking for JAR deployment...");
+        System.out.println("    >>> Deploying job classes to cluster...");
         
         // Find the JAR file in the target directory
         Path jarPath = Paths.get("target/07-compute-api-app-1.0.0.jar");
@@ -103,10 +108,73 @@ public class BasicComputeOperations {
         }
         
         System.out.println("    >>> JAR file found: " + jarPath);
-        System.out.println("    >>> Note: Job classes need to be deployed to standalone clusters");  
-        System.out.println("    >>> To deploy manually using Ignite CLI:");
-        System.out.println("    >>>   ignite deployment deploy " + DEPLOYMENT_UNIT_NAME + " " + jarPath.toAbsolutePath());
-        System.out.println("    >>> Continuing with job execution (will fail if not deployed)...");
+        
+        try {
+            // Attempt programmatic deployment via REST API
+            deployViaRestAPI(jarPath);
+            System.out.println("    >>> JAR deployed successfully via REST API");
+            
+        } catch (Exception e) {
+            System.out.println("    >>> REST API deployment failed: " + e.getMessage());
+            System.out.println("    >>> Fallback: Deploy manually using CLI or Docker:");
+            System.out.println("    >>>   CLI: ignite deployment deploy " + DEPLOYMENT_UNIT_NAME + " " + jarPath.toAbsolutePath());
+            System.out.println("    >>>   Docker: docker run --rm -it --network=host apacheignite/ignite:3.0.0 cli");
+            System.out.println("    >>> Continuing with job execution (will fail if not deployed)...");
+        }
+    }
+    
+    /**
+     * Deploy JAR file via REST API using multipart form upload.
+     */
+    private void deployViaRestAPI(Path jarPath) throws Exception {
+        // Ignite REST API typically runs on port 10300
+        String restApiUrl = "http://127.0.0.1:10300/management/v1/deployment/units/" 
+                          + DEPLOYMENT_UNIT_NAME + "/" + DEPLOYMENT_UNIT_VERSION + "?deployMode=MAJORITY";
+        
+        // Read JAR file content
+        byte[] jarContent = Files.readAllBytes(jarPath);
+        
+        // Create multipart form data
+        String boundary = "----WebKitFormBoundary" + System.currentTimeMillis();
+        String multipartData = createMultipartData(boundary, jarPath.getFileName().toString(), jarContent);
+        
+        // Create HTTP request
+        HttpClient httpClient = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(restApiUrl))
+                .header("Content-Type", "multipart/form-data; boundary=" + boundary)
+                .POST(HttpRequest.BodyPublishers.ofString(multipartData, StandardCharsets.ISO_8859_1))
+                .build();
+        
+        // Send request and check response
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        
+        if (response.statusCode() == 200 || response.statusCode() == 201) {
+            System.out.println("    >>> Deployment successful (HTTP " + response.statusCode() + ")");
+        } else if (response.statusCode() == 409) {
+            System.out.println("    >>> Deployment unit already exists (HTTP 409) - continuing");
+        } else {
+            throw new RuntimeException("Deployment failed with HTTP " + response.statusCode() + ": " + response.body());
+        }
+    }
+    
+    /**
+     * Create multipart form data for JAR file upload.
+     */
+    private String createMultipartData(String boundary, String filename, byte[] content) {
+        StringBuilder sb = new StringBuilder();
+        
+        sb.append("--").append(boundary).append("\r\n");
+        sb.append("Content-Disposition: form-data; name=\"unitContent\"; filename=\"").append(filename).append("\"\r\n");
+        sb.append("Content-Type: application/octet-stream\r\n");
+        sb.append("\r\n");
+        
+        // Convert binary content to ISO-8859-1 string (preserves bytes)
+        sb.append(new String(content, StandardCharsets.ISO_8859_1));
+        
+        sb.append("\r\n--").append(boundary).append("--\r\n");
+        
+        return sb.toString();
     }
 
     // Deployment unit configuration
@@ -118,13 +186,8 @@ public class BasicComputeOperations {
      * Returns the deployment unit that should contain our job classes.
      */
     private static List<DeploymentUnit> getDeploymentUnits() {
-        // For standalone clusters, jobs must be deployed externally via CLI
-        // Using empty list will attempt to load classes from the classpath
-        // This works when the cluster has access to the application JAR
-        return List.of();
-        
-        // When properly deployed via CLI, use:
-        // return List.of(new DeploymentUnit(DEPLOYMENT_UNIT_NAME, DEPLOYMENT_UNIT_VERSION));
+        // Use the deployment unit that should be deployed via REST API or CLI
+        return List.of(new DeploymentUnit(DEPLOYMENT_UNIT_NAME, DEPLOYMENT_UNIT_VERSION));
     }
 
     /**

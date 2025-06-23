@@ -42,12 +42,8 @@ public class ComputeJobWorkflows {
      * Get deployment units for this application.
      */
     private static List<DeploymentUnit> getDeploymentUnits() {
-        // For standalone clusters, jobs must be deployed externally via CLI
-        // Using empty list will attempt to load classes from the classpath
-        return List.of();
-        
-        // When properly deployed via CLI, use:
-        // return List.of(new DeploymentUnit(DEPLOYMENT_UNIT_NAME, DEPLOYMENT_UNIT_VERSION));
+        // Use the deployment unit that should be deployed via REST API or CLI
+        return List.of(new DeploymentUnit(DEPLOYMENT_UNIT_NAME, DEPLOYMENT_UNIT_VERSION));
     }
 
     public static void main(String[] args) {

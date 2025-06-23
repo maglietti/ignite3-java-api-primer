@@ -97,7 +97,19 @@ This creates `target/07-compute-api-app-1.0.0.jar` containing all job implementa
 
 ### 2. Deploy JAR to Cluster
 
-**Using Docker CLI (Recommended):**
+**Using REST API (Automated - Recommended):**
+
+The application automatically attempts REST API deployment. You can also deploy manually:
+
+```bash
+# Deploy via HTTP REST API (port 10300)
+curl -X POST \
+  "http://localhost:10300/management/v1/deployment/units/compute-jobs/1.0.0?deployMode=MAJORITY" \
+  -H "Content-Type: multipart/form-data" \
+  -F "unitContent=@target/07-compute-api-app-1.0.0.jar"
+```
+
+**Using Docker CLI:**
 
 ```bash
 # Start containerized Ignite CLI

@@ -180,7 +180,18 @@ public class ComputeExample {
    mvn package
    ```
 
-2. **Deploy JAR**: Use Ignite CLI to deploy the JAR to the cluster
+2. **Deploy JAR**: Use REST API, CLI, or Docker CLI to deploy the JAR to the cluster
+
+   **REST API (Recommended for Automation):**
+   ```bash
+   # Deploy via HTTP REST API
+   curl -X POST \
+     "http://localhost:10300/management/v1/deployment/units/compute-jobs/1.0.0?deployMode=MAJORITY" \
+     -H "Content-Type: multipart/form-data" \
+     -F "unitContent=@target/app-1.0.0.jar"
+   ```
+
+   **CLI Options:**
    ```bash
    # Using local CLI
    ignite deployment deploy compute-jobs target/app-1.0.0.jar
@@ -192,11 +203,45 @@ public class ComputeExample {
 
 3. **Execute Jobs**: Run application using deployment units that reference the deployed JAR
 
-**Development vs Production Deployment:**
+**Programmatic Deployment in Java:**
 
-- **Development**: Use empty deployment units `List.of()` when cluster has classpath access to job classes
+```java
+// Deploy JAR programmatically via REST API
+public void deployJobClasses(Path jarPath) throws Exception {
+    String restApiUrl = "http://localhost:10300/management/v1/deployment/units/" 
+                      + "compute-jobs/1.0.0?deployMode=MAJORITY";
+    
+    byte[] jarContent = Files.readAllBytes(jarPath);
+    
+    // Create multipart form data
+    String boundary = "----WebKitFormBoundary" + System.currentTimeMillis();
+    String multipartData = createMultipartData(boundary, jarPath.getFileName().toString(), jarContent);
+    
+    HttpClient httpClient = HttpClient.newHttpClient();
+    HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create(restApiUrl))
+            .header("Content-Type", "multipart/form-data; boundary=" + boundary)
+            .POST(HttpRequest.BodyPublishers.ofString(multipartData, StandardCharsets.ISO_8859_1))
+            .build();
+    
+    HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+    
+    if (response.statusCode() == 200 || response.statusCode() == 201) {
+        System.out.println("Deployment successful");
+    } else if (response.statusCode() == 409) {
+        System.out.println("Deployment unit already exists");
+    } else {
+        throw new RuntimeException("Deployment failed: HTTP " + response.statusCode());
+    }
+}
+```
+
+**Deployment Strategy Guidelines:**
+
+- **Automated Environments**: Use REST API for CI/CD pipeline integration and programmatic deployment
+- **Development**: Applications can automatically deploy JARs before job execution
 - **Production**: Use proper deployment units with deployed JARs for isolation and versioning
-- **Error Handling**: Applications should provide clear deployment instructions when jobs fail
+- **Error Handling**: Applications should provide fallback instructions when REST API deployment fails
 
 ### Job Targeting Strategies
 
