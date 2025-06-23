@@ -117,7 +117,54 @@ This module includes `deploy-jar.sh`, a reference script for deploying JAR files
 | `-c, --check` | Check deployment status | false |
 | `-r, --remove` | Remove existing before deploy | false |
 | `-v, --verbose` | Enable detailed output | false |
+| `--validate` | Validate cluster state pre-deployment | false |
+| `--monitor` | Monitor compute jobs post-deployment | false |
+| `--metrics` | Enable compute metrics | false |
 | `--help` | Show complete usage | - |
+
+### Advanced Features
+
+**Cluster Validation (`--validate`):**
+- Verifies cluster initialization status
+- Checks CMG (Cluster Management Group) nodes
+- Validates cluster topology and node availability
+- Prevents deployment to unhealthy clusters
+
+**Enhanced Status Checking (`--check`):**
+- Cluster-wide deployment status verification
+- Per-node deployment verification
+- Version-specific status tracking
+- Deployment consistency validation
+
+**Compute Job Monitoring (`--monitor`):**
+- Lists all active compute jobs
+- Shows job status, ID, and creation time
+- Monitors job execution after deployment
+- Helps troubleshoot job execution issues
+
+**Metrics Enablement (`--metrics`):**
+- Enables compute-specific cluster metrics
+- Supports performance monitoring and diagnostics
+- Prepares cluster for job execution monitoring
+- Facilitates troubleshooting and optimization
+
+**Complete Workflow Example:**
+```bash
+# Full deployment with all features
+./deploy-jar.sh \
+  --validate \
+  --metrics \
+  --check \
+  --monitor \
+  --verbose \
+  compute-jobs 1.0.0 target/app.jar
+
+# Development workflow with validation
+./deploy-jar.sh --validate --check my-jobs 1.0.0 target/jobs.jar && mvn exec:java
+
+# Production deployment with monitoring
+./deploy-jar.sh -h prod-cluster.company.com --validate --metrics --monitor production-jobs 2.0.0 app.jar
+```
 
 ### Integration Patterns
 
@@ -200,12 +247,15 @@ This module includes a deployment script that handles REST API deployment with f
 ```
 
 **Script Features:**
-- Automatic REST API deployment with error handling
-- Status checking and validation
-- Colored output for clear feedback
-- Fallback instructions when deployment fails
-- Support for different cluster configurations
-- Verbose mode for troubleshooting
+- **Automatic REST API deployment** with comprehensive error handling
+- **Cluster validation** with topology verification and health checks
+- **Enhanced status checking** with per-node deployment verification
+- **Compute job monitoring** to track job execution after deployment
+- **Metrics enablement** for performance monitoring and diagnostics
+- **Colored output** with clear progress indication and feedback
+- **Fallback instructions** when deployment fails or API is unavailable
+- **Multi-cluster support** for different hosts, ports, and configurations
+- **Development-friendly** verbose mode for troubleshooting
 
 **Manual REST API (Alternative):**
 

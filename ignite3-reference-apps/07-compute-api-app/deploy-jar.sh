@@ -57,6 +57,9 @@ OPTIONS:
     -c, --check         Check deployment status after upload
     -r, --remove        Remove existing deployment unit before deploying
     -v, --verbose       Enable verbose output
+    --validate          Validate cluster state before deployment
+    --monitor           Monitor compute jobs after deployment
+    --metrics           Enable compute metrics
     --help              Show this help message
 
 EXAMPLES:
@@ -68,6 +71,9 @@ EXAMPLES:
 
     # Deploy to all nodes with removal of existing unit
     $0 -m ALL -r data-processors 1.5.2 processors.jar
+
+    # Deploy with full validation and monitoring
+    $0 --validate --check --monitor --metrics compute-jobs 1.0.0 target/jobs.jar
 
     # Check deployment status only
     $0 -c compute-jobs 1.0.0 ""
@@ -97,6 +103,9 @@ parse_arguments() {
     CHECK_STATUS=false
     REMOVE_EXISTING=false
     VERBOSE=false
+    VALIDATE_CLUSTER=false
+    MONITOR_JOBS=false
+    ENABLE_METRICS=false
     
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -126,6 +135,18 @@ parse_arguments() {
                 ;;
             -v|--verbose)
                 VERBOSE=true
+                shift
+                ;;
+            --validate)
+                VALIDATE_CLUSTER=true
+                shift
+                ;;
+            --monitor)
+                MONITOR_JOBS=true
+                shift
+                ;;
+            --metrics)
+                ENABLE_METRICS=true
                 shift
                 ;;
             --help)
@@ -178,6 +199,175 @@ check_dependencies() {
         print_error "curl is required but not installed"
         exit 1
     fi
+    
+    # Check for jq if using advanced features
+    if [[ "$VALIDATE_CLUSTER" == true || "$MONITOR_JOBS" == true ]] && ! command -v jq >/dev/null 2>&1; then
+        print_warning "jq not found - some advanced features will be limited"
+    fi
+}
+
+# Validate cluster state before deployment
+validate_cluster() {
+    print_info "=== [1/4] Validating Cluster State ==="
+    
+    # Check cluster initialization
+    print_info "Checking cluster initialization..."
+    local response
+    response=$(curl -s -w "HTTPSTATUS:%{http_code}" \
+                  "http://${CLUSTER_HOST}:${REST_PORT}/management/v1/cluster/state" 2>/dev/null || echo "HTTPSTATUS:000")
+    
+    local http_code
+    http_code=$(echo "$response" | grep -o "HTTPSTATUS:[0-9]*" | cut -d: -f2)
+    
+    if [[ "$http_code" != "200" ]]; then
+        print_error "Cannot connect to cluster management API (HTTP $http_code)"
+        print_error "Verify cluster is running at ${CLUSTER_HOST}:${REST_PORT}"
+        return 1
+    fi
+    
+    local body
+    body=$(echo "$response" | sed 's/HTTPSTATUS:[0-9]*$//')
+    
+    # Parse cluster state with or without jq
+    if command -v jq >/dev/null 2>&1; then
+        local cmg_nodes
+        cmg_nodes=$(echo "$body" | jq -r '.cmgNodes | length' 2>/dev/null || echo "unknown")
+        if [[ "$cmg_nodes" == "0" || "$cmg_nodes" == "null" ]]; then
+            print_error "Cluster is not properly initialized (CMG nodes: $cmg_nodes)"
+            return 1
+        fi
+        print_success "Cluster initialized with $cmg_nodes CMG nodes"
+        
+        # Check cluster topology
+        print_info "Validating cluster topology..."
+        local topology_response
+        topology_response=$(curl -s "http://${CLUSTER_HOST}:${REST_PORT}/management/v1/cluster/topology/physical" 2>/dev/null)
+        local node_count
+        node_count=$(echo "$topology_response" | jq -r 'length' 2>/dev/null || echo "unknown")
+        print_success "Cluster has $node_count active nodes"
+        
+        if [[ "$VERBOSE" == true ]]; then
+            echo "$topology_response" | jq -r '.[] | "  >>> Node: \(.name) at \(.address.host):\(.address.port)"' 2>/dev/null || echo "  >>> Node details unavailable"
+        fi
+    else
+        print_success "Cluster API accessible (detailed validation requires jq)"
+    fi
+    
+    return 0
+}
+
+# Enable compute metrics for monitoring
+enable_compute_metrics() {
+    print_info "=== [2/4] Enabling Compute Metrics ==="
+    
+    local response
+    response=$(curl -s -w "HTTPSTATUS:%{http_code}" \
+                  -X POST \
+                  -H "Content-Type: text/plain" \
+                  -d "compute" \
+                  "http://${CLUSTER_HOST}:${REST_PORT}/management/v1/metric/cluster/enable" 2>/dev/null || echo "HTTPSTATUS:000")
+    
+    local http_code
+    http_code=$(echo "$response" | grep -o "HTTPSTATUS:[0-9]*" | cut -d: -f2)
+    
+    case $http_code in
+        200|201)
+            print_success "Compute metrics enabled successfully"
+            ;;
+        000)
+            print_warning "Failed to enable metrics - cluster unreachable"
+            ;;
+        *)
+            print_warning "Metrics enablement returned HTTP $http_code"
+            ;;
+    esac
+}
+
+# Monitor compute jobs after deployment
+monitor_compute_jobs() {
+    print_info "=== [4/4] Monitoring Compute Jobs ==="
+    
+    local response
+    response=$(curl -s -w "HTTPSTATUS:%{http_code}" \
+                  "http://${CLUSTER_HOST}:${REST_PORT}/management/v1/compute/jobs" 2>/dev/null || echo "HTTPSTATUS:000")
+    
+    local http_code
+    http_code=$(echo "$response" | grep -o "HTTPSTATUS:[0-9]*" | cut -d: -f2)
+    
+    if [[ "$http_code" != "200" ]]; then
+        print_warning "Cannot retrieve compute jobs (HTTP $http_code)"
+        return 1
+    fi
+    
+    local body
+    body=$(echo "$response" | sed 's/HTTPSTATUS:[0-9]*$//')
+    
+    if command -v jq >/dev/null 2>&1; then
+        local job_count
+        job_count=$(echo "$body" | jq -r 'length' 2>/dev/null || echo "0")
+        
+        if [[ "$job_count" == "0" ]]; then
+            print_info "No active compute jobs"
+        else
+            print_info "Found $job_count active compute jobs:"
+            echo "$body" | jq -r '.[] | "  >>> Job \(.id): \(.status) (\(.createTime))"' 2>/dev/null || print_warning "Job details parsing failed"
+        fi
+    else
+        print_info "Compute jobs endpoint accessible (detailed info requires jq)"
+    fi
+}
+
+# Enhanced deployment status check with per-node verification
+check_enhanced_deployment_status() {
+    print_info "=== [3/4] Enhanced Deployment Verification ==="
+    
+    # Check cluster-wide deployment status
+    print_info "Checking cluster-wide deployment status..."
+    local cluster_url="http://${CLUSTER_HOST}:${REST_PORT}/management/v1/deployment/cluster/units/${UNIT_ID}"
+    local response
+    response=$(curl -s -w "HTTPSTATUS:%{http_code}" -X GET "$cluster_url" 2>/dev/null || echo "HTTPSTATUS:000")
+    
+    local http_code
+    http_code=$(echo "$response" | grep -o "HTTPSTATUS:[0-9]*" | cut -d: -f2)
+    
+    case $http_code in
+        200)
+            local body
+            body=$(echo "$response" | sed 's/HTTPSTATUS:[0-9]*$//')
+            
+            if command -v jq >/dev/null 2>&1; then
+                local version_status
+                version_status=$(echo "$body" | jq -r --arg version "$UNIT_VERSION" '.versionToStatus[]? | select(.version == $version) | .status' 2>/dev/null)
+                
+                if [[ -n "$version_status" ]]; then
+                    print_success "Deployment unit ${UNIT_ID}:${UNIT_VERSION} status: $version_status"
+                    
+                    # Check node-level deployment
+                    print_info "Verifying node-level deployment..."
+                    local node_url="http://${CLUSTER_HOST}:${REST_PORT}/management/v1/deployment/node/units/${UNIT_ID}"
+                    local node_response
+                    node_response=$(curl -s "$node_url" 2>/dev/null)
+                    
+                    if [[ -n "$node_response" ]]; then
+                        echo "$node_response" | jq -r --arg version "$UNIT_VERSION" '.[] | select(.version == $version) | "  >>> Node \(.nodeName): \(.status)"' 2>/dev/null || print_info "Node status details unavailable"
+                    fi
+                else
+                    print_warning "Version $UNIT_VERSION not found in deployment status"
+                fi
+            else
+                print_success "Deployment status retrieved (detailed info requires jq)"
+            fi
+            ;;
+        404)
+            print_warning "Deployment unit not found: ${UNIT_ID}"
+            ;;
+        000)
+            print_error "Failed to connect to cluster at ${CLUSTER_HOST}:${REST_PORT}"
+            ;;
+        *)
+            print_error "Status check failed with HTTP $http_code"
+            ;;
+    esac
 }
 
 # Remove existing deployment unit
@@ -363,16 +553,47 @@ main() {
     
     # Handle status check only
     if [[ "$CHECK_STATUS" == true && -z "$JAR_FILE" ]]; then
-        check_deployment_status
+        if [[ "$VALIDATE_CLUSTER" == true || "$MONITOR_JOBS" == true ]]; then
+            # Run advanced status checks
+            [[ "$VALIDATE_CLUSTER" == true ]] && validate_cluster
+            check_enhanced_deployment_status
+            [[ "$MONITOR_JOBS" == true ]] && monitor_compute_jobs
+        else
+            # Basic status check
+            check_deployment_status
+        fi
         exit 0
+    fi
+    
+    # Pre-deployment validation
+    if [[ "$VALIDATE_CLUSTER" == true ]]; then
+        if ! validate_cluster; then
+            print_error "Cluster validation failed - aborting deployment"
+            exit 1
+        fi
+        echo
+    fi
+    
+    # Enable metrics if requested
+    if [[ "$ENABLE_METRICS" == true ]]; then
+        enable_compute_metrics
+        echo
     fi
     
     # Deploy JAR file
     if deploy_jar; then
-        # Check status if requested
+        echo
+        
+        # Enhanced status check if requested
         if [[ "$CHECK_STATUS" == true ]]; then
+            check_enhanced_deployment_status
             echo
-            check_deployment_status
+        fi
+        
+        # Monitor compute jobs if requested
+        if [[ "$MONITOR_JOBS" == true ]]; then
+            monitor_compute_jobs
+            echo
         fi
         
         print_success "Deployment process completed successfully"
