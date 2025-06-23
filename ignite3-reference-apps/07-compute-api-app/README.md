@@ -19,7 +19,7 @@ Harness Ignite 3's distributed computing capabilities to process data where it l
 
 ## Prerequisites
 
-**Required**: Complete [sample-data-setup](../sample-data-setup/) for data and understanding of colocation.
+**Required**: Complete [sample-data-setup](../01-sample-data-setup/) for data and understanding of colocation.
 
 ## Reference Applications
 
