@@ -1,4 +1,4 @@
-# Chapter 1.2: Your First Implementation
+# Chapter 1.2: Getting Started with Your First Application
 
 ## Learning Objectives
 
@@ -103,7 +103,7 @@ try (IgniteClient client = IgniteClient.builder()
         .addresses("localhost:10800", "localhost:10801", "localhost:10802")
         .build()) {
     
-    System.out.println("Connected to cluster with partition awareness");
+    System.out.println("Connected to: " + client.connections());
        
     // Your application logic here
 }
