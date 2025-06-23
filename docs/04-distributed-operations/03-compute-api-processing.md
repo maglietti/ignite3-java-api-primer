@@ -21,11 +21,20 @@ mvn package
 mvn compile exec:java
 ```
 
-**Job Deployment Requirement**: Standalone Ignite clusters require job classes to be deployed before execution. The application will build a JAR containing job classes and provide deployment instructions if jobs fail with "Deployment units list is empty" errors.
+**Job Deployment Requirement**: Standalone Ignite clusters require job classes to be deployed before execution. The application uses the `ComputeJobDeployment` utility class for automatic REST API deployment with fallback options.
 
-**Using Docker CLI for Deployment** (when needed):
+**Automatic Deployment** (recommended):
 ```bash
-# Deploy job classes using containerized Ignite CLI
+# Application handles deployment automatically
+mvn package && mvn compile exec:java
+```
+
+**Manual Deployment** (if needed):
+```bash
+# Using included deployment script
+./deploy-jar.sh compute-jobs 1.0.0 target/07-compute-api-app-1.0.0.jar
+
+# Or using Docker CLI
 docker run --rm -it --network=host -e LANG=C.UTF-8 -e LC_ALL=C.UTF-8 apacheignite/ignite:3.0.0 cli
 cluster unit deploy compute-jobs /path/to/target/07-compute-api-app-1.0.0.jar
 ```
@@ -141,29 +150,22 @@ try (IgniteClient ignite = IgniteClient.builder()
 
 ### Deployment Units and Job Class Management
 
-For standalone Ignite clusters, job classes must be deployed before execution using deployment units:
+For standalone Ignite clusters, job classes must be deployed before execution using deployment units. The reference application includes a `ComputeJobDeployment` utility class that handles this automatically:
 
 ```java
 import org.apache.ignite.deployment.DeploymentUnit;
 
 public class ComputeExample {
     
-    // Deployment unit configuration
-    private static final String DEPLOYMENT_UNIT_NAME = "compute-jobs";
-    private static final String DEPLOYMENT_UNIT_VERSION = "1.0.0";
-    
-    private static List<DeploymentUnit> getDeploymentUnits() {
-        // For standalone clusters with proper deployment
-        return List.of(new DeploymentUnit(DEPLOYMENT_UNIT_NAME, DEPLOYMENT_UNIT_VERSION));
-        
-        // For development with empty deployment units (jobs load from classpath)
-        // return List.of();
-    }
-    
     public void executeJobWithDeployment(IgniteClient ignite) {
+        // Use the deployment utility for automatic JAR deployment
+        if (!ComputeJobDeployment.deployJobClasses()) {
+            System.out.println(">>> Continuing with development deployment units");
+        }
+        
         // Create job descriptor with deployment units
         JobDescriptor<String, String> job = JobDescriptor.builder(MessageProcessingJob.class)
-                .units(getDeploymentUnits())
+                .units(ComputeJobDeployment.getDeploymentUnits())
                 .build();
         
         JobTarget target = JobTarget.anyNode(ignite.clusterNodes());
@@ -859,6 +861,52 @@ class Recommendation {
 ```
 
 The Compute API transforms single-node processing limitations into distributed intelligence, enabling analytics and processing that scales with your data across the cluster while maintaining the performance benefits of data locality.
+
+## Important Implementation Notes
+
+### SQL Reserved Words in Ignite 3
+
+When writing SQL queries within compute jobs, avoid using reserved words in AS clauses. Ignite 3 will reject queries with reserved word aliases:
+
+```java
+// ❌ Incorrect - will cause parsing errors
+try (ResultSet<SqlRow> result = sql.execute(null, "SELECT COUNT(*) as count FROM Track")) {
+    // This will fail with "Encountered 'count' at line 1, column 20"
+}
+
+// ✅ Correct - use descriptive aliases
+try (ResultSet<SqlRow> result = sql.execute(null, "SELECT COUNT(*) as track_count FROM Track")) {
+    if (result.hasNext()) {
+        return (int) result.next().longValue("track_count");
+    }
+}
+```
+
+**Common reserved words to avoid in AS clauses:**
+
+- `count`, `sum`, `avg`, `min`, `max`
+- `value`, `data`, `key`, `index`
+- `table`, `column`, `row`, `name`
+
+### Serialization Patterns
+
+Use string-based serialization for distributed job results:
+
+```java
+// String-based results
+public static class GenreStatsJob implements ComputeJob<Void, String> {
+    @Override
+    public CompletableFuture<String> executeAsync(JobExecutionContext context, Void arg) {
+        // Return CSV format for easy parsing
+        return CompletableFuture.completedFuture("Rock,150\nPop,120\nJazz,80");
+    }
+}
+
+// Complex collections require additional serialization handling
+public static class ComplexJob implements ComputeJob<Void, Map<String, List<Integer>>> {
+    // Complex nested collections need custom serialization
+}
+```
 
 ## Module Conclusion
 

@@ -25,30 +25,51 @@ Harness Ignite 3's distributed computing capabilities to process data where it l
 
 This module provides compute demonstrations:
 
-### 1. BasicComputeOperations - Job Submission Fundamentals
+### 1. BasicComputeOperations - Job Submission Fundamentals (314 lines)
 
+Core compute patterns:
 - **HelloWorldJob**: Simple distributed job execution
+- **NodeInfoJob**: Execution context access and node information
 - **ArtistSearchJob**: Parameterized jobs with SQL queries
 - **TrackCountJob**: Data aggregation across cluster
 - **GenreAnalysisJob**: Complex multi-table analysis
 - **Key Concepts**: Job creation, targeting strategies, async execution
 
-### 2. AdvancedComputeOperations - Data Locality and Complex Patterns
+### 2. AdvancedComputeOperations - Data Locality Patterns (264 lines)
 
-- **ArtistAnalysisJob**: Colocated artist sales analysis using `JobTarget.colocated()`
+Distributed performance optimization:
+- **Data Colocation**: Jobs execute where data resides for optimal performance
+- **Broadcast Execution**: Cluster-wide operations for health monitoring
+- **Performance Comparison**: Timing colocated vs any-node execution
+- **Job Coordination**: Orchestrating multiple distributed jobs
+- **Key Concepts**: Data locality, broadcast patterns, performance optimization
+
+### 3. AdvancedComputeJobs - Job Implementations (223 lines)
+
+Job implementations for data locality patterns:
+- **ArtistAnalysisJob**: Colocated artist data analysis
 - **CustomerAnalysisJob**: Customer data processing with data locality
-- **ArtistSalesAnalysisJob**: Performance comparison between colocated and any-node execution
-- **GenreMapJob**: Distributed MapReduce pattern implementation
-- **ClusterHealthJob**: Broadcast execution across all nodes
+- **ArtistSalesAnalysisJob**: Revenue analysis for performance comparison
+- **ClusterHealthJob**: Node health reporting for broadcast patterns
+- **LocalDataCountJob**: Data distribution analysis
+- **GenreMapJob**: MapReduce-style genre statistics
 
-### 3. ComputeJobWorkflows - Multi-step Business Process Automation
+### 4. ComputeJobWorkflows - Business Process Automation (129 lines)
 
-- **CustomerAnalyticsWorkflow**: Multi-step customer segmentation analysis
-- **MusicRecommendationWorkflow**: Personalized recommendation pipeline
-- **RevenueOptimizationWorkflow**: Business intelligence with metric calculation
-- **Key Concepts**: Job coordination, workflow orchestration, result aggregation
+Multi-step workflow demonstrations:
+- **CustomerAnalyticsWorkflow**: Customer segmentation analysis
+- **String-based Serialization**: Compatible data exchange patterns
+- **Key Concepts**: Job coordination, workflow orchestration
 
-### 4. ComputeAPIDemo - Complete Demonstration
+### 5. ComputeJobDeployment - Deployment Utilities (189 lines)
+
+Deployment utilities for cluster management:
+- **REST API Integration**: Automated JAR deployment via HTTP
+- **Error Handling**: Comprehensive fallback options
+- **Development Support**: Automatic deployment detection
+- **Production Patterns**: Deployment unit management
+
+### 6. ComputeAPIDemo - Complete Demonstration (90 lines)
 
 Main orchestrator that runs all compute patterns in educational progression with detailed output formatting.
 
@@ -60,19 +81,19 @@ Main orchestrator that runs all compute patterns in educational progression with
 - **Recommendation Engine**: Collaborative filtering algorithms
 - **Data Aggregation**: Roll up statistics from partitioned data
 
-### MapReduce Patterns
+### Implementation Features
 
-- **Map Phase**: Distribute analysis across partitions
-- **Reduce Phase**: Aggregate results from multiple nodes
-- **Custom Jobs**: Implement business-specific algorithms
-- **Parallel Processing**: Maximize CPU utilization
+- **Modular Design**: Job implementations organized by functionality
+- **Data Locality**: Colocated job execution for performance optimization
+- **Broadcast Patterns**: Cluster-wide operations for monitoring and analysis
+- **Workflow Orchestration**: Multi-step business process automation
 
-### Job Management
+### Technical Patterns
 
-- Job deployment and versioning
-- Error handling and retry logic
-- Progress monitoring and cancellation
-- Resource management
+- **SQL Compliance**: Proper alias usage in Ignite 3 SQL queries
+- **Resource Management**: Try-with-resources patterns for connection handling
+- **Error Handling**: Meaningful error messages with recovery suggestions
+- **Documentation**: JavaDoc explaining distributed systems concepts
 
 ## Deployment Script Reference
 
@@ -299,7 +320,38 @@ ignite cluster unit deploy compute-jobs target/07-compute-api-app-1.0.0.jar
 mvn compile exec:java
 ```
 
-**Note**: The application automatically builds deployment instructions when job deployment is required. Development environments may work with empty deployment units if the cluster has classpath access to job classes.
+**Note**: The application uses the `ComputeJobDeployment` utility class for automatic deployment. Development environments may work with empty deployment units if the cluster has classpath access to job classes.
+
+## Key Technical Notes
+
+### SQL Reserved Words
+
+Ignite 3 does not accept SQL reserved words in AS clauses. All queries use proper aliases:
+
+```sql
+-- ✅ Correct
+SELECT COUNT(*) as track_count FROM Track
+
+-- ❌ Incorrect (causes parsing errors)
+SELECT COUNT(*) as count FROM Track
+```
+
+### Serialization Patterns
+
+String-based serialization for distributed job results:
+
+- **MapReduce Results**: CSV string format for `Map<String, Integer>` data
+- **Job Coordination**: Newline-separated strings for `List<String>` data  
+- **Workflow Data**: String-based data exchange for distributed processing
+
+### Class Organization
+
+Organized for educational progression:
+
+- **BasicComputeOperations**: Core patterns (314 lines)
+- **AdvancedComputeOperations**: Data locality focus (264 lines)
+- **Utility Classes**: Deployment and job implementations
+- **Learning Path**: Basic → Advanced → Workflows
 
 ## Java Version Compatibility
 
