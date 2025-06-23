@@ -5,10 +5,10 @@ import org.apache.ignite.compute.*;
 import org.apache.ignite.sql.IgniteSql;
 import org.apache.ignite.sql.ResultSet;
 import org.apache.ignite.sql.SqlRow;
+import org.apache.ignite.table.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -82,34 +82,69 @@ public class AdvancedComputeOperations {
         System.out.println("    >>> Running jobs close to data for optimal performance");
         
         // Artist-specific analytics (colocated by ArtistId)
-        JobDescriptor<String> artistJob = JobDescriptor.builder(ArtistAnalysisJob.class)
-                .args(1) // AC/DC
-                .build();
+        JobDescriptor<Integer, String> artistJob = JobDescriptor.builder(ArtistAnalysisJob.class).build();
         
         try {
-            // Execute on node containing the artist data
-            String result = client.compute()
-                    .execute(JobTarget.anyNode(), artistJob)
-                    .join();
+            // Execute on node where Artist with ArtistId=1 data resides for optimal performance
+            JobTarget colocatedTarget = JobTarget.colocated("Artist", 
+                Tuple.create().set("ArtistId", 1));
             
-            System.out.println("    <<< Artist analysis: " + result);
+            String result = client.compute()
+                    .execute(colocatedTarget, artistJob, 1); // AC/DC
+            
+            System.out.println("    <<< Artist analysis (colocated): " + result);
         } catch (Exception e) {
             System.err.println("    !!! Artist analysis failed: " + e.getMessage());
         }
         
-        // Album-specific processing
-        JobDescriptor<String> albumJob = JobDescriptor.builder(AlbumProcessingJob.class)
-                .args(1) // First album
-                .build();
+        // Customer-specific processing colocated with customer data
+        JobDescriptor<Integer, String> customerJob = JobDescriptor.builder(CustomerAnalysisJob.class).build();
         
         try {
-            String albumResult = client.compute()
-                    .execute(JobTarget.anyNode(), albumJob)
-                    .join();
+            // Execute on node where Customer with CustomerId=1 data resides
+            JobTarget customerTarget = JobTarget.colocated("Customer", 
+                Tuple.create().set("CustomerId", 1));
             
-            System.out.println("    <<< Album processing: " + albumResult);
+            String customerResult = client.compute()
+                    .execute(customerTarget, customerJob, 1);
+            
+            System.out.println("    <<< Customer analysis (colocated): " + customerResult);
         } catch (Exception e) {
-            System.err.println("    !!! Album processing failed: " + e.getMessage());
+            System.err.println("    !!! Customer analysis failed: " + e.getMessage());
+        }
+        
+        // Demonstrate performance benefit of colocation
+        demonstrateColocationPerformance(client);
+    }
+
+    /**
+     * Demonstrates performance benefits of data colocation.
+     */
+    private void demonstrateColocationPerformance(IgniteClient client) {
+        System.out.println("\n        --- Colocation Performance Comparison");
+        
+        JobDescriptor<Integer, String> salesJob = JobDescriptor.builder(ArtistSalesAnalysisJob.class).build();
+        
+        try {
+            // Time execution with colocation
+            long start = System.currentTimeMillis();
+            JobTarget colocatedTarget = JobTarget.colocated("Artist", 
+                Tuple.create().set("ArtistId", 1));
+            String colocatedResult = client.compute()
+                    .execute(colocatedTarget, salesJob, 1);
+            long colocatedTime = System.currentTimeMillis() - start;
+            
+            // Time execution without colocation (any node)
+            start = System.currentTimeMillis();
+            String anyNodeResult = client.compute()
+                    .execute(JobTarget.anyNode(client.clusterNodes()), salesJob, 1);
+            long anyNodeTime = System.currentTimeMillis() - start;
+            
+            System.out.println("        >>> Colocated execution: " + colocatedTime + "ms - " + colocatedResult);
+            System.out.println("        >>> Any node execution: " + anyNodeTime + "ms - " + anyNodeResult);
+            System.out.println("        >>> Performance benefit demonstrates data locality optimization");
+        } catch (Exception e) {
+            System.err.println("        !!! Performance comparison failed: " + e.getMessage());
         }
     }
 
@@ -121,33 +156,34 @@ public class AdvancedComputeOperations {
         System.out.println("    >>> Running jobs across all cluster nodes");
         
         // Cluster health check
-        JobDescriptor<String> healthJob = JobDescriptor.builder(ClusterHealthJob.class).build();
+        JobDescriptor<Void, String> healthJob = JobDescriptor.builder(ClusterHealthJob.class).build();
         
         try {
-            Map<String, String> results = client.compute()
-                    .executeBroadcast(BroadcastJobTarget.allNodes(), healthJob)
-                    .join();
+            Collection<String> results = client.compute()
+                    .execute(BroadcastJobTarget.nodes(client.clusterNodes()), healthJob, null);
             
             System.out.println("    <<< Health check results from " + results.size() + " nodes:");
-            results.forEach((node, health) -> 
-                System.out.println("         " + node + ": " + health));
+            int nodeIndex = 1;
+            for (String health : results) {
+                System.out.println("         Node " + nodeIndex++ + ": " + health);
+            }
         } catch (Exception e) {
             System.err.println("    !!! Broadcast health check failed: " + e.getMessage());
         }
         
         // Data distribution analysis
-        JobDescriptor<Integer> dataJob = JobDescriptor.builder(LocalDataCountJob.class).build();
+        JobDescriptor<Void, Integer> dataJob = JobDescriptor.builder(LocalDataCountJob.class).build();
         
         try {
-            Map<String, Integer> dataCounts = client.compute()
-                    .executeBroadcast(BroadcastJobTarget.allNodes(), dataJob)
-                    .join();
+            Collection<Integer> dataCounts = client.compute()
+                    .execute(BroadcastJobTarget.nodes(client.clusterNodes()), dataJob, null);
             
             System.out.println("    <<< Data distribution across nodes:");
             int totalRecords = 0;
-            for (Map.Entry<String, Integer> entry : dataCounts.entrySet()) {
-                System.out.println("         " + entry.getKey() + ": " + entry.getValue() + " records");
-                totalRecords += entry.getValue();
+            int nodeIndex = 1;
+            for (Integer count : dataCounts) {
+                System.out.println("         Node " + nodeIndex++ + ": " + count + " records");
+                totalRecords += count;
             }
             System.out.println("         Total: " + totalRecords + " records");
         } catch (Exception e) {
@@ -163,17 +199,16 @@ public class AdvancedComputeOperations {
         System.out.println("    >>> Implementing distributed map-reduce operations");
         
         // Genre popularity analysis using MapReduce
-        JobDescriptor<Map<String, Integer>> mapJob = JobDescriptor.builder(GenreMapJob.class).build();
+        JobDescriptor<Void, Map<String, Integer>> mapJob = JobDescriptor.builder(GenreMapJob.class).build();
         
         try {
             // Map phase: collect genre data from each node
-            Map<String, Map<String, Integer>> mapResults = client.compute()
-                    .executeBroadcast(BroadcastJobTarget.allNodes(), mapJob)
-                    .join();
+            Collection<Map<String, Integer>> mapResults = client.compute()
+                    .execute(BroadcastJobTarget.nodes(client.clusterNodes()), mapJob, null);
             
             // Reduce phase: aggregate results
             Map<String, Integer> genreStats = new HashMap<>();
-            for (Map<String, Integer> nodeResult : mapResults.values()) {
+            for (Map<String, Integer> nodeResult : mapResults) {
                 for (Map.Entry<String, Integer> entry : nodeResult.entrySet()) {
                     genreStats.merge(entry.getKey(), entry.getValue(), Integer::sum);
                 }
@@ -199,22 +234,19 @@ public class AdvancedComputeOperations {
         
         try {
             // Step 1: Analyze top artists
-            JobDescriptor<List<String>> topArtistsJob = JobDescriptor.builder(TopArtistsJob.class).build();
+            JobDescriptor<Void, List<String>> topArtistsJob = JobDescriptor.builder(TopArtistsJob.class).build();
             List<String> topArtists = client.compute()
-                    .execute(JobTarget.anyNode(), topArtistsJob)
-                    .join();
+                    .execute(JobTarget.anyNode(client.clusterNodes()), topArtistsJob, null);
             
             System.out.println("    >>> Step 1: Found " + topArtists.size() + " top artists");
             
             // Step 2: Analyze each artist in parallel
             List<CompletableFuture<String>> futures = new ArrayList<>();
             for (String artistName : topArtists) {
-                JobDescriptor<String> artistDetailJob = JobDescriptor.builder(ArtistDetailJob.class)
-                        .args(artistName)
-                        .build();
+                JobDescriptor<String, String> artistDetailJob = JobDescriptor.builder(ArtistDetailJob.class).build();
                 
                 CompletableFuture<String> future = client.compute()
-                        .execute(JobTarget.anyNode(), artistDetailJob);
+                        .executeAsync(JobTarget.anyNode(client.clusterNodes()), artistDetailJob, artistName);
                 futures.add(future);
             }
             
@@ -233,126 +265,194 @@ public class AdvancedComputeOperations {
 
     // Job implementations
 
-    public static class ArtistAnalysisJob implements ComputeJob<String>, Serializable {
+    public static class ArtistAnalysisJob implements ComputeJob<Integer, String> {
         @Override
-        public String execute(JobExecutionContext context, Object... args) {
-            int artistId = (Integer) args[0];
-            IgniteSql sql = context.ignite().sql();
-            
-            try (ResultSet<SqlRow> result = sql.execute(null,
-                    "SELECT a.Name, COUNT(t.TrackId) as track_count " +
-                    "FROM Artist a JOIN Album al ON a.ArtistId = al.ArtistId " +
-                    "JOIN Track t ON al.AlbumId = t.AlbumId " +
-                    "WHERE a.ArtistId = ? GROUP BY a.Name", artistId)) {
+        public CompletableFuture<String> executeAsync(JobExecutionContext context, Integer artistId) {
+            return CompletableFuture.supplyAsync(() -> {
+                IgniteSql sql = context.ignite().sql();
                 
-                if (result.hasNext()) {
-                    SqlRow row = result.next();
-                    return row.stringValue("Name") + " has " + row.longValue("track_count") + " tracks";
+                try (ResultSet<SqlRow> result = sql.execute(null,
+                        "SELECT a.Name, COUNT(t.TrackId) as track_count " +
+                        "FROM Artist a JOIN Album al ON a.ArtistId = al.ArtistId " +
+                        "JOIN Track t ON al.AlbumId = t.AlbumId " +
+                        "WHERE a.ArtistId = ? GROUP BY a.Name", artistId)) {
+                    
+                    if (result.hasNext()) {
+                        SqlRow row = result.next();
+                        return row.stringValue("Name") + " has " + row.longValue("track_count") + " tracks";
+                    }
+                    return "Artist not found";
                 }
-                return "Artist not found";
-            }
+            });
         }
     }
 
-    public static class AlbumProcessingJob implements ComputeJob<String>, Serializable {
+    public static class AlbumProcessingJob implements ComputeJob<Integer, String> {
         @Override
-        public String execute(JobExecutionContext context, Object... args) {
-            int albumId = (Integer) args[0];
-            IgniteSql sql = context.ignite().sql();
-            
-            try (ResultSet<SqlRow> result = sql.execute(null,
-                    "SELECT al.Title, COUNT(t.TrackId) as track_count " +
-                    "FROM Album al JOIN Track t ON al.AlbumId = t.AlbumId " +
-                    "WHERE al.AlbumId = ? GROUP BY al.Title", albumId)) {
+        public CompletableFuture<String> executeAsync(JobExecutionContext context, Integer albumId) {
+            return CompletableFuture.supplyAsync(() -> {
+                IgniteSql sql = context.ignite().sql();
                 
-                if (result.hasNext()) {
-                    SqlRow row = result.next();
-                    return "Album '" + row.stringValue("Title") + "' has " + row.longValue("track_count") + " tracks";
+                try (ResultSet<SqlRow> result = sql.execute(null,
+                        "SELECT al.Title, COUNT(t.TrackId) as track_count " +
+                        "FROM Album al JOIN Track t ON al.AlbumId = t.AlbumId " +
+                        "WHERE al.AlbumId = ? GROUP BY al.Title", albumId)) {
+                    
+                    if (result.hasNext()) {
+                        SqlRow row = result.next();
+                        return "Album '" + row.stringValue("Title") + "' has " + row.longValue("track_count") + " tracks";
+                    }
+                    return "Album not found";
                 }
-                return "Album not found";
-            }
+            });
         }
     }
 
-    public static class ClusterHealthJob implements ComputeJob<String>, Serializable {
+    public static class ClusterHealthJob implements ComputeJob<Void, String> {
         @Override
-        public String execute(JobExecutionContext context, Object... args) {
-            return "Node healthy - Available memory: " + 
-                   (Runtime.getRuntime().freeMemory() / (1024 * 1024)) + " MB";
+        public CompletableFuture<String> executeAsync(JobExecutionContext context, Void arg) {
+            return CompletableFuture.completedFuture("Node healthy - Available memory: " + 
+                   (Runtime.getRuntime().freeMemory() / (1024 * 1024)) + " MB");
         }
     }
 
-    public static class LocalDataCountJob implements ComputeJob<Integer>, Serializable {
+    public static class LocalDataCountJob implements ComputeJob<Void, Integer> {
         @Override
-        public Integer execute(JobExecutionContext context, Object... args) {
-            IgniteSql sql = context.ignite().sql();
-            
-            try (ResultSet<SqlRow> result = sql.execute(null, 
-                    "SELECT COUNT(*) as artist_count FROM Artist")) {
+        public CompletableFuture<Integer> executeAsync(JobExecutionContext context, Void arg) {
+            return CompletableFuture.supplyAsync(() -> {
+                IgniteSql sql = context.ignite().sql();
                 
-                if (result.hasNext()) {
-                    return (int) result.next().longValue("artist_count");
+                try (ResultSet<SqlRow> result = sql.execute(null, 
+                        "SELECT COUNT(*) as artist_count FROM Artist")) {
+                    
+                    if (result.hasNext()) {
+                        return (int) result.next().longValue("artist_count");
+                    }
+                    return 0;
                 }
-                return 0;
-            }
+            });
         }
     }
 
-    public static class GenreMapJob implements ComputeJob<Map<String, Integer>>, Serializable {
+    public static class GenreMapJob implements ComputeJob<Void, Map<String, Integer>> {
         @Override
-        public Map<String, Integer> execute(JobExecutionContext context, Object... args) {
-            IgniteSql sql = context.ignite().sql();
-            Map<String, Integer> genreStats = new HashMap<>();
-            
-            try (ResultSet<SqlRow> result = sql.execute(null,
-                    "SELECT g.Name, COUNT(t.TrackId) as track_count " +
-                    "FROM Genre g JOIN Track t ON g.GenreId = t.GenreId " +
-                    "GROUP BY g.Name")) {
+        public CompletableFuture<Map<String, Integer>> executeAsync(JobExecutionContext context, Void arg) {
+            return CompletableFuture.supplyAsync(() -> {
+                IgniteSql sql = context.ignite().sql();
+                Map<String, Integer> genreStats = new HashMap<>();
                 
-                while (result.hasNext()) {
-                    SqlRow row = result.next();
-                    genreStats.put(row.stringValue("Name"), (int) row.longValue("track_count"));
+                try (ResultSet<SqlRow> result = sql.execute(null,
+                        "SELECT g.Name, COUNT(t.TrackId) as track_count " +
+                        "FROM Genre g JOIN Track t ON g.GenreId = t.GenreId " +
+                        "GROUP BY g.Name")) {
+                    
+                    while (result.hasNext()) {
+                        SqlRow row = result.next();
+                        genreStats.put(row.stringValue("Name"), (int) row.longValue("track_count"));
+                    }
                 }
-            }
-            
-            return genreStats;
+                
+                return genreStats;
+            });
         }
     }
 
-    public static class TopArtistsJob implements ComputeJob<List<String>>, Serializable {
+    public static class TopArtistsJob implements ComputeJob<Void, List<String>> {
         @Override
-        public List<String> execute(JobExecutionContext context, Object... args) {
-            IgniteSql sql = context.ignite().sql();
-            List<String> topArtists = new ArrayList<>();
-            
-            try (ResultSet<SqlRow> result = sql.execute(null,
-                    "SELECT Name FROM Artist LIMIT 3")) {
+        public CompletableFuture<List<String>> executeAsync(JobExecutionContext context, Void arg) {
+            return CompletableFuture.supplyAsync(() -> {
+                IgniteSql sql = context.ignite().sql();
+                List<String> topArtists = new ArrayList<>();
                 
-                while (result.hasNext()) {
-                    topArtists.add(result.next().stringValue("Name"));
+                try (ResultSet<SqlRow> result = sql.execute(null,
+                        "SELECT Name FROM Artist LIMIT 3")) {
+                    
+                    while (result.hasNext()) {
+                        topArtists.add(result.next().stringValue("Name"));
+                    }
                 }
-            }
-            
-            return topArtists;
+                
+                return topArtists;
+            });
         }
     }
 
-    public static class ArtistDetailJob implements ComputeJob<String>, Serializable {
+    public static class ArtistDetailJob implements ComputeJob<String, String> {
         @Override
-        public String execute(JobExecutionContext context, Object... args) {
-            String artistName = (String) args[0];
-            IgniteSql sql = context.ignite().sql();
-            
-            try (ResultSet<SqlRow> result = sql.execute(null,
-                    "SELECT COUNT(DISTINCT al.AlbumId) as album_count " +
-                    "FROM Artist a JOIN Album al ON a.ArtistId = al.ArtistId " +
-                    "WHERE a.Name = ?", artistName)) {
+        public CompletableFuture<String> executeAsync(JobExecutionContext context, String artistName) {
+            return CompletableFuture.supplyAsync(() -> {
+                IgniteSql sql = context.ignite().sql();
                 
-                if (result.hasNext()) {
-                    return result.next().longValue("album_count") + " albums";
+                try (ResultSet<SqlRow> result = sql.execute(null,
+                        "SELECT COUNT(DISTINCT al.AlbumId) as album_count " +
+                        "FROM Artist a JOIN Album al ON a.ArtistId = al.ArtistId " +
+                        "WHERE a.Name = ?", artistName)) {
+                    
+                    if (result.hasNext()) {
+                        return result.next().longValue("album_count") + " albums";
+                    }
+                    return "No data";
                 }
-                return "No data";
-            }
+            });
+        }
+    }
+
+    public static class CustomerAnalysisJob implements ComputeJob<Integer, String> {
+        @Override
+        public CompletableFuture<String> executeAsync(JobExecutionContext context, Integer customerId) {
+            return CompletableFuture.supplyAsync(() -> {
+                IgniteSql sql = context.ignite().sql();
+                
+                try (ResultSet<SqlRow> result = sql.execute(null,
+                        "SELECT c.FirstName, c.LastName, COUNT(i.InvoiceId) as purchase_count, " +
+                        "SUM(il.UnitPrice * il.Quantity) as total_spent " +
+                        "FROM Customer c " +
+                        "LEFT JOIN Invoice i ON c.CustomerId = i.CustomerId " +
+                        "LEFT JOIN InvoiceLine il ON i.InvoiceId = il.InvoiceId " +
+                        "WHERE c.CustomerId = ? " +
+                        "GROUP BY c.CustomerId, c.FirstName, c.LastName", customerId)) {
+                    
+                    if (result.hasNext()) {
+                        SqlRow row = result.next();
+                        String name = row.stringValue("FirstName") + " " + row.stringValue("LastName");
+                        int purchases = (int) row.longValue("purchase_count");
+                        Object totalObj = row.value("total_spent");
+                        double total = totalObj != null ? ((Number) totalObj).doubleValue() : 0.0;
+                        return name + " has " + purchases + " purchases, total spent: $" + String.format("%.2f", total);
+                    }
+                    return "Customer not found";
+                }
+            });
+        }
+    }
+
+    public static class ArtistSalesAnalysisJob implements ComputeJob<Integer, String> {
+        @Override
+        public CompletableFuture<String> executeAsync(JobExecutionContext context, Integer artistId) {
+            return CompletableFuture.supplyAsync(() -> {
+                IgniteSql sql = context.ignite().sql();
+                
+                try (ResultSet<SqlRow> result = sql.execute(null,
+                        "SELECT ar.Name, COUNT(il.InvoiceLineId) as sales_count, " +
+                        "SUM(il.UnitPrice * il.Quantity) as total_revenue " +
+                        "FROM Artist ar " +
+                        "JOIN Album al ON ar.ArtistId = al.ArtistId " +
+                        "JOIN Track t ON al.AlbumId = t.AlbumId " +
+                        "JOIN InvoiceLine il ON t.TrackId = il.TrackId " +
+                        "WHERE ar.ArtistId = ? " +
+                        "GROUP BY ar.ArtistId, ar.Name", artistId)) {
+                    
+                    if (result.hasNext()) {
+                        SqlRow row = result.next();
+                        String name = row.stringValue("Name");
+                        int sales = (int) row.longValue("sales_count");
+                        Object revenueObj = row.value("total_revenue");
+                        double revenue = revenueObj != null ? ((Number) revenueObj).doubleValue() : 0.0;
+                        return name + ": " + sales + " sales, $" + String.format("%.2f", revenue) + " revenue";
+                    }
+                    return "No sales data for artist";
+                }
+            });
         }
     }
 }

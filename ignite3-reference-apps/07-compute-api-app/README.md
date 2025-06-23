@@ -2,11 +2,6 @@
 
 **Distributed processing and job execution**
 
-> [!WARNING]
-> This module is known to be incomplete, does not compile, and has known bugs.
->
-> ❌ DO NOT reference code from this module until this warning is removed.
-
 📖 **Related Documentation**: [Compute API - Distributed Processing](../../docs/04-distributed-operations/03-compute-api-processing.md)
 
 ## Overview
@@ -30,37 +25,32 @@ Harness Ignite 3's distributed computing capabilities to process data where it l
 
 This module provides compute demonstrations:
 
-### 1. BasicComputeDemo - Job Submission Fundamentals
+### 1. BasicComputeOperations - Job Submission Fundamentals
 
-- **TrackDurationJob**: Calculate total duration for track collections
-- **NameProcessingJob**: CPU-intensive string processing  
-- **AlbumStatsJob**: Multi-table analysis with SQL integration
-- **Key Concepts**: Job creation, targeting strategies, result handling
+- **HelloWorldJob**: Simple distributed job execution
+- **ArtistSearchJob**: Parameterized jobs with SQL queries
+- **TrackCountJob**: Data aggregation across cluster
+- **GenreAnalysisJob**: Complex multi-table analysis
+- **Key Concepts**: Job creation, targeting strategies, async execution
 
-### 2. ColocationComputeDemo - Data-Local Execution
+### 2. AdvancedComputeOperations - Data Locality and Complex Patterns
 
-- **ArtistAnalysisJob**: Colocated artist sales analysis
-- **LocalTrackStatsJob**: Broadcast statistics gathering
-- **CustomerPurchaseAnalysisJob**: Customer data processing
-- **GenreAnalysisMapJob**: MapReduce pattern implementation
+- **ArtistAnalysisJob**: Colocated artist sales analysis using `JobTarget.colocated()`
+- **CustomerAnalysisJob**: Customer data processing with data locality
+- **ArtistSalesAnalysisJob**: Performance comparison between colocated and any-node execution
+- **GenreMapJob**: Distributed MapReduce pattern implementation
+- **ClusterHealthJob**: Broadcast execution across all nodes
 
-### 3. AsyncComputePatterns - Non-blocking Execution  
+### 3. ComputeJobWorkflows - Multi-step Business Process Automation
 
-- **TrackAnalysisJob**: Async track data processing
-- **ArtistSalesJob**: Parallel artist analysis
-- **LongRunningAnalysisJob**: Job monitoring and control
-- **GenreCountJob + DetailedGenreAnalysisJob**: Workflow orchestration
+- **CustomerAnalyticsWorkflow**: Multi-step customer segmentation analysis
+- **MusicRecommendationWorkflow**: Personalized recommendation pipeline
+- **RevenueOptimizationWorkflow**: Business intelligence with metric calculation
+- **Key Concepts**: Job coordination, workflow orchestration, result aggregation
 
-### 4. MusicStoreJobs - Business Intelligence
+### 4. ComputeAPIDemo - Complete Demonstration
 
-- **CustomerRecommendationJob**: Personalized music recommendations
-- **SalesAnalysisMapJob**: Distributed sales performance analysis
-- **ContentPopularityJob**: Track and genre popularity trends
-- **RevenueOptimizationJob**: Revenue analysis and optimization
-
-### 5. ComputeAPIDemo - Complete Demonstration
-
-Main application that runs all compute patterns in sequence with detailed output formatting.
+Main orchestrator that runs all compute patterns in educational progression with detailed output formatting.
 
 ### Music Store Use Cases
 
@@ -89,28 +79,31 @@ Main application that runs all compute patterns in sequence with detailed output
 **Run all demos:**
 
 ```bash
-mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.compute.ComputeAPIDemo"
+mvn compile exec:java
 ```
 
 **Run individual demos:**
 
 ```bash
 # Basic patterns
-mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.compute.BasicComputeDemo"
+mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.compute.BasicComputeOperations"
 
-# Data locality patterns  
-mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.compute.ColocationComputeDemo"
+# Advanced patterns with data locality
+mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.compute.AdvancedComputeOperations"
 
-# Async execution patterns
-mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.compute.AsyncComputePatterns"
-
-# Business intelligence jobs
-mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.compute.MusicStoreJobs"
+# Multi-step workflows
+mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.compute.ComputeJobWorkflows"
 ```
 
 ## Development Status
 
-✅ **COMPLETED** - Full implementation with compute patterns and real-world analytics jobs.
+✅ **ALIGNED WITH CHAPTER 4.3** - Fully functional implementation demonstrating:
+- ✅ Correct Apache Ignite 3 Compute API usage (`ComputeJob<T,R>`, `executeAsync`)
+- ✅ Data colocation patterns with `JobTarget.colocated()` 
+- ✅ Broadcast execution with `BroadcastJobTarget.nodes()`
+- ✅ MapReduce patterns with proper map/reduce phases
+- ✅ Job coordination and workflow orchestration
+- ✅ Performance optimization through data locality
 
 ## Related Modules
 

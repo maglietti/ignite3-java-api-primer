@@ -8,7 +8,6 @@ import org.apache.ignite.sql.SqlRow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
@@ -79,22 +78,19 @@ public class ComputeJobWorkflows {
         
         try {
             // Step 1: Get customer segments
-            JobDescriptor<List<String>> segmentJob = JobDescriptor.builder(CustomerSegmentJob.class).build();
+            JobDescriptor<Void, List<String>> segmentJob = JobDescriptor.builder(CustomerSegmentJob.class).build();
             List<String> segments = client.compute()
-                    .execute(JobTarget.anyNode(), segmentJob)
-                    .join();
+                    .execute(JobTarget.anyNode(client.clusterNodes()), segmentJob, null);
             
             System.out.println("    >>> Step 1: Identified " + segments.size() + " customer segments");
             
             // Step 2: Analyze each segment in parallel
             List<CompletableFuture<String>> futures = new ArrayList<>();
             for (String segment : segments) {
-                JobDescriptor<String> analysisJob = JobDescriptor.builder(SegmentAnalysisJob.class)
-                        .args(segment)
-                        .build();
+                JobDescriptor<String, String> analysisJob = JobDescriptor.builder(SegmentAnalysisJob.class).build();
                 
                 CompletableFuture<String> future = client.compute()
-                        .execute(JobTarget.anyNode(), analysisJob);
+                        .executeAsync(JobTarget.anyNode(client.clusterNodes()), analysisJob, segment);
                 futures.add(future);
             }
             
@@ -120,10 +116,9 @@ public class ComputeJobWorkflows {
         
         try {
             // Step 1: Analyze listening patterns
-            JobDescriptor<Map<String, Integer>> patternJob = JobDescriptor.builder(ListeningPatternJob.class).build();
+            JobDescriptor<Void, Map<String, Integer>> patternJob = JobDescriptor.builder(ListeningPatternJob.class).build();
             Map<String, Integer> patterns = client.compute()
-                    .execute(JobTarget.anyNode(), patternJob)
-                    .join();
+                    .execute(JobTarget.anyNode(client.clusterNodes()), patternJob, null);
             
             System.out.println("    >>> Step 1: Analyzed listening patterns (" + patterns.size() + " genres)");
             
@@ -133,24 +128,18 @@ public class ComputeJobWorkflows {
                     .map(Map.Entry::getKey)
                     .orElse("Rock");
             
-            JobDescriptor<List<String>> recommendationJob = JobDescriptor.builder(RecommendationJob.class)
-                    .args(topGenre)
-                    .build();
+            JobDescriptor<String, List<String>> recommendationJob = JobDescriptor.builder(RecommendationJob.class).build();
             
             List<String> recommendations = client.compute()
-                    .execute(JobTarget.anyNode(), recommendationJob)
-                    .join();
+                    .execute(JobTarget.anyNode(client.clusterNodes()), recommendationJob, topGenre);
             
             System.out.println("    >>> Step 2: Generated " + recommendations.size() + " recommendations");
             
             // Step 3: Rank and filter recommendations
-            JobDescriptor<List<String>> rankingJob = JobDescriptor.builder(RankingJob.class)
-                    .args(recommendations.toArray())
-                    .build();
+            JobDescriptor<List<String>, List<String>> rankingJob = JobDescriptor.builder(RankingJob.class).build();
             
             List<String> rankedRecommendations = client.compute()
-                    .execute(JobTarget.anyNode(), rankingJob)
-                    .join();
+                    .execute(JobTarget.anyNode(client.clusterNodes()), rankingJob, recommendations);
             
             System.out.println("    <<< Music recommendation workflow completed:");
             System.out.println("         Top genre: " + topGenre);
@@ -169,32 +158,25 @@ public class ComputeJobWorkflows {
         
         try {
             // Step 1: Calculate current metrics
-            JobDescriptor<Map<String, Double>> metricsJob = JobDescriptor.builder(RevenueMetricsJob.class).build();
+            JobDescriptor<Void, Map<String, Double>> metricsJob = JobDescriptor.builder(RevenueMetricsJob.class).build();
             Map<String, Double> metrics = client.compute()
-                    .execute(JobTarget.anyNode(), metricsJob)
-                    .join();
+                    .execute(JobTarget.anyNode(client.clusterNodes()), metricsJob, null);
             
             System.out.println("    >>> Step 1: Current revenue metrics calculated");
             
             // Step 2: Identify optimization opportunities
-            JobDescriptor<List<String>> opportunityJob = JobDescriptor.builder(OptimizationOpportunityJob.class)
-                    .args(metrics)
-                    .build();
+            JobDescriptor<Map<String, Double>, List<String>> opportunityJob = JobDescriptor.builder(OptimizationOpportunityJob.class).build();
             
             List<String> opportunities = client.compute()
-                    .execute(JobTarget.anyNode(), opportunityJob)
-                    .join();
+                    .execute(JobTarget.anyNode(client.clusterNodes()), opportunityJob, metrics);
             
             System.out.println("    >>> Step 2: Identified " + opportunities.size() + " optimization opportunities");
             
             // Step 3: Generate action plan
-            JobDescriptor<String> actionPlanJob = JobDescriptor.builder(ActionPlanJob.class)
-                    .args(opportunities.toArray())
-                    .build();
+            JobDescriptor<List<String>, String> actionPlanJob = JobDescriptor.builder(ActionPlanJob.class).build();
             
             String actionPlan = client.compute()
-                    .execute(JobTarget.anyNode(), actionPlanJob)
-                    .join();
+                    .execute(JobTarget.anyNode(client.clusterNodes()), actionPlanJob, opportunities);
             
             System.out.println("    <<< Revenue optimization workflow completed:");
             System.out.println("         Current revenue: $" + String.format("%.2f", metrics.getOrDefault("total_revenue", 0.0)));
@@ -206,129 +188,132 @@ public class ComputeJobWorkflows {
 
     // Job implementations
 
-    public static class CustomerSegmentJob implements ComputeJob<List<String>>, Serializable {
+    public static class CustomerSegmentJob implements ComputeJob<Void, List<String>> {
         @Override
-        public List<String> execute(JobExecutionContext context, Object... args) {
-            return Arrays.asList("High Value", "Regular", "New Customers");
+        public CompletableFuture<List<String>> executeAsync(JobExecutionContext context, Void arg) {
+            return CompletableFuture.completedFuture(Arrays.asList("High Value", "Regular", "New Customers"));
         }
     }
 
-    public static class SegmentAnalysisJob implements ComputeJob<String>, Serializable {
+    public static class SegmentAnalysisJob implements ComputeJob<String, String> {
         @Override
-        public String execute(JobExecutionContext context, Object... args) {
-            String segment = (String) args[0];
-            IgniteSql sql = context.ignite().sql();
-            
-            try (ResultSet<SqlRow> result = sql.execute(null,
-                    "SELECT COUNT(*) as customer_count FROM Customer LIMIT 1")) {
+        public CompletableFuture<String> executeAsync(JobExecutionContext context, String segment) {
+            return CompletableFuture.supplyAsync(() -> {
+                IgniteSql sql = context.ignite().sql();
                 
-                if (result.hasNext()) {
-                    int count = (int) result.next().longValue("customer_count");
-                    return count + " customers analyzed";
+                try (ResultSet<SqlRow> result = sql.execute(null,
+                        "SELECT COUNT(*) as customer_count FROM Customer LIMIT 1")) {
+                    
+                    if (result.hasNext()) {
+                        int count = (int) result.next().longValue("customer_count");
+                        return count + " customers analyzed";
+                    }
+                    return "No data";
                 }
-                return "No data";
-            }
+            });
         }
     }
 
-    public static class ListeningPatternJob implements ComputeJob<Map<String, Integer>>, Serializable {
+    public static class ListeningPatternJob implements ComputeJob<Void, Map<String, Integer>> {
         @Override
-        public Map<String, Integer> execute(JobExecutionContext context, Object... args) {
-            IgniteSql sql = context.ignite().sql();
-            Map<String, Integer> patterns = new HashMap<>();
-            
-            try (ResultSet<SqlRow> result = sql.execute(null,
-                    "SELECT g.Name, COUNT(t.TrackId) as track_count " +
-                    "FROM Genre g JOIN Track t ON g.GenreId = t.GenreId " +
-                    "GROUP BY g.Name")) {
+        public CompletableFuture<Map<String, Integer>> executeAsync(JobExecutionContext context, Void arg) {
+            return CompletableFuture.supplyAsync(() -> {
+                IgniteSql sql = context.ignite().sql();
+                Map<String, Integer> patterns = new HashMap<>();
                 
-                while (result.hasNext()) {
-                    SqlRow row = result.next();
-                    patterns.put(row.stringValue("Name"), (int) row.longValue("track_count"));
+                try (ResultSet<SqlRow> result = sql.execute(null,
+                        "SELECT g.Name, COUNT(t.TrackId) as track_count " +
+                        "FROM Genre g JOIN Track t ON g.GenreId = t.GenreId " +
+                        "GROUP BY g.Name")) {
+                    
+                    while (result.hasNext()) {
+                        SqlRow row = result.next();
+                        patterns.put(row.stringValue("Name"), (int) row.longValue("track_count"));
+                    }
                 }
-            }
-            
-            return patterns;
-        }
-    }
-
-    public static class RecommendationJob implements ComputeJob<List<String>>, Serializable {
-        @Override
-        public List<String> execute(JobExecutionContext context, Object... args) {
-            String genre = (String) args[0];
-            IgniteSql sql = context.ignite().sql();
-            List<String> recommendations = new ArrayList<>();
-            
-            try (ResultSet<SqlRow> result = sql.execute(null,
-                    "SELECT t.Name FROM Track t " +
-                    "JOIN Genre g ON t.GenreId = g.GenreId " +
-                    "WHERE g.Name = ? LIMIT 5", genre)) {
                 
-                while (result.hasNext()) {
-                    recommendations.add(result.next().stringValue("Name"));
-                }
-            }
-            
-            return recommendations;
+                return patterns;
+            });
         }
     }
 
-    public static class RankingJob implements ComputeJob<List<String>>, Serializable {
+    public static class RecommendationJob implements ComputeJob<String, List<String>> {
         @Override
-        public List<String> execute(JobExecutionContext context, Object... args) {
-            List<String> tracks = new ArrayList<>();
-            for (Object arg : args) {
-                if (arg instanceof List) {
-                    tracks.addAll((List<String>) arg);
-                }
-            }
-            Collections.shuffle(tracks); // Simple ranking simulation
-            return tracks;
-        }
-    }
-
-    public static class RevenueMetricsJob implements ComputeJob<Map<String, Double>>, Serializable {
-        @Override
-        public Map<String, Double> execute(JobExecutionContext context, Object... args) {
-            IgniteSql sql = context.ignite().sql();
-            Map<String, Double> metrics = new HashMap<>();
-            
-            try (ResultSet<SqlRow> result = sql.execute(null,
-                    "SELECT SUM(UnitPrice * Quantity) as total_revenue FROM InvoiceLine")) {
+        public CompletableFuture<List<String>> executeAsync(JobExecutionContext context, String genre) {
+            return CompletableFuture.supplyAsync(() -> {
+                IgniteSql sql = context.ignite().sql();
+                List<String> recommendations = new ArrayList<>();
                 
-                if (result.hasNext()) {
-                    Object revenueObj = result.next().value("total_revenue");
-                    double revenue = revenueObj != null ? ((Number) revenueObj).doubleValue() : 0.0;
-                    metrics.put("total_revenue", revenue);
+                try (ResultSet<SqlRow> result = sql.execute(null,
+                        "SELECT t.Name FROM Track t " +
+                        "JOIN Genre g ON t.GenreId = g.GenreId " +
+                        "WHERE g.Name = ? LIMIT 5", genre)) {
+                    
+                    while (result.hasNext()) {
+                        recommendations.add(result.next().stringValue("Name"));
+                    }
                 }
-            }
-            
-            return metrics;
+                
+                return recommendations;
+            });
         }
     }
 
-    public static class OptimizationOpportunityJob implements ComputeJob<List<String>>, Serializable {
+    public static class RankingJob implements ComputeJob<List<String>, List<String>> {
         @Override
-        public List<String> execute(JobExecutionContext context, Object... args) {
-            Map<String, Double> metrics = (Map<String, Double>) args[0];
-            List<String> opportunities = new ArrayList<>();
-            
-            double revenue = metrics.getOrDefault("total_revenue", 0.0);
-            if (revenue < 1000.0) {
-                opportunities.add("Increase marketing efforts");
-                opportunities.add("Expand music catalog");
-            }
-            opportunities.add("Optimize pricing strategy");
-            
-            return opportunities;
+        public CompletableFuture<List<String>> executeAsync(JobExecutionContext context, List<String> tracks) {
+            return CompletableFuture.supplyAsync(() -> {
+                List<String> rankedTracks = new ArrayList<>(tracks);
+                Collections.shuffle(rankedTracks); // Simple ranking simulation
+                return rankedTracks;
+            });
         }
     }
 
-    public static class ActionPlanJob implements ComputeJob<String>, Serializable {
+    public static class RevenueMetricsJob implements ComputeJob<Void, Map<String, Double>> {
         @Override
-        public String execute(JobExecutionContext context, Object... args) {
-            List<String> opportunities = Arrays.asList((String[]) args[0]);
-            return "Implement " + opportunities.size() + " optimization strategies";
+        public CompletableFuture<Map<String, Double>> executeAsync(JobExecutionContext context, Void arg) {
+            return CompletableFuture.supplyAsync(() -> {
+                IgniteSql sql = context.ignite().sql();
+                Map<String, Double> metrics = new HashMap<>();
+                
+                try (ResultSet<SqlRow> result = sql.execute(null,
+                        "SELECT SUM(UnitPrice * Quantity) as total_revenue FROM InvoiceLine")) {
+                    
+                    if (result.hasNext()) {
+                        Object revenueObj = result.next().value("total_revenue");
+                        double revenue = revenueObj != null ? ((Number) revenueObj).doubleValue() : 0.0;
+                        metrics.put("total_revenue", revenue);
+                    }
+                }
+                
+                return metrics;
+            });
+        }
+    }
+
+    public static class OptimizationOpportunityJob implements ComputeJob<Map<String, Double>, List<String>> {
+        @Override
+        public CompletableFuture<List<String>> executeAsync(JobExecutionContext context, Map<String, Double> metrics) {
+            return CompletableFuture.supplyAsync(() -> {
+                List<String> opportunities = new ArrayList<>();
+                
+                double revenue = metrics.getOrDefault("total_revenue", 0.0);
+                if (revenue < 1000.0) {
+                    opportunities.add("Increase marketing efforts");
+                    opportunities.add("Expand music catalog");
+                }
+                opportunities.add("Optimize pricing strategy");
+                
+                return opportunities;
+            });
+        }
+    }
+
+    public static class ActionPlanJob implements ComputeJob<List<String>, String> {
+        @Override
+        public CompletableFuture<String> executeAsync(JobExecutionContext context, List<String> opportunities) {
+            return CompletableFuture.completedFuture("Implement " + opportunities.size() + " optimization strategies");
         }
     }
 }

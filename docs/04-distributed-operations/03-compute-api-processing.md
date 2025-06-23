@@ -72,6 +72,7 @@ The fundamental pattern involves creating a job descriptor and selecting an exec
 ```java
 import org.apache.ignite.compute.ComputeJob;
 import org.apache.ignite.compute.JobExecutionContext;
+import org.apache.ignite.compute.BroadcastJobTarget;
 import org.apache.ignite.sql.IgniteSql;
 import org.apache.ignite.sql.ResultSet;
 import org.apache.ignite.sql.SqlRow;
@@ -299,7 +300,7 @@ public class LocalTrackStatsJob implements ComputeJob<Void, TrackStatistics> {
 }
 
 // Execute on all nodes to gather comprehensive statistics
-JobTarget broadcastTarget = JobTarget.nodes(ignite.clusterNodes());
+BroadcastJobTarget broadcastTarget = BroadcastJobTarget.nodes(ignite.clusterNodes());
 Collection<TrackStatistics> nodeStats = ignite.compute().execute(broadcastTarget, job, null);
 
 // Aggregate statistics from all nodes
@@ -436,7 +437,7 @@ public class GenreAnalysisMapJob implements ComputeJob<Void, Map<String, GenreSt
 }
 
 // Execute map jobs across all nodes
-JobTarget target = JobTarget.nodes(ignite.clusterNodes());
+BroadcastJobTarget target = BroadcastJobTarget.nodes(ignite.clusterNodes());
 Collection<Map<String, GenreStats>> mapResults = ignite.compute()
     .execute(target, mapJob, null);
 

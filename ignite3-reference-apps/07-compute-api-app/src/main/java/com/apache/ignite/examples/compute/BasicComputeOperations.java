@@ -11,7 +11,6 @@ import org.apache.ignite.sql.SqlRow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Serializable;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -83,12 +82,11 @@ public class BasicComputeOperations {
         System.out.println("    >>> Executing basic jobs on cluster nodes");
         
         // Simple greeting job
-        JobDescriptor<String> greetingJob = JobDescriptor.builder(HelloWorldJob.class).build();
+        JobDescriptor<Void, String> greetingJob = JobDescriptor.builder(HelloWorldJob.class).build();
         
         try {
             String result = client.compute()
-                    .execute(JobTarget.anyNode(), greetingJob)
-                    .join();
+                    .execute(JobTarget.anyNode(client.clusterNodes()), greetingJob, null);
             
             System.out.println("    <<< Job result: " + result);
         } catch (Exception e) {
@@ -96,12 +94,11 @@ public class BasicComputeOperations {
         }
         
         // Node information job
-        JobDescriptor<String> nodeInfoJob = JobDescriptor.builder(NodeInfoJob.class).build();
+        JobDescriptor<Void, String> nodeInfoJob = JobDescriptor.builder(NodeInfoJob.class).build();
         
         try {
             String nodeInfo = client.compute()
-                    .execute(JobTarget.anyNode(), nodeInfoJob)
-                    .join();
+                    .execute(JobTarget.anyNode(client.clusterNodes()), nodeInfoJob, null);
             
             System.out.println("    <<< Node info: " + nodeInfo);
         } catch (Exception e) {
@@ -117,14 +114,11 @@ public class BasicComputeOperations {
         System.out.println("    >>> Executing jobs with input parameters");
         
         // Artist search job
-        JobDescriptor<String> searchJob = JobDescriptor.builder(ArtistSearchJob.class)
-                .args("AC/DC")
-                .build();
+        JobDescriptor<String, String> searchJob = JobDescriptor.builder(ArtistSearchJob.class).build();
         
         try {
             String result = client.compute()
-                    .execute(JobTarget.anyNode(), searchJob)
-                    .join();
+                    .execute(JobTarget.anyNode(client.clusterNodes()), searchJob, "AC/DC");
             
             System.out.println("    <<< Search result: " + result);
         } catch (Exception e) {
@@ -132,12 +126,11 @@ public class BasicComputeOperations {
         }
         
         // Track count job
-        JobDescriptor<Integer> countJob = JobDescriptor.builder(TrackCountJob.class).build();
+        JobDescriptor<Void, Integer> countJob = JobDescriptor.builder(TrackCountJob.class).build();
         
         try {
             Integer trackCount = client.compute()
-                    .execute(JobTarget.anyNode(), countJob)
-                    .join();
+                    .execute(JobTarget.anyNode(client.clusterNodes()), countJob, null);
             
             System.out.println("    <<< Total tracks in database: " + trackCount);
         } catch (Exception e) {
@@ -153,12 +146,11 @@ public class BasicComputeOperations {
         System.out.println("    >>> Running jobs that execute database queries");
         
         // Genre analysis job
-        JobDescriptor<String> genreJob = JobDescriptor.builder(GenreAnalysisJob.class).build();
+        JobDescriptor<Void, String> genreJob = JobDescriptor.builder(GenreAnalysisJob.class).build();
         
         try {
             String analysis = client.compute()
-                    .execute(JobTarget.anyNode(), genreJob)
-                    .join();
+                    .execute(JobTarget.anyNode(client.clusterNodes()), genreJob, null);
             
             System.out.println("    <<< Genre analysis: " + analysis);
         } catch (Exception e) {
@@ -174,15 +166,15 @@ public class BasicComputeOperations {
         System.out.println("    >>> Running jobs asynchronously without blocking");
         
         // Start multiple jobs asynchronously
-        JobDescriptor<String> job1 = JobDescriptor.builder(HelloWorldJob.class).build();
-        JobDescriptor<Integer> job2 = JobDescriptor.builder(TrackCountJob.class).build();
+        JobDescriptor<Void, String> job1 = JobDescriptor.builder(HelloWorldJob.class).build();
+        JobDescriptor<Void, Integer> job2 = JobDescriptor.builder(TrackCountJob.class).build();
         
         try {
             CompletableFuture<String> future1 = client.compute()
-                    .execute(JobTarget.anyNode(), job1);
+                    .executeAsync(JobTarget.anyNode(client.clusterNodes()), job1, null);
             
             CompletableFuture<Integer> future2 = client.compute()
-                    .execute(JobTarget.anyNode(), job2);
+                    .executeAsync(JobTarget.anyNode(client.clusterNodes()), job2, null);
             
             System.out.println("    >>> Both jobs started asynchronously");
             
@@ -199,74 +191,79 @@ public class BasicComputeOperations {
 
     // Job implementations
 
-    public static class HelloWorldJob implements ComputeJob<String>, Serializable {
+    public static class HelloWorldJob implements ComputeJob<Void, String> {
         @Override
-        public String execute(JobExecutionContext context, Object... args) {
-            return "Hello from Ignite Compute!";
+        public CompletableFuture<String> executeAsync(JobExecutionContext context, Void arg) {
+            return CompletableFuture.completedFuture("Hello from Ignite Compute!");
         }
     }
 
-    public static class NodeInfoJob implements ComputeJob<String>, Serializable {
+    public static class NodeInfoJob implements ComputeJob<Void, String> {
         @Override
-        public String execute(JobExecutionContext context, Object... args) {
-            return "Node: " + context.ignite().name();
+        public CompletableFuture<String> executeAsync(JobExecutionContext context, Void arg) {
+            return CompletableFuture.completedFuture("Node: " + context.ignite().name());
         }
     }
 
-    public static class ArtistSearchJob implements ComputeJob<String>, Serializable {
+    public static class ArtistSearchJob implements ComputeJob<String, String> {
         @Override
-        public String execute(JobExecutionContext context, Object... args) {
-            if (args.length == 0) return "No search term provided";
-            
-            String searchTerm = (String) args[0];
-            IgniteSql sql = context.ignite().sql();
-            
-            try (ResultSet<SqlRow> result = sql.execute(null, 
-                    "SELECT Name FROM Artist WHERE Name LIKE ? LIMIT 1", 
-                    "%" + searchTerm + "%")) {
+        public CompletableFuture<String> executeAsync(JobExecutionContext context, String searchTerm) {
+            return CompletableFuture.supplyAsync(() -> {
+                if (searchTerm == null || searchTerm.isEmpty()) return "No search term provided";
                 
-                if (result.hasNext()) {
-                    return "Found: " + result.next().stringValue("Name");
-                } else {
-                    return "Artist not found: " + searchTerm;
+                IgniteSql sql = context.ignite().sql();
+                
+                try (ResultSet<SqlRow> result = sql.execute(null, 
+                        "SELECT Name FROM Artist WHERE Name LIKE ? LIMIT 1", 
+                        "%" + searchTerm + "%")) {
+                    
+                    if (result.hasNext()) {
+                        return "Found: " + result.next().stringValue("Name");
+                    } else {
+                        return "Artist not found: " + searchTerm;
+                    }
                 }
-            }
+            });
         }
     }
 
-    public static class TrackCountJob implements ComputeJob<Integer>, Serializable {
+    public static class TrackCountJob implements ComputeJob<Void, Integer> {
         @Override
-        public Integer execute(JobExecutionContext context, Object... args) {
-            IgniteSql sql = context.ignite().sql();
-            
-            try (ResultSet<SqlRow> result = sql.execute(null, 
-                    "SELECT COUNT(*) as track_count FROM Track")) {
+        public CompletableFuture<Integer> executeAsync(JobExecutionContext context, Void arg) {
+            return CompletableFuture.supplyAsync(() -> {
+                IgniteSql sql = context.ignite().sql();
                 
-                if (result.hasNext()) {
-                    return (int) result.next().longValue("track_count");
+                try (ResultSet<SqlRow> result = sql.execute(null, 
+                        "SELECT COUNT(*) as track_count FROM Track")) {
+                    
+                    if (result.hasNext()) {
+                        return (int) result.next().longValue("track_count");
+                    }
+                    return 0;
                 }
-                return 0;
-            }
+            });
         }
     }
 
-    public static class GenreAnalysisJob implements ComputeJob<String>, Serializable {
+    public static class GenreAnalysisJob implements ComputeJob<Void, String> {
         @Override
-        public String execute(JobExecutionContext context, Object... args) {
-            IgniteSql sql = context.ignite().sql();
-            
-            try (ResultSet<SqlRow> result = sql.execute(null, 
-                    "SELECT g.Name, COUNT(t.TrackId) as track_count " +
-                    "FROM Genre g JOIN Track t ON g.GenreId = t.GenreId " +
-                    "GROUP BY g.Name ORDER BY track_count DESC LIMIT 1")) {
+        public CompletableFuture<String> executeAsync(JobExecutionContext context, Void arg) {
+            return CompletableFuture.supplyAsync(() -> {
+                IgniteSql sql = context.ignite().sql();
                 
-                if (result.hasNext()) {
-                    SqlRow row = result.next();
-                    return "Most popular genre: " + row.stringValue("Name") + 
-                           " (" + row.longValue("track_count") + " tracks)";
+                try (ResultSet<SqlRow> result = sql.execute(null, 
+                        "SELECT g.Name, COUNT(t.TrackId) as track_count " +
+                        "FROM Genre g JOIN Track t ON g.GenreId = t.GenreId " +
+                        "GROUP BY g.Name ORDER BY track_count DESC LIMIT 1")) {
+                    
+                    if (result.hasNext()) {
+                        SqlRow row = result.next();
+                        return "Most popular genre: " + row.stringValue("Name") + 
+                               " (" + row.longValue("track_count") + " tracks)";
+                    }
+                    return "No genre data found";
                 }
-                return "No genre data found";
-            }
+            });
         }
     }
 }
