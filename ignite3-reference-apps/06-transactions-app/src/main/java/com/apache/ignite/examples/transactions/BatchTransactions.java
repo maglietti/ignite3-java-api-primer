@@ -66,7 +66,7 @@ public class BatchTransactions {
         demonstrateBatchUpdate(transactions, artists);
         demonstrateBatchErrorHandling(transactions, artists);
         
-        System.out.println("\n✓ Batch transactions completed successfully");
+        System.out.println("\n<<< Batch transactions completed successfully");
     }
 
     private static void demonstrateBatchInsert(IgniteTransactions transactions, RecordView<Tuple> artists) {
@@ -81,7 +81,7 @@ public class BatchTransactions {
             artistBatch.add(artist);
         }
         
-        System.out.println("   ⚡ Prepared " + artistBatch.size() + " artists for batch insert");
+        System.out.println("   >>> Prepared " + artistBatch.size() + " artists for batch insert");
         
         // Execute batch insert in transaction
         Transaction tx = transactions.begin();
@@ -93,11 +93,11 @@ public class BatchTransactions {
             }
             
             long insertTime = System.currentTimeMillis() - startTime;
-            System.out.println("   ⚡ Batch insert completed in " + insertTime + "ms");
+            System.out.println("   >>> Batch insert completed in " + insertTime + "ms");
             
             tx.commit();
             long totalTime = System.currentTimeMillis() - startTime;
-            System.out.println("   ✓ Transaction committed in " + totalTime + "ms total");
+            System.out.println("   <<< Transaction committed in " + totalTime + "ms total");
             
         } catch (Exception e) {
             tx.rollback();
@@ -130,11 +130,11 @@ public class BatchTransactions {
             }
             
             long updateTime = System.currentTimeMillis() - startTime;
-            System.out.println("   ⚡ Batch update of " + updateCount + " records in " + updateTime + "ms");
+            System.out.println("   >>> Batch update of " + updateCount + " records in " + updateTime + "ms");
             
             tx.commit();
             long totalTime = System.currentTimeMillis() - startTime;
-            System.out.println("   ✓ Batch update committed in " + totalTime + "ms total");
+            System.out.println("   <<< Batch update committed in " + totalTime + "ms total");
             
         } catch (Exception e) {
             tx.rollback();
@@ -166,19 +166,19 @@ public class BatchTransactions {
                 }
             }
             
-            System.out.println("   ⚡ Processed " + processedCount + " records successfully");
+            System.out.println("   >>> Processed " + processedCount + " records successfully");
             
             // Simulate error on record 9006
-            System.out.println("   ⚠ Simulating error during batch processing...");
+            System.out.println("   !!! Simulating error during batch processing...");
             throw new RuntimeException("Simulated batch processing error");
             
         } catch (Exception e) {
             tx.rollback();
-            System.out.println("   ✓ Error detected, transaction rolled back: " + e.getMessage());
+            System.out.println("   <<< Error detected, transaction rolled back: " + e.getMessage());
         }
         
         // Verify that no partial updates were committed
-        System.out.println("   ⚡ Verifying rollback...");
+        System.out.println("   >>> Verifying rollback...");
         boolean allRolledBack = true;
         for (int id = 9001; id <= 9005; id++) {
             Tuple key = Tuple.create().set("ArtistId", id);
@@ -191,9 +191,9 @@ public class BatchTransactions {
         }
         
         if (allRolledBack) {
-            System.out.println("   ✓ Verified: All partial updates rolled back successfully");
+            System.out.println("   <<< Verified: All partial updates rolled back successfully");
         } else {
-            System.out.println("   ⚠ Warning: Some partial updates may have persisted");
+            System.out.println("   !!! Warning: Some partial updates may have persisted");
         }
         
         // Cleanup all test data
@@ -201,7 +201,7 @@ public class BatchTransactions {
     }
 
     private static void verifyBatchData(RecordView<Tuple> artists, int startId, int endId, String expectedPrefix) {
-        System.out.println("   ⚡ Verifying batch data...");
+        System.out.println("   >>> Verifying batch data...");
         int verifiedCount = 0;
         
         for (int id = startId; id <= endId; id++) {
@@ -213,7 +213,7 @@ public class BatchTransactions {
             }
         }
         
-        System.out.println("   ✓ Verified " + verifiedCount + "/" + (endId - startId + 1) + " records");
+        System.out.println("   <<< Verified " + verifiedCount + "/" + (endId - startId + 1) + " records");
     }
 
     private static void cleanupBatchData(IgniteTransactions transactions, RecordView<Tuple> artists) {
@@ -230,7 +230,7 @@ public class BatchTransactions {
                 }
             }
             
-            System.out.println("   ✓ Cleaned up " + deletedCount + " test records");
+            System.out.println("   <<< Cleaned up " + deletedCount + " test records");
         });
     }
 }

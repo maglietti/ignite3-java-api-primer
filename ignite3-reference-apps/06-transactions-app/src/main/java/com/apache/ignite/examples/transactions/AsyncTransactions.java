@@ -66,7 +66,7 @@ public class AsyncTransactions {
         demonstrateAsyncChaining(transactions, artists);
         demonstrateAsyncErrorHandling(transactions, artists);
         
-        System.out.println("\n✓ Async transactions completed successfully");
+        System.out.println("\n<<< Async transactions completed successfully");
     }
 
     private static void demonstrateAsyncCommit(IgniteTransactions transactions, RecordView<Tuple> artists) 
@@ -83,25 +83,25 @@ public class AsyncTransactions {
             
             // Async upsert within transaction
             CompletableFuture<Void> upsertFuture = artists.upsertAsync(tx, newArtist);
-            System.out.println("   ⚡ Async upsert started...");
+            System.out.println("   >>> Async upsert started...");
             
             // Wait for upsert completion
             upsertFuture.get();
-            System.out.println("   ✓ Async upsert completed");
+            System.out.println("   <<< Async upsert completed");
             
             // Async commit
             CompletableFuture<Void> commitFuture = tx.commitAsync();
-            System.out.println("   ⚡ Async commit started...");
+            System.out.println("   >>> Async commit started...");
             
             // Wait for commit completion
             commitFuture.get();
-            System.out.println("   ✓ Async commit completed");
+            System.out.println("   <<< Async commit completed");
             
             // Verify the result
             Tuple key = Tuple.create().set("ArtistId", 8001);
             Tuple result = artists.get(null, key);
             if (result != null) {
-                System.out.println("   ✓ Verified: " + result.stringValue("Name"));
+                System.out.println("   <<< Verified: " + result.stringValue("Name"));
             }
             
         } catch (Exception e) {
@@ -119,12 +119,12 @@ public class AsyncTransactions {
         CompletableFuture<String> chainedTransaction = CompletableFuture
             // Start with beginning a transaction
             .supplyAsync(() -> {
-                System.out.println("   ⚡ Step 1: Beginning transaction...");
+                System.out.println("   >>> Step 1: Beginning transaction...");
                 return transactions.begin();
             })
             // Create and insert artist
             .thenCompose(tx -> {
-                System.out.println("   ⚡ Step 2: Creating artist...");
+                System.out.println("   >>> Step 2: Creating artist...");
                 Tuple newArtist = Tuple.create()
                     .set("ArtistId", artistId)
                     .set("Name", "Chained Artist");
@@ -134,7 +134,7 @@ public class AsyncTransactions {
             })
             // Read back the artist
             .thenCompose(tx -> {
-                System.out.println("   ⚡ Step 3: Reading back artist...");
+                System.out.println("   >>> Step 3: Reading back artist...");
                 Tuple key = Tuple.create().set("ArtistId", artistId);
                 return artists.getAsync(tx, key)
                     .thenApply(artist -> new Object[]{tx, artist}); // Pass both tx and artist
@@ -144,14 +144,14 @@ public class AsyncTransactions {
                 Transaction tx = (Transaction) objects[0];
                 Tuple artist = (Tuple) objects[1];
                 
-                System.out.println("   ⚡ Step 4: Updating artist...");
+                System.out.println("   >>> Step 4: Updating artist...");
                 Tuple updatedArtist = artist.set("Name", "Chained Updated Artist");
                 return artists.upsertAsync(tx, updatedArtist)
                     .thenApply(ignored -> tx); // Pass transaction to commit
             })
             // Commit the transaction
             .thenCompose(tx -> {
-                System.out.println("   ⚡ Step 5: Committing transaction...");
+                System.out.println("   >>> Step 5: Committing transaction...");
                 return tx.commitAsync()
                     .thenApply(ignored -> "Transaction chain completed successfully");
             })
@@ -162,7 +162,7 @@ public class AsyncTransactions {
             });
         
         String result = chainedTransaction.get();
-        System.out.println("   ✓ " + result);
+        System.out.println("   <<< " + result);
         
         // Cleanup
         Tuple key = Tuple.create().set("ArtistId", artistId);
@@ -177,7 +177,7 @@ public class AsyncTransactions {
         
         CompletableFuture<String> errorHandlingDemo = CompletableFuture
             .supplyAsync(() -> {
-                System.out.println("   ⚡ Starting transaction with potential error...");
+                System.out.println("   >>> Starting transaction with potential error...");
                 return transactions.begin();
             })
             .thenCompose(tx -> {
@@ -189,7 +189,7 @@ public class AsyncTransactions {
                 return artists.upsertAsync(tx, newArtist)
                     .thenCompose(ignored -> {
                         // Simulate an error condition
-                        System.out.println("   ⚠ Simulating error condition...");
+                        System.out.println("   !!! Simulating error condition...");
                         CompletableFuture<Void> errorFuture = new CompletableFuture<>();
                         errorFuture.completeExceptionally(new RuntimeException("Simulated async error"));
                         return errorFuture;
@@ -198,7 +198,7 @@ public class AsyncTransactions {
             })
             .handle((tx, throwable) -> {
                 if (throwable != null) {
-                    System.out.println("   ⚠ Error detected, rolling back transaction...");
+                    System.out.println("   !!! Error detected, rolling back transaction...");
                     try {
                         if (tx != null) {
                             tx.rollback();
@@ -214,15 +214,15 @@ public class AsyncTransactions {
             });
         
         String result = errorHandlingDemo.get();
-        System.out.println("   ✓ " + result);
+        System.out.println("   <<< " + result);
         
         // Verify rollback worked
         Tuple key = Tuple.create().set("ArtistId", artistId);
         Tuple artist = artists.get(null, key);
         if (artist == null) {
-            System.out.println("   ✓ Verified: Transaction was properly rolled back");
+            System.out.println("   <<< Verified: Transaction was properly rolled back");
         } else {
-            System.out.println("   ⚠ Unexpected: Data found after rollback");
+            System.out.println("   !!! Unexpected: Data found after rollback");
             artists.delete(null, key); // Cleanup
         }
         
