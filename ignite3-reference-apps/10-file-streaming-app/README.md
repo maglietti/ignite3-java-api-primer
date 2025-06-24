@@ -6,6 +6,68 @@ File-based backpressure streaming using Apache Ignite 3's reactive DataStreamer 
 
 Demonstrates end-to-end backpressure propagation from file I/O to cluster ingestion. Shows how reactive streams control upstream data production to match downstream consumption capacity, preventing memory bloat during high-volume file processing.
 
+## Architecture Diagram
+
+```text
+┌─────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                File Streaming with Backpressure                             │
+└─────────────────────────────────────────────────────────────────────────────────────────────┘
+
+   CSV File                FileStreamingPublisher           DataStreamer           Ignite 3
+┌─────────────┐         ┌─────────────────────────┐      ┌──────────────┐      ┌──────────────┐
+│EventId,User │         │                         │      │              │      │              │
+│1,123,456... │◄────────┤  Flow.Publisher<Item>   │─────►│ Batch Buffer │─────►│  MusicStore  │
+│2,124,457... │  demand │                         │ item │              │ batch│    Zone      │
+│3,125,458... │         │  ┌────────────────────┐ │      │   pageSize   │      │              │
+│     ...     │         │  │ FileSubscription   │ │      │     1000     │      │ ┌──────────┐ │
+│     ...     │         │  │                    │ │      │              │      │ │PartitionA│ │
+│     ...     │         │  │ ▼ request(n)       │ │      │              │      │ │PartitionB│ │
+│1M records   │         │  │ ▼ readNextLine()   │ │      │              │      │ │PartitionC│ │
+│~150MB       │         │  │ ▼ onNext(item)     │ │      │              │      │ └──────────┘ │
+└─────────────┘         │  └────────────────────┘ │      └──────────────┘      └──────────────┘
+                        └─────────────────────────┘              ▲
+                                    ▲                            │
+                                    │                            ▼
+                        ┌─────────────────────────┐      ┌──────────────┐
+                        │    StreamingMetrics     │      │ Backpressure │
+                        │                         │      │   Control    │
+                        │ ▪ Lines read: 485K      │      │              │
+                        │ ▪ Published: 485K       │      │ ▪ Pause file │
+                        │ ▪ File rate: 125K/sec   │      │   reading    │
+                        │ ▪ Memory: 245MB         │      │ ▪ Wait for   │
+                        │ ▪ CPU: 45%              │      │   capacity   │
+                        │ ▪ Backpressure: 15      │      │ ▪ Resume on  │
+                        └─────────────────────────┘      │   demand     │
+                                                         └──────────────┘
+
+Flow Control Mechanism:
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                                                                                 │
+│  1. DataStreamer requests N items ──────────────────┐                           │
+│                                                     ▼                           │
+│  2. FileSubscription.request(N) ────────────────────┐                           │
+│                                                     ▼                           │
+│  3. Read N lines from CSV file ─────────────────────┐                           │
+│                                                     ▼                           │
+│  4. Parse and emit DataStreamerItems ───────────────┐                           │
+│                                                     ▼                           │
+│  5. When buffer full, DataStreamer stops requesting ─────► Backpressure!        │
+│                                                     ▲                           │
+│  6. File reading pauses automatically ──────────────┘                           │
+│                                                                                 │
+│  Result: Memory usage stays bounded, no file buffering, demand-driven I/O       │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+Scenario Comparison:
+┌─────────────────┬─────────────────┬─────────────────┬─────────────────┐
+│   Scenario      │  File Rate      │  Cluster Rate   │  Backpressure   │
+├─────────────────┼─────────────────┼─────────────────┼─────────────────┤
+│ Normal          │ 125K lines/sec  │ 118K events/sec │ Low (15 events) │
+│ Slow Cluster    │ 45K lines/sec   │ 42K events/sec  │ High (150+ evts)│
+│ High Velocity   │ 200K lines/sec  │ 195K events/sec │ Medium (45 evts)│
+└─────────────────┴─────────────────┴─────────────────┴─────────────────┘
+```
+
 ## Key Concepts
 
 - **File-based Streaming**: Line-by-line CSV processing with demand-driven reading
@@ -70,7 +132,7 @@ The demonstration creates temporary CSV files (~150MB total) and shows:
 
 Example metrics output:
 
-```
+```text
 Lines: 500,000 | Published: 485,000 | File Rate: 125,000 lines/sec | 
 Publish Rate: 118,000 events/sec | Memory: 245.6 MB | CPU: 45.2% | 
 Phase: NORMAL | Backpressure Events: 15
