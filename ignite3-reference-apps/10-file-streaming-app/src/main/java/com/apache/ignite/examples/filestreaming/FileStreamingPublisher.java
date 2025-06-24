@@ -22,12 +22,17 @@ import org.apache.ignite.table.Tuple;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.nio.channels.AsynchronousFileChannel;
+import java.nio.channels.CompletionHandler;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.ForkJoinPool;
 
 /**
  * Custom Flow.Publisher that reads CSV files line-by-line with true backpressure control.
@@ -93,6 +98,7 @@ public class FileStreamingPublisher implements Flow.Publisher<DataStreamerItem<T
         private final AtomicLong demand = new AtomicLong(0);
         private final AtomicBoolean cancelled = new AtomicBoolean(false);
         private final AtomicBoolean headerSkipped = new AtomicBoolean(false);
+        private final AtomicBoolean delivering = new AtomicBoolean(false);
         
         public FileSubscription(Flow.Subscriber<? super DataStreamerItem<Tuple>> subscriber, 
                                BufferedReader reader) {
@@ -111,11 +117,17 @@ public class FileStreamingPublisher implements Flow.Publisher<DataStreamerItem<T
                 return;
             }
             
-            // Record the demand for metrics
+            // Record the demand for metrics  
             metrics.recordEventsRequested(n);
             
             // Add to demand and trigger delivery
             long currentDemand = demand.addAndGet(n);
+            
+            // Debug logging for significant requests
+            //if (currentDemand <= 10000 && (n > 1000 || currentDemand % 1000 == 0)) {
+            //    System.out.printf("!!! Request received: %d items, total demand: %d%n", n, currentDemand);
+            //}
+            
             deliverItems();
         }
         
@@ -127,55 +139,94 @@ public class FileStreamingPublisher implements Flow.Publisher<DataStreamerItem<T
         
         /**
          * Delivers items based on current demand, reading lines only as needed.
-         * This is the core backpressure mechanism - no reading ahead occurs.
+         * Uses a guard to prevent concurrent deliveries from multiple request calls.
          */
         private void deliverItems() {
-            CompletableFuture.runAsync(() -> {
-                try {
-                    while (demand.get() > 0 && !cancelled.get()) {
-                        String line = readNextLine();
-                        
-                        if (line == null) {
-                            // End of file reached
-                            subscriber.onComplete();
+            // Only start delivery if not already delivering
+            if (delivering.compareAndSet(false, true)) {
+                deliverItemsAsync()
+                    .whenComplete((result, error) -> {
+                        delivering.set(false); // Allow future deliveries
+                        if (error != null) {
+                            subscriber.onError(error);
                             closeReader();
-                            return;
                         }
-                        
-                        // Skip header line
-                        if (!headerSkipped.getAndSet(true)) {
-                            continue;
-                        }
-                        
-                        // Parse line and create DataStreamerItem
-                        try {
-                            DataStreamerItem<Tuple> item = parseLineToDataStreamerItem(line);
-                            
-                            // Deliver item to subscriber
-                            subscriber.onNext(item);
-                            metrics.recordEventPublished();
-                            
-                            // Decrease demand after successful delivery
-                            demand.decrementAndGet();
-                            
-                        } catch (Exception e) {
-                            subscriber.onError(new RuntimeException("Failed to parse CSV line: " + line, e));
-                            closeReader();
-                            return;
-                        }
-                    }
-                    
-                    // If demand is 0, we naturally pause here until more is requested
-                    if (demand.get() == 0 && !cancelled.get()) {
-                        metrics.recordBackpressureEvent();
-                    }
-                    
-                } catch (Exception e) {
-                    subscriber.onError(e);
-                    closeReader();
-                }
+                    });
+            }
+        }
+        
+        /**
+         * Delivers items synchronously in batches to satisfy demand.
+         * This simpler approach avoids async complications and delivers items immediately.
+         */
+        private CompletableFuture<Void> deliverItemsAsync() {
+            return CompletableFuture.runAsync(() -> {
+                deliverItemsSynchronously();
             });
         }
+        
+        /**
+         * Delivers items synchronously to satisfy current demand.
+         * This approach is simpler and more reliable than complex async chains.
+         */
+        private void deliverItemsSynchronously() {
+            long startingDemand = demand.get();
+            //if (startingDemand <= 1000) {
+            //    System.out.printf("!!! Starting delivery with demand: %d%n", startingDemand);
+            //}
+            
+            while (demand.get() > 0 && !cancelled.get()) {
+                try {
+                    String line = readNextLine();
+                    
+                    if (line == null) {
+                        // End of file reached
+                        subscriber.onComplete();
+                        closeReader();
+                        return;
+                    }
+                    
+                    // Skip header line
+                    if (!headerSkipped.getAndSet(true)) {
+                        continue;
+                    }
+                    
+                    // Parse and deliver item, skip malformed lines
+                    try {
+                        DataStreamerItem<Tuple> item = parseLineToDataStreamerItem(line);
+                        subscriber.onNext(item);
+                        metrics.recordEventPublished();
+                        demand.decrementAndGet();
+                        
+                        // Debug logging for first few items
+                        //if (metrics.getEventsPublished() <= 5) {
+                        //    System.out.printf(">>> Published item %d: %s%n", 
+                        //       metrics.getEventsPublished(), line);
+                        //}
+                        
+                    } catch (IllegalArgumentException e) {
+                        // Skip malformed lines and continue processing
+                        System.out.printf("!!! Skipping malformed line: %s (error: %s)%n", line, e.getMessage());
+                        continue;
+                    }
+                    
+                } catch (IOException e) {
+                    subscriber.onError(new RuntimeException("Failed to read CSV line", e));
+                    closeReader();
+                    return;
+                } catch (Exception e) {
+                    subscriber.onError(new RuntimeException("Failed to process CSV line", e));
+                    closeReader();
+                    return;
+                }
+            }
+            
+            // Record backpressure if we stopped due to lack of demand
+            if (demand.get() == 0 && !cancelled.get()) {
+                metrics.recordBackpressureEvent();
+            }
+        }
+        
         
         /**
          * Reads the next line from the CSV file and tracks metrics.
@@ -195,10 +246,16 @@ public class FileStreamingPublisher implements Flow.Publisher<DataStreamerItem<T
          * CSV format: EventId,UserId,TrackId,EventType,EventTime,Duration,PlaylistId
          */
         private DataStreamerItem<Tuple> parseLineToDataStreamerItem(String csvLine) {
+            // Skip empty or malformed lines
+            if (csvLine == null || csvLine.trim().isEmpty()) {
+                throw new IllegalArgumentException("Empty CSV line encountered");
+            }
+            
             String[] fields = csvLine.split(",", -1); // -1 to include empty trailing fields
             
             if (fields.length < 6) {
-                throw new IllegalArgumentException("Invalid CSV line - expected at least 6 fields: " + csvLine);
+                throw new IllegalArgumentException("Invalid CSV line - expected at least 6 fields, got " + 
+                    fields.length + " fields: " + csvLine);
             }
             
             try {

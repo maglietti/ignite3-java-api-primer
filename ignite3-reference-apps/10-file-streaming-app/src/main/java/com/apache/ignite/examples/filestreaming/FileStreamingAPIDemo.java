@@ -121,12 +121,12 @@ public class FileStreamingAPIDemo {
      * Runs the complete suite of file streaming demonstrations.
      */
     private static void runFileStreamingDemonstrations(IgniteClient client) {
-        System.out.println("--- File-Based Backpressure Streaming Demonstrations ---");
+        System.out.println("=== File-Based Backpressure Streaming Demonstrations ===");
         System.out.println();
         
         try {
             // Run file backpressure streaming demonstrations
-            System.out.println("!!! Starting file streaming demonstrations...");
+            System.out.println("--- Starting file streaming demonstrations...");
             System.out.println("    These demos show end-to-end backpressure from file I/O to cluster ingestion");
             System.out.println("    Watch how file reading rates automatically adapt to cluster processing capacity");
             System.out.println();

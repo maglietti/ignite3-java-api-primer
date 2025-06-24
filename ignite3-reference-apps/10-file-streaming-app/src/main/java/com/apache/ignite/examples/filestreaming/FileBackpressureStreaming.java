@@ -173,7 +173,7 @@ public class FileBackpressureStreaming {
         metrics.startStreaming();
         
         // Monitor progress during streaming (more frequent updates)
-        CompletableFuture<Void> monitoringFuture = startProgressMonitoring(metrics, 1000);
+        CompletableFuture<Void> monitoringFuture = startProgressMonitoring(metrics, 100);
         
         // Execute streaming
         CompletableFuture<Void> streamingFuture = recordView.streamData(publisher, options);
@@ -228,7 +228,7 @@ public class FileBackpressureStreaming {
         metrics.setPhase("SLOW_CLUSTER");
         
         // Monitor progress during streaming (frequent updates to see backpressure)
-        CompletableFuture<Void> monitoringFuture = startProgressMonitoring(metrics, 1500);
+        CompletableFuture<Void> monitoringFuture = startProgressMonitoring(metrics, 100);
         
         // Execute streaming
         CompletableFuture<Void> streamingFuture = recordView.streamData(publisher, options);
@@ -283,7 +283,7 @@ public class FileBackpressureStreaming {
         metrics.setPhase("HIGH_VELOCITY");
         
         // Monitor progress during streaming (frequent updates for high throughput)
-        CompletableFuture<Void> monitoringFuture = startProgressMonitoring(metrics, 1000);
+        CompletableFuture<Void> monitoringFuture = startProgressMonitoring(metrics, 100);
         
         // Execute streaming
         CompletableFuture<Void> streamingFuture = recordView.streamData(publisher, options);
@@ -303,19 +303,35 @@ public class FileBackpressureStreaming {
     
     /**
      * Starts background monitoring of streaming progress with periodic updates.
+     * Uses proper async patterns following lessons from Module 06 async transactions.
      */
     private static CompletableFuture<Void> startProgressMonitoring(StreamingMetrics metrics, 
                                                                   long intervalMs) {
-        return CompletableFuture.runAsync(() -> {
-            try {
-                while (metrics.isActive() && !Thread.currentThread().isInterrupted()) {
-                    Thread.sleep(intervalMs);
-                    System.out.println("  " + metrics.getFormattedSummary());
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        });
+        // Use async pattern with scheduler instead of thread pool wrapping
+        CompletableFuture<Void> monitoringFuture = new CompletableFuture<>();
+        
+        // Start async monitoring loop
+        scheduleNextUpdate(metrics, intervalMs, monitoringFuture);
+        
+        return monitoringFuture;
+    }
+    
+    /**
+     * Schedules the next monitoring update using async composition.
+     */
+    private static void scheduleNextUpdate(StreamingMetrics metrics, long intervalMs, 
+                                         CompletableFuture<Void> controlFuture) {
+        if (controlFuture.isCancelled() || !metrics.isActive()) {
+            controlFuture.complete(null);
+            return;
+        }
+        
+        // Print current status
+        System.out.println("  " + metrics.getFormattedSummary());
+        
+        // Schedule next update without blocking threads
+        CompletableFuture.delayedExecutor(intervalMs, TimeUnit.MILLISECONDS)
+            .execute(() -> scheduleNextUpdate(metrics, intervalMs, controlFuture));
     }
     
     /**

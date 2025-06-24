@@ -84,67 +84,28 @@ public class SampleDataGenerator {
             Random random = ThreadLocalRandom.current();
             long baseTime = System.currentTimeMillis() - (eventCount * 1000L); // Start in the past
             
-            // Track active sessions for realistic event sequences
-            int activeUserId = -1;
-            int activeTrackId = -1;
-            long trackStartTime = 0;
-            
             for (int i = 1; i <= eventCount; i++) {
                 long eventId = i;
                 long eventTime = baseTime + (i * random.nextInt(500, 2000)); // 0.5-2 sec between events
                 
-                // Generate realistic event sequences
-                String eventType;
-                int userId;
-                int trackId;
+                // Simplified event generation to avoid complex state tracking issues
+                int userId = random.nextInt(MIN_USER_ID, MAX_USER_ID + 1);
+                int trackId = random.nextInt(MIN_TRACK_ID, MAX_TRACK_ID + 1);
+                String eventType = EVENT_TYPES[random.nextInt(EVENT_TYPES.length)];
                 long duration = 0;
                 Integer playlistId = null;
                 
-                // 60% chance to continue with active session, 40% chance new session
-                if (activeUserId != -1 && random.nextDouble() < 0.6) {
-                    userId = activeUserId;
-                    trackId = activeTrackId;
-                    
-                    // Choose appropriate follow-up event
-                    String[] followUpEvents = {"TRACK_END", "TRACK_PAUSE", "TRACK_SKIP", "TRACK_LIKE"};
-                    eventType = followUpEvents[random.nextInt(followUpEvents.length)];
-                    
-                    // Calculate duration for TRACK_END events
-                    if ("TRACK_END".equals(eventType)) {
-                        duration = eventTime - trackStartTime;
-                        activeUserId = -1; // End session
-                    } else if ("TRACK_SKIP".equals(eventType)) {
-                        duration = eventTime - trackStartTime;
-                        activeUserId = -1; // End session
-                    }
-                    
-                    // Add playlist context for some events
-                    if (random.nextDouble() < 0.3) {
-                        playlistId = random.nextInt(MIN_PLAYLIST_ID, MAX_PLAYLIST_ID + 1);
-                    }
-                    
-                } else {
-                    // Start new session
-                    userId = random.nextInt(MIN_USER_ID, MAX_USER_ID + 1);
-                    trackId = random.nextInt(MIN_TRACK_ID, MAX_TRACK_ID + 1);
-                    
-                    // Favor TRACK_START for new sessions, but allow other events
-                    if (random.nextDouble() < 0.7) {
-                        eventType = "TRACK_START";
-                        activeUserId = userId;
-                        activeTrackId = trackId;
-                        trackStartTime = eventTime;
-                    } else {
-                        eventType = EVENT_TYPES[random.nextInt(EVENT_TYPES.length)];
-                    }
-                    
-                    // Add playlist context for playlist-related events
-                    if (eventType.contains("PLAYLIST") || random.nextDouble() < 0.2) {
-                        playlistId = random.nextInt(MIN_PLAYLIST_ID, MAX_PLAYLIST_ID + 1);
-                    }
+                // Add duration for appropriate events
+                if ("TRACK_END".equals(eventType) || "TRACK_SKIP".equals(eventType)) {
+                    duration = random.nextInt(30000, 300000); // 30sec to 5min
                 }
                 
-                // Write CSV record
+                // Add playlist context occasionally
+                if (eventType.contains("PLAYLIST") || random.nextDouble() < 0.2) {
+                    playlistId = random.nextInt(MIN_PLAYLIST_ID, MAX_PLAYLIST_ID + 1);
+                }
+                
+                // Write CSV record with proper field ordering: EventId,UserId,TrackId,EventType,EventTime,Duration,PlaylistId
                 writer.write(String.format("%d,%d,%d,%s,%d,%d,%s",
                     eventId, userId, trackId, eventType, eventTime, duration,
                     playlistId != null ? playlistId.toString() : ""));
@@ -152,7 +113,7 @@ public class SampleDataGenerator {
                 
                 // Periodic progress for large files
                 if (i % 10000 == 0) {
-                    System.out.printf("Generated %d events...%n", i);
+                    System.out.printf("Generated %d events...\r", i);
                 }
             }
         }
