@@ -31,12 +31,14 @@ This multi-module Maven project provides practical, runnable examples for all ma
 **⚠️ Required First Step**: Start and initialize the 3-node Docker cluster before running any applications.
 
 **Quick setup** (recommended):
+
 ```bash
 cd 00-docker
 ./init-cluster.sh
 ```
 
 **Manual setup**:
+
 ```bash
 cd 00-docker
 # The init-cluster.sh script automatically detects docker-compose vs docker compose
@@ -44,6 +46,7 @@ cd 00-docker
 ```
 
 **Alternative manual steps** (if needed):
+
 ```bash
 cd 00-docker
 # Note: Use docker-compose or docker compose as detected by your system
@@ -51,6 +54,7 @@ docker-compose up -d  # or: docker compose up -d
 ```
 
 Verify cluster is initialized and ready:
+
 ```bash
 curl http://localhost:10300/management/v1/cluster/state
 # {"cmgNodes":["node1","node2","node3"],"msNodes":["node1","node2","node3"],"igniteVersion":"3.0.0","clusterTag":{"clusterName":"ignite3-reference-cluster","clusterId":"b30643d3-34b0-4c2a-b8f7-e74c5f8ca316"}}
@@ -258,11 +262,13 @@ Edit configuration in:
 1. **Connection Failed / Cluster Not Initialized**
    - Verify Ignite 3 cluster is running: `docker-compose ps`
    - **Most Common**: Cluster not initialized - run initialization:
+
      ```bash
      curl -X POST http://localhost:10300/management/v1/cluster/init \
        -H "Content-Type: application/json" \
        -d '{"metaStorageNodes": ["node1", "node2", "node3"], "cmgNodes": ["node1", "node2", "node3"], "clusterName": "ignite3-reference-cluster"}'
      ```
+
    - Check cluster address and port
    - Confirm network connectivity
 
