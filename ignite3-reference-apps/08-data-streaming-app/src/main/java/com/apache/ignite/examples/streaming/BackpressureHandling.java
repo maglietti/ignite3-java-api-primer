@@ -22,6 +22,10 @@ import org.apache.ignite.table.RecordView;
 import org.apache.ignite.table.DataStreamerItem;
 import org.apache.ignite.table.DataStreamerOptions;
 import org.apache.ignite.table.Tuple;
+import org.apache.ignite.catalog.IgniteCatalog;
+import org.apache.ignite.catalog.definitions.ColumnDefinition;
+import org.apache.ignite.catalog.ColumnType;
+import org.apache.ignite.catalog.definitions.TableDefinition;
 
 import java.util.concurrent.Flow;
 import java.util.concurrent.SubmissionPublisher;
@@ -68,21 +72,116 @@ public class BackpressureHandling {
             
             System.out.println("=== Backpressure Handling Demo ===");
             
-            // Demonstrate custom publisher with backpressure
-            demonstrateCustomPublisher(ignite);
+            // Create test tables
+            createTestTables(ignite);
             
-            // Demonstrate adaptive rate limiting
-            demonstrateAdaptiveRateLimiting(ignite);
-            
-            // Demonstrate buffer overflow handling
-            demonstrateBufferOverflowHandling(ignite);
-            
-            System.out.println("Backpressure handling demonstration completed successfully!");
+            try {
+                // Demonstrate custom publisher with backpressure
+                demonstrateCustomPublisher(ignite);
+                
+                // Demonstrate adaptive rate limiting
+                demonstrateAdaptiveRateLimiting(ignite);
+                
+                // Demonstrate buffer overflow handling
+                demonstrateBufferOverflowHandling(ignite);
+                
+                System.out.println("Backpressure handling demonstration completed successfully!");
+                
+            } finally {
+                // Clean up test tables
+                cleanupTestTables(ignite);
+            }
             
         } catch (Exception e) {
             System.err.println("Backpressure demo failed: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+    
+    /**
+     * Creates test tables for backpressure demonstration.
+     */
+    private static void createTestTables(IgniteClient ignite) {
+        System.out.println(">>> Creating test tables for backpressure demonstrations");
+        
+        IgniteCatalog catalog = ignite.catalog();
+        
+        // Create BackpressureTest table
+        TableDefinition backpressureTable = TableDefinition.builder("BackpressureTest")
+            .ifNotExists()
+            .columns(
+                ColumnDefinition.column("EventId", ColumnType.BIGINT),
+                ColumnDefinition.column("UserId", ColumnType.INTEGER),
+                ColumnDefinition.column("TrackId", ColumnType.INTEGER),
+                ColumnDefinition.column("EventType", ColumnType.VARCHAR),
+                ColumnDefinition.column("EventTime", ColumnType.BIGINT),
+                ColumnDefinition.column("BackpressureTest", ColumnType.BOOLEAN)
+            )
+            .primaryKey("EventId")
+            .zone("MusicStore")
+            .build();
+        
+        // Create RateLimitTest table
+        TableDefinition rateLimitTable = TableDefinition.builder("RateLimitTest")
+            .ifNotExists()
+            .columns(
+                ColumnDefinition.column("EventId", ColumnType.BIGINT),
+                ColumnDefinition.column("UserId", ColumnType.INTEGER),
+                ColumnDefinition.column("TrackId", ColumnType.INTEGER),
+                ColumnDefinition.column("EventType", ColumnType.VARCHAR),
+                ColumnDefinition.column("EventTime", ColumnType.BIGINT),
+                ColumnDefinition.column("LoadPhase", ColumnType.VARCHAR)
+            )
+            .primaryKey("EventId")
+            .zone("MusicStore")
+            .build();
+        
+        // Create OverflowTest table
+        TableDefinition overflowTable = TableDefinition.builder("OverflowTest")
+            .ifNotExists()
+            .columns(
+                ColumnDefinition.column("EventId", ColumnType.BIGINT),
+                ColumnDefinition.column("UserId", ColumnType.INTEGER),
+                ColumnDefinition.column("TrackId", ColumnType.INTEGER),
+                ColumnDefinition.column("EventType", ColumnType.VARCHAR),
+                ColumnDefinition.column("EventTime", ColumnType.BIGINT),
+                ColumnDefinition.column("BufferTest", ColumnType.BOOLEAN)
+            )
+            .primaryKey("EventId")
+            .zone("MusicStore")
+            .build();
+        
+        try {
+            catalog.createTable(backpressureTable);
+            catalog.createTable(rateLimitTable);
+            catalog.createTable(overflowTable);
+            System.out.println("<<< Test tables created successfully");
+        } catch (Exception e) {
+            // Tables may already exist, continue anyway
+            System.out.println("<<< Tables already exist or creation skipped");
+        }
+    }
+    
+    /**
+     * Cleans up test tables after demonstration.
+     */
+    private static void cleanupTestTables(IgniteClient ignite) {
+        System.out.println(">>> Cleaning up test tables");
+        
+        IgniteCatalog catalog = ignite.catalog();
+        
+        String[] tables = {"BackpressureTest", "RateLimitTest", "OverflowTest"};
+        
+        for (String tableName : tables) {
+            try {
+                catalog.dropTable(tableName);
+                System.out.println("<<< Dropped table: " + tableName);
+            } catch (Exception e) {
+                System.out.println("<<< Table " + tableName + " not found or already dropped");
+            }
+        }
+        
+        System.out.println("<<< Test table cleanup completed");
     }
     
     /**
@@ -181,13 +280,13 @@ public class BackpressureHandling {
                 
                 CompletableFuture.runAsync(() -> {
                     try {
-                        for (int i = 1; i <= 50000; i++) {
+                        for (int i = 1; i <= 20000; i++) {
                             Tuple event = Tuple.create()
-                                .set("EventId", i)
+                                .set("EventId", (long) i)
                                 .set("UserId", 6000 + (i % 300))
                                 .set("TrackId", 1 + (i % 150))
                                 .set("EventType", "ADAPTIVE_TEST")
-                                .set("Timestamp", System.currentTimeMillis())
+                                .set("EventTime", System.currentTimeMillis())
                                 .set("LoadPhase", rateController.getCurrentPhase());
                             
                             publisher.submit(DataStreamerItem.of(event));
@@ -359,7 +458,7 @@ public class BackpressureHandling {
                             .set("UserId", event.getUserId())
                             .set("TrackId", event.getTrackId())
                             .set("EventType", event.getEventType())
-                            .set("Timestamp", event.getTimestamp())
+                            .set("EventTime", event.getTimestamp())
                             .set("BackpressureTest", true);
                         
                         try {
@@ -448,13 +547,13 @@ public class BackpressureHandling {
         }
         
         private void updatePhase(int eventNumber) {
-            if (eventNumber < 5000) {
+            if (eventNumber < 2000) {
                 setPhase("WARMUP");
-            } else if (eventNumber < 20000) {
+            } else if (eventNumber < 8000) {
                 setPhase("NORMAL");
-            } else if (eventNumber < 35000) {
+            } else if (eventNumber < 14000) {
                 setPhase("PEAK_LOAD");
-            } else if (eventNumber < 45000) {
+            } else if (eventNumber < 18000) {
                 setPhase("RECOVERY");
             } else {
                 setPhase("NORMAL");
@@ -500,13 +599,13 @@ public class BackpressureHandling {
         private void startProducing() {
             CompletableFuture.runAsync(() -> {
                 int eventId = 1;
-                while (producing && eventId <= 30000) {
+                while (producing && eventId <= 15000) {
                     Tuple event = Tuple.create()
-                        .set("EventId", eventId++)
+                        .set("EventId", (long) eventId++)
                         .set("UserId", 7000 + (eventId % 100))
                         .set("TrackId", 1 + (eventId % 50))
                         .set("EventType", "OVERFLOW_TEST")
-                        .set("Timestamp", System.currentTimeMillis())
+                        .set("EventTime", System.currentTimeMillis())
                         .set("BufferTest", true);
                     
                     DataStreamerItem<Tuple> item = DataStreamerItem.of(event);
