@@ -43,6 +43,8 @@ public class StreamingMetrics {
     // Timing and rate tracking
     private final AtomicLong startTime = new AtomicLong(0);
     private final AtomicLong lastRateCalculation = new AtomicLong(0);
+    private final AtomicLong lastLinesCount = new AtomicLong(0);
+    private final AtomicLong lastPublishedCount = new AtomicLong(0);
     private final AtomicReference<Double> currentFileReadRate = new AtomicReference<>(0.0);
     private final AtomicReference<Double> currentPublishRate = new AtomicReference<>(0.0);
     private final AtomicReference<Double> peakFileReadRate = new AtomicReference<>(0.0);
@@ -67,8 +69,20 @@ public class StreamingMetrics {
      * Marks the completion of streaming operations.
      */
     public void stopStreaming() {
+        // Force a final rate calculation to capture last measurement
+        forceRateUpdate();
         active = false;
         currentPhase.set("COMPLETED");
+    }
+    
+    /**
+     * Forces an immediate rate calculation regardless of timing.
+     */
+    public void forceRateUpdate() {
+        long now = System.currentTimeMillis();
+        long lastCalc = lastRateCalculation.get();
+        updateRates(now, lastCalc);
+        lastRateCalculation.set(now);
     }
     
     /**
@@ -117,32 +131,43 @@ public class StreamingMetrics {
     
     /**
      * Updates rate calculations if sufficient time has passed.
-     * Rates are calculated every 1 second to avoid excessive computation.
+     * Rates are calculated every 500ms to capture more granular performance data.
      */
     private void updateRatesIfNeeded() {
         long now = System.currentTimeMillis();
         long lastCalc = lastRateCalculation.get();
         
-        // Update rates every 1000ms
-        if (now - lastCalc >= 1000 && lastRateCalculation.compareAndSet(lastCalc, now)) {
-            updateRates(now);
+        // Update rates every 500ms for better granularity
+        if (now - lastCalc >= 500 && lastRateCalculation.compareAndSet(lastCalc, now)) {
+            updateRates(now, lastCalc);
         }
     }
     
     /**
-     * Calculates current rates based on elapsed time and counters.
+     * Calculates current rates based on changes since last calculation.
      * 
      * @param currentTime current timestamp for calculation
+     * @param lastCalcTime timestamp of last calculation
      */
-    private void updateRates(long currentTime) {
-        long elapsed = currentTime - startTime.get();
-        if (elapsed <= 0) return;
+    private void updateRates(long currentTime, long lastCalcTime) {
+        if (lastCalcTime == 0) {
+            // First calculation, set baseline
+            lastLinesCount.set(linesRead.get());
+            lastPublishedCount.set(eventsPublished.get());
+            return;
+        }
         
-        double elapsedSeconds = elapsed / 1000.0;
+        double intervalSeconds = (currentTime - lastCalcTime) / 1000.0;
+        if (intervalSeconds <= 0) return;
         
-        // Calculate current rates
-        double fileRate = linesRead.get() / elapsedSeconds;
-        double publishRate = eventsPublished.get() / elapsedSeconds;
+        // Calculate rates based on change since last measurement
+        long currentLines = linesRead.get();
+        long currentPublished = eventsPublished.get();
+        long lastLines = lastLinesCount.getAndSet(currentLines);
+        long lastPublished = lastPublishedCount.getAndSet(currentPublished);
+        
+        double fileRate = (currentLines - lastLines) / intervalSeconds;
+        double publishRate = (currentPublished - lastPublished) / intervalSeconds;
         
         currentFileReadRate.set(fileRate);
         currentPublishRate.set(publishRate);

@@ -60,7 +60,7 @@ mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.filestreaming.FileBac
 
 ## Expected Output
 
-The demonstration creates temporary CSV files (~50MB total) and shows:
+The demonstration creates temporary CSV files (~150MB total) and shows:
 
 1. **File Generation**: Creating realistic music event data
 2. **Streaming Progress**: Real-time metrics showing file reading vs cluster ingestion rates
@@ -70,8 +70,8 @@ The demonstration creates temporary CSV files (~50MB total) and shows:
 Example metrics output:
 
 ```
-Lines: 50,000 | Published: 48,500 | File Rate: 12,500 lines/sec | 
-Publish Rate: 11,800 events/sec | Phase: NORMAL | Backpressure Events: 3
+Lines: 500,000 | Published: 485,000 | File Rate: 125,000 lines/sec | 
+Publish Rate: 118,000 events/sec | Phase: NORMAL | Backpressure Events: 15
 ```
 
 ## Integration with Other Modules
@@ -84,5 +84,5 @@ Publish Rate: 11,800 events/sec | Phase: NORMAL | Backpressure Events: 3
 
 - Temporary CSV files are created in system temp directory
 - Files are automatically cleaned up after demonstrations
-- Peak disk usage: ~50MB during largest scenario
+- Peak disk usage: ~150MB during largest scenario (1M records)
 - Generated data follows music store schema for consistency

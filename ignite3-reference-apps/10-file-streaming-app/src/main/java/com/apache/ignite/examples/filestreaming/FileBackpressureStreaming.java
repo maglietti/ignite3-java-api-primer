@@ -143,9 +143,9 @@ public class FileBackpressureStreaming {
     private static void demonstrateNormalFileStreaming(IgniteClient client) throws Exception {
         System.out.println("\n--- Scenario 1: Normal File Streaming ---");
         
-        // Generate moderate-sized sample file
+        // Generate large sample file to demonstrate meaningful backpressure
         Path sampleFile = Paths.get(TEMP_DIR, "music_events_normal.csv");
-        int eventCount = 50000;
+        int eventCount = 500000;
         
         System.out.printf(">>> Generating sample data file (%,d events)%n", eventCount);
         SampleDataGenerator.generateMusicEventFile(sampleFile.toString(), eventCount);
@@ -172,8 +172,8 @@ public class FileBackpressureStreaming {
         System.out.println(">>> Starting file streaming...");
         metrics.startStreaming();
         
-        // Monitor progress during streaming
-        CompletableFuture<Void> monitoringFuture = startProgressMonitoring(metrics, 2000);
+        // Monitor progress during streaming (more frequent updates)
+        CompletableFuture<Void> monitoringFuture = startProgressMonitoring(metrics, 1000);
         
         // Execute streaming
         CompletableFuture<Void> streamingFuture = recordView.streamData(publisher, options);
@@ -197,9 +197,9 @@ public class FileBackpressureStreaming {
     private static void demonstrateSlowClusterScenario(IgniteClient client) throws Exception {
         System.out.println("\n--- Scenario 2: Slow Cluster with Backpressure ---");
         
-        // Generate sample file
+        // Generate substantial sample file to show backpressure effects
         Path sampleFile = Paths.get(TEMP_DIR, "music_events_backpressure.csv");
-        int eventCount = 30000;
+        int eventCount = 750000;
         
         System.out.printf(">>> Generating sample data file (%,d events)%n", eventCount);
         SampleDataGenerator.generateMusicEventFile(sampleFile.toString(), eventCount);
@@ -227,8 +227,8 @@ public class FileBackpressureStreaming {
         metrics.startStreaming();
         metrics.setPhase("SLOW_CLUSTER");
         
-        // Monitor progress during streaming
-        CompletableFuture<Void> monitoringFuture = startProgressMonitoring(metrics, 3000);
+        // Monitor progress during streaming (frequent updates to see backpressure)
+        CompletableFuture<Void> monitoringFuture = startProgressMonitoring(metrics, 1500);
         
         // Execute streaming
         CompletableFuture<Void> streamingFuture = recordView.streamData(publisher, options);
@@ -252,9 +252,9 @@ public class FileBackpressureStreaming {
     private static void demonstrateHighVelocityStreaming(IgniteClient client) throws Exception {
         System.out.println("\n--- Scenario 3: High-Velocity Event Streaming ---");
         
-        // Generate high-velocity sample file
+        // Generate large high-velocity sample file (1M records)
         Path sampleFile = Paths.get(TEMP_DIR, "music_events_velocity.csv");
-        int eventCount = 75000;
+        int eventCount = 1000000;
         
         System.out.printf(">>> Generating high-velocity sample data file (%,d events)%n", eventCount);
         SampleDataGenerator.generateHighVelocityEventFile(sampleFile.toString(), eventCount);
@@ -282,8 +282,8 @@ public class FileBackpressureStreaming {
         metrics.startStreaming();
         metrics.setPhase("HIGH_VELOCITY");
         
-        // Monitor progress during streaming
-        CompletableFuture<Void> monitoringFuture = startProgressMonitoring(metrics, 1500);
+        // Monitor progress during streaming (frequent updates for high throughput)
+        CompletableFuture<Void> monitoringFuture = startProgressMonitoring(metrics, 1000);
         
         // Execute streaming
         CompletableFuture<Void> streamingFuture = recordView.streamData(publisher, options);
