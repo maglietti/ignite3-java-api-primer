@@ -11,7 +11,8 @@ Demonstrates end-to-end backpressure propagation from file I/O to cluster ingest
 - **File-based Streaming**: Line-by-line CSV processing with demand-driven reading
 - **Backpressure Propagation**: Flow control from cluster through to file I/O operations
 - **Memory Efficiency**: Reactive streams prevent large buffer accumulation
-- **Performance Monitoring**: Detailed metrics tracking file vs cluster processing rates
+- **Resource Monitoring**: Real-time tracking of memory usage, CPU utilization, and system pressure
+- **Performance Analysis**: Correlation between system resources and backpressure events
 
 ## Prerequisites
 
@@ -71,7 +72,8 @@ Example metrics output:
 
 ```
 Lines: 500,000 | Published: 485,000 | File Rate: 125,000 lines/sec | 
-Publish Rate: 118,000 events/sec | Phase: NORMAL | Backpressure Events: 15
+Publish Rate: 118,000 events/sec | Memory: 245.6 MB | CPU: 45.2% | 
+Phase: NORMAL | Backpressure Events: 15
 ```
 
 ## Integration with Other Modules
