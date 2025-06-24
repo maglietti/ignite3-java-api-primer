@@ -309,15 +309,18 @@ public class ReadOnlyTransactions {
 
 ## Asynchronous Transactions: Non-Blocking Operations
 
-For high-throughput applications, asynchronous transactions prevent blocking threads while operations complete across the distributed cluster.
+For high-throughput applications, asynchronous transactions prevent blocking threads while operations complete across the distributed cluster. Proper async patterns use `transactions.beginAsync()` directly instead of wrapping synchronous operations in `CompletableFuture.supplyAsync()`.
 
 ### Basic Async Pattern
 
+> [!IMPORTANT]
+> **Async Best Practices**: Use `transactions.beginAsync()` directly instead of `CompletableFuture.supplyAsync(() -> transactions.begin())`. Avoid `.get()` calls that defeat the async purpose. Use proper rollback handling in error scenarios.
+
 ```java
 /**
- * Demonstrates asynchronous transaction patterns for non-blocking operations.
- * Async transactions are crucial for high-throughput applications that need
- * to handle many concurrent operations efficiently.
+ * Demonstrates proper asynchronous transaction patterns for non-blocking operations.
+ * Uses transactions.beginAsync() without blocking calls for optimal performance.
+ * Includes proper error handling with rollback on failures.
  */
 public class AsyncTransactionPatterns {
     
@@ -327,9 +330,9 @@ public class AsyncTransactionPatterns {
                 System.out.println("🚀 Starting async transaction for: " + artistName);
                 
                 RecordView<Artist> artistTable = client.tables().table("Artist").recordView(Artist.class);
-                
                 Artist artist = new Artist(generateArtistId(), artistName);
                 
+                // Chain async operations without blocking
                 return artistTable.upsertAsync(tx, artist)
                     .thenCompose(ignored -> {
                         System.out.println("✓ Artist created: " + artistName);
@@ -337,7 +340,11 @@ public class AsyncTransactionPatterns {
                     })
                     .exceptionally(throwable -> {
                         System.err.println("✗ Failed to create artist: " + throwable.getMessage());
-                        tx.rollbackAsync();
+                        try {
+                            tx.rollback(); // Synchronous rollback in error path
+                        } catch (Exception rollbackError) {
+                            System.err.println("Rollback failed: " + rollbackError.getMessage());
+                        }
                         throw new RuntimeException(throwable);
                     });
             });
@@ -426,30 +433,24 @@ public class AdvancedAsyncPatterns {
     
     private CompletableFuture<Payment> processPaymentAsync(
             IgniteClient client, Transaction tx, Invoice invoice) {
-        // Simulate async payment processing
-        return CompletableFuture.supplyAsync(() -> {
-            // In real implementation, this would call payment gateway
-            try {
-                Thread.sleep(100); // Simulate network call
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException(e);
-            }
-            
-            return new Payment(invoice.getInvoiceId(), invoice.getTotal(), "SUCCESS");
-        });
+        // Simulate async payment processing without blocking thread pools
+        Payment payment = new Payment(invoice.getInvoiceId(), invoice.getTotal(), "SUCCESS");
+        
+        // In real implementation, this would use actual async payment gateway APIs
+        // Avoid CompletableFuture.supplyAsync() with blocking operations
+        return CompletableFuture.completedFuture(payment);
     }
     
     private CompletableFuture<Void> updateInventoryAsync(
             IgniteClient client, Transaction tx, List<PurchaseItem> items) {
         IgniteSql sql = client.sql();
         
+        // Use async SQL APIs directly instead of wrapping sync operations
         List<CompletableFuture<Void>> updates = items.stream()
-            .map(item -> CompletableFuture.runAsync(() -> {
-                sql.execute(tx, 
-                    "UPDATE Inventory SET QuantityAvailable = QuantityAvailable - ? WHERE ProductId = ?",
-                    item.getQuantity(), item.getProductId());
-            }))
+            .map(item -> sql.executeAsync(tx, 
+                "UPDATE Inventory SET QuantityAvailable = QuantityAvailable - ? WHERE ProductId = ?",
+                item.getQuantity(), item.getProductId())
+                .thenApply(result -> (Void) null))
             .collect(Collectors.toList());
         
         return CompletableFuture.allOf(updates.toArray(new CompletableFuture[0]));

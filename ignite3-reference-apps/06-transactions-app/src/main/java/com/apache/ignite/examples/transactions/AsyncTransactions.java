@@ -167,7 +167,7 @@ public class AsyncTransactions {
                 // Cleanup
                 System.out.println("   >>> Cleaning up test data...");
                 Tuple key = Tuple.create().set("ArtistId", artistId);
-                return artists.deleteAsync(null, key);
+                return artists.deleteAsync(null, key).thenApply(result -> (Void) null);
             })
             .exceptionally(throwable -> {
                 logger.error("Async transaction chain failed", throwable);
@@ -194,11 +194,10 @@ public class AsyncTransactions {
                     .thenCompose(ignored -> {
                         // Simulate an error condition
                         System.out.println("   !!! Simulating error condition...");
-                        CompletableFuture<Void> errorFuture = new CompletableFuture<>();
+                        CompletableFuture<Transaction> errorFuture = new CompletableFuture<>();
                         errorFuture.completeExceptionally(new RuntimeException("Simulated async error"));
                         return errorFuture;
-                    })
-                    .thenApply(ignored -> tx);
+                    });
             })
             .handle((tx, throwable) -> {
                 if (throwable != null) {
@@ -233,7 +232,8 @@ public class AsyncTransactions {
             })
             .thenCompose(ignored -> {
                 // Final cleanup
-                return artists.deleteAsync(null, Tuple.create().set("ArtistId", 8001));
+                return artists.deleteAsync(null, Tuple.create().set("ArtistId", 8001))
+                    .thenApply(result -> (Void) null);
             });
     }
 }
