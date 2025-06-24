@@ -86,7 +86,7 @@ public class BackpressureHandling {
                 // Demonstrate buffer overflow handling
                 demonstrateBufferOverflowHandling(ignite);
                 
-                System.out.println("Backpressure handling demonstration completed successfully!");
+                System.out.println("Backpressure patterns and flow control demonstrated");
                 
             } finally {
                 // Clean up test tables
@@ -170,7 +170,7 @@ public class BackpressureHandling {
             catalog.createTable(backpressureTable);
             catalog.createTable(rateLimitTable);
             catalog.createTable(overflowTable);
-            System.out.println("<<< Test tables created successfully");
+            System.out.println("<<< Test tables created");
             Thread.sleep(2000); // Wait for tables to be fully available
         } catch (Exception e) {
             System.out.println("<<< Failed to create tables: " + e.getMessage());
@@ -335,7 +335,7 @@ public class BackpressureHandling {
                 
                 streamingFuture.get();
                 
-                System.out.println("    <<< Adaptive rate limiting completed");
+                System.out.println("    <<< Adaptive rate limiting demonstration completed");
                 System.out.printf("  Peak rate: %.2f events/sec, Min rate: %.2f events/sec%n",
                     rateController.getPeakRate(), rateController.getMinRate());
                 
@@ -359,10 +359,9 @@ public class BackpressureHandling {
         
         // Create publisher with limited buffer to force overflow scenarios
         try {
-            System.out.println("Testing buffer overflow handling with limited buffer size...");
-            System.out.println("Creating basic overflow simulation using SubmissionPublisher...");
+            System.out.println("Demonstrating buffer overflow scenarios with constrained memory allocation");
             
-            // Use a simpler approach to avoid classloader issues
+            // SubmissionPublisher provides built-in backpressure through buffer size limits
             try (SubmissionPublisher<DataStreamerItem<Tuple>> publisher = 
                     new SubmissionPublisher<>(ForkJoinPool.commonPool(), 1000)) { // Small buffer
                 
@@ -376,7 +375,7 @@ public class BackpressureHandling {
                 CompletableFuture<Void> streamingFuture = overflowView
                     .streamData(publisher, overflowOptions);
                 
-                // Generate events to test overflow
+                // High-rate event generation to trigger overflow conditions
                 CompletableFuture.runAsync(() -> {
                     int eventId = 1;
                     int submittedCount = 0;
@@ -394,7 +393,7 @@ public class BackpressureHandling {
                         DataStreamerItem<Tuple> item = DataStreamerItem.of(event);
                         
                         try {
-                            // Submit with immediate check for overflow
+                            // Submit operation returns negative lag when buffer overflows
                             int lag = publisher.submit(item);
                             if (lag < 0) {
                                 droppedCount++;
@@ -413,7 +412,7 @@ public class BackpressureHandling {
                             break;
                         }
                         
-                        // Produce at high rate to create pressure
+                        // Minimal delay ensures producer rate exceeds consumer capacity
                         try {
                             Thread.sleep(1);
                         } catch (InterruptedException e) {
@@ -429,7 +428,7 @@ public class BackpressureHandling {
                 
                 streamingFuture.get();
                 
-                System.out.println("    <<< Buffer overflow handling completed");
+                System.out.println("    <<< Buffer overflow patterns demonstrated");
             }
             
         } catch (Exception e) {

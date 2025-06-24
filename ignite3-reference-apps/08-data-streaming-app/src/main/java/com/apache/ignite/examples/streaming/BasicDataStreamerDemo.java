@@ -76,7 +76,7 @@ public class BasicDataStreamerDemo {
                     .recordView();
                 
                 runBasicStreamingOperations(trackEventsView);
-                System.out.println("\n>>> Basic data streaming operations completed successfully");
+                System.out.println("\n>>> Basic data streaming operations completed");
                 
             } finally {
                 // Clean up test table
@@ -96,11 +96,11 @@ public class BasicDataStreamerDemo {
         
         IgniteCatalog catalog = ignite.catalog();
         
-        // First drop table if it exists to ensure clean state
+        // Table recreation ensures consistent schema and data isolation
         try {
             catalog.dropTable("TrackEvents");
             System.out.println("<<< Dropped existing TrackEvents table");
-            Thread.sleep(2000); // Wait for cleanup to complete
+            Thread.sleep(2000); // Distributed cluster operations require coordination time
         } catch (Exception e) {
             // Table doesn't exist, continue
         }
@@ -120,8 +120,8 @@ public class BasicDataStreamerDemo {
         
         try {
             catalog.createTable(trackEventsTable);
-            System.out.println("<<< TrackEvents table created successfully");
-            Thread.sleep(2000); // Wait for table to be fully available
+            System.out.println("<<< TrackEvents table created");
+            Thread.sleep(2000); // Schema propagation across cluster nodes
         } catch (Exception e) {
             System.out.println("<<< Failed to create TrackEvents table: " + e.getMessage());
             throw new RuntimeException("Table creation failed", e);
@@ -135,12 +135,12 @@ public class BasicDataStreamerDemo {
         System.out.println(">>> Cleaning up TrackEvents table");
         
         try {
-            // Wait a moment to ensure all operations are complete
+            // Streaming operations complete asynchronously before table operations
             Thread.sleep(1000);
             
             IgniteCatalog catalog = ignite.catalog();
             catalog.dropTable("TrackEvents");
-            System.out.println("<<< TrackEvents table dropped successfully");
+            System.out.println("<<< TrackEvents table dropped");
         } catch (Exception e) {
             System.out.println("<<< TrackEvents table not found or already dropped");
         }
@@ -190,7 +190,7 @@ public class BasicDataStreamerDemo {
                 // Wait for streaming to complete
                 streamingFuture.get();
                 
-                System.out.println("    <<< Successfully streamed 1,000 events with default settings");
+                System.out.println("    <<< Streamed 1,000 events with default settings");
             }
             
         } catch (Exception e) {
@@ -327,7 +327,7 @@ public class BasicDataStreamerDemo {
                 publisher.close();
                 streamingFuture.get();
                 
-                System.out.println("    <<< Successfully processed 500 listening sessions with mixed operations");
+                System.out.println("    <<< Processed 500 listening sessions with mixed operations");
                 System.out.println("  Operations included: TRACK_STARTED, TRACK_COMPLETED, and cleanup deletions");
             }
             

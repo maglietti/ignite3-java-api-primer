@@ -63,12 +63,15 @@ public class DataStreamingAPIDemo {
                 .build()) {
             
             System.out.println("\n--- Connecting to Ignite cluster");
-            System.out.println(">>> Successfully connected to: " + clusterAddress);
+            System.out.println(">>> Connected to: " + clusterAddress);
             System.out.println(">>> Cluster nodes: " + ignite.clusterNodes().size());
             
             runStreamingDemonstrations(clusterAddress);
             
-            System.out.println("\n=== Data streaming demonstrations completed successfully ===");
+            System.out.println("\n=== Data streaming demonstrations completed ===");
+            
+            // Background thread completion before process termination
+            Thread.sleep(5000);
             
         } catch (Exception e) {
             System.err.println("!!! Error: " + e.getMessage());
@@ -91,7 +94,7 @@ public class DataStreamingAPIDemo {
         System.out.println("--- Fundamental streaming patterns and configuration");
         try {
             BasicDataStreamerDemo.main(new String[]{clusterAddress});
-            System.out.println(">>> Basic streaming operations completed");
+            System.out.println(">>> Basic streaming patterns demonstrated");
         } catch (Exception e) {
             System.err.println("!!! Basic streaming demo failed: " + e.getMessage());
         }
@@ -101,7 +104,7 @@ public class DataStreamingAPIDemo {
         System.out.println("--- High-volume data loading and performance optimization");
         try {
             BulkDataIngestion.main(new String[]{clusterAddress});
-            System.out.println(">>> Bulk ingestion operations completed");
+            System.out.println(">>> Bulk ingestion patterns demonstrated");
         } catch (Exception e) {
             System.err.println("!!! Bulk ingestion demo failed: " + e.getMessage());
         }
@@ -111,7 +114,7 @@ public class DataStreamingAPIDemo {
         System.out.println("--- Flow control and adaptive rate limiting");
         try {
             BackpressureHandling.main(new String[]{clusterAddress});
-            System.out.println(">>> Backpressure handling completed");
+            System.out.println(">>> Backpressure patterns demonstrated");
         } catch (Exception e) {
             System.err.println("!!! Backpressure demo failed: " + e.getMessage());
         }

@@ -79,7 +79,7 @@ public class BulkDataIngestion {
             try {
                 runBulkIngestionOperations(ignite);
                 
-                System.out.println("\n>>> Bulk data ingestion operations completed successfully");
+                System.out.println("\n>>> Bulk data ingestion operations completed");
                 
             } finally {
                 // Clean up test tables
@@ -99,7 +99,7 @@ public class BulkDataIngestion {
         
         IgniteCatalog catalog = ignite.catalog();
         
-        // Clean up any existing tables first
+        // Table recreation ensures consistent schema across demonstrations
         String[] tableNames = {"BulkLoadTest", "FileLoadTest", "AdaptiveLoadTest"};
         for (String tableName : tableNames) {
             try {
@@ -111,7 +111,7 @@ public class BulkDataIngestion {
         }
         
         try {
-            Thread.sleep(2000); // Wait for cleanup to complete
+            Thread.sleep(2000); // Cluster-wide table deletion coordination
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
@@ -164,8 +164,8 @@ public class BulkDataIngestion {
             catalog.createTable(bulkLoadTable);
             catalog.createTable(fileLoadTable);
             catalog.createTable(adaptiveLoadTable);
-            System.out.println("<<< Test tables created successfully");
-            Thread.sleep(2000); // Wait for tables to be fully available
+            System.out.println("<<< Test tables created");
+            Thread.sleep(2000); // Schema replication across cluster topology
         } catch (Exception e) {
             System.out.println("<<< Failed to create tables: " + e.getMessage());
             throw new RuntimeException("Table creation failed", e);
@@ -179,7 +179,7 @@ public class BulkDataIngestion {
         System.out.println(">>> Cleaning up test tables");
         
         try {
-            // Wait to ensure all operations are complete
+            // Async streaming operations complete before table cleanup
             Thread.sleep(1000);
             
             IgniteCatalog catalog = ignite.catalog();
