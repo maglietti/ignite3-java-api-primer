@@ -114,11 +114,11 @@ public class BasicTrackEventStreaming {
             // Simulate real-time track events
             for (int i = 0; i < 10000; i++) {
                 Tuple trackEvent = Tuple.create()
-                    .set("EventId", i)
+                    .set("EventId", (long) i)
                     .set("UserId", 1000 + (i % 100))          // 100 different users
                     .set("TrackId", 1 + (i % 50))             // 50 different tracks
                     .set("EventType", "TRACK_STARTED")
-                    .set("Timestamp", System.currentTimeMillis())
+                    .set("EventTime", System.currentTimeMillis())
                     .set("Duration", 0);                      // Will be updated when track ends
                 
                 // Stream as INSERT operation
@@ -183,11 +183,11 @@ public class MixedOperationStreaming {
                 
                 // 1. Track started event
                 Tuple startEvent = Tuple.create()
-                    .set("EventId", sessionId * 3)
+                    .set("EventId", (long) sessionId * 3)
                     .set("UserId", userId)
                     .set("TrackId", trackId)
                     .set("EventType", "TRACK_STARTED")
-                    .set("Timestamp", startTime)
+                    .set("EventTime", startTime)
                     .set("Duration", 0);
                 
                 publisher.submit(DataStreamerItem.of(startEvent)); // PUT operation
@@ -195,11 +195,11 @@ public class MixedOperationStreaming {
                 // 2. Track completed event (update duration)
                 long endTime = startTime + (30000 + (sessionId % 240000)); // 30s to 4.5min
                 Tuple completeEvent = Tuple.create()
-                    .set("EventId", sessionId * 3 + 1)
+                    .set("EventId", (long) sessionId * 3 + 1)
                     .set("UserId", userId)
                     .set("TrackId", trackId)
                     .set("EventType", "TRACK_COMPLETED")
-                    .set("Timestamp", endTime)
+                    .set("EventTime", endTime)
                     .set("Duration", endTime - startTime);
                 
                 publisher.submit(DataStreamerItem.of(completeEvent)); // PUT operation
@@ -207,7 +207,7 @@ public class MixedOperationStreaming {
                 // 3. Remove old incomplete events (simulate cleanup)
                 if (sessionId % 10 == 0) {
                     Tuple obsoleteEvent = Tuple.create()
-                        .set("EventId", sessionId * 3 - 30); // Old event ID
+                        .set("EventId", (long) sessionId * 3 - 30); // Old event ID
                     
                     publisher.submit(DataStreamerItem.removed(obsoleteEvent)); // REMOVE operation
                 }
@@ -387,7 +387,7 @@ public class RealTimeEventStreamer {
             .set("UserId", event.getUserId())
             .set("TrackId", event.getTrackId())
             .set("EventType", event.getType().name())
-            .set("Timestamp", event.getTimestamp())
+            .set("EventTime", event.getTimestamp())
             .set("Metadata", event.getMetadata());
     }
 }
@@ -470,7 +470,7 @@ public class AdaptiveTrackEventPublisher implements Flow.Publisher<DataStreamerI
                         .set("UserId", event.getUserId())
                         .set("TrackId", event.getTrackId())
                         .set("EventType", event.getType().name())
-                        .set("Timestamp", event.getTimestamp());
+                        .set("EventTime", event.getTimestamp());
                     
                     try {
                         subscriber.onNext(DataStreamerItem.of(eventTuple));
@@ -605,7 +605,7 @@ public class RobustMusicEventStreamer {
             .set("UserId", event.getUserId())
             .set("TrackId", event.getTrackId())
             .set("EventType", event.getType().name())
-            .set("Timestamp", event.getTimestamp())
+            .set("EventTime", event.getTimestamp())
             .set("StreamedAt", System.currentTimeMillis());
     }
     
