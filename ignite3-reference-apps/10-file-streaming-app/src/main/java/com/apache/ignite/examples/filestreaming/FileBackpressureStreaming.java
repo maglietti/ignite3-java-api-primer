@@ -145,7 +145,7 @@ public class FileBackpressureStreaming {
         
         // Generate large sample file to demonstrate meaningful backpressure
         Path sampleFile = Paths.get(TEMP_DIR, "music_events_normal.csv");
-        int eventCount = 500000;
+        int eventCount = 1000000;
         
         System.out.printf(">>> Generating sample data file (%,d events)%n", eventCount);
         SampleDataGenerator.generateMusicEventFile(sampleFile.toString(), eventCount);
@@ -199,7 +199,7 @@ public class FileBackpressureStreaming {
         
         // Generate substantial sample file to show backpressure effects
         Path sampleFile = Paths.get(TEMP_DIR, "music_events_backpressure.csv");
-        int eventCount = 750000;
+        int eventCount = 5000000;
         
         System.out.printf(">>> Generating sample data file (%,d events)%n", eventCount);
         SampleDataGenerator.generateMusicEventFile(sampleFile.toString(), eventCount);
@@ -254,7 +254,7 @@ public class FileBackpressureStreaming {
         
         // Generate large high-velocity sample file (1M records)
         Path sampleFile = Paths.get(TEMP_DIR, "music_events_velocity.csv");
-        int eventCount = 1000000;
+        int eventCount = 10000000;
         
         System.out.printf(">>> Generating high-velocity sample data file (%,d events)%n", eventCount);
         SampleDataGenerator.generateHighVelocityEventFile(sampleFile.toString(), eventCount);
