@@ -16,16 +16,16 @@ import java.util.concurrent.ExecutionException;
  * Async Transactions - Asynchronous transaction patterns with Apache Ignite 3.
  * 
  * This class demonstrates asynchronous transaction processing:
- * - Non-blocking transaction operations
- * - CompletableFuture patterns with transactions
+ * - Non-blocking transaction operations using beginAsync()
+ * - Proper CompletableFuture chaining without blocking calls
  * - Async error handling and rollback
  * - Performance benefits of async transactions
  * 
  * Learning Focus:
- * - Async transaction lifecycle
- * - CompletableFuture with transactions
- * - Non-blocking error handling
- * - Async operation chaining
+ * - Async transaction lifecycle with transactions.beginAsync()
+ * - CompletableFuture composition without supplyAsync() wrapping
+ * - Non-blocking error handling with proper rollback
+ * - Async operation chaining for educational examples
  */
 public class AsyncTransactions {
 
@@ -61,70 +61,69 @@ public class AsyncTransactions {
         
         System.out.println("\n--- Async Transaction Patterns ---");
         
-        // Demonstrate async transaction patterns
-        demonstrateAsyncCommit(transactions, artists);
-        demonstrateAsyncChaining(transactions, artists);
-        demonstrateAsyncErrorHandling(transactions, artists);
+        // Chain async transaction patterns
+        CompletableFuture<Void> allTransactions = demonstrateAsyncCommit(transactions, artists)
+            .thenCompose(ignored -> demonstrateAsyncChaining(transactions, artists))
+            .thenCompose(ignored -> demonstrateAsyncErrorHandling(transactions, artists))
+            .thenRun(() -> System.out.println("\n<<< Async transactions completed successfully"));
         
-        System.out.println("\n<<< Async transactions completed successfully");
+        // Wait for all async operations to complete
+        allTransactions.get();
     }
 
-    private static void demonstrateAsyncCommit(IgniteTransactions transactions, RecordView<Tuple> artists) 
-            throws ExecutionException, InterruptedException {
+    private static CompletableFuture<Void> demonstrateAsyncCommit(IgniteTransactions transactions, RecordView<Tuple> artists) {
         System.out.println("\n1. Async Transaction Commit:");
         
-        Transaction tx = transactions.begin();
-        
-        try {
-            // Create test data
-            Tuple newArtist = Tuple.create()
-                .set("ArtistId", 8001)
-                .set("Name", "Async Artist 1");
-            
-            // Async upsert within transaction
-            CompletableFuture<Void> upsertFuture = artists.upsertAsync(tx, newArtist);
-            System.out.println("   >>> Async upsert started...");
-            
-            // Wait for upsert completion
-            upsertFuture.get();
-            System.out.println("   <<< Async upsert completed");
-            
-            // Async commit
-            CompletableFuture<Void> commitFuture = tx.commitAsync();
-            System.out.println("   >>> Async commit started...");
-            
-            // Wait for commit completion
-            commitFuture.get();
-            System.out.println("   <<< Async commit completed");
-            
-            // Verify the result
-            Tuple key = Tuple.create().set("ArtistId", 8001);
-            Tuple result = artists.get(null, key);
-            if (result != null) {
-                System.out.println("   <<< Verified: " + result.stringValue("Name"));
-            }
-            
-        } catch (Exception e) {
-            tx.rollback();
-            throw e;
-        }
+        return transactions.beginAsync()
+            .thenCompose(tx -> {
+                // Create test data
+                Tuple newArtist = Tuple.create()
+                    .set("ArtistId", 8001)
+                    .set("Name", "Async Artist 1");
+                
+                System.out.println("   >>> Async upsert started...");
+                
+                // Chain upsert -> commit -> verification
+                return artists.upsertAsync(tx, newArtist)
+                    .thenCompose(ignored -> {
+                        System.out.println("   <<< Async upsert completed");
+                        System.out.println("   >>> Async commit started...");
+                        return tx.commitAsync();
+                    })
+                    .thenCompose(ignored -> {
+                        System.out.println("   <<< Async commit completed");
+                        
+                        // Verify the result asynchronously
+                        Tuple key = Tuple.create().set("ArtistId", 8001);
+                        return artists.getAsync(null, key);
+                    })
+                    .thenAccept(result -> {
+                        if (result != null) {
+                            System.out.println("   <<< Verified: " + result.stringValue("Name"));
+                        }
+                    })
+                    .exceptionally(throwable -> {
+                        System.out.println("   !!! Error in async commit, rolling back...");
+                        try {
+                            tx.rollback();
+                        } catch (Exception rollbackError) {
+                            logger.error("Rollback failed", rollbackError);
+                        }
+                        throw new RuntimeException("Async commit failed", throwable);
+                    });
+            });
     }
 
-    private static void demonstrateAsyncChaining(IgniteTransactions transactions, RecordView<Tuple> artists)
-            throws ExecutionException, InterruptedException {
+    private static CompletableFuture<Void> demonstrateAsyncChaining(IgniteTransactions transactions, RecordView<Tuple> artists) {
         System.out.println("\n2. Async Transaction Chaining:");
         
         final int artistId = 8002;
         
-        CompletableFuture<String> chainedTransaction = CompletableFuture
-            // Start with beginning a transaction
-            .supplyAsync(() -> {
-                System.out.println("   >>> Step 1: Beginning transaction...");
-                return transactions.begin();
-            })
-            // Create and insert artist
+        return transactions.beginAsync()
             .thenCompose(tx -> {
+                System.out.println("   >>> Step 1: Beginning transaction...");
                 System.out.println("   >>> Step 2: Creating artist...");
+                
                 Tuple newArtist = Tuple.create()
                     .set("ArtistId", artistId)
                     .set("Name", "Chained Artist");
@@ -153,34 +152,39 @@ public class AsyncTransactions {
             .thenCompose(tx -> {
                 System.out.println("   >>> Step 5: Committing transaction...");
                 return tx.commitAsync()
-                    .thenApply(ignored -> "Transaction chain completed successfully");
+                    .thenAccept(ignored -> System.out.println("   <<< Transaction chain completed successfully"))
+                    .exceptionally(throwable -> {
+                        System.out.println("   !!! Commit failed, rolling back...");
+                        try {
+                            tx.rollback();
+                        } catch (Exception rollbackError) {
+                            logger.error("Rollback failed", rollbackError);
+                        }
+                        throw new RuntimeException("Transaction chain failed", throwable);
+                    });
             })
-            // Handle any errors
+            .thenCompose(ignored -> {
+                // Cleanup
+                System.out.println("   >>> Cleaning up test data...");
+                Tuple key = Tuple.create().set("ArtistId", artistId);
+                return artists.deleteAsync(null, key);
+            })
             .exceptionally(throwable -> {
                 logger.error("Async transaction chain failed", throwable);
-                return "Transaction chain failed: " + throwable.getMessage();
+                System.out.println("   <<< Transaction chain failed: " + throwable.getMessage());
+                return null;
             });
-        
-        String result = chainedTransaction.get();
-        System.out.println("   <<< " + result);
-        
-        // Cleanup
-        Tuple key = Tuple.create().set("ArtistId", artistId);
-        artists.delete(null, key);
     }
 
-    private static void demonstrateAsyncErrorHandling(IgniteTransactions transactions, RecordView<Tuple> artists)
-            throws ExecutionException, InterruptedException {
+    private static CompletableFuture<Void> demonstrateAsyncErrorHandling(IgniteTransactions transactions, RecordView<Tuple> artists) {
         System.out.println("\n3. Async Error Handling:");
         
         final int artistId = 8003;
         
-        CompletableFuture<String> errorHandlingDemo = CompletableFuture
-            .supplyAsync(() -> {
-                System.out.println("   >>> Starting transaction with potential error...");
-                return transactions.begin();
-            })
+        return transactions.beginAsync()
             .thenCompose(tx -> {
+                System.out.println("   >>> Starting transaction with potential error...");
+                
                 // Insert valid data
                 Tuple newArtist = Tuple.create()
                     .set("ArtistId", artistId)
@@ -203,30 +207,33 @@ public class AsyncTransactions {
                         if (tx != null) {
                             tx.rollback();
                         }
-                        return "Transaction rolled back due to error";
+                        System.out.println("   <<< Transaction rolled back due to error");
+                        return CompletableFuture.completedFuture("rollback_success");
                     } catch (Exception rollbackError) {
                         logger.error("Rollback failed", rollbackError);
-                        return "Rollback failed";
+                        return CompletableFuture.completedFuture("rollback_failed");
                     }
                 } else {
-                    return "Transaction completed successfully";
+                    System.out.println("   <<< Transaction completed successfully");
+                    return CompletableFuture.completedFuture("success");
                 }
+            })
+            .thenCompose(resultFuture -> resultFuture)
+            .thenCompose(result -> {
+                // Verify rollback worked
+                Tuple key = Tuple.create().set("ArtistId", artistId);
+                return artists.getAsync(null, key)
+                    .thenAccept(artist -> {
+                        if (artist == null) {
+                            System.out.println("   <<< Verified: Transaction was properly rolled back");
+                        } else {
+                            System.out.println("   !!! Unexpected: Data found after rollback");
+                        }
+                    });
+            })
+            .thenCompose(ignored -> {
+                // Final cleanup
+                return artists.deleteAsync(null, Tuple.create().set("ArtistId", 8001));
             });
-        
-        String result = errorHandlingDemo.get();
-        System.out.println("   <<< " + result);
-        
-        // Verify rollback worked
-        Tuple key = Tuple.create().set("ArtistId", artistId);
-        Tuple artist = artists.get(null, key);
-        if (artist == null) {
-            System.out.println("   <<< Verified: Transaction was properly rolled back");
-        } else {
-            System.out.println("   !!! Unexpected: Data found after rollback");
-            artists.delete(null, key); // Cleanup
-        }
-        
-        // Final cleanup
-        artists.delete(null, Tuple.create().set("ArtistId", 8001));
     }
 }
