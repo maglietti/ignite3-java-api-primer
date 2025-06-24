@@ -22,8 +22,11 @@ import org.apache.ignite.table.RecordView;
 import org.apache.ignite.table.DataStreamerItem;
 import org.apache.ignite.table.DataStreamerOptions;
 import org.apache.ignite.table.Tuple;
+import org.apache.ignite.catalog.IgniteCatalog;
+import org.apache.ignite.catalog.definitions.ColumnDefinition;
+import org.apache.ignite.catalog.ColumnType;
+import org.apache.ignite.catalog.definitions.TableDefinition;
 
-import java.util.concurrent.Flow;
 import java.util.concurrent.SubmissionPublisher;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -70,12 +73,130 @@ public class BulkDataIngestion {
                 .addresses(clusterAddress)
                 .build()) {
             
-            runBulkIngestionOperations(ignite);
+            // Create test tables
+            createTestTables(ignite);
             
-            System.out.println("\n>>> Bulk data ingestion operations completed successfully");
+            try {
+                runBulkIngestionOperations(ignite);
+                
+                System.out.println("\n>>> Bulk data ingestion operations completed successfully");
+                
+            } finally {
+                // Clean up test tables
+                cleanupTestTables(ignite);
+            }
             
         } catch (Exception e) {
             System.err.println("!!! Error: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Creates test tables for bulk ingestion demonstrations.
+     */
+    private static void createTestTables(IgniteClient ignite) {
+        System.out.println(">>> Creating test tables for bulk ingestion demonstrations");
+        
+        IgniteCatalog catalog = ignite.catalog();
+        
+        // Clean up any existing tables first
+        String[] tableNames = {"BulkLoadTest", "FileLoadTest", "AdaptiveLoadTest"};
+        for (String tableName : tableNames) {
+            try {
+                catalog.dropTable(tableName);
+                System.out.println("<<< Dropped existing " + tableName + " table");
+            } catch (Exception e) {
+                // Table doesn't exist, continue
+            }
+        }
+        
+        try {
+            Thread.sleep(2000); // Wait for cleanup to complete
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        
+        // Create BulkLoadTest table
+        TableDefinition bulkLoadTable = TableDefinition.builder("BulkLoadTest")
+            .columns(
+                ColumnDefinition.column("RecordId", ColumnType.BIGINT),
+                ColumnDefinition.column("UserId", ColumnType.INTEGER),
+                ColumnDefinition.column("TrackId", ColumnType.INTEGER),
+                ColumnDefinition.column("PlayDate", ColumnType.VARCHAR),
+                ColumnDefinition.column("PlayCount", ColumnType.INTEGER),
+                ColumnDefinition.column("Rating", ColumnType.INTEGER),
+                ColumnDefinition.column("PlayDuration", ColumnType.INTEGER)
+            )
+            .primaryKey("RecordId")
+            .zone("MusicStore")
+            .build();
+        
+        // Create FileLoadTest table
+        TableDefinition fileLoadTable = TableDefinition.builder("FileLoadTest")
+            .columns(
+                ColumnDefinition.column("RecordId", ColumnType.BIGINT),
+                ColumnDefinition.column("UserId", ColumnType.INTEGER),
+                ColumnDefinition.column("TrackId", ColumnType.INTEGER),
+                ColumnDefinition.column("PlayDate", ColumnType.VARCHAR),
+                ColumnDefinition.column("PlayCount", ColumnType.INTEGER),
+                ColumnDefinition.column("Rating", ColumnType.INTEGER),
+                ColumnDefinition.column("PlayDuration", ColumnType.INTEGER)
+            )
+            .primaryKey("RecordId")
+            .zone("MusicStore")
+            .build();
+        
+        // Create AdaptiveLoadTest table
+        TableDefinition adaptiveLoadTable = TableDefinition.builder("AdaptiveLoadTest")
+            .columns(
+                ColumnDefinition.column("RecordId", ColumnType.BIGINT),
+                ColumnDefinition.column("UserId", ColumnType.INTEGER),
+                ColumnDefinition.column("TrackId", ColumnType.INTEGER),
+                ColumnDefinition.column("BatchSize", ColumnType.INTEGER),
+                ColumnDefinition.column("EventTime", ColumnType.BIGINT),
+                ColumnDefinition.column("TestData", ColumnType.VARCHAR)
+            )
+            .primaryKey("RecordId")
+            .zone("MusicStore")
+            .build();
+        
+        try {
+            catalog.createTable(bulkLoadTable);
+            catalog.createTable(fileLoadTable);
+            catalog.createTable(adaptiveLoadTable);
+            System.out.println("<<< Test tables created successfully");
+            Thread.sleep(2000); // Wait for tables to be fully available
+        } catch (Exception e) {
+            System.out.println("<<< Failed to create tables: " + e.getMessage());
+            throw new RuntimeException("Table creation failed", e);
+        }
+    }
+    
+    /**
+     * Cleans up test tables after demonstrations.
+     */
+    private static void cleanupTestTables(IgniteClient ignite) {
+        System.out.println(">>> Cleaning up test tables");
+        
+        try {
+            // Wait to ensure all operations are complete
+            Thread.sleep(1000);
+            
+            IgniteCatalog catalog = ignite.catalog();
+            String[] tables = {"BulkLoadTest", "FileLoadTest", "AdaptiveLoadTest"};
+            
+            for (String tableName : tables) {
+                try {
+                    catalog.dropTable(tableName);
+                    System.out.println("<<< Dropped table: " + tableName);
+                } catch (Exception e) {
+                    System.out.println("<<< Table " + tableName + " not found or already dropped");
+                }
+            }
+            
+            System.out.println("<<< Bulk ingestion table cleanup completed");
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
     
@@ -124,7 +245,7 @@ public class BulkDataIngestion {
                 // Generate large dataset for bulk loading
                 for (int i = 1; i <= recordCount; i++) {
                     Tuple bulkRecord = Tuple.create()
-                        .set("RecordId", i)
+                        .set("RecordId", (long) i)
                         .set("UserId", 1000 + (i % 5000))           // 5000 different users
                         .set("TrackId", 1 + (i % 1000))             // 1000 different tracks
                         .set("PlayDate", "2024-" + String.format("%02d", (i % 12) + 1) + 
@@ -294,7 +415,7 @@ public class BulkDataIngestion {
                         .set("UserId", 5000 + (i % 100))
                         .set("TrackId", 1 + (i % 200))
                         .set("BatchSize", batchSize)                    // Track which batch size
-                        .set("Timestamp", System.currentTimeMillis())
+                        .set("EventTime", System.currentTimeMillis())
                         .set("TestData", "Batch test data for size " + batchSize);
                     
                     publisher.submit(DataStreamerItem.of(testRecord));

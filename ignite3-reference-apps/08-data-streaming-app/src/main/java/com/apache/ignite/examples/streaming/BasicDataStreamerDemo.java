@@ -22,8 +22,11 @@ import org.apache.ignite.table.RecordView;
 import org.apache.ignite.table.DataStreamerItem;
 import org.apache.ignite.table.DataStreamerOptions;
 import org.apache.ignite.table.Tuple;
+import org.apache.ignite.catalog.IgniteCatalog;
+import org.apache.ignite.catalog.definitions.ColumnDefinition;
+import org.apache.ignite.catalog.ColumnType;
+import org.apache.ignite.catalog.definitions.TableDefinition;
 
-import java.util.concurrent.Flow;
 import java.util.concurrent.SubmissionPublisher;
 import java.util.concurrent.CompletableFuture;
 
@@ -63,17 +66,83 @@ public class BasicDataStreamerDemo {
                 .addresses(clusterAddress)
                 .build()) {
             
-            // Get table view for streaming operations
-            RecordView<Tuple> trackEventsView = ignite.tables()
-                .table("TrackEvents")
-                .recordView();
+            // Create test table
+            createTestTable(ignite);
             
-            runBasicStreamingOperations(trackEventsView);
-            
-            System.out.println("\n>>> Basic data streaming operations completed successfully");
+            try {
+                // Get table view for streaming operations
+                RecordView<Tuple> trackEventsView = ignite.tables()
+                    .table("TrackEvents")
+                    .recordView();
+                
+                runBasicStreamingOperations(trackEventsView);
+                System.out.println("\n>>> Basic data streaming operations completed successfully");
+                
+            } finally {
+                // Clean up test table
+                cleanupTestTable(ignite);
+            }
             
         } catch (Exception e) {
             System.err.println("!!! Error: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Creates test table for streaming demonstrations.
+     */
+    private static void createTestTable(IgniteClient ignite) {
+        System.out.println(">>> Creating TrackEvents table for streaming demonstrations");
+        
+        IgniteCatalog catalog = ignite.catalog();
+        
+        // First drop table if it exists to ensure clean state
+        try {
+            catalog.dropTable("TrackEvents");
+            System.out.println("<<< Dropped existing TrackEvents table");
+            Thread.sleep(2000); // Wait for cleanup to complete
+        } catch (Exception e) {
+            // Table doesn't exist, continue
+        }
+        
+        TableDefinition trackEventsTable = TableDefinition.builder("TrackEvents")
+            .columns(
+                ColumnDefinition.column("EventId", ColumnType.BIGINT),
+                ColumnDefinition.column("UserId", ColumnType.INTEGER),
+                ColumnDefinition.column("TrackId", ColumnType.INTEGER),
+                ColumnDefinition.column("EventType", ColumnType.VARCHAR),
+                ColumnDefinition.column("EventTime", ColumnType.BIGINT),
+                ColumnDefinition.column("Duration", ColumnType.INTEGER)
+            )
+            .primaryKey("EventId")
+            .zone("MusicStore")
+            .build();
+        
+        try {
+            catalog.createTable(trackEventsTable);
+            System.out.println("<<< TrackEvents table created successfully");
+            Thread.sleep(2000); // Wait for table to be fully available
+        } catch (Exception e) {
+            System.out.println("<<< Failed to create TrackEvents table: " + e.getMessage());
+            throw new RuntimeException("Table creation failed", e);
+        }
+    }
+    
+    /**
+     * Cleans up test table after demonstration.
+     */
+    private static void cleanupTestTable(IgniteClient ignite) {
+        System.out.println(">>> Cleaning up TrackEvents table");
+        
+        try {
+            // Wait a moment to ensure all operations are complete
+            Thread.sleep(1000);
+            
+            IgniteCatalog catalog = ignite.catalog();
+            catalog.dropTable("TrackEvents");
+            System.out.println("<<< TrackEvents table dropped successfully");
+        } catch (Exception e) {
+            System.out.println("<<< TrackEvents table not found or already dropped");
         }
     }
     
@@ -104,11 +173,11 @@ public class BasicDataStreamerDemo {
                 
                 for (int i = 1; i <= 1000; i++) {
                     Tuple trackEvent = Tuple.create()
-                        .set("EventId", i)
+                        .set("EventId", (long) i)
                         .set("UserId", 1000 + (i % 50))           // 50 different users
                         .set("TrackId", 1 + (i % 25))             // 25 different tracks
                         .set("EventType", getEventType(i))        // Realistic event types
-                        .set("Timestamp", System.currentTimeMillis() + i * 1000)
+                        .set("EventTime", System.currentTimeMillis() + i * 1000)
                         .set("Duration", getDuration(i));         // Track duration in ms
                     
                     // Stream as PUT operation (insert/update)
@@ -159,11 +228,11 @@ public class BasicDataStreamerDemo {
                 // Stream larger dataset with performance monitoring
                 for (int i = 2001; i <= 7000; i++) {
                     Tuple trackEvent = Tuple.create()
-                        .set("EventId", i)
+                        .set("EventId", (long) i)
                         .set("UserId", 2000 + (i % 100))          // 100 different users
                         .set("TrackId", 1 + (i % 50))             // 50 different tracks
                         .set("EventType", getEventType(i))
-                        .set("Timestamp", System.currentTimeMillis() + i * 500)
+                        .set("EventTime", System.currentTimeMillis() + i * 500)
                         .set("Duration", getDuration(i));
                     
                     publisher.submit(DataStreamerItem.of(trackEvent));
@@ -225,7 +294,7 @@ public class BasicDataStreamerDemo {
                         .set("UserId", userId)
                         .set("TrackId", trackId)
                         .set("EventType", "TRACK_STARTED")
-                        .set("Timestamp", System.currentTimeMillis() + sessionId * 1000)
+                        .set("EventTime", System.currentTimeMillis() + sessionId * 1000)
                         .set("Duration", 0);
                     
                     publisher.submit(DataStreamerItem.of(startEvent));
@@ -236,7 +305,7 @@ public class BasicDataStreamerDemo {
                         .set("UserId", userId)
                         .set("TrackId", trackId)
                         .set("EventType", "TRACK_COMPLETED")
-                        .set("Timestamp", System.currentTimeMillis() + sessionId * 1000 + 180000)
+                        .set("EventTime", System.currentTimeMillis() + sessionId * 1000 + 180000)
                         .set("Duration", 180000 + (sessionId % 60000)); // 3-4 minutes
                     
                     publisher.submit(DataStreamerItem.of(completeEvent));

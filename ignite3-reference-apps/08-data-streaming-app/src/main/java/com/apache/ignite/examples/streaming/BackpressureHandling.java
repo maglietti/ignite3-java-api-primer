@@ -106,9 +106,25 @@ public class BackpressureHandling {
         
         IgniteCatalog catalog = ignite.catalog();
         
+        // Clean up any existing tables first
+        String[] tableNames = {"BackpressureTest", "RateLimitTest", "OverflowTest"};
+        for (String tableName : tableNames) {
+            try {
+                catalog.dropTable(tableName);
+                System.out.println("<<< Dropped existing " + tableName + " table");
+            } catch (Exception e) {
+                // Table doesn't exist, continue
+            }
+        }
+        
+        try {
+            Thread.sleep(2000); // Wait for cleanup to complete
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        
         // Create BackpressureTest table
         TableDefinition backpressureTable = TableDefinition.builder("BackpressureTest")
-            .ifNotExists()
             .columns(
                 ColumnDefinition.column("EventId", ColumnType.BIGINT),
                 ColumnDefinition.column("UserId", ColumnType.INTEGER),
@@ -123,7 +139,6 @@ public class BackpressureHandling {
         
         // Create RateLimitTest table
         TableDefinition rateLimitTable = TableDefinition.builder("RateLimitTest")
-            .ifNotExists()
             .columns(
                 ColumnDefinition.column("EventId", ColumnType.BIGINT),
                 ColumnDefinition.column("UserId", ColumnType.INTEGER),
@@ -138,7 +153,6 @@ public class BackpressureHandling {
         
         // Create OverflowTest table
         TableDefinition overflowTable = TableDefinition.builder("OverflowTest")
-            .ifNotExists()
             .columns(
                 ColumnDefinition.column("EventId", ColumnType.BIGINT),
                 ColumnDefinition.column("UserId", ColumnType.INTEGER),
@@ -156,9 +170,10 @@ public class BackpressureHandling {
             catalog.createTable(rateLimitTable);
             catalog.createTable(overflowTable);
             System.out.println("<<< Test tables created successfully");
+            Thread.sleep(2000); // Wait for tables to be fully available
         } catch (Exception e) {
-            // Tables may already exist, continue anyway
-            System.out.println("<<< Tables already exist or creation skipped");
+            System.out.println("<<< Failed to create tables: " + e.getMessage());
+            throw new RuntimeException("Table creation failed", e);
         }
     }
     
@@ -168,20 +183,26 @@ public class BackpressureHandling {
     private static void cleanupTestTables(IgniteClient ignite) {
         System.out.println(">>> Cleaning up test tables");
         
-        IgniteCatalog catalog = ignite.catalog();
-        
-        String[] tables = {"BackpressureTest", "RateLimitTest", "OverflowTest"};
-        
-        for (String tableName : tables) {
-            try {
-                catalog.dropTable(tableName);
-                System.out.println("<<< Dropped table: " + tableName);
-            } catch (Exception e) {
-                System.out.println("<<< Table " + tableName + " not found or already dropped");
+        try {
+            // Wait to ensure all operations are complete
+            Thread.sleep(1000);
+            
+            IgniteCatalog catalog = ignite.catalog();
+            String[] tables = {"BackpressureTest", "RateLimitTest", "OverflowTest"};
+            
+            for (String tableName : tables) {
+                try {
+                    catalog.dropTable(tableName);
+                    System.out.println("<<< Dropped table: " + tableName);
+                } catch (Exception e) {
+                    System.out.println("<<< Table " + tableName + " not found or already dropped");
+                }
             }
+            
+            System.out.println("<<< Test table cleanup completed");
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
-        
-        System.out.println("<<< Test table cleanup completed");
     }
     
     /**
@@ -221,7 +242,7 @@ public class BackpressureHandling {
             CompletableFuture.runAsync(() -> {
                 while (!streamingFuture.isDone()) {
                     try {
-                        Thread.sleep(2000);
+                        Thread.sleep(1000);
                         System.out.printf("  Published: %d, Requested: %d, Rate: %.2f events/sec%n",
                             publisher.getPublishedCount(),
                             publisher.getRequestedCount(),
@@ -297,8 +318,8 @@ public class BackpressureHandling {
                                 Thread.sleep(delay);
                             }
                             
-                            // Progress and rate monitoring
-                            if (i % 5000 == 0) {
+                            // Progress and rate monitoring with more frequent updates
+                            if (i % 1000 == 0) {
                                 System.out.printf("  Submitted %d events, Current rate: %.2f events/sec, Phase: %s%n",
                                     i, rateController.getCurrentRate(), rateController.getCurrentPhase());
                             }
@@ -355,9 +376,10 @@ public class BackpressureHandling {
             CompletableFuture.runAsync(() -> {
                 while (!streamingFuture.isDone()) {
                     try {
-                        Thread.sleep(3000);
-                        System.out.printf("  Buffer status - Size: %d, Overflows: %d, Dropped: %d%n",
+                        Thread.sleep(2000);
+                        System.out.printf("  Buffer status - Size: %d/%d, Overflows: %d, Dropped: %d%n",
                             overflowPublisher.getBufferSize(),
+                            overflowPublisher.getMaxBufferSize(),
                             overflowPublisher.getOverflowCount(),
                             overflowPublisher.getDroppedCount());
                     } catch (InterruptedException e) {
@@ -411,6 +433,7 @@ public class BackpressureHandling {
         public long getRequestedCount() { return requestedCount.get(); }
         public double getCurrentRate() { return currentRate; }
         public double getMaxRate() { return maxRate; }
+        public long getLastRateUpdate() { return lastRateUpdate; }
         
         private class BackpressureSubscription implements Flow.Subscription {
             private final Flow.Subscriber<? super DataStreamerItem<Tuple>> subscriber;
@@ -473,6 +496,7 @@ public class BackpressureHandling {
                                 if (elapsed > 0) {
                                     currentRate = (double) delivered / elapsed * 1000;
                                     maxRate = Math.max(maxRate, currentRate);
+                                    lastRateUpdate = System.currentTimeMillis();
                                 }
                                 
                                 // Apply backpressure-based delay
@@ -562,6 +586,7 @@ public class BackpressureHandling {
         
         private void setPhase(String newPhase) {
             if (!newPhase.equals(currentPhase)) {
+                System.out.printf("  >>> Phase transition: %s → %s%n", currentPhase, newPhase);
                 currentPhase = newPhase;
                 phaseStartTime = System.currentTimeMillis();
                 eventCount = 0;
@@ -638,6 +663,7 @@ public class BackpressureHandling {
         }
         
         public int getBufferSize() { return buffer.size(); }
+        public int getMaxBufferSize() { return maxBufferSize; }
         public long getProcessedCount() { return processedCount.get(); }
         public long getDroppedCount() { return droppedCount.get(); }
         public long getOverflowCount() { return overflowCount.get(); }
