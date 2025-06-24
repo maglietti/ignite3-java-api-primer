@@ -147,7 +147,7 @@ public class BasicSQLOperations {
                 .pageSize(100)
                 .build();
 
-        String[] searchArtists = {"AC/DC", "Metallica", "U2"};
+        String[] searchArtists = {"AC/DC", "Accept", "Aerosmith"};
         
         for (String artistName : searchArtists) {
             ResultSet<SqlRow> result = sql.execute(null, artistLookup, artistName);
