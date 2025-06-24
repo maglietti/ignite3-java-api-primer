@@ -25,7 +25,7 @@ Master performance optimization for music streaming platforms using Ignite 3's c
 
 This module contains caching pattern demonstrations:
 
-### 1. CacheAsidePatternDemo
+### 1. CacheAsidePatterns
 
 **Application-controlled catalog caching**
 
@@ -38,7 +38,7 @@ Demonstrates cache-aside pattern for music catalog data with manual cache manage
 - Cache warming strategies for improved performance
 - Async patterns for non-blocking operations
 
-### 2. WriteThroughPatternDemo  
+### 2. WriteThroughPatterns
 
 **Synchronous customer data updates**
 
@@ -51,7 +51,7 @@ Shows write-through pattern for customer profile management with transaction gua
 - Error handling with rollback capabilities
 - Consistency guarantees for critical business data
 
-### 3. WriteBehindPatternDemo
+### 3. WriteBehindPatterns
 
 **High-throughput analytics event recording**
 
@@ -64,7 +64,7 @@ Implements write-behind pattern for analytics data with background processing an
 - High-throughput event recording for user activity tracking
 - Buffer management and overflow handling
 
-### 4. CachingPatternsDemo
+### 4. CachingAPIDemo
 
 **Complete orchestrator demonstrating combined patterns**
 
@@ -83,7 +83,7 @@ Runs all caching pattern demonstrations with realistic music streaming scenarios
 
 ```bash
 cd 09-caching-patterns-app
-mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.caching.CachingPatternsDemo"
+mvn compile exec:java
 ```
 
 ### Individual Pattern Demonstrations
@@ -91,25 +91,33 @@ mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.caching.CachingPatter
 **Cache-Aside Pattern**:
 
 ```bash
-mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.caching.CacheAsidePatternDemo"
+mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.caching.CacheAsidePatterns"
 ```
 
 **Write-Through Pattern**:
 
 ```bash
-mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.caching.WriteThroughPatternDemo"
+mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.caching.WriteThroughPatterns"
 ```
 
 **Write-Behind Pattern**:
 
 ```bash
-mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.caching.WriteBehindPatternDemo"
+mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.caching.WriteBehindPatterns"
 ```
 
 ### Custom Cluster Address
 
 ```bash
-mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.caching.CachingPatternsDemo" -Dexec.args="192.168.1.100:10800"
+mvn compile exec:java -Dexec.args="192.168.1.100:10800"
+```
+
+### Complete Workflow
+
+For a clean build and execution:
+
+```bash
+mvn clean compile exec:java
 ```
 
 ## Key Implementation Patterns
