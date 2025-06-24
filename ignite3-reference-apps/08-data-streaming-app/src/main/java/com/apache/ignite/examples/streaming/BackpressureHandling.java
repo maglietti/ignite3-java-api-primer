@@ -33,6 +33,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.List;
@@ -357,45 +358,79 @@ public class BackpressureHandling {
             .recordView();
         
         // Create publisher with limited buffer to force overflow scenarios
-        BufferOverflowPublisher overflowPublisher = new BufferOverflowPublisher(10000); // Small buffer
-        
-        DataStreamerOptions overflowOptions = DataStreamerOptions.builder()
-            .pageSize(500)                      // Small batches to increase pressure
-            .perPartitionParallelOperations(1)  // Single-threaded processing
-            .autoFlushInterval(2000)            // Slow flushing to create backpressure
-            .retryLimit(8)                      // Standard retry limit
-            .build();
-        
         try {
             System.out.println("Testing buffer overflow handling with limited buffer size...");
+            System.out.println("Creating basic overflow simulation using SubmissionPublisher...");
             
-            CompletableFuture<Void> streamingFuture = overflowView
-                .streamData(overflowPublisher, overflowOptions);
-            
-            // Monitor overflow statistics
-            CompletableFuture.runAsync(() -> {
-                while (!streamingFuture.isDone()) {
-                    try {
-                        Thread.sleep(2000);
-                        System.out.printf("  Buffer status - Size: %d/%d, Overflows: %d, Dropped: %d%n",
-                            overflowPublisher.getBufferSize(),
-                            overflowPublisher.getMaxBufferSize(),
-                            overflowPublisher.getOverflowCount(),
-                            overflowPublisher.getDroppedCount());
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        break;
+            // Use a simpler approach to avoid classloader issues
+            try (SubmissionPublisher<DataStreamerItem<Tuple>> publisher = 
+                    new SubmissionPublisher<>(ForkJoinPool.commonPool(), 1000)) { // Small buffer
+                
+                DataStreamerOptions overflowOptions = DataStreamerOptions.builder()
+                    .pageSize(500)                      // Small batches to increase pressure
+                    .perPartitionParallelOperations(1)  // Single-threaded processing
+                    .autoFlushInterval(2000)            // Slow flushing to create backpressure
+                    .retryLimit(8)                      // Standard retry limit
+                    .build();
+                
+                CompletableFuture<Void> streamingFuture = overflowView
+                    .streamData(publisher, overflowOptions);
+                
+                // Generate events to test overflow
+                CompletableFuture.runAsync(() -> {
+                    int eventId = 1;
+                    int submittedCount = 0;
+                    int droppedCount = 0;
+                    
+                    while (eventId <= 15000 && !streamingFuture.isDone()) {
+                        Tuple event = Tuple.create()
+                            .set("EventId", (long) eventId++)
+                            .set("UserId", 7000 + (eventId % 100))
+                            .set("TrackId", 1 + (eventId % 50))
+                            .set("EventType", "OVERFLOW_TEST")
+                            .set("EventTime", System.currentTimeMillis())
+                            .set("BufferTest", true);
+                        
+                        DataStreamerItem<Tuple> item = DataStreamerItem.of(event);
+                        
+                        try {
+                            // Submit with immediate check for overflow
+                            int lag = publisher.submit(item);
+                            if (lag < 0) {
+                                droppedCount++;
+                                System.out.println("  !!! Buffer overflow - event dropped");
+                            } else {
+                                submittedCount++;
+                            }
+                            
+                            // Progress reporting
+                            if (submittedCount % 2000 == 0) {
+                                System.out.printf("  Submitted: %d, Dropped: %d, Subscriber lag: %d%n", 
+                                    submittedCount, droppedCount, lag);
+                            }
+                        } catch (Exception e) {
+                            System.out.println("  !!! Publisher exception: " + e.getMessage());
+                            break;
+                        }
+                        
+                        // Produce at high rate to create pressure
+                        try {
+                            Thread.sleep(1);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            break;
+                        }
                     }
-                }
-            });
-            
-            streamingFuture.get();
-            
-            System.out.println("    <<< Buffer overflow handling completed");
-            System.out.printf("  Final stats - Processed: %d, Dropped: %d, Overflow events: %d%n",
-                overflowPublisher.getProcessedCount(),
-                overflowPublisher.getDroppedCount(),
-                overflowPublisher.getOverflowCount());
+                    
+                    publisher.close();
+                    System.out.printf("  Final producer stats - Submitted: %d, Dropped: %d%n", 
+                        submittedCount, droppedCount);
+                });
+                
+                streamingFuture.get();
+                
+                System.out.println("    <<< Buffer overflow handling completed");
+            }
             
         } catch (Exception e) {
             System.err.println("Buffer overflow demo failed: " + e.getMessage());
@@ -602,7 +637,7 @@ public class BackpressureHandling {
     /**
      * Publisher that simulates buffer overflow scenarios and handles them gracefully.
      */
-    private static class BufferOverflowPublisher implements Flow.Publisher<DataStreamerItem<Tuple>> {
+    public static class BufferOverflowPublisher implements Flow.Publisher<DataStreamerItem<Tuple>> {
         private final BlockingQueue<DataStreamerItem<Tuple>> buffer;
         private final AtomicLong processedCount = new AtomicLong(0);
         private final AtomicLong droppedCount = new AtomicLong(0);
