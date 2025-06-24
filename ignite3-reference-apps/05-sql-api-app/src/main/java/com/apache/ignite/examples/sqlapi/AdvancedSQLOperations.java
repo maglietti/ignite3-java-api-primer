@@ -9,6 +9,8 @@ import org.apache.ignite.table.mapper.Mapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
+
 /**
  * Demonstrates advanced SQL operations using the Apache Ignite 3 SQL API.
  * 
@@ -119,9 +121,9 @@ public class AdvancedSQLOperations {
             SqlRow row = trackStats.next();
             String artist = row.stringValue("ArtistName");
             long trackCount = row.longValue("TrackCount");
-            long avgDuration = row.longValue("AvgDuration");
+            BigDecimal avgDuration = row.decimalValue("AvgDuration");
             System.out.println("         " + artist + ": " + trackCount + 
-                             " tracks, avg " + (avgDuration / 1000) + "s");
+                             " tracks, avg " + (avgDuration.longValue() / 1000) + "s");
         }
     }
 
