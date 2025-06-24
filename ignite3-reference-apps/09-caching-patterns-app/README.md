@@ -26,44 +26,52 @@ Master performance optimization for music streaming platforms using Ignite 3's c
 This module contains caching pattern demonstrations:
 
 ### 1. CacheAsidePatternDemo
+
 **Application-controlled catalog caching**
 
 Demonstrates cache-aside pattern for music catalog data with manual cache management, batch operations, and cache warming strategies.
 
 **Key Features**:
+
 - Manual cache management for artist catalog browsing
 - Batch operations for efficient data loading
 - Cache warming strategies for improved performance
 - Async patterns for non-blocking operations
 
 ### 2. WriteThroughPatternDemo  
+
 **Synchronous customer data updates**
 
 Shows write-through pattern for customer profile management with transaction guarantees and consistency across systems.
 
 **Key Features**:
+
 - Customer profile synchronization across cache and data store
 - Transaction management for data consistency
 - Error handling with rollback capabilities
 - Consistency guarantees for critical business data
 
 ### 3. WriteBehindPatternDemo
+
 **High-throughput analytics event recording**
 
 Implements write-behind pattern for analytics data with background processing and high-throughput event recording.
 
 **Key Features**:
+
 - Analytics data buffering for performance optimization
 - Background processing with configurable flush intervals
 - High-throughput event recording for user activity tracking
 - Buffer management and overflow handling
 
 ### 4. CachingPatternsDemo
+
 **Complete orchestrator demonstrating combined patterns**
 
 Runs all caching pattern demonstrations with realistic music streaming scenarios showing how patterns work together.
 
 **Key Features**:
+
 - Combined pattern usage in realistic scenarios
 - Progress reporting and concept explanations
 - Performance monitoring and metrics collection
@@ -81,16 +89,19 @@ mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.caching.CachingPatter
 ### Individual Pattern Demonstrations
 
 **Cache-Aside Pattern**:
+
 ```bash
 mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.caching.CacheAsidePatternDemo"
 ```
 
 **Write-Through Pattern**:
+
 ```bash
 mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.caching.WriteThroughPatternDemo"
 ```
 
 **Write-Behind Pattern**:
+
 ```bash
 mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.caching.WriteBehindPatternDemo"
 ```
@@ -104,6 +115,7 @@ mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.caching.CachingPatter
 ## Key Implementation Patterns
 
 ### Cache-Aside Implementation
+
 ```java
 // Application manages cache explicitly
 Artist artist = artistCache.get(artistId);
@@ -115,6 +127,7 @@ return artist;
 ```
 
 ### Write-Through Implementation
+
 ```java
 // Synchronous updates to both cache and data store
 client.transactions().runInTransaction(tx -> {
@@ -124,6 +137,7 @@ client.transactions().runInTransaction(tx -> {
 ```
 
 ### Write-Behind Implementation
+
 ```java
 // Immediate cache update, asynchronous data store update
 eventBuffer.add(playEvent);
@@ -135,16 +149,19 @@ if (eventBuffer.size() >= batchSize) {
 ## Performance Characteristics
 
 ### Cache-Aside Pattern
+
 - **Best For**: Read-heavy workloads (catalog browsing, search results)
 - **Consistency**: Eventual consistency with manual invalidation
 - **Performance**: High read performance, controlled by application logic
 
 ### Write-Through Pattern  
+
 - **Best For**: Consistency-critical data (customer profiles, transactions)
 - **Consistency**: Strong consistency with immediate synchronization
 - **Performance**: Write latency includes both cache and data store operations
 
 ### Write-Behind Pattern
+
 - **Best For**: High-throughput writes (analytics events, metrics)
 - **Consistency**: Eventual consistency with asynchronous updates
 - **Performance**: High write throughput with minimal write latency
