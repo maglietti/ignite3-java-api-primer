@@ -13,6 +13,8 @@ By completing this chapter, you will:
 
 The **`05-sql-api-app`** demonstrates all SQL API patterns covered in this chapter with comprehensive music analytics examples. Run it alongside your learning to see complex queries, aggregations, and reporting patterns in action.
 
+> **Critical Note**: Ignite 3 normalizes all SQL metadata (table names, column names, aliases) to uppercase. When accessing columns via `SqlRow.stringValue()` or other accessor methods, always use uppercase names regardless of how they're defined in your schema or query aliases.
+
 **Quick Start**: After reading this chapter, explore the reference application:
 
 ```bash

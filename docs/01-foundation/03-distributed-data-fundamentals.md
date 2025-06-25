@@ -177,14 +177,31 @@ flowchart LR
 **Local Joins**: Queries involving related tables execute locally:
 
 ```java
+// Preferred: Use StatementBuilder for complex queries
+Statement joinQuery = client.sql().statementBuilder()
+    .query("SELECT a.Name, al.Title, t.Name " +
+           "FROM Artist a " +
+           "JOIN Album al ON a.ArtistId = al.ArtistId " +
+           "JOIN Track t ON al.AlbumId = t.AlbumId " +
+           "WHERE a.ArtistId = ?")
+    .pageSize(100)
+    .build();
+
 // This join executes on a single node
-var result = client.sql().execute(null,
-    "SELECT a.Name, al.Title, t.Name " +
-    "FROM Artist a " +
-    "JOIN Album al ON a.ArtistId = al.ArtistId " +
-    "JOIN Track t ON al.AlbumId = t.AlbumId " +
-    "WHERE a.ArtistId = ?", 123);
+var result = client.sql().execute(null, joinQuery, 123);
+
+// Process results - note that all column names are normalized to uppercase
+while (result.hasNext()) {
+    SqlRow row = result.next();
+    String artistName = row.stringValue("NAME");      // Column names are uppercase
+    String albumTitle = row.stringValue("TITLE");     // Even if defined as mixed case
+    String trackName = row.stringValue("NAME");       // Column alias resolution needed
+}
 ```
+
+> **Important**: Ignite 3 normalizes all SQL metadata (table names, column names) to uppercase. When accessing columns via `SqlRow`, always use uppercase names regardless of how they're defined in your schema or query aliases.
+>
+> For complete details on SQL processing, query optimization, and Apache Calcite integration, see [SQL Engine Architecture](../00-reference/SQL-ENGINE-ARCH.md).
 
 **Batch Operations**: Multi-record operations on colocated data are efficient:
 
