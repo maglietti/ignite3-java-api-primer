@@ -32,7 +32,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.Executor;
 
 /**
  * Custom Flow.Publisher that reads CSV files line-by-line with true backpressure control.
@@ -56,6 +56,7 @@ public class FileStreamingPublisher implements Flow.Publisher<DataStreamerItem<T
     
     private final Path csvFilePath;
     private final StreamingMetrics metrics;
+    private final Executor deliveryExecutor;
     private final AtomicBoolean subscribed = new AtomicBoolean(false);
     
     /**
@@ -63,10 +64,12 @@ public class FileStreamingPublisher implements Flow.Publisher<DataStreamerItem<T
      * 
      * @param csvFilePath path to the CSV file to stream
      * @param metrics metrics tracker for monitoring performance
+     * @param deliveryExecutor executor for async delivery operations
      */
-    public FileStreamingPublisher(Path csvFilePath, StreamingMetrics metrics) {
+    public FileStreamingPublisher(Path csvFilePath, StreamingMetrics metrics, Executor deliveryExecutor) {
         this.csvFilePath = csvFilePath;
         this.metrics = metrics;
+        this.deliveryExecutor = deliveryExecutor;
     }
     
     @Override
@@ -162,7 +165,7 @@ public class FileStreamingPublisher implements Flow.Publisher<DataStreamerItem<T
         private CompletableFuture<Void> deliverItemsAsync() {
             return CompletableFuture.runAsync(() -> {
                 deliverItemsSynchronously();
-            });
+            }, deliveryExecutor);
         }
         
         /**
