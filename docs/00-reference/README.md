@@ -36,6 +36,17 @@ API design patterns and client programming model for Java development.
 - Resource management strategies
 - Error handling patterns
 
+### [Storage System Architecture](./STORAGE-SYSTEM-ARCH.md)
+
+Distributed storage foundation that powers Apache Ignite 3's data management capabilities.
+
+**What you'll learn:**
+
+- Distribution zones and data placement control
+- Data partitioning algorithms and rebalancing
+- Storage profiles and engine configuration
+- Physical storage implementations and tuning
+
 ### [Technical Features](./TECHNICAL_FEATURES.md)
 
 Feature matrix and capability overview for understanding what's possible with Ignite 3.
