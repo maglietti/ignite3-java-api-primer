@@ -273,7 +273,7 @@ public class FileBackpressureStreaming {
         DataStreamerOptions options = DataStreamerOptions.builder()
             .pageSize(2000)                     // Large batches for efficiency
             .perPartitionParallelOperations(3)  // High parallelism
-            .autoFlushInterval(300)             // Fast flushing
+            .autoFlushInterval(30)              // Fast flushing
             .retryLimit(16)                     // Higher retry tolerance
             .build();
         
