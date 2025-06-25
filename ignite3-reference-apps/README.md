@@ -41,7 +41,6 @@ cd 00-docker
 
 ```bash
 cd 00-docker
-# The init-cluster.sh script automatically detects docker-compose vs docker compose
 ./init-cluster.sh
 ```
 
@@ -66,20 +65,20 @@ curl http://localhost:10300/management/v1/cluster/state
 
    ```bash
    cd 01-sample-data-setup
-   mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.setup.app.ProjectInitializationApp"
+   mvn compile exec:java
    ```
 
-2. **Or run components individually**:
+2. **Or run with options**:
 
    ```bash
-   # Create schema only
-   mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.setup.app.SchemaCreationApp"
+   # Include extended dataset
+   mvn compile exec:java -Dexec.args="--extended"
    
-   # Load data only (requires existing schema)
-   mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.setup.app.DataLoadingApp"
+   # Reset existing schema and recreate
+   mvn compile exec:java -Dexec.args="--reset"
    
-   # Run analytics on existing data
-   mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.setup.app.SampleAnalyticsApp"
+   # Custom cluster address
+   mvn compile exec:java -Dexec.args="192.168.1.100:10800"
    ```
 
 ### Project Structure
@@ -96,127 +95,204 @@ ignite3-reference-apps/
 ├── 07-compute-api-app/             # Distributed computing
 ├── 08-data-streaming-app/          # High-throughput data loading
 ├── 09-caching-patterns-app/        # Caching strategies
-└── 10-catalog-management-app/      # Schema and zone management
+└── 10-file-streaming-app/          # File-based streaming with backpressure
 ```
 
 ## Sample Dataset
 
-All reference applications use a consistent **music store dataset** with 11 entities:
+All reference applications use a consistent **music store dataset** with 11 entities organized for optimal distributed performance:
 
-### Core Music Entities
-
-- **Artist** → **Album** → **Track** (hierarchical with colocation)
-- **Genre**, **MediaType** (reference data)
-
-### Business Entities  
-
-- **Customer** → **Invoice** → **InvoiceLine** (business workflow)
-- **Employee** (organizational hierarchy)
-
-### Playlist Entities
-
-- **Playlist** → **PlaylistTrack** (many-to-many relationships)
+```mermaid
+erDiagram
+    %% Core Music Entities (MusicStore Zone - 2 replicas)
+    Artist {
+        int ArtistId PK
+        string Name
+    }
+    
+    Album {
+        int AlbumId PK
+        int ArtistId FK "Colocation Key"
+        string Title
+    }
+    
+    Track {
+        int TrackId PK
+        int AlbumId FK
+        int ArtistId FK "Colocation Key"
+        string Name
+        int GenreId FK
+        int MediaTypeId FK
+        decimal UnitPrice
+    }
+    
+    %% Reference Data (MusicStoreReplicated Zone - 3 replicas)
+    Genre {
+        int GenreId PK
+        string Name
+    }
+    
+    MediaType {
+        int MediaTypeId PK
+        string Name
+    }
+    
+    %% Business Entities (MusicStore Zone - 2 replicas)
+    Customer {
+        int CustomerId PK
+        string FirstName
+        string LastName
+        string Email
+        int SupportRepId FK
+    }
+    
+    Invoice {
+        int InvoiceId PK
+        int CustomerId FK "Colocation Key"
+        datetime InvoiceDate
+        decimal Total
+    }
+    
+    InvoiceLine {
+        int InvoiceLineId PK
+        int InvoiceId FK
+        int CustomerId FK "Colocation Key"
+        int TrackId FK
+        decimal UnitPrice
+        int Quantity
+    }
+    
+    Employee {
+        int EmployeeId PK
+        string FirstName
+        string LastName
+        string Title
+        int ReportsTo FK
+    }
+    
+    %% Playlist Entities (MusicStore Zone - 2 replicas)
+    Playlist {
+        int PlaylistId PK
+        string Name
+    }
+    
+    PlaylistTrack {
+        int PlaylistId PK
+        int TrackId PK
+    }
+    
+    %% Relationships
+    Artist ||--o{ Album : "creates"
+    Album ||--o{ Track : "contains"
+    Genre ||--o{ Track : "categorizes"
+    MediaType ||--o{ Track : "formats"
+    Customer ||--o{ Invoice : "purchases"
+    Invoice ||--o{ InvoiceLine : "itemizes"
+    Track ||--o{ InvoiceLine : "sold_as"
+    Track ||--o{ PlaylistTrack : "included_in"
+    Playlist ||--o{ PlaylistTrack : "contains"
+    Employee ||--o{ Customer : "supports"
+    Employee ||--o{ Employee : "manages"
+```
 
 ### Distribution Strategy
 
-- **MusicStore Zone** (2 replicas): Primary business data with colocation
-- **MusicStoreReplicated Zone** (3 replicas): Reference/lookup data
+- **MusicStore Zone** (2 replicas): Primary business data colocated by ArtistId/CustomerId for optimal join performance
+- **MusicStoreReplicated Zone** (3 replicas): Reference/lookup data replicated for high availability
 
-## Key Features Demonstrated
 
-### Schema-as-Code
-
-```java
-@Table(zone = @Zone(value = "MusicStore", storageProfiles = "default"),
-       colocateBy = @ColumnRef("ArtistId"))
-public class Album {
-    @Id Integer AlbumId;
-    @Id Integer ArtistId;
-    @Column(value = "Title", nullable = false) String Title;
-}
-```
-
-### Table API Operations
-
-```java
-RecordView<Artist> artists = client.tables()
-    .table("Artist").recordView(Artist.class);
-Artist artist = new Artist(1, "AC/DC");
-artists.upsert(null, artist);
-```
-
-### SQL Operations
-
-```java
-var resultSet = client.sql().execute(null,
-    "SELECT a.Name, COUNT(al.AlbumId) as AlbumCount " +
-    "FROM Artist a LEFT JOIN Album al ON a.ArtistId = al.ArtistId " +
-    "GROUP BY a.ArtistId, a.Name ORDER BY AlbumCount DESC");
-```
-
-### Transactional Operations
-
-```java
-client.transactions().runInTransaction(tx -> {
-    Artist artist = artists.get(tx, artistKey);
-    artist.setName("Updated Name");
-    artists.put(tx, artistKey, artist);
-});
-```
-
-## Module Usage
+## Reference Apps Overview
 
 ### 1. Sample Data Setup
 
-**Purpose**: Foundation module providing sample data and utilities  
-**Run**: `mvn exec:java` (uses ProjectInitializationApp by default)  
-**Features**: Schema creation, data loading, analytics utilities
+Creates the foundation music store dataset with schema and sample data for all reference applications. Handles zone configuration, table creation, and transactional data loading using hierarchical music store model with colocation strategies.
+
+**Key API concepts**: Schema-as-code, zone configuration, transactional loading, data distribution  
+**Classes**: `MusicStoreSetup`, `SchemaUtils`, `DataLoader`, model POJOs  
+**Primer section**: [Getting Started](../docs/01-foundation/02-getting-started.md)  
+**App guide**: [`01-sample-data-setup/README.md`](01-sample-data-setup/README.md)
 
 ### 2. Getting Started
 
-**Purpose**: Basic Ignite 3 operations and connection patterns  
+Introduces core Ignite 3 client patterns and basic data operations using simple music store scenarios. Establishes fundamental distributed database concepts through connection management, basic CRUD operations, and simple SQL queries.
+
+**Key API concepts**: Client connections, basic CRUD, simple queries, distributed fundamentals  
+**Classes**: `HelloWorldApp`, `ConnectionExamples`, `BasicSetupDemo`  
 **Prerequisites**: Completed sample-data-setup  
-**Features**: Client connections, basic CRUD, simple queries
+**Primer section**: [Introduction and Architecture](../docs/01-foundation/01-introduction-and-architecture.md)  
+**App guide**: [`02-getting-started-app/README.md`](02-getting-started-app/README.md)
 
 ### 3. Schema Annotations
 
-**Purpose**: Schema-as-code with annotation-driven table creation  
-**Features**: POJO mapping, zone configuration, colocation strategies
+Demonstrates schema-as-code using Java annotations to define tables, zones, and colocation strategies. Maps Java classes to distributed tables with optimal data placement for music streaming performance scenarios.
+
+**Key API concepts**: Annotation-driven schema, POJO mapping, colocation, data placement  
+**Classes**: `SchemaAPIDemo`, `BasicAnnotations`, `ColocationPatterns`, `SchemaValidation`  
+**Primer section**: [Basic Annotations](../docs/02-schema-design/01-basic-annotations.md)  
+**App guide**: [`03-schema-annotations-app/README.md`](03-schema-annotations-app/README.md)
 
 ### 4. Table API
 
-**Purpose**: Object-oriented data access patterns  
-**Features**: RecordView, KeyValueView, async operations, bulk operations
+Explores object-oriented data access through RecordView and KeyValueView APIs. Covers synchronous and asynchronous operations, bulk processing, and type-safe data access patterns using music store entities.
+
+**Key API concepts**: RecordView, KeyValueView, async operations, bulk processing, type safety  
+**Classes**: `TableAPIDemo`, `RecordViewExamples`, `KeyValueExamples`, `AsyncBasicOperations`  
+**Primer section**: [Table API Operations](../docs/03-data-access-apis/01-table-api-operations.md)  
+**App guide**: [`04-table-api-app/README.md`](04-table-api-app/README.md)
 
 ### 5. SQL API
 
-**Purpose**: Relational data access and complex queries  
-**Features**: DDL/DML operations, parameterized queries, result mapping
+Covers relational data access using SQL operations for complex queries and analytics. Includes DDL/DML operations, parameterized queries, and result set processing for music store analytics and reporting scenarios.
+
+**Key API concepts**: SQL operations, DDL/DML, parameterized queries, result mapping, analytics  
+**Classes**: `SQLAPIDemo`, `BasicSQLOperations`, `AdvancedSQLOperations`, `TransactionSQLOperations`  
+**Primer section**: [SQL API Analytics](../docs/03-data-access-apis/02-sql-api-analytics.md)  
+**App guide**: [`05-sql-api-app/README.md`](05-sql-api-app/README.md)
 
 ### 6. Transactions
 
-**Purpose**: ACID transaction patterns and consistency  
-**Features**: Explicit transactions, isolation levels, rollback handling
+Implements ACID transaction patterns for consistent data operations across distributed nodes. Covers explicit transaction management, isolation levels, and error handling patterns using music store business workflows.
+
+**Key API concepts**: ACID transactions, isolation levels, explicit transactions, error handling, consistency  
+**Classes**: `TransactionAPIDemo`, `BasicTransactions`, `AsyncTransactions`, `BatchTransactions`, `TransactionIsolation`  
+**Primer section**: [Transaction Fundamentals](../docs/04-distributed-operations/01-transaction-fundamentals.md)  
+**App guide**: [`06-transactions-app/README.md`](06-transactions-app/README.md)
 
 ### 7. Compute API
 
-**Purpose**: Distributed processing and job execution  
-**Features**: Compute jobs, data colocation, job targeting
+Demonstrates distributed processing using compute jobs that execute near data for optimal performance. Covers job deployment, data colocation benefits, and workflow orchestration using music analytics processing scenarios.
 
-### 8. Data Streaming ✅
+**Key API concepts**: Distributed compute, job deployment, data colocation, workflow orchestration  
+**Classes**: `ComputeAPIDemo`, `BasicComputeOperations`, `AdvancedComputeOperations`, `ComputeJobWorkflows`  
+**Primer section**: [Compute API Processing](../docs/04-distributed-operations/03-compute-api-processing.md)  
+**App guide**: [`07-compute-api-app/README.md`](07-compute-api-app/README.md)
 
-**Purpose**: High-throughput data loading and processing  
-**Features**: DataStreamer API, Flow control, bulk ingestion, backpressure handling
+### 8. Data Streaming
+
+Implements high-throughput data ingestion using the DataStreamer API with flow control and backpressure handling. Covers bulk data loading patterns and memory management for large-scale music event processing.
+
+**Key API concepts**: DataStreamer, flow control, backpressure, bulk ingestion, memory management  
+**Classes**: `DataStreamingAPIDemo`, `BasicDataStreamerDemo`, `BulkDataIngestion`, `BackpressureHandling`  
+**Primer section**: [Data Streaming](../docs/05-performance-scalability/01-data-streaming.md)  
+**App guide**: [`08-data-streaming-app/README.md`](08-data-streaming-app/README.md)
 
 ### 9. Caching Patterns
 
-**Purpose**: Caching pattern implementations with Ignite 3  
-**Features**: Cache-aside, write-through, write-behind patterns, high-performance data access
+Explores caching strategies using Ignite 3 as a high-performance data layer. Implements cache-aside, write-through, and write-behind patterns for music streaming applications with external data source integration.
 
-### 10. Catalog Management
+**Key API concepts**: Caching patterns, cache-aside, write-through, write-behind, external integration  
+**Classes**: `CachingAPIDemo`, `CacheAsidePatterns`, `WriteThroughPatterns`, `WriteBehindPatterns`, `ExternalDataSource`  
+**Primer section**: [Caching Strategies](../docs/05-performance-scalability/02-caching-strategies.md)  
+**App guide**: [`09-caching-patterns-app/README.md`](09-caching-patterns-app/README.md)
 
-**Purpose**: Schema and zone management operations  
-**Features**: Dynamic schema evolution, zone configuration, table administration
+### 10. File Streaming
+
+Demonstrates file-based reactive streaming with end-to-end backpressure propagation from file I/O to cluster ingestion. Covers demand-driven CSV processing with performance monitoring and resource management for large-scale data file processing.
+
+**Key API concepts**: Reactive streaming, backpressure propagation, file I/O, performance monitoring  
+**Classes**: `FileStreamingAPIDemo`, `FileBackpressureStreaming`, `FileStreamingPublisher`, `StreamingMetrics`, `SampleDataGenerator`  
+**Primer section**: [Data Streaming](../docs/05-performance-scalability/01-data-streaming.md)  
+**App guide**: [`10-file-streaming-app/README.md`](10-file-streaming-app/README.md)
 
 ## Building and Running
 
@@ -230,13 +306,13 @@ mvn clean compile
 
 ```bash
 cd [module-name]
-mvn exec:java -Dexec.mainClass="[MainClass]" -Dexec.args="[cluster-address]"
+mvn compile exec:java
 ```
 
 ### Run with Custom Cluster Address
 
 ```bash
-mvn exec:java -Dexec.args="192.168.1.100:10800"
+mvn compile exec:java -Dexec.args="192.168.1.100:10800"
 ```
 
 ## Configuration
@@ -255,43 +331,6 @@ Edit configuration in:
 - `sample-data-setup/src/main/java/com/apache/ignite/examples/setup/config/`
 - Individual module application properties
 
-## Troubleshooting
-
-### Common Issues
-
-1. **Connection Failed / Cluster Not Initialized**
-   - Verify Ignite 3 cluster is running: `docker-compose ps`
-   - **Most Common**: Cluster not initialized - run initialization:
-
-     ```bash
-     curl -X POST http://localhost:10300/management/v1/cluster/init \
-       -H "Content-Type: application/json" \
-       -d '{"metaStorageNodes": ["node1", "node2", "node3"], "cmgNodes": ["node1", "node2", "node3"], "clusterName": "ignite3-reference-cluster"}'
-     ```
-
-   - Check cluster address and port
-   - Confirm network connectivity
-
-2. **Table Not Found**
-   - Run `01-sample-data-setup` module first
-   - Verify schema creation completed successfully
-   - Check zone configuration
-
-3. **Data Not Found**
-   - Ensure data loading completed
-   - Verify using `SampleAnalyticsApp`
-   - Check transaction commits
-
-### Diagnostics
-
-```bash
-# Check cluster status
-mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.setup.app.SampleAnalyticsApp" -Dexec.args="127.0.0.1:10800 info"
-
-# Verify schema
-mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.setup.app.SchemaCreationApp" -Dexec.args="127.0.0.1:10800 info"
-```
-
 ## Learning Path
 
 **Recommended order for learning Ignite 3:**
@@ -305,7 +344,7 @@ mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.setup.app.SchemaCreat
 7. **compute-api-app** - Distributed processing
 8. **data-streaming-app** - High-throughput operations
 9. **caching-patterns-app** - Caching strategies and patterns
-10. **catalog-management-app** - Schema and zone management
+10. **file-streaming-app** - File-based reactive streaming with backpressure
 
 ## Documentation
 
