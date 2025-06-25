@@ -94,8 +94,6 @@ mvn compile exec:java
 
 ## Self-Paced Learning
 
-**Recommended Path**: Follow this sequence for systematic progression
-
 **Phase 1: Foundations**
 
 - **[Module 01: Foundation](./docs/01-foundation/)** - Essential distributed systems concepts
@@ -122,9 +120,7 @@ mvn compile exec:java
   - Data Streaming → Caching Strategies → Query Performance
   - **Reference Apps**: [`08-data-streaming-app/`](./ignite3-reference-apps/08-data-streaming-app/), [`09-caching-patterns-app/`](./ignite3-reference-apps/09-caching-patterns-app/), [`10-file-streaming-app/`](./ignite3-reference-apps/10-file-streaming-app/)
 
-### Alternative Paths
-
-**Problem-Focused**
+### Problem-Focused Path
 
 - **Need to connect and store data?** → [Module 01: Foundation](./docs/01-foundation/)
 - **Building data models?** → [Module 02: Schema Design](./docs/02-schema-design/)
@@ -132,13 +128,13 @@ mvn compile exec:java
 - **Managing consistency?** → [Module 04: Distributed Operations](./docs/04-distributed-operations/)
 - **Performance tuning?** → [Module 05: Performance & Scalability](./docs/05-performance-scalability/)
 
-**Reference Materials**
+### Reference Materials
 
 - **[Technical Reference](./docs/00-reference/)** - Architecture patterns and API design principles
 
 ## Reference Applications
 
-All reference applications are located in [`ignite3-reference-apps/`](./ignite3-reference-apps/) and use a consistent music store dataset. Each application demonstrates the concepts from its corresponding documentation module through working, runnable code.
+All reference applications are located in [`ignite3-reference-apps/`](./ignite3-reference-apps/) and use the same music store dataset. Each application demonstrates the concepts from its corresponding documentation module through working, runnable code.
 
 ### Foundation Infrastructure
 
