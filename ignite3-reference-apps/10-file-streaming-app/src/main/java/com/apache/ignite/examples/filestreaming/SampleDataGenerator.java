@@ -113,9 +113,12 @@ public class SampleDataGenerator {
                 
                 // Periodic progress for large files
                 if (i % 10000 == 0) {
-                    System.out.printf("Generated %d events...\r", i);
+                    System.out.printf("+++ Generated %d events...\r", i);
                 }
             }
+
+            // Report rows generated
+            System.out.printf(">>> Generated %d events.\n", eventCount);
         }
         
         return path;
@@ -166,7 +169,15 @@ public class SampleDataGenerator {
                     eventId, userId, trackId, eventType, eventTime, duration,
                     playlistId != null ? playlistId.toString() : ""));
                 writer.newLine();
+
+                // Periodic progress for large files
+                if (i % 10000 == 0) {
+                    System.out.printf("+++ Generated %d events...\r", i);
+                }
             }
+
+            // Report rows generated
+            System.out.printf(">>> Generated %d events.\n", eventCount);
         }
         
         return path;
