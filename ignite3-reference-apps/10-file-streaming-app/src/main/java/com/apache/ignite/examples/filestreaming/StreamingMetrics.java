@@ -142,7 +142,7 @@ public class StreamingMetrics {
         
         // Log backpressure correlation for debugging
         if (backpressureEvents.get() % 100 == 0) { // Every 100th event to avoid spam
-            System.out.printf("   !!! Backpressure event #%d - Memory: %.1f MB, CPU: %.1f%%%n",
+            System.out.printf("!!! Backpressure event #%d - Memory: %.1f MB, CPU: %.1f%%%n",
                 backpressureEvents.get(), getCurrentMemoryUsageMB(), getCurrentCpuUsage());
         }
     }
@@ -307,13 +307,13 @@ public class StreamingMetrics {
     }
     
     /**
-     * Gets the memory efficiency ratio (MB processed per MB used).
-     * Higher values indicate better memory efficiency.
+     * Gets the memory efficiency ratio (MB processed per MB of memory growth).
+     * Higher values indicate better memory efficiency during processing.
      */
     public double getMemoryEfficiencyRatio() {
-        double memoryUsed = getPeakMemoryUsageMB();
+        double memoryGrowth = getPeakMemoryUsageMB() - getCurrentMemoryUsageMB();
         double dataProcessed = getBytesRead() / (1024.0 * 1024.0);
-        return memoryUsed > 0 ? dataProcessed / memoryUsed : 0.0;
+        return memoryGrowth > 0 ? dataProcessed / memoryGrowth : dataProcessed;
     }
     
     /**
@@ -349,6 +349,7 @@ public class StreamingMetrics {
      */
     public String getDetailedReport() {
         return String.format("""
+
             === File Streaming Metrics Report ===
             Total Lines Read: %,d
             Total Bytes Read: %,d (%.2f MB)
@@ -381,7 +382,7 @@ public class StreamingMetrics {
               Final Phase: %s
             
             Resource Analysis:
-              %s
+            %s
             """,
             getLinesRead(),
             getBytesRead(),
@@ -422,37 +423,37 @@ public class StreamingMetrics {
         // Memory analysis
         double memoryGrowth = getPeakMemoryUsageMB() - getCurrentMemoryUsageMB();
         if (memoryGrowth > 50) {
-            analysis.append("High memory growth detected (").append(String.format("%.1f", memoryGrowth))
-                   .append(" MB increase)\n              ");
+            analysis.append("  High memory growth detected (").append(String.format("%.1f", memoryGrowth))
+                   .append(" MB increase)\n");
         }
         
         // CPU analysis
         if (getPeakCpuUsage() > 50) {
-            analysis.append("CPU intensive processing (peak ").append(String.format("%.1f", getPeakCpuUsage()))
-                   .append("%)\n              ");
+            analysis.append("  CPU intensive processing (peak ").append(String.format("%.1f", getPeakCpuUsage()))
+                   .append("%)\n");
         }
         
         // Backpressure correlation
         long backpressureCount = getBackpressureEvents();
         if (backpressureCount > 0) {
             double backpressureRate = (double) backpressureCount / (getElapsedTime() / 1000.0);
-            analysis.append("Backpressure rate: ").append(String.format("%.1f", backpressureRate))
-                   .append(" events/sec\n              ");
+            analysis.append("  Backpressure rate: ").append(String.format("%.1f", backpressureRate))
+                   .append(" events/sec\n");
         }
         
         // Efficiency assessment
         double efficiency = getMemoryEfficiencyRatio();
-        if (efficiency > 10) {
-            analysis.append("Excellent memory efficiency (").append(String.format("%.1f", efficiency))
-                   .append(":1 ratio)");
-        } else if (efficiency > 5) {
-            analysis.append("Good memory efficiency (").append(String.format("%.1f", efficiency))
-                   .append(":1 ratio)");
+        if (efficiency > 1.0) {
+            analysis.append("  Good memory efficiency (").append(String.format("%.1f", efficiency))
+                   .append(":1 data/growth ratio)");
+        } else if (efficiency > 0.1) {
+            analysis.append("  Moderate memory efficiency (").append(String.format("%.1f", efficiency))
+                   .append(":1 data/growth ratio)");
         } else if (efficiency > 0) {
-            analysis.append("Low memory efficiency (").append(String.format("%.1f", efficiency))
-                   .append(":1 ratio) - check for memory leaks");
+            analysis.append("  Low memory efficiency (").append(String.format("%.1f", efficiency))
+                   .append(":1 data/growth ratio) - high memory overhead");
         }
         
-        return analysis.length() > 0 ? analysis.toString() : "Normal resource usage patterns";
+        return analysis.length() > 0 ? analysis.toString() : "  Normal resource usage patterns";
     }
 }

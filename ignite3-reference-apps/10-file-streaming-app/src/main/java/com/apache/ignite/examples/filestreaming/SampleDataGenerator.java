@@ -177,7 +177,7 @@ public class SampleDataGenerator {
             }
 
             // Report rows generated
-            System.out.printf(">>> Generated %d events.\n", eventCount);
+            System.out.printf(">>> Generated %d events.\n", countLines(path));
         }
         
         return path;
@@ -220,6 +220,7 @@ public class SampleDataGenerator {
      */
     public static boolean deleteFile(Path path) {
         try {
+            System.out.printf("<<< Deleting temp file: %s%n", path);
             return Files.deleteIfExists(path);
         } catch (IOException e) {
             return false;

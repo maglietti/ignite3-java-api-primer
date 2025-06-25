@@ -327,7 +327,7 @@ public class FileBackpressureStreaming {
         }
         
         // Print current status
-        System.out.println("  " + metrics.getFormattedSummary());
+        System.out.println("+++ " + metrics.getFormattedSummary());
         
         // Schedule next update without blocking threads
         CompletableFuture.delayedExecutor(intervalMs, TimeUnit.MILLISECONDS)
