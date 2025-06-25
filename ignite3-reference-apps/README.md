@@ -22,22 +22,16 @@ This multi-module Maven project provides practical, runnable examples for all ma
 - Maven 3.8+
 - Docker 20.10.0 or newer & Docker Compose 2.23.1 or newer
 
-> [!NOTE]
-> For Docker installation instructions, see the [Apache Ignite 3 Docker Installation Guide](https://ignite.apache.org/docs/ignite3/latest/installation/installing-using-docker).
-> Docker installation is preferred but not required.
+For Docker installation instructions, see the [Apache Ignite 3 Docker Installation Guide](https://ignite.apache.org/docs/ignite3/latest/installation/installing-using-docker).
+
+Running Ignite in Docker is preferred but not required.
 
 ### 1. Start Ignite 3 Cluster
 
-**⚠️ Required First Step**: Start and initialize the 3-node Docker cluster before running any applications.
+> [!WARNING]
+> **Required First Step**: Start and initialize the 3-node Docker cluster before running any applications.
 
 **Quick setup** (recommended):
-
-```bash
-cd 00-docker
-./init-cluster.sh
-```
-
-**Manual setup**:
 
 ```bash
 cd 00-docker
