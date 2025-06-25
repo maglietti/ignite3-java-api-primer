@@ -1,6 +1,6 @@
 # Apache Ignite 3 Reference Applications
 
-A collection of reference applications demonstrating Apache Ignite 3 Java API usage patterns using a consistent music store sample dataset.
+Reference applications demonstrating Apache Ignite 3 Java API usage patterns using a consistent music store sample dataset.
 
 ## Project Overview
 
@@ -94,7 +94,7 @@ ignite3-reference-apps/
 
 ## Sample Dataset
 
-All reference applications use a consistent **music store dataset** with 11 entities organized for optimal distributed performance:
+All reference applications use a consistent **music store dataset** with 11 entities organized for distributed performance:
 
 ```mermaid
 erDiagram
@@ -191,14 +191,14 @@ erDiagram
 
 ### Distribution Strategy
 
-- **MusicStore Zone** (2 replicas): Primary business data colocated by ArtistId/CustomerId for optimal join performance
+- **MusicStore Zone** (2 replicas): Primary business data colocated by ArtistId/CustomerId for join performance
 - **MusicStoreReplicated Zone** (3 replicas): Reference/lookup data replicated for high availability
 
 ## Learning Apache Ignite 3 Java API with reference apps
 
-This series of reference applications builds your expertise progressively, from basic connections to advanced distributed processing patterns. Each app teaches specific concepts while building on previous knowledge.
+This series of reference applications builds expertise progressively, from basic connections to distributed processing patterns. Each app teaches specific concepts while building on previous knowledge.
 
-**Recommended order for learning Ignite 3:**
+**Learning order for Ignite 3:**
 
 1. **sample-data-setup** - Understanding the dataset and basic setup
 2. **getting-started-app** - Basic operations and connections  

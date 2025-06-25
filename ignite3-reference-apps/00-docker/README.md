@@ -9,7 +9,7 @@
 
 ## Quick Start
 
-### Option 1: Automated Setup (Recommended)
+### Option 1: Automated Setup
 
 1. **Run the initialization script**:
    ```bash
@@ -20,7 +20,7 @@
    - Start the 3-node cluster
    - Wait for containers to be healthy
    - Initialize the cluster automatically
-   - Verify everything is working
+   - Verify functionality
 
 ### Option 2: Manual Setup
 
@@ -80,7 +80,7 @@ This setup provides a **3-node Apache Ignite cluster** with the following config
 
 ### Recommended Connection Pattern
 
-**Best Practice**: Connect to all cluster nodes for optimal performance:
+**Pattern**: Connect to all cluster nodes for performance:
 ```java
 IgniteClient client = IgniteClient.builder()
     .addresses("127.0.0.1:10800", "127.0.0.1:10801", "127.0.0.1:10802")

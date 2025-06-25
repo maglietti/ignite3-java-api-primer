@@ -1,10 +1,10 @@
-# Apache Ignite 3 - Java API Primer
+# Apache Ignite 3 Java API Primer
 
-Learn to build distributed applications with Apache Ignite 3's Java API through structured modules and working reference applications. This primer guides Java developers from basic concepts to advanced distributed programming patterns using a consistent music store dataset.
+Implementation guidance for Apache Ignite 3's Java API through structured modules and working reference applications. This primer provides Java developers with practical patterns for distributed programming using a consistent music store dataset.
 
-## Who This Is For
+## Target Audience
 
-Java developers new to Ignite 3 who want to master distributed data management through practical, runnable examples.
+Java developers new to Ignite 3 requiring distributed data management patterns through practical, runnable examples.
 
 ## Quick Start
 
@@ -94,46 +94,45 @@ mvn compile exec:java
 
 ## Self-Paced Learning
 
-**Recommended Path**: Follow this sequence for optimal learning progression
+**Recommended Path**: Follow this sequence for systematic progression
 
-**Phase 1: Foundations** _(Start here for systematic learning)_
+**Phase 1: Foundations**
 
 - **[Module 01: Foundation](./docs/01-foundation/)** - Essential distributed systems concepts
-
   - Introduction and Architecture → Getting Started → Data Fundamentals
   - **Reference App**: [`02-getting-started-app/`](./ignite3-reference-apps/02-getting-started-app/)
 
-- **[Module 02: Schema Design](./docs/02-schema-design/)** - Schema-as-code mastery
-  - Basic Annotations → Relationships → Advanced Patterns → Evolution
+- **[Module 02: Schema Design](./docs/02-schema-design/)** - Schema-as-code implementation
+  - Basic Annotations → Relationships → Patterns → Evolution
   - **Reference App**: [`03-schema-annotations-app/`](./ignite3-reference-apps/03-schema-annotations-app/)
 
-**Phase 2: Core APIs** _(Build on foundations)_
--. **[Module 03: Data Access APIs](./docs/03-data-access-apis/)** - Data manipulation patterns
+**Phase 2: Core APIs**
 
-- Table API → SQL API → Selection Guide
-- **Reference Apps**: [`04-table-api-app/`](./ignite3-reference-apps/04-table-api-app/), [`05-sql-api-app/`](./ignite3-reference-apps/05-sql-api-app/)
+- **[Module 03: Data Access APIs](./docs/03-data-access-apis/)** - Data manipulation patterns
+  - Table API → SQL API → Selection Guide
+  - **Reference Apps**: [`04-table-api-app/`](./ignite3-reference-apps/04-table-api-app/), [`05-sql-api-app/`](./ignite3-reference-apps/05-sql-api-app/)
 
-- **[Module 04: Distributed Operations](./docs/04-distributed-operations/)** - Advanced operations
-  - Transaction Fundamentals → Advanced Patterns → Compute API
+- **[Module 04: Distributed Operations](./docs/04-distributed-operations/)** - Transaction and compute operations
+  - Transaction Fundamentals → Patterns → Compute API
   - **Reference Apps**: [`06-transactions-app/`](./ignite3-reference-apps/06-transactions-app/), [`07-compute-api-app/`](./ignite3-reference-apps/07-compute-api-app/)
 
-**Phase 3: Performance** _(Optimize and scale)_
+**Phase 3: Performance**
 
 - **[Module 05: Performance & Scalability](./docs/05-performance-scalability/)** - Production patterns
   - Data Streaming → Caching Strategies → Query Performance
-  - **Reference Apps**: [`08-data-streaming-app/`](./ignite3-reference-apps/08-data-streaming-app/), [`09-caching-patterns-app/`](./ignite3-reference-apps/09-caching-patterns-app/)
+  - **Reference Apps**: [`08-data-streaming-app/`](./ignite3-reference-apps/08-data-streaming-app/), [`09-caching-patterns-app/`](./ignite3-reference-apps/09-caching-patterns-app/), [`10-file-streaming-app/`](./ignite3-reference-apps/10-file-streaming-app/)
 
 ### Alternative Paths
 
-**Problem-Focused** _(Jump to your immediate need)_
+**Problem-Focused**
 
 - **Need to connect and store data?** → [Module 01: Foundation](./docs/01-foundation/)
 - **Building data models?** → [Module 02: Schema Design](./docs/02-schema-design/)
-- **Querying data efficiently?** → [Module 03: Data Access APIs](./docs/03-data-access-apis/)
+- **Querying data?** → [Module 03: Data Access APIs](./docs/03-data-access-apis/)
 - **Managing consistency?** → [Module 04: Distributed Operations](./docs/04-distributed-operations/)
-- **Optimizing performance?** → [Module 05: Performance & Scalability](./docs/05-performance-scalability/)
+- **Performance tuning?** → [Module 05: Performance & Scalability](./docs/05-performance-scalability/)
 
-**Reference Materials** _(Architectural context)_
+**Reference Materials**
 
 - **[Technical Reference](./docs/00-reference/)** - Architecture patterns and API design principles
 
@@ -141,15 +140,29 @@ mvn compile exec:java
 
 All reference applications are located in [`ignite3-reference-apps/`](./ignite3-reference-apps/) and use a consistent music store dataset. Each application demonstrates the concepts from its corresponding documentation module through working, runnable code.
 
+### Foundation Infrastructure
+
 - **Docker Setup**: [`00-docker/`](./ignite3-reference-apps/00-docker/) - 3-node cluster with initialization scripts
 - **Foundation Data**: [`01-sample-data-setup/`](./ignite3-reference-apps/01-sample-data-setup/) - Sample data and schema setup
+
+### Application Series
+
+- **Getting Started**: [`02-getting-started-app/`](./ignite3-reference-apps/02-getting-started-app/) - Basic operations and connections
+- **Schema Design**: [`03-schema-annotations-app/`](./ignite3-reference-apps/03-schema-annotations-app/) - Schema-as-code patterns
+- **Table API**: [`04-table-api-app/`](./ignite3-reference-apps/04-table-api-app/) - Object-oriented data access
+- **SQL API**: [`05-sql-api-app/`](./ignite3-reference-apps/05-sql-api-app/) - SQL operations and analytics
+- **Transactions**: [`06-transactions-app/`](./ignite3-reference-apps/06-transactions-app/) - ACID transaction patterns
+- **Compute API**: [`07-compute-api-app/`](./ignite3-reference-apps/07-compute-api-app/) - Distributed processing
+- **Data Streaming**: [`08-data-streaming-app/`](./ignite3-reference-apps/08-data-streaming-app/) - High-throughput ingestion
+- **Caching Patterns**: [`09-caching-patterns-app/`](./ignite3-reference-apps/09-caching-patterns-app/) - Cache strategies
+- **File Streaming**: [`10-file-streaming-app/`](./ignite3-reference-apps/10-file-streaming-app/) - File processing with backpressure
 
 ## Key Concepts Demonstrated
 
 ### Data Colocation for Performance
 
 ```java
-// Album data colocates with Artist data for efficient joins
+// Album data colocates with Artist data for join performance
 @Table(zone = @Zone(value = "MusicStore"),
        colocateBy = @ColumnRef("ArtistId"))
 public class Album {
@@ -162,7 +175,7 @@ public class Album {
 ### Asynchronous Programming Patterns
 
 ```java
-// Chain operations efficiently without blocking threads
+// Chain operations without blocking threads
 artists.getAsync(null, artistKey)
     .thenCompose(artist -> albums.getAllAsync(null, artist.getAlbums()))
     .thenApply(this::calculateTotalDuration)
@@ -172,10 +185,10 @@ artists.getAsync(null, artistKey)
 ### Multi-Modal API Integration
 
 ```java
-// Fast single-record operations through Table API
+// Single-record operations through Table API
 Artist artist = artists.get(null, artistKey);
 
-// Complex analytics through SQL API
+// Analytics through SQL API
 var topTracks = client.sql().execute(null,
     "SELECT t.Name, COUNT(il.Quantity) as Purchases " +
     "FROM Track t JOIN InvoiceLine il ON t.TrackId = il.TrackId " +
@@ -188,9 +201,9 @@ var topTracks = client.sql().execute(null,
 
 1. **Dual Mode Support**: All APIs support both synchronous and asynchronous operations
 2. **Builder Pattern**: Extensive use of builders for configuration (Client.Builder, Statement.Builder)
-3. **Resource Management**: AutoCloseable interfaces for proper resource cleanup
+3. **Resource Management**: AutoCloseable interfaces for resource cleanup
 4. **Type Safety**: Generic types for compile-time type safety
-5. **Fluent APIs**: Method chaining for improved developer experience
+5. **Fluent APIs**: Method chaining for developer experience
 
 ## Main Entry Points Summary
 
@@ -205,7 +218,7 @@ var topTracks = client.sql().execute(null,
 - **SQL Operations**: Full SQL support with DDL/DML/DQL
 - **Compute**: Distributed job execution and MapReduce
 - **Transactions**: ACID transactions with configurable isolation
-- **Streaming**: High-performance data ingestion
+- **Streaming**: High-throughput data ingestion
 - **Catalog Management**: Dynamic schema operations
 - **Caching**: Distributed caching with multiple patterns
 - **Security**: Authentication and SSL/TLS support
@@ -228,7 +241,7 @@ All examples use a music store dataset with:
 
 - **Playlist** → **PlaylistTrack** (many-to-many relationships)
 
-This consistent dataset reduces cognitive load and demonstrates real-world distributed application patterns.
+This consistent dataset reduces cognitive load and demonstrates distributed application patterns.
 
 ## Getting Help
 
@@ -239,10 +252,10 @@ This consistent dataset reduces cognitive load and demonstrates real-world distr
 
 ## Next Steps
 
-**New to Ignite 3?** Start with the recommended learning path:
+**New to Ignite 3?** Start with the structured learning path:
 
 - **[Begin with Module 01: Foundation](./docs/01-foundation/)** - Essential concepts and first connection
 - **[Continue with Module 02: Schema Design](./docs/02-schema-design/)** - Build your data models
 - **[Follow the structured path](./docs/README.md)** - Progress through all modules systematically
 
-**Need immediate results?** Use problem-focused learning to jump directly to your area of interest.
+**Need immediate results?** Use problem-focused learning to jump to your area of interest.

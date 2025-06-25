@@ -57,9 +57,9 @@ High-performance patterns for production applications.
 
 ### Self-Paced Learning Framework
 
-**🎯 Start Here**: [**Module 01: Foundation**](./01-foundation/01-introduction-and-architecture.md)
+**Start Here**: [**Module 01: Foundation**](./01-foundation/01-introduction-and-architecture.md)
 
-This primer uses a progressive learning model where each module builds upon previous concepts:
+This primer uses a progressive learning model where each module builds on previous concepts:
 
 **Foundation → Schema → APIs → Operations → Performance**
 
@@ -117,15 +117,15 @@ When you can:
 
 ### Alternative Learning Paths
 
-**🚀 Quick Start**: Need immediate results?
+**Quick Start**: Need immediate results?
 
 - **I need to connect and store data** → [Module 01](./01-foundation/)
 - **I'm building data models** → [Module 02](./02-schema-design/)  
-- **I need efficient queries** → [Module 03](./03-data-access-apis/)
+- **I need queries** → [Module 03](./03-data-access-apis/)
 - **I need transaction handling** → [Module 04](./04-distributed-operations/)
-- **I need performance optimization** → [Module 05](./05-performance-scalability/)
+- **I need performance tuning** → [Module 05](./05-performance-scalability/)
 
-**📚 Reference Study**: Understanding architecture first?
+**Reference Study**: Understanding architecture first?
 
 - Start with [Module 00: Reference](./00-reference/) for architectural context
 - Then follow the standard progression from Module 01
@@ -150,6 +150,6 @@ Examples use a unified music store dataset:
 - **Core Entities**: Artist → Album → Track (hierarchical relationships)
 - **Business Entities**: Customer → Invoice workflows
 - **Reference Data**: Genre, MediaType tables
-- **Colocation Strategy**: Related data distributed for optimal performance
+- **Colocation Strategy**: Related data distributed for performance
 
-This consistent dataset reduces cognitive load and demonstrates real-world distributed application patterns.
+This consistent dataset reduces cognitive load and demonstrates distributed application patterns.

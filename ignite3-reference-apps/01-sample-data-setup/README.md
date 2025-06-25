@@ -2,7 +2,7 @@
 
 **Foundation module for Apache Ignite 3 music store sample dataset**
 
-📖 **Related Documentation**: [Introduction & Overview](../../docs/01-foundation/01-introduction-and-architecture.md)
+**Related Documentation**: [Introduction & Overview](../../docs/01-foundation/01-introduction-and-architecture.md)
 
 ## Overview
 
@@ -12,7 +12,7 @@ This module provides the foundation for all Apache Ignite 3 reference applicatio
 
 - **Schema-as-Code**: Define tables using Java annotations
 - **Distribution Zones**: Configure data placement and replication strategies  
-- **Colocation**: Optimize performance by co-locating related data
+- **Colocation**: Performance through co-locating related data
 - **Composite Keys**: Handle multi-field primary keys in distributed systems
 - **Reference Data**: Manage lookup tables with high replication
 - **Transactional Operations**: Load data safely with ACID guarantees
