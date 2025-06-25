@@ -27,37 +27,76 @@ This worked perfectly for learning the basics. Now you're ready to understand wh
 
 > [!NOTE]
 > **Distribution Zones**: Think of zones as policies that control where your data lives, how many copies exist, and how it spreads across nodes. They're the foundation of Ignite 3's data placement and performance optimization strategies.
+>
+> For complete architectural details, see [Storage System Architecture](../00-reference/STORAGE-SYSTEM-ARCH.md).
 
 ### What Are Distribution Zones?
 
-Distribution zones are containers that define how your data spreads across cluster nodes. Think of them as policies that control:
+Distribution zones are logical containers that define how your data spreads across cluster nodes. Behind the scenes, Ignite 3 uses the **Rendezvous (Highest Random Weight) algorithm** to ensure consistent data placement without requiring coordination between nodes.
 
-- **Where** your data lives (which nodes)
-- **How many copies** exist (replication factor)
-- **How data spreads** (partitioning strategy)
-- **Storage characteristics** (memory, persistence, performance)
+```mermaid
+graph TB
+    subgraph "Zone Configuration Controls"
+        ZONE["Distribution Zone<br/>'MusicStore'"] --> REPLICAS["Replicas: 3<br/>Fault tolerance"]
+        ZONE --> PARTITIONS["Partitions: 50<br/>Parallel processing"]
+        ZONE --> STORAGE["Storage Profile<br/>aipersist engine"]
+        ZONE --> FILTER["Node Filter<br/>SSD nodes only"]
+    end
+    
+    subgraph "Physical Distribution Result"
+        N1["Node 1<br/>Partitions: 1,4,7..."]
+        N2["Node 2<br/>Partitions: 2,5,8..."]
+        N3["Node 3<br/>Partitions: 3,6,9..."]
+        
+        N1 <--> N2
+        N2 <--> N3
+        N1 <--> N3
+    end
+    
+    ZONE --> N1
+    ZONE --> N2
+    ZONE --> N3
+```
+
+Each zone controls:
+
+- **Where** your data lives (node selection and filtering)
+- **How many copies** exist (replica count for fault tolerance)
+- **How data spreads** (partition count and Rendezvous distribution)
+- **Storage characteristics** (engine choice: aimem, aipersist, or rocksdb)
+
+> **Deep dive**: See [Storage System Architecture](../00-reference/STORAGE-SYSTEM-ARCH.md) for complete details on partitioning algorithms, storage engines, and data placement strategies.
 
 ### Zone Configuration in Action
 
 When you create a zone, you're configuring the distributed behavior:
 
+```sql
+-- SQL approach for creating zones
+CREATE ZONE "MusicStore" WITH 
+    PARTITIONS=50,                        -- Split data into 50 partitions
+    REPLICAS=3,                           -- Keep 3 copies for fault tolerance
+    STORAGE_PROFILES='aipersist_profile', -- Use persistent storage engine
+    DATA_NODES_FILTER='$.storage == "SSD"' -- Only use SSD nodes
+```
+
+Or use the programmatic approach with StatementBuilder:
+
 ```java
-ZoneDefinition musicZone = ZoneDefinition.builder("MusicStore")
-    .replicas(3)                          // Keep 3 copies of each data partition
-    .partitions(32)                       // Split data into 32 partitions
-    .storageProfiles("fast_storage")      // Use high-performance storage
-    .distributionAlgorithm("ROUND_ROBIN") // Even distribution strategy
+// Preferred: Use StatementBuilder API for zone creation
+Statement createZoneStmt = client.sql().statementBuilder()
+    .query("CREATE ZONE \"MusicStore\" WITH PARTITIONS=?, REPLICAS=?, STORAGE_PROFILES=?")
     .build();
 
-client.catalog().createZone(musicZone);
+client.sql().execute(null, createZoneStmt, 50, 3, "default");
 ```
 
 **Why This Matters:**
 
 - **Fault Tolerance**: 3 replicas mean your data survives 2 node failures
-- **Performance**: More partitions enable parallel processing
-- **Storage Control**: Different profiles optimize for different workloads
-- **Load Balance**: Distribution algorithms prevent hotspots
+- **Performance**: 50 partitions enable parallel processing across cluster
+- **Storage Control**: Profile choice determines engine (aimem, aipersist, rocksdb)
+- **Node Selection**: Filters ensure data goes to appropriate hardware
 
 ### How Data Distributes
 
@@ -160,125 +199,224 @@ tracks.getAll(null, artistTrackKeys);
 
 ### Replica Configuration
 
-Different applications need different replication strategies:
+Different applications need different replication strategies. Ignite 3 uses a **Placement Driver** to ensure exactly one primary replica per partition handles writes:
 
-```java
-// High availability music catalog
-ZoneDefinition catalogZone = ZoneDefinition.builder("MusicCatalog")
-    .replicas(3)                    // Survive 2 node failures
-    .consistencyMode("STRONG")      // Immediate consistency
-    .build();
+```sql
+-- High availability music catalog
+CREATE ZONE "MusicCatalog" WITH 
+    PARTITIONS=50,
+    REPLICAS=3;                     -- Survive 2 node failures
 
-// Read-heavy reference data
-ZoneDefinition refDataZone = ZoneDefinition.builder("ReferenceData")
-    .replicas(5)                    // Maximum read performance
-    .consistencyMode("EVENTUAL")    // Relaxed consistency for reads
-    .build();
+-- Read-heavy reference data  
+CREATE ZONE "ReferenceData" WITH 
+    PARTITIONS=25,
+    REPLICAS=5;                     -- Maximum read performance
 
-// High-write user activity
-ZoneDefinition activityZone = ZoneDefinition.builder("UserActivity")
-    .replicas(2)                    // Balance performance and safety
-    .consistencyMode("WEAK")        // Optimize for write throughput
-    .build();
+-- Balanced user activity
+CREATE ZONE "UserActivity" WITH 
+    PARTITIONS=64,
+    REPLICAS=2;                     -- Balance performance and safety
 ```
 
-### Consistency Levels
+### Primary Replica Management
 
-**Strong Consistency**: All replicas synchronized before operations complete
+The Placement Driver coordinates primary replica selection using time-limited leases:
 
-- **Use for**: Financial transactions, critical business data
-- **Trade-off**: Higher latency, guaranteed accuracy
+```mermaid
+graph TB
+    subgraph "Primary Replica Lifecycle"
+        MONITOR["Placement Driver<br/>Monitors Topology"] --> SELECT["Select Primary<br/>from Available Replicas"]
+        SELECT --> GRANT["Grant Lease<br/>(time-limited)"]
+        GRANT --> KEEPALIVE["Primary Sends<br/>Keep-alive Messages"]
+        KEEPALIVE --> RENEW["Lease Renewal"]
+        RENEW --> KEEPALIVE
+        
+        GRANT --> EXPIRE["Lease Expiration"]
+        EXPIRE --> FAILOVER["Automatic Failover"]
+        FAILOVER --> SELECT
+    end
+```
 
-**Eventual Consistency**: Updates propagate asynchronously
+**Lease Management Benefits:**
 
-- **Use for**: User preferences, activity logs, caching
-- **Trade-off**: Lower latency, potential temporary inconsistencies
+- **Split-brain Prevention**: Only one valid primary per partition
+- **Automatic Failover**: Failed primaries detected via lease expiration
+- **No Coordination Overhead**: Secondaries don't need to coordinate
+- **Consistent Writes**: All writes go through the primary replica
 
-**Weak Consistency**: Minimal synchronization requirements
+### Transaction Consistency with MVCC
 
-- **Use for**: Metrics, analytics, high-volume logging
-- **Trade-off**: Maximum performance, potential data loss
+Ignite 3 uses **Multi-Version Concurrency Control (MVCC)** to handle concurrent access:
+
+```java
+// Each record maintains multiple versions with timestamps
+public class VersionedRecord {
+    private final Object key;
+    private final Object value;
+    private final long timestamp;      // Version identifier
+    private final boolean committed;   // Transaction state
+}
+```
+
+**MVCC Benefits:**
+
+- **Read Operations**: See committed versions as of transaction timestamp
+- **Write Operations**: Create new versions without blocking readers
+- **Garbage Collection**: Configurable cleanup removes old versions
+- **Isolation**: Transactions see consistent snapshots
+
+**Consistency Guarantees:**
+
+- **ACID Transactions**: Full transactional semantics across partitions
+- **Snapshot Isolation**: Readers see consistent data without locking
+- **Linearizability**: Writes appear to happen atomically
+- **Read-your-writes**: Sessions see their own writes immediately
+
+> **Deep Dive**: See [Storage System Architecture](../00-reference/STORAGE-SYSTEM-ARCH.md#multi-version-concurrency-control-mvcc) for complete MVCC implementation details.
 
 ## Practical Zone Design Patterns
 
 ### Multi-Zone Architecture
 
-Real applications use multiple zones for different data characteristics:
+Real applications use multiple zones optimized for different data characteristics. Each zone uses storage profiles that match their requirements:
 
 ```java
-// Critical business data - maximum reliability
-client.catalog().createZone(
-    ZoneDefinition.builder("BusinessCritical")
-        .replicas(3)
-        .consistencyMode("STRONG")
-        .storageProfiles("persistent_ssd")
-        .build()
-);
+// Preferred: Use StatementBuilder for zone creation
+Statement businessZoneStmt = client.sql().statementBuilder()
+    .query("CREATE ZONE \"BusinessCritical\" WITH PARTITIONS=?, REPLICAS=?, STORAGE_PROFILES=?")
+    .build();
+client.sql().execute(null, businessZoneStmt, 25, 3, "production_persistent");
 
-// Analytics data - optimized for bulk operations
-client.catalog().createZone(
-    ZoneDefinition.builder("Analytics")
-        .replicas(2)
-        .partitions(64)  // More partitions for parallel processing
-        .consistencyMode("EVENTUAL")
-        .storageProfiles("bulk_storage")
-        .build()
-);
+Statement analyticsZoneStmt = client.sql().statementBuilder()
+    .query("CREATE ZONE \"Analytics\" WITH PARTITIONS=?, REPLICAS=?, STORAGE_PROFILES=?")
+    .build();
+client.sql().execute(null, analyticsZoneStmt, 64, 2, "analytics_persistent");
 
-// Session data - optimized for speed
-client.catalog().createZone(
-    ZoneDefinition.builder("Sessions")
-        .replicas(2)
-        .consistencyMode("WEAK")
-        .storageProfiles("memory_only")
-        .build()
-);
+Statement sessionsZoneStmt = client.sql().statementBuilder()
+    .query("CREATE ZONE \"Sessions\" WITH PARTITIONS=?, REPLICAS=?, STORAGE_PROFILES=?")
+    .build();
+client.sql().execute(null, sessionsZoneStmt, 50, 2, "default");
+```
+
+### Storage Profile Configuration
+
+Before creating zones, configure storage profiles on cluster nodes:
+
+```bash
+# Configure persistent storage for production data
+ignite node config update "ignite.storage.profiles: {
+    production_persistent: {
+        engine: aipersist,
+        size: 8589934592    # 8GB cache for hot data
+    },
+    analytics_persistent: {
+        engine: aipersist,
+        size: 4294967296    # 4GB cache for analytics
+    }
+}"
+```
+
+**Storage Engine Selection Guide:**
+
+- **aimem** (default): Development, caching, temporary data (no persistence)
+- **aipersist**: Production applications requiring data durability
+- **rocksdb**: Experimental engine for write-heavy workloads
+
+**Creating Reusable Statement Patterns:**
+
+```java
+// Create domain-specific builders for consistent configuration
+public static Statement.StatementBuilder musicStoreQuery() {
+    return client.sql().statementBuilder()
+        .defaultSchema("MUSIC_STORE")
+        .pageSize(100)
+        .queryTimeout(30, TimeUnit.SECONDS);
+}
+
+// Use for zone operations
+Statement zoneStmt = musicStoreQuery()
+    .query("CREATE ZONE ? WITH PARTITIONS=?, REPLICAS=?, STORAGE_PROFILES=?")
+    .build();
 ```
 
 ### Zone-Table Mapping
 
 ```java
-// Business entities in reliable storage
-@Table(zone = @Zone(value = "BusinessCritical"))
+// Business entities use persistent storage for durability
+@Table(zone = @Zone(value = "BusinessCritical", storageProfiles = "production_persistent"))
 public class Customer { ... }
 
-@Table(zone = @Zone(value = "BusinessCritical"))
+@Table(zone = @Zone(value = "BusinessCritical", storageProfiles = "production_persistent"))
 public class Invoice { ... }
 
-// Analytics in optimized storage
-@Table(zone = @Zone(value = "Analytics"))
+// Analytics use persistent storage but larger partitions
+@Table(zone = @Zone(value = "Analytics", storageProfiles = "analytics_persistent"))
 public class UserBehavior { ... }
 
-@Table(zone = @Zone(value = "Analytics"))
+@Table(zone = @Zone(value = "Analytics", storageProfiles = "analytics_persistent"))
 public class SalesMetrics { ... }
 
-// Session data in fast storage
-@Table(zone = @Zone(value = "Sessions"))
+// Session data uses default aimem for maximum speed
+@Table(zone = @Zone(value = "Sessions", storageProfiles = "default"))
 public class UserSession { ... }
 ```
 
+**Zone Assignment Principles:**
+
+- **Match storage to durability needs**: Use aipersist for data that must survive restarts
+- **Optimize for access patterns**: More partitions for parallel processing
+- **Consider fault tolerance**: More replicas for critical data
+
 ## Performance Through Design
+
+### Understanding Data Distribution
+
+Ignite 3 uses the **Rendezvous (Highest Random Weight) algorithm** to distribute data consistently across nodes:
+
+```mermaid
+graph TB
+    subgraph "Data Distribution Process"
+        DATA["Track Record<br/>TrackId: 12345"] --> HASH["Hash Function<br/>hash(12345) = 0x7f8a..."]
+        HASH --> PARTITION["Partition Assignment<br/>partition = hash % 50"]
+        PARTITION --> NODES["Rendezvous Algorithm<br/>Selects 3 nodes for<br/>partition 23"]
+        NODES --> REPLICAS["Replicas Created<br/>Node 1: Primary<br/>Node 3: Secondary<br/>Node 7: Secondary"]
+    end
+```
+
+**Algorithm Benefits:**
+
+- **Consistent Assignment**: Same key always maps to same nodes
+- **No Coordination**: Nodes independently calculate assignments
+- **Minimal Movement**: Only affected partitions rebalance when topology changes
+- **Even Distribution**: Load spreads evenly across available nodes
 
 ### Partition Key Selection
 
-Choose partition keys that distribute load evenly:
+Choose partition keys that work with the Rendezvous algorithm:
 
 ```java
-// Good: Random distribution
-@Table(zone = @Zone(value = "MusicStore"))
+// Good: Random distribution across all partitions
+@Table(zone = @Zone(value = "MusicStore", storageProfiles = "default"))
 public class Track {
     @Id private UUID TrackId;      // Random UUID distributes evenly
     private Integer ArtistId;
 }
 
 // Better: Semantic distribution with colocation
-@Table(zone = @Zone(value = "MusicStore"),
+@Table(zone = @Zone(value = "MusicStore", storageProfiles = "default"),
        colocateBy = @ColumnRef("ArtistId"))
 public class Track {
     @Id private Integer TrackId;   // Sequential within artist
     @Id private Integer ArtistId;  // Groups related tracks
 }
 ```
+
+**Partitioning Best Practices:**
+
+- **Avoid Hot Partitions**: Don't use sequential keys that concentrate on few partitions
+- **Consider Colocation**: Group related data for local joins
+- **Plan for Growth**: Choose partition counts that accommodate future scaling
+- **Monitor Distribution**: Use cluster tools to verify even load distribution
 
 ### Query-Driven Design
 
@@ -305,7 +443,7 @@ public class PlaylistTrack { ... }
 The complete setup provides a rich learning experience with realistic data distribution:
 
 ```bash
-cd ignite3-reference-apps/00-docker
+cd ignite3-java-api-primer/00-docker
 ./init-cluster.sh
 
 cd ../01-sample-data-setup
@@ -315,9 +453,21 @@ mvn compile exec:java
 **What This Establishes:**
 
 - **3-Node Cluster**: Production-ready distributed setup with automatic failover
-- **Multiple Zones**: Different distribution strategies for different data types
+- **Multiple Storage Engines**: Experience with aimem (default) and aipersist storage
 - **Colocated Data**: Artist-Album-Track hierarchies optimized for performance
 - **Realistic Scale**: Sample data that demonstrates distribution effects
+- **Zone Strategies**: Multiple zones using different storage profiles
+
+**Cluster Configuration:**
+
+```bash
+# Verify cluster status and partition distribution
+ignite cluster status
+ignite cluster partition states --zone-name default
+
+# Check storage profiles and engines
+ignite node config show --filter storage
+```
 
 ### Next Steps in Your Learning Journey
 
