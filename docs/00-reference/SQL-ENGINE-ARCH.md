@@ -1,6 +1,6 @@
 # Apache Ignite 3 SQL Engine Architecture
 
-*Understanding Apache Calcite integration and SQL processing in Ignite 3*
+## Understanding Apache Calcite integration and SQL processing in Ignite 3
 
 ## Overview
 
@@ -225,33 +225,70 @@ SELECT * FROM Track WHERE TrackId = 12345
 
 ## SQL Standard Compliance
 
-### Supported SQL Features
+### SQL Capabilities: Ignite 3 vs Full Apache Calcite
 
-Ignite 3 with Calcite supports most of SQL:2016 standard:
+While Ignite 3 uses Apache Calcite as its foundation, it implements a subset of Calcite's full capabilities. The following comparison shows what's actually supported:
 
-**Core SQL:**
-- SELECT, INSERT, UPDATE, DELETE, UPSERT
-- All standard data types (INTEGER, VARCHAR, DECIMAL, DATE, TIMESTAMP, etc.)
-- Standard functions (mathematical, string, date/time)
-- Window functions (ROW_NUMBER, RANK, LAG, LEAD)
-- Common Table Expressions (WITH clauses)
+| Feature Category | Ignite 3 Implementation | Full Calcite Capability | Status |
+|------------------|------------------------|---------------------------|--------|
+| **Core SQL Operations** | | | |
+| SELECT, INSERT, UPDATE, DELETE, UPSERT | ✅ Full support | ✅ Full support | Complete |
+| Subqueries and correlated queries | ✅ Full support | ✅ Full support | Complete |
+| CASE expressions and conditional logic | ✅ Full support | ✅ Full support | Complete |
+| **Data Types** | | | |
+| Numeric types (INT, DECIMAL, FLOAT, etc.) | ✅ Full support | ✅ Full support | Complete |
+| String types (VARCHAR, CHAR) | ✅ Full support | ✅ Full support | Complete |
+| Date/Time types (DATE, TIMESTAMP, etc.) | ✅ Full support | ✅ Full support | Complete |
+| BOOLEAN, UUID, NULL | ✅ Full support | ✅ Full support | Complete |
+| Collections (ARRAY, MAP) | ⚠️ Basic support | ✅ Full support | Limited |
+| **JOIN Operations** | | | |
+| INNER, LEFT, RIGHT, FULL OUTER, CROSS | ✅ Full support | ✅ Full support | Complete |
+| NATURAL JOIN | ✅ Full support | ✅ Full support | Complete |
+| Complex join expressions | ✅ Full support | ✅ Full support | Complete |
+| **Aggregate Functions** | | | |
+| COUNT, SUM, AVG, MIN, MAX | ✅ Full support | ✅ Full support | Complete |
+| ANY_VALUE, SINGLE_VALUE | ✅ Full support | ✅ Full support | Complete |
+| EVERY, SOME with FILTER | ✅ Full support | ✅ Full support | Complete |
+| **Window Functions** | | | |
+| ROW_NUMBER, RANK, DENSE_RANK | ❌ Not supported | ✅ Full support | Missing |
+| LAG, LEAD, FIRST_VALUE, LAST_VALUE | ❌ Not supported | ✅ Full support | Missing |
+| Analytical functions (NTILE, CUME_DIST) | ❌ Not supported | ✅ Full support | Missing |
+| **Mathematical Functions** | | | |
+| Basic math (ABS, SQRT, POWER, etc.) | ✅ Full support | ✅ Full support | Complete |
+| Trigonometric functions | ✅ Full support | ✅ Full support | Complete |
+| Statistical functions (STDDEV, VAR) | ❌ Not supported | ✅ Full support | Missing |
+| **String Functions** | | | |
+| UPPER, LOWER, SUBSTRING, CONCAT | ✅ Full support | ✅ Full support | Complete |
+| Pattern matching (LIKE, SIMILAR TO) | ✅ Full support | ✅ Full support | Complete |
+| Advanced string ops (SOUNDEX, TRANSLATE) | ✅ Full support | ✅ Full support | Complete |
+| **Date/Time Functions** | | | |
+| CURRENT_DATE, EXTRACT, date arithmetic | ✅ Full support | ✅ Full support | Complete |
+| Unix timestamp functions | ✅ Full support | ✅ Full support | Complete |
+| Time zone operations | ⚠️ Basic support | ✅ Full support | Limited |
+| **JSON Functions** | | | |
+| JSON_VALUE, JSON_QUERY, JSON_EXISTS | ✅ Full support | ✅ Full support | Complete |
+| JSON_OBJECT, JSON_ARRAY | ✅ Full support | ✅ Full support | Complete |
+| JSON predicates and manipulation | ✅ Full support | ✅ Full support | Complete |
+| **Advanced Features** | | | |
+| Common Table Expressions (WITH) | ✅ Full support | ✅ Full support | Complete |
+| Recursive CTEs (WITH RECURSIVE) | ❌ Explicitly blocked | ✅ Full support | Missing |
+| Set operations (UNION, INTERSECT, EXCEPT) | ✅ Full support | ✅ Full support | Complete |
+| PIVOT/UNPIVOT operations | ❌ Not supported | ✅ Full support | Missing |
+| MATCH_RECOGNIZE pattern matching | ❌ Not supported | ✅ Full support | Missing |
+| **Collection Operations** | | | |
+| Basic ARRAY and MAP operations | ⚠️ Basic support | ✅ Full support | Limited |
+| MULTISET operations | ❌ Not supported | ✅ Full support | Missing |
+| Collection querying (ARRAY_QUERY) | ❌ Not supported | ✅ Full support | Missing |
 
-**Advanced Features:**
-- Complex subqueries and correlated queries
-- CASE expressions and conditional logic
-- Set operations (UNION, INTERSECT, EXCEPT)
-- Advanced joins (LEFT, RIGHT, FULL OUTER, CROSS)
-
-**Example of Advanced SQL:**
+### Example of Supported SQL
 
 ```java
-Statement complexQuery = client.sql().statementBuilder()
+Statement supportedQuery = client.sql().statementBuilder()
     .query("""
         WITH artist_stats AS (
             SELECT a.ArtistId, a.Name,
                    COUNT(t.TrackId) as track_count,
-                   AVG(t.UnitPrice) as avg_price,
-                   ROW_NUMBER() OVER (ORDER BY COUNT(t.TrackId) DESC) as rank
+                   AVG(t.UnitPrice) as avg_price
             FROM Artist a
             JOIN Album al ON a.ArtistId = al.ArtistId
             JOIN Track t ON al.AlbumId = t.AlbumId
@@ -259,7 +296,25 @@ Statement complexQuery = client.sql().statementBuilder()
         )
         SELECT Name, track_count, avg_price
         FROM artist_stats
-        WHERE rank <= 10
+        WHERE track_count > 10
+        ORDER BY track_count DESC
+        """)
+    .build();
+```
+
+### Example of Unsupported SQL
+
+```java
+// This will fail - window functions not supported
+Statement unsupportedQuery = client.sql().statementBuilder()
+    .query("""
+        SELECT a.Name,
+               COUNT(t.TrackId) as track_count,
+               ROW_NUMBER() OVER (ORDER BY COUNT(t.TrackId) DESC) as rank
+        FROM Artist a
+        JOIN Album al ON a.ArtistId = al.ArtistId
+        JOIN Track t ON al.AlbumId = t.AlbumId
+        GROUP BY a.ArtistId, a.Name
         """)
     .build();
 ```
@@ -431,29 +486,8 @@ SQL operations respect Ignite's MVCC transaction model:
 - **Write Operations**: Use distributed locking for consistency
 - **DDL Operations**: Coordinate schema changes across all nodes
 
-## Future Enhancements
 
-### Streaming SQL
-
-Ignite 3 plans to extend Calcite for streaming queries:
-
-```sql
--- Future capability: continuous queries over streaming data
-SELECT STREAM artistId, COUNT(*) 
-FROM Track_Stream
-GROUP BY artistId
-WINDOW TUMBLING (INTERVAL '1' MINUTE)
-```
-
-### Advanced Analytics
-
-Enhanced Calcite integration for analytical workloads:
-
-- **Vectorized Execution**: Batch processing for analytical queries
-- **Columnar Storage**: Integration with columnar storage engines
-- **Advanced Functions**: Machine learning and statistical functions
-
-## Summary
+## Final Thoughts
 
 Apache Calcite provides the SQL foundation that makes Ignite 3 a powerful distributed database:
 
