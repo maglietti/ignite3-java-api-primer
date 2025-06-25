@@ -6,12 +6,12 @@ By completing this chapter, you will:
 
 - Implement cache-aside patterns for read-heavy workloads
 - Master write-through and write-behind caching strategies
-- Optimize application performance with intelligent data access patterns
+- Tune application performance with data access patterns
 - Handle cache invalidation and consistency requirements
 
 ## Working with the Reference Application
 
-The **`09-caching-patterns-app`** demonstrates all caching patterns covered in this chapter with real-world music platform optimization examples. Run it alongside your learning to see cache-aside, write-through, and write-behind patterns in action.
+The **`09-caching-patterns-app`** demonstrates caching patterns covered in this chapter with music platform examples. Run it alongside your learning to see cache-aside, write-through, and write-behind patterns in action.
 
 **Quick Start**: After reading this chapter, explore the reference application:
 
@@ -20,7 +20,7 @@ cd ignite3-reference-apps/09-caching-patterns-app
 mvn compile exec:java
 ```
 
-The reference app shows how the streaming patterns from [Chapter 5.1](01-data-streaming.md) integrate with intelligent caching strategies, building on all the data access and consistency patterns from previous modules.
+The reference app shows how the streaming patterns from [Chapter 5.1](01-data-streaming.md) integrate with caching strategies, building on the data access and consistency patterns from previous modules.
 
 ## The Performance Challenge
 

@@ -11,7 +11,7 @@ By completing this chapter, you will:
 
 ## Working with the Reference Application
 
-The **`08-data-streaming-app`** demonstrates all Data Streaming patterns covered in this chapter with high-velocity music event ingestion examples. Run it alongside your learning to see reactive streaming, backpressure handling, and bulk ingestion optimization in action.
+The **`08-data-streaming-app`** demonstrates Data Streaming patterns covered in this chapter with music event ingestion examples. Run it alongside your learning to see reactive streaming, backpressure handling, and bulk ingestion patterns in action.
 
 **Quick Start**: After reading this chapter, explore the reference application:
 
@@ -29,11 +29,11 @@ The reference app shows how the distributed computing from [Chapter 4.3](../04-d
 
 When a music streaming service releases a new album from a major artist, millions of users immediately begin streaming tracks. Each play generates events: track started, track completed, rating given, playlist added. Processing these events one-by-one through traditional database operations creates bottlenecks that prevent real-time analytics and recommendations.
 
-Consider this scenario: A popular band releases their new album at midnight. Within the first hour, 500,000 listeners generate 2.5 million track events. Traditional INSERT statements would require 2.5 million individual database operations. Instead, Ignite 3's Data Streaming API **batches these events into optimized chunks**, routes them to appropriate cluster nodes based on data locality, and **ingests thousands of records per second** with built-in backpressure handling.
+Consider this scenario: A popular band releases their new album at midnight. Within the first hour, 500,000 listeners generate 2.5 million track events. Traditional INSERT statements would require 2.5 million individual database operations. Instead, Ignite 3's Data Streaming API **batches these events into chunks**, routes them to cluster nodes based on data locality, and **ingests thousands of records per second** with backpressure handling.
 
 ## Overview: Data Streaming Architecture
 
-The Data Streaming API provides a reactive framework for bulk data operations with sophisticated performance optimization:
+The Data Streaming API provides a reactive framework for bulk data operations with performance optimization:
 
 ```mermaid
 graph TB

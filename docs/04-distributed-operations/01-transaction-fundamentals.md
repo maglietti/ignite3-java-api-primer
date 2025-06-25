@@ -11,7 +11,7 @@ By completing this chapter, you will:
 
 ## Working with the Reference Application
 
-The **`06-transactions-app`** demonstrates all transaction patterns covered in this chapter with real-world music store workflows. Run it alongside your learning to see ACID guarantees, isolation levels, and error handling patterns in action.
+The **`06-transactions-app`** demonstrates transaction patterns covered in this chapter with music store workflows. Run it alongside your learning to see ACID guarantees, isolation levels, and error handling patterns in action.
 
 **Quick Start**: After reading this chapter, explore the reference application:
 
@@ -20,7 +20,7 @@ cd ignite3-reference-apps/06-transactions-app
 mvn compile exec:java
 ```
 
-The reference app shows how the Table API and SQL operations from [Module 3](../03-data-access-apis/01-table-api-operations.md) work together within distributed transactions for complete business workflows.
+The reference app shows how the Table API and SQL operations from [Module 3](../03-data-access-apis/01-table-api-operations.md) work together within distributed transactions for business workflows.
 
 ## The Transaction Challenge in Music Store Operations
 
@@ -37,7 +37,7 @@ Consider this scenario: A customer selects five tracks from different albums and
 
 If any step fails—network issues, insufficient inventory, payment decline—the entire operation should rollback. The customer shouldn't see a charge without receiving their music, and inventory shouldn't decrease without a completed sale.
 
-This is exactly what Ignite 3's Transaction API delivers: **atomic operations across multiple tables and nodes** with full ACID guarantees.
+This is what Ignite 3's Transaction API delivers: **atomic operations across multiple tables and nodes** with ACID guarantees.
 
 ## Overview: Transaction API Architecture
 

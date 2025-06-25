@@ -4,7 +4,7 @@
 
 ## About This Module
 
-This module provides the technical foundation for understanding Apache Ignite 3's architecture and Java API design patterns. While other modules focus on hands-on learning, this module serves as your reference guide for deeper architectural understanding.
+This module provides the technical foundation for understanding Apache Ignite 3's architecture and Java API design patterns. While other modules focus on hands-on learning, this module serves as reference for architectural understanding.
 
 **When to read this module:**
 
@@ -27,7 +27,7 @@ Core platform architecture and distributed systems concepts that underpin all Ig
 
 ### [Java API Architecture](./JAVA-API-ARCH.md)
 
-API design patterns and client programming model that guide effective Java development.
+API design patterns and client programming model for Java development.
 
 **What you'll learn:**
 
@@ -55,7 +55,7 @@ This module provides context for the practical patterns you'll implement in modu
 - **Module 02 schema design** applies the data distribution principles explained here
 - **Module 03 data access** leverages the API patterns documented here
 - **Module 04 operations** implements the consistency models described here
-- **Module 05 performance** optimizes using the characteristics outlined here
+- **Module 05 performance** applies the characteristics outlined here
 
 ## Reading Strategy
 

@@ -14,11 +14,11 @@ By completing this chapter, you will:
 
 Modern applications handle data at scales that traditional databases struggle to support. Consider a music streaming platform serving millions of users. Your application needs to:
 
-- Store and retrieve artist catalogs instantaneously across global regions
+- Store and retrieve artist catalogs across global regions
 - Process customer purchases with ACID guarantees while maintaining high throughput
 - Generate real-time recommendations by analyzing listening patterns across distributed data
 - Handle massive data ingestion as new tracks and user interactions flow continuously
-- Scale seamlessly from thousands to millions of concurrent users
+- Scale from thousands to millions of concurrent users
 
 These requirements push beyond what traditional databases can deliver. You need a distributed computing platform designed for modern application demands.
 
@@ -28,23 +28,23 @@ Apache Ignite 3 addresses these challenges through a unified platform that combi
 
 ### Core Capabilities
 
-- **In-Memory Data Grid**: Data resides in memory across cluster nodes, delivering microsecond access times with optional persistence for durability.
+- **In-Memory Data Grid**: Data resides in memory across cluster nodes, providing microsecond access times with persistence for durability.
 
-- **Distributed SQL Engine**: Execute ANSI-compliant SQL queries across distributed datasets with automatic join optimization and parallel execution.
+- **Distributed SQL Engine**: Execute ANSI-compliant SQL queries across distributed datasets with join optimization and parallel execution.
 
-- **NoSQL Key-Value Store**: Access data through type-safe object-oriented APIs optimized for high-performance single-record and batch operations.
+- **NoSQL Key-Value Store**: Access data through type-safe object-oriented APIs for single-record and batch operations.
 
-- **Compute Engine**: Execute business logic directly on data nodes, eliminating network overhead and maximizing performance through colocation.
+- **Compute Engine**: Execute business logic directly on data nodes, eliminating network overhead through colocation.
 
 - **Streaming Engine**: Ingest and process high-velocity data streams with built-in backpressure handling and flow control.
 
 ### Evolution from Ignite 2
 
-If you have worked with version 2 of Ignite in the past, Ignite 3 represents a fundamental redesign focused on modern developer experience and operational simplicity:
+If you have worked with version 2 of Ignite in the past, Ignite 3 represents a redesign focused on developer experience and operational management:
 
 - **Cleaner Architecture**: Simplified codebase with clear separation between storage, compute, and API layers
-- **Enhanced Schema Management**: Annotation-driven table creation eliminates configuration complexity
-- **Improved Transaction Semantics**: Stronger consistency guarantees with intuitive programming models
+- **Schema Management**: Annotation-driven table creation reduces configuration complexity
+- **Transaction Semantics**: Consistency guarantees with programming models
 - **Modern Java Integration**: Built-in support for CompletableFuture, type safety, and contemporary frameworks
 
 ## Connection Strategy Framework

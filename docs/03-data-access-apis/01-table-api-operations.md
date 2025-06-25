@@ -5,13 +5,13 @@
 By completing this chapter, you will:
 
 - Master object-oriented data access through RecordView and KeyValueView
-- Understand when to use Table API versus SQL API for optimal performance
+- Understand when to use Table API versus SQL API for performance
 - Implement CRUD operations with proper error handling and resource management
-- Apply bulk operations and async patterns for high-performance scenarios
+- Apply bulk operations and async patterns for performance scenarios
 
 ## Working with the Reference Application
 
-The **`04-table-api-app`** demonstrates all Table API patterns covered in this chapter using the complete music store dataset. Run it alongside your learning to see object-oriented data access patterns in action.
+The **`04-table-api-app`** demonstrates Table API patterns covered in this chapter using the music store dataset. Run it alongside your learning to see object-oriented data access patterns in action.
 
 **Quick Start**: After reading this chapter, explore the reference application:
 
@@ -20,7 +20,7 @@ cd ignite3-reference-apps/04-table-api-app
 mvn compile exec:java
 ```
 
-The reference app shows how the schema design from [Module 2](../02-schema-design/01-basic-annotations.md) translates into efficient CRUD operations, bulk processing, and async programming patterns.
+The reference app shows how the schema design from [Module 2](../02-schema-design/01-basic-annotations.md) translates into CRUD operations, bulk processing, and async programming patterns.
 
 ## Understanding Object-Oriented Data Access
 
@@ -28,7 +28,7 @@ The reference app shows how the schema design from [Module 2](../02-schema-desig
 
 Traditional database programming requires constant mental context switching. You design your application using object-oriented principles, but when it's time to persist or retrieve data, you switch to SQL thinking - rows, columns, JOIN operations, and result set iteration.
 
-Apache Ignite 3's Table API eliminates this friction entirely by providing **native object-oriented data access**. Your Java objects become first-class citizens in the database, with direct CRUD operations that feel natural to Java developers.
+Apache Ignite 3's Table API reduces this friction by providing **native object-oriented data access**. Your Java objects become first-class citizens in the database, with direct CRUD operations that feel natural to Java developers.
 
 ### Why Object-Oriented Data Access Matters
 

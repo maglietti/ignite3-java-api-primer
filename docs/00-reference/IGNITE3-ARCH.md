@@ -1,10 +1,10 @@
 # Apache Ignite 3 Architecture
 
-This document provides a complete architectural overview of Apache Ignite 3, from high-level design principles to detailed system implementation patterns.
+This document provides an architectural overview of Apache Ignite 3, from high-level design principles to system implementation patterns.
 
 ## Introduction
 
-Apache Ignite 3 represents a complete architectural redesign of the Apache Ignite platform, built as a distributed database for high-performance computing and real-time analytics workloads. The system addresses the scalability, performance, and operational challenges of modern distributed computing while maintaining strong consistency guarantees and multi-platform accessibility.
+Apache Ignite 3 represents an architectural redesign of the Apache Ignite platform, built as a distributed database for high-performance computing and real-time analytics workloads. The system addresses the scalability, performance, and operational challenges of distributed computing while maintaining consistency guarantees and multi-platform accessibility.
 
 ### Design Philosophy
 
@@ -12,9 +12,9 @@ Apache Ignite 3 is built on several foundational principles:
 
 - **Schema-First Design**: All data operations are schema-driven, ensuring consistency between DDL definitions, internal models, and physical storage
 - **Modular Architecture**: Clear separation of concerns with pluggable components and well-defined interfaces
-- **Distributed-by-Design**: Built for horizontal scalability with automatic partitioning and rebalancing
-- **Multi-Platform Native**: First-class support for Java, .NET, C++, and Python with consistent feature parity
-- **Operational Simplicity**: Unified management through CLI tools and REST APIs with automatic cluster coordination
+- **Distributed-by-Design**: Built for horizontal scalability with partitioning and rebalancing
+- **Multi-Platform Native**: Support for Java, .NET, C++, and Python with feature parity
+- **Operational Management**: Unified management through CLI tools and REST APIs with cluster coordination
 
 ### Key Capabilities
 

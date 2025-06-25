@@ -21,7 +21,7 @@ cd ignite3-reference-apps/02-getting-started-app
 mvn compile exec:java
 ```
 
-The reference app demonstrates the connection patterns, schema creation, and basic CRUD operations that scale from the Book examples here to the full Artist-Album-Track hierarchy.
+The reference app demonstrates the connection patterns, schema creation, and CRUD operations that scale from the Book examples here to the Artist-Album-Track hierarchy.
 
 ## Environment Setup
 

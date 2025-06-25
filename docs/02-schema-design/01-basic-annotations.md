@@ -7,11 +7,11 @@ By completing this chapter, you will:
 - Understand the advantages of schema-as-code over traditional database schema management
 - Master the six core annotations for defining distributed tables
 - Create your first production-ready table using annotations
-- Recognize how annotations eliminate schema synchronization complexity
+- Recognize how annotations reduce schema synchronization complexity
 
 ## Working with the Reference Application
 
-The **`03-schema-annotations-app`** demonstrates all schema design patterns covered in this module with the complete music store dataset. Run it alongside your learning to see annotations and colocation strategies in production code.
+The **`03-schema-annotations-app`** demonstrates schema design patterns covered in this module with the music store dataset. Run it alongside your learning to see annotations and colocation strategies in production code.
 
 **Quick Start**: After reading this module, explore the reference application:
 
@@ -20,7 +20,7 @@ cd ignite3-reference-apps/03-schema-annotations-app
 mvn compile exec:java
 ```
 
-The reference app shows how the Book example from [Chapter 1.2](../01-foundation/02-getting-started.md) scales to Artist-Album-Track hierarchies with proper colocation and distribution zones.
+The reference app shows how the Book example from [Chapter 1.2](../01-foundation/02-getting-started.md) scales to Artist-Album-Track hierarchies with colocation and distribution zones.
 
 ## Building on Your Success
 
@@ -34,20 +34,20 @@ public class Book {
 }
 ```
 
-This worked perfectly for learning the basics. Now you're ready to design production-ready schemas that handle complex relationships, optimize performance, and scale across distributed environments.
+This worked for learning the basics. Now you're ready to design schemas that handle relationships, performance, and scale across distributed environments.
 
 ### From Simple to Sophisticated: The Schema Evolution Journey
 
 Your Book entity demonstrated the fundamental pattern. Now we'll explore how that same pattern scales to handle:
 
 - **Related Entities**: Artist → Album → Track hierarchies that mirror real business relationships
-- **Performance Optimization**: Colocation strategies that keep related data together for efficient joins
-- **Production Concerns**: Indexing, distribution zones, and query patterns that support high-performance applications
+- **Performance**: Colocation strategies that keep related data together for joins
+- **Production Concerns**: Indexing, distribution zones, and query patterns for applications
 
 ## Understanding Schema-as-Code
 
 > [!IMPORTANT]
-> **Schema-as-Code Benefits**: Ignite 3's annotation-based schema approach eliminates the friction of managing separate DDL scripts, provides compile-time validation, and ensures consistency across all environments while automatically handling distributed database complexities.
+> **Schema-as-Code Benefits**: Ignite 3's annotation-based schema approach reduces the friction of managing separate DDL scripts, provides compile-time validation, and ensures consistency across environments while handling distributed database complexities.
 
 ### The Traditional Database Challenge
 
