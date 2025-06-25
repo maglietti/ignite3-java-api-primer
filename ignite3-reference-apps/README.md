@@ -228,7 +228,7 @@ Create tables, zones, and load sample data for a music streaming platform. Learn
 - **Load data**: Insert 200+ artists, 500+ albums, and 3000+ tracks transactionally
 - **Verify deployment**: Confirm data is distributed correctly across nodes
 
-*Start here*: [`01-sample-data-setup`](01-sample-data-setup/) | *Learn more*: [Getting Started Guide](../docs/01-foundation/02-getting-started.md)
+*Start here*: [`01-sample-data-setup`](01-sample-data-setup/) | [Getting Started Guide](../docs/01-foundation/02-getting-started.md)
 
 ### Getting Started
 
