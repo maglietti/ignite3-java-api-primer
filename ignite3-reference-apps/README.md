@@ -200,14 +200,25 @@ erDiagram
 - **MusicStore Zone** (2 replicas): Primary business data colocated by ArtistId/CustomerId for optimal join performance
 - **MusicStoreReplicated Zone** (3 replicas): Reference/lookup data replicated for high availability
 
-
-## Learning Path: Apache Ignite 3 Java API
+## Learning Apache Ignite 3 Java API with reference apps
 
 This series of reference applications builds your expertise progressively, from basic connections to advanced distributed processing patterns. Each app teaches specific concepts while building on previous knowledge.
 
-### Foundation: Data and Connections
+**Recommended order for learning Ignite 3:**
 
-#### 1. Sample Data Setup
+1. **sample-data-setup** - Understanding the dataset and basic setup
+2. **getting-started-app** - Basic operations and connections  
+3. **schema-annotations-app** - Schema definition and table creation
+4. **table-api-app** - Object-oriented data access
+5. **sql-api-app** - SQL operations and queries
+6. **transactions-app** - ACID transactions and consistency
+7. **compute-api-app** - Distributed processing
+8. **data-streaming-app** - High-throughput operations
+9. **caching-patterns-app** - Caching strategies and patterns
+10. **file-streaming-app** - Optional file-based reactive streaming with backpressure
+
+### Sample Data Setup
+
 **What you'll build**: A complete music store database with optimal data distribution
 
 Create tables, zones, and load sample data for a music streaming platform. Learn how data placement affects performance by colocating related records (artists with their albums) on the same nodes. This foundation supports all subsequent learning exercises.
@@ -219,7 +230,8 @@ Create tables, zones, and load sample data for a music streaming platform. Learn
 
 *Start here*: [`01-sample-data-setup`](01-sample-data-setup/) | *Learn more*: [Getting Started Guide](../docs/01-foundation/02-getting-started.md)
 
-#### 2. Getting Started
+### Getting Started
+
 **What you'll build**: Your first Ignite 3 applications using Table and SQL APIs
 
 Master the essential patterns every Ignite developer needs. Connect to clusters with partition awareness, perform basic CRUD operations, and run simple SQL queries. Learn the default zone pattern for rapid development.
@@ -232,9 +244,8 @@ Master the essential patterns every Ignite developer needs. Connect to clusters 
 *Prerequisites*: Sample data setup | *Builds toward*: Schema design patterns  
 [`02-getting-started-app`](02-getting-started-app/) | [Introduction and Architecture](../docs/01-foundation/01-introduction-and-architecture.md)
 
-### Schema Design: Distribution and Performance
+### Schema Annotations  
 
-#### 3. Schema Annotations  
 **What you'll build**: Advanced data models with optimal distribution strategies
 
 Move beyond basic tables to design schemas for distributed performance. Use annotations to control data placement, define relationships, and ensure queries execute efficiently. Learn colocation strategies that minimize network overhead.
@@ -247,9 +258,8 @@ Move beyond basic tables to design schemas for distributed performance. Use anno
 *Prerequisites*: Getting started | *Builds toward*: Object-oriented data access  
 [`03-schema-annotations-app`](03-schema-annotations-app/) | [Basic Annotations](../docs/02-schema-design/01-basic-annotations.md)
 
-### Data Access APIs: Type Safety and Performance
+### Table API
 
-#### 4. Table API
 **What you'll build**: Type-safe, high-performance data access layer
 
 Master object-oriented data access through RecordView and KeyValueView APIs. Learn when to use each approach, implement bulk operations, and use async patterns for maximum throughput. Compare with cache-like access patterns.
@@ -262,7 +272,8 @@ Master object-oriented data access through RecordView and KeyValueView APIs. Lea
 *Prerequisites*: Schema annotations | *Builds toward*: SQL analytics  
 [`04-table-api-app`](04-table-api-app/) | [Table API Operations](../docs/03-data-access-apis/01-table-api-operations.md)
 
-#### 5. SQL API
+### SQL API
+
 **What you'll build**: Analytics and reporting system using SQL
 
 Implement complex queries, aggregations, and analytics using standard SQL. Learn when SQL excels over Table API, implement parameterized queries, and process large result sets efficiently. Build music streaming analytics.
@@ -275,9 +286,8 @@ Implement complex queries, aggregations, and analytics using standard SQL. Learn
 *Prerequisites*: Table API | *Builds toward*: Transactional workflows  
 [`05-sql-api-app`](05-sql-api-app/) | [SQL API Analytics](../docs/03-data-access-apis/02-sql-api-analytics.md)
 
-### Advanced Operations: Consistency and Processing
+### Transactions
 
-#### 6. Transactions
 **What you'll build**: ACID workflows for business operations
 
 Implement multi-table transactions for critical business workflows. Learn explicit transaction management, handle errors gracefully, and use async patterns for better performance. Build customer order processing workflows.
@@ -290,7 +300,8 @@ Implement multi-table transactions for critical business workflows. Learn explic
 *Prerequisites*: SQL API | *Builds toward*: Distributed processing  
 [`06-transactions-app`](06-transactions-app/) | [Transaction Fundamentals](../docs/04-distributed-operations/01-transaction-fundamentals.md)
 
-#### 7. Compute API
+### Compute API
+
 **What you'll build**: Distributed analytics processing system
 
 Execute code near your data for optimal performance. Learn job deployment, leverage data colocation, and orchestrate complex workflows. Build music recommendation analytics that processes data in-place.
@@ -303,9 +314,8 @@ Execute code near your data for optimal performance. Learn job deployment, lever
 *Prerequisites*: Transactions | *Builds toward*: High-throughput ingestion  
 [`07-compute-api-app`](07-compute-api-app/) | [Compute API Processing](../docs/04-distributed-operations/03-compute-api-processing.md)
 
-### High Performance: Streaming and Caching
+### Data Streaming
 
-#### 8. Data Streaming
 **What you'll build**: High-throughput event ingestion system
 
 Handle millions of music streaming events efficiently using the DataStreamer API. Learn backpressure handling, optimize batch sizes, and implement flow control. Achieve 200K+ events per second throughput.
@@ -318,7 +328,8 @@ Handle millions of music streaming events efficiently using the DataStreamer API
 *Prerequisites*: Compute API | *Builds toward*: Caching strategies  
 [`08-data-streaming-app`](08-data-streaming-app/) | [Data Streaming](../docs/05-performance-scalability/01-data-streaming.md)
 
-#### 9. Caching Patterns
+### Caching Patterns
+
 **What you'll build**: Multi-tier caching system with external data sources
 
 Implement cache-aside, write-through, and write-behind patterns using Ignite 3 as a high-performance cache layer. Integrate with external databases and handle cache consistency challenges.
@@ -331,7 +342,8 @@ Implement cache-aside, write-through, and write-behind patterns using Ignite 3 a
 *Prerequisites*: Data streaming | *Builds toward*: File processing  
 [`09-caching-patterns-app`](09-caching-patterns-app/) | [Caching Strategies](../docs/05-performance-scalability/02-caching-strategies.md)
 
-#### 10. File Streaming
+### File Streaming
+
 **What you'll build**: File processing system with reactive backpressure
 
 Process large CSV files using reactive streams with end-to-end backpressure propagation. Learn demand-driven I/O, implement performance monitoring, and handle memory pressure gracefully.
@@ -385,21 +397,6 @@ Edit configuration in:
 
 - `sample-data-setup/src/main/java/com/apache/ignite/examples/setup/config/`
 - Individual module application properties
-
-## Learning Path
-
-**Recommended order for learning Ignite 3:**
-
-1. **sample-data-setup** - Understanding the dataset and basic setup
-2. **getting-started-app** - Basic operations and connections  
-3. **schema-annotations-app** - Schema definition and table creation
-4. **table-api-app** - Object-oriented data access
-5. **sql-api-app** - SQL operations and queries
-6. **transactions-app** - ACID transactions and consistency
-7. **compute-api-app** - Distributed processing
-8. **data-streaming-app** - High-throughput operations
-9. **caching-patterns-app** - Caching strategies and patterns
-10. **file-streaming-app** - File-based reactive streaming with backpressure
 
 ## Documentation
 
