@@ -1,12 +1,12 @@
-# Apache Ignite 3: Technical Feature Analysis
+# Apache Ignite 3 Technical Features
 
-## Executive Summary
+## Feature matrix and capability overview
 
-Apache Ignite 3 is a distributed database platform designed for high-performance computing applications requiring in-memory speed, ACID transactions, and horizontal scalability. The system provides a modular architecture with pluggable storage engines, distributed SQL processing, multi-platform client support, and enterprise-grade reliability features.
+Apache Ignite 3 implements a distributed database platform for high-performance computing applications. The system provides modular architecture with pluggable storage engines, distributed SQL processing, and multi-platform client support.
 
 ## Architecture Overview
 
-Apache Ignite 3 implements a modern distributed database architecture built around consensus-driven coordination, pluggable storage engines, and advanced SQL processing capabilities.
+Apache Ignite 3 implements distributed database architecture using consensus-driven coordination, pluggable storage engines, and SQL processing capabilities.
 
 ```mermaid
 graph TB
@@ -35,7 +35,7 @@ graph TB
         subgraph "Storage Layer"
             RSE[RocksDB Engine]
             PME[PageMemory Engine]
-            VPM[Volatile PageMemory]
+            AME[AI Memory Engine]
         end
         
         subgraph "Infrastructure"
@@ -74,25 +74,25 @@ graph TB
 
 ### Distributed SQL Engine
 
-Apache Ignite 3 provides enterprise-grade SQL capabilities through Apache Calcite integration with distributed query processing.
+Apache Ignite 3 provides SQL capabilities through Apache Calcite integration with distributed query processing.
 
 **Query Processing Architecture**
 - Three-phase execution model: preparation, initialization, execution
-- Dedicated thread pools for planning (4 threads) and execution (4 threads)
-- Cost-based optimization with 25+ transformation rules
+- Configurable thread pools for planning and execution (default: 4 threads each)
+- Cost-based optimization with transformation rules
 - Distributed fragment execution with partition awareness
 
 **SQL Standard Compliance**
 - DDL operations: CREATE/DROP/ALTER for tables, indexes, schemas
 - DML operations: SELECT, INSERT, UPDATE, DELETE, MERGE with complex predicates
-- Advanced features: CTEs, window functions, analytical functions, JSON operations
+- Advanced features: CTEs, JSON operations (window functions not supported)
 - Transaction control: START TRANSACTION, COMMIT, ROLLBACK
 
 **Performance Optimization**
-- Query plan caching (10,000 entries) with parsed result caching
+- Query plan caching with parsed result caching
 - Partition pruning for selective data access
 - Colocation optimization for co-located joins
-- Expression compilation using Janino for runtime optimization
+- Expression compilation for runtime optimization
 
 ### Storage Engine Architecture
 
@@ -103,7 +103,7 @@ graph LR
     subgraph "Storage Engines"
         RDB[RocksDB<br/>LSM-Tree<br/>Write-Optimized]
         PPM[Persistent PageMemory<br/>B+ Tree<br/>Low-Latency]
-        VPM[Volatile PageMemory<br/>In-Memory<br/>Maximum Performance]
+        AME[AI Memory<br/>In-Memory<br/>Maximum Performance]
     end
     
     subgraph "MVCC Layer"

@@ -1,8 +1,8 @@
-# Apache Ignite 3 - Java API Information Architecture
+# Apache Ignite 3 Java API Architecture
 
-## Overview
+## Java API structure and implementation patterns
 
-This document provides an information architecture for the Apache Ignite 3 Java API, mapping out all major components, their relationships, and interaction patterns. The architecture is organized into 8 distinct layers, each serving specific purposes in the distributed computing ecosystem.
+This document examines the Apache Ignite 3 Java API architecture, organizing components into logical layers and documenting their relationships and interaction patterns.
 
 ## Architecture Layers
 
@@ -52,9 +52,9 @@ Entry Points & Builders
 **Key Characteristics:**
 
 - Builder pattern for configuration
-- Auto-closeable resource management
+- Resource management through AutoCloseable
 - Async-first design with CompletableFuture support
-- Enterprise-grade connection management
+- Connection pooling and failover
 
 ---
 

@@ -1,10 +1,12 @@
 # Apache Ignite 3 Architecture
 
-This document provides an architectural overview of Apache Ignite 3, from high-level design principles to system implementation patterns.
+## Architectural overview of Apache Ignite 3 distributed database system
+
+This document examines Apache Ignite 3's architecture from design principles through implementation patterns.
 
 ## Introduction
 
-Apache Ignite 3 represents an architectural redesign of the Apache Ignite platform, built as a distributed database for high-performance computing and real-time analytics workloads. The system addresses the scalability, performance, and operational challenges of distributed computing while maintaining consistency guarantees and multi-platform accessibility.
+Apache Ignite 3 implements a distributed database architecture designed for high-performance computing and analytics workloads. The system provides horizontal scalability, ACID transactions, and multi-platform client support through a consensus-based distributed design.
 
 ### Design Philosophy
 
@@ -93,9 +95,9 @@ graph TB
     CFG -.-> MS
 ```
 
-Apache Ignite 3's cluster topology reveals a democracy of equals rather than a traditional master-slave hierarchy. Every node in the cluster wears multiple hats: data storage, compute engine, and SQL processor. This design choice eliminates single points of failure while enabling linear scalability. When a Java application connects to the cluster, it doesn't need to find a "special" node – any node can handle its request and coordinate with others as needed.
+Apache Ignite 3 uses a shared-nothing architecture where every node provides data storage, compute processing, and SQL capabilities. This design eliminates single points of failure and enables linear scaling. Client applications can connect to any cluster node for request processing.
 
-The real intelligence lies in the cluster services that orchestrate this distributed symphony. The Cluster Management Group acts as the membership committee, deciding who joins and leaves the cluster. Metastorage serves as the cluster's collective memory, storing critical decisions that every node needs to know. The Placement Driver functions like an air traffic controller, determining which node should be the primary for each piece of data. This separation between data operations (the solid connections) and coordination operations (the dotted lines) allows the cluster to maintain consistency while maximizing performance.
+Cluster coordination occurs through specialized services: the Cluster Management Group manages node membership, Metastorage maintains cluster metadata, and the Placement Driver coordinates partition leadership. This separation between data operations and coordination enables consistent performance while maintaining strong consistency guarantees.
 
 ### Data Distribution Model
 
@@ -142,11 +144,11 @@ graph TB
     T3 --> P3_3
 ```
 
-Think of Apache Ignite 3's data distribution like a well-organized library system where books are automatically catalogued and distributed across multiple buildings. When you create a Users table, the system doesn't store it as one massive file somewhere. Instead, it intelligently breaks the table into 1024 smaller partition "volumes," each containing a subset of user records.
+Apache Ignite 3 partitions tables across cluster nodes using configurable partition counts. Each table splits into multiple partitions distributed evenly across available nodes. The system maintains configurable replica counts for fault tolerance.
 
-The genius lies in how these partitions spread across the cluster. Node 1 might hold partitions 1-256 of the Users table, while Node 2 takes partitions 257-512, ensuring no single node becomes a bottleneck. But what happens if Node 1 fails? That's where Node 3 comes in, quietly maintaining replica copies of Node 1's partitions. This isn't just backup storage – these replicas are live, synchronized copies that can instantly take over if needed.
+Partition distribution follows the Rendezvous (Highest Random Weight) algorithm for consistent placement without coordination overhead. When nodes join or leave the cluster, the Placement Driver triggers rebalancing to maintain optimal distribution and replica counts.
 
-The Placement Driver continuously monitors this distribution, making decisions like a smart city planner. When a new node joins the cluster, it automatically rebalances partitions to take advantage of the additional capacity. When a node leaves, it ensures the remaining nodes pick up the slack. All of this happens transparently, without application downtime or data loss.
+This partitioning approach eliminates single points of failure while enabling parallel processing across the cluster. Failed nodes trigger automatic failover to replica partitions without data loss or service interruption.
 
 ### Service Architecture Overview
 
@@ -204,13 +206,11 @@ graph TB
     All --> LIFE
 ```
 
-Apache Ignite 3's service architecture resembles a well-designed skyscraper where each floor has a specific purpose, and higher floors depend on the stability and services of those below. At the foundation, the Infrastructure Layer provides the bedrock services – networking that connects nodes, consensus protocols that ensure agreement, and lifecycle management that orchestrates startup and shutdown sequences.
+Apache Ignite 3 organizes services into distinct layers with clear responsibilities. The Infrastructure Layer provides networking, consensus protocols, and lifecycle management. The Data Management Layer handles schema metadata, indexing, and replica coordination.
 
-The Data Management Layer sits above this foundation, handling the nitty-gritty of data organization. Here, the Catalog Manager maintains the schema definitions, the Index Manager ensures fast data retrieval, and the Replica Manager coordinates data placement across nodes. This layer transforms raw infrastructure capabilities into data services.
+The Service Layer processes user operations through specialized managers: the SQL Query Processor handles distributed query execution, the Table Manager manages DDL operations, and the Compute Manager coordinates distributed processing. The Transaction Manager ensures ACID properties across all distributed operations.
 
-The Service Layer is where the magic happens for end users. The SQL Query Processor transforms SQL statements into distributed execution plans, the Table Manager handles DDL operations like creating and dropping tables, and the Compute Manager enables processing data where it lives. All of these services lean heavily on the Transaction Manager, which ensures that operations maintain ACID properties across the distributed system.
-
-Finally, the Client Interfaces layer provides multiple doorways into the system. Whether you're a Java developer using the native API, a data analyst connecting via ODBC, or a DevOps engineer using REST endpoints, this layer translates your requests into the internal service calls that get work done.
+The Client Interfaces layer supports multiple access patterns through SQL, key-value, and compute APIs. This layer provides protocol translation between external clients and internal services while maintaining consistent semantics across all access methods.
 
 ## Node Architecture
 
@@ -247,13 +247,11 @@ sequenceDiagram
     Note over Node: Node Ready for Operations
 ```
 
-Joining an Apache Ignite 3 cluster is like getting a new employee fully onboarded in a distributed organization. The process is methodical and ensures the new node can contribute meaningfully before it starts handling real work.
+Node startup follows a coordinated sequence to ensure cluster stability. Nodes first initialize core components and establish network connectivity. The Cluster Management Group validates node credentials and configuration before approving cluster membership.
 
-First, the new node gets its internal house in order – initializing core components and preparing for cluster communication. Then comes the interview process with the Cluster Management Group, which validates that the node has the right credentials, configuration, and capabilities to join the team. This isn't just a formality; the CMG ensures the node won't destabilize the cluster.
+Accepted nodes connect to Metastorage to receive current cluster configuration and topology information. Service initialization follows dependency order: storage engines initialize first, followed by table managers and SQL processing components.
 
-Once accepted, the node connects to Metastorage – essentially downloading the employee handbook that contains all cluster policies, configurations, and current topology. Armed with this knowledge, the node starts up its services in a carefully orchestrated sequence. Storage engines come first (you need to be able to store data), followed by table managers (you need to understand the schema), and finally the SQL engine (you need to process queries).
-
-The final step is registration with the Placement Driver, which is like getting assigned to specific projects. The Placement Driver evaluates the node's capacity and current cluster load, then assigns partitions that the node will be responsible for. Only after this complete onboarding process is the node considered a full cluster member, ready to serve client requests and participate in distributed operations.
+The Placement Driver assigns partition responsibilities based on current cluster load and node capacity. Nodes begin serving client requests only after completing the full initialization sequence and receiving partition assignments.
 
 ### Node Internal Architecture
 
@@ -333,17 +331,17 @@ graph TB
     LIFECYCLE -.-> ALL
 ```
 
-Every Apache Ignite 3 node is a microcosm of the entire database system, capable of operating independently while collaborating seamlessly with its peers. The architecture reveals how complex distributed database operations are broken down into manageable, layered responsibilities.
+Each Apache Ignite 3 node contains all components necessary for distributed database operations. The layered architecture separates concerns while enabling collaboration across the cluster.
 
-At the perimeter, the Client Interface Layer acts as the node's reception desk, welcoming connections from various clients through TCP servers, HTTP endpoints, and JMX interfaces. This layer speaks multiple protocols fluently, whether it's binary protocol for high-performance applications or REST for management tools.
+The Client Interface Layer handles connections through TCP servers, HTTP endpoints, and JMX interfaces. This layer implements multiple protocols including binary protocol for high-performance clients and REST for management operations.
 
-The Service Layer houses the node's core competencies. The SQL engine transforms queries into execution plans, the compute engine processes distributed jobs, and the table manager handles schema changes. The Transaction Manager serves as the coordinator, ensuring that operations across all these services maintain consistency. This layer represents the node's "brain" – where business logic decisions are made.
+The Service Layer processes core operations through the SQL engine for query execution, compute engine for distributed jobs, and table manager for schema operations. The Transaction Manager coordinates ACID properties across all service operations.
 
-Below this, the Data Layer manages the node's understanding of data organization. The catalog manager knows about every table and column, the index manager maintains performance-critical data structures, and the replica manager coordinates with other nodes to maintain data consistency. This layer bridges the gap between high-level operations and physical storage.
+The Data Layer manages schema metadata through the catalog manager, maintains indexes for query performance, and coordinates replica consistency. This layer translates high-level operations into storage-level operations.
 
-The Storage Layer is where data actually lives. The MVCC engine ensures multiple transactions can work simultaneously without interfering with each other, while pluggable storage engines (RocksDB for persistence, Page Memory for performance) handle the actual bytes on disk or in memory. The garbage collector quietly cleans up obsolete data versions.
+The Storage Layer implements MVCC for transaction isolation and provides pluggable storage engines. Available engines include RocksDB for persistent storage and PageMemory for high-performance operations. Garbage collection maintains system performance by cleaning obsolete data versions.
 
-The Consensus Layer keeps the node connected to cluster decisions through Raft protocols, while the Infrastructure Layer provides the networking, configuration, and lifecycle management that everything else depends on. The Lifecycle Manager's oversight (shown by the dotted line) ensures that when the node starts up or shuts down, all these components coordinate properly rather than creating chaos.
+The Consensus Layer maintains cluster coordination through Raft protocols, while the Infrastructure Layer provides networking, configuration, and lifecycle management. The Lifecycle Manager coordinates startup and shutdown sequences across all components.
 
 ## Distributed System Fundamentals
 
@@ -384,15 +382,15 @@ graph TB
     TABLE_INIT --> PART_ASSIGN
 ```
 
-Building an Apache Ignite 3 cluster is like establishing a new city – it requires careful planning, proper infrastructure, and a logical sequence of development phases.
+Apache Ignite 3 cluster formation follows a four-phase process ensuring stable operation before serving client requests.
 
-The journey begins with exploration and discovery. Using ScaleCube's gossip protocol, nodes locate each other through word-of-mouth communication, starting from a few known seed addresses. This is like pioneers finding each other in uncharted territory – each node that joins the network helps others discover the growing community.
+Phase 1 uses ScaleCube gossip protocol for node discovery from configured seed addresses. Nodes establish network connectivity and identify potential cluster members.
 
-Once enough nodes find each other, they need to establish governance. The Cluster Management Group formation phase is like drafting a constitution and electing a city council. Initial nodes validate each other's credentials and capabilities, ensuring only qualified members can participate in cluster decisions. This democratic process prevents rogue nodes from disrupting the community.
+Phase 2 forms the Cluster Management Group through credential validation and consensus establishment. This prevents unauthorized nodes from participating in cluster decisions.
 
-With governance established, the cluster needs infrastructure. The Metastorage initialization phase creates the distributed "city hall" where all important cluster information is stored and made available to every node. Configuration distribution ensures that all nodes operate under the same rules and policies, like a municipality ensuring consistent building codes across all neighborhoods.
+Phase 3 initializes Metastorage for distributed metadata storage and distributes cluster configuration to all nodes. This ensures consistent operational parameters across the cluster.
 
-Finally, the cluster becomes operational when table services activate and partition assignments are distributed. This is like opening businesses and assigning addresses – the infrastructure is ready, governance is in place, and now the cluster can start serving real work. The sequential nature of these phases ensures that foundational elements are solid before higher-level services begin operating.
+Phase 4 activates table services and distributes partition assignments. Only after completing all phases do nodes begin serving client requests and processing data operations.
 
 ### Consensus and Coordination
 
@@ -446,17 +444,17 @@ graph TB
     PD_L -.-> DP3
 ```
 
-Apache Ignite 3's consensus architecture operates like a well-structured government with specialized departments, each responsible for different aspects of cluster governance while maintaining clear lines of authority and accountability.
+Apache Ignite 3 uses multiple Raft consensus groups for different coordination responsibilities, ensuring both performance and consistency.
 
-At the federal level, the Cluster Management Group functions as the supreme court, making fundamental decisions about cluster membership with a conservative three-member panel. These decisions are too critical for large groups – who can join the cluster, who must leave, and what the basic rules of engagement are.
+The Cluster Management Group manages cluster membership through a three-node configuration. This group handles critical decisions about node joining and leaving the cluster.
 
-The Metastorage Group operates like the national archives, maintaining the permanent record of all important cluster decisions. Its five-member structure includes three voting archivists and two apprentices (learners) who stay synchronized but don't vote. This design ensures the archive remains available even if some members are temporarily unavailable, while the learners provide geographic distribution and disaster recovery capabilities.
+The Metastorage Group maintains cluster metadata using a five-node configuration with three voting members and two learners. This provides high availability for metadata operations while enabling geographic distribution.
 
-The Placement Driver Group serves as the logistics department, making real-time decisions about where data should live in the cluster. Its focused three-member team can make quick decisions about partition assignments and rebalancing without the overhead of larger committees.
+The Placement Driver Group coordinates partition placement decisions through a three-node configuration. This group makes real-time decisions about data distribution and rebalancing.
 
-Below these specialized groups, hundreds of Data Partition Groups operate like local governments, each managing a specific slice of data with their own three-member councils. This distributed approach means that decisions about individual partitions don't require involvement from the central authorities – local groups can handle local issues efficiently.
+Data Partition Groups operate independently with three-node configurations per partition. This enables parallel processing of partition-specific operations without centralized coordination overhead.
 
-The hierarchy ensures that broad policy flows down from CMG through Metastorage to the Placement Driver, while individual partition groups operate autonomously within these established guidelines. This separation of concerns prevents bottlenecks while maintaining system-wide consistency.
+This multi-group approach isolates different consensus concerns, preventing metadata operations from interfering with data operations while maintaining strong consistency across all system components.
 
 ### Transaction Processing Architecture
 
@@ -506,15 +504,15 @@ graph TB
     LOG --> RECOVERY
 ```
 
-Apache Ignite 3's transaction processing resembles a sophisticated financial clearing house where multiple banks coordinate to process complex multi-party transactions while maintaining perfect accuracy and preventing fraud.
+Apache Ignite 3 implements distributed ACID transactions using hybrid logical clocks for ordering and MVCC for concurrency control.
 
-The Transaction Coordination center acts as the master orchestrator, tracking each transaction from inception to completion. When a transaction spans multiple partitions (like transferring money between accounts at different banks), the Transaction Coordinator ensures all participants stay synchronized and that the entire operation succeeds or fails as a unit.
+The Transaction Coordinator manages transaction lifecycle across multiple partitions. For distributed transactions, the coordinator ensures all participants reach the same outcome through two-phase commit protocol.
 
-The Concurrency Control system is the traffic management center that prevents chaos when thousands of transactions run simultaneously. The Hybrid Logical Clock ensures that events across the distributed system have a consistent timeline – crucial when determining which transaction happened first. The MVCC Engine allows multiple transactions to work with the same data simultaneously without stepping on each other's toes, while the Lock Manager prevents conflicts during critical sections.
+Concurrency control uses Hybrid Logical Clock for consistent event ordering across nodes. The MVCC engine enables multiple concurrent transactions without blocking reads, while the Lock Manager prevents write conflicts during commit processing.
 
-The Commit Process machinery handles the permanent recording of successful transactions. The Commit Processor orchestrates the two-phase commit protocol across all involved partitions, the Transaction Log ensures durability (even if nodes crash), and the Recovery Manager can reconstruct the system state after failures.
+The Commit Process implements distributed durability through the Transaction Log and Recovery Manager. The Commit Processor coordinates the two-phase commit across all partition participants, ensuring atomicity for distributed operations.
 
-Finally, the Participants – the primary replicas holding actual data – execute the transaction operations under coordination from the central systems. This distributed approach means that transactions can span any number of partitions across any number of nodes while maintaining ACID guarantees that would be familiar to any traditional database administrator.
+Primary replicas execute transaction operations under coordinator supervision. This approach maintains ACID properties across distributed partitions while enabling high-throughput concurrent processing.
 
 ### Data Replication and Consistency
 
@@ -546,15 +544,13 @@ sequenceDiagram
     Primary->>Secondary2: Commit Notification
 ```
 
-Apache Ignite 3's data replication protocol demonstrates how strong consistency can coexist with high performance in a distributed system. The dance begins when a client needs to write data but doesn't know which node is currently the authoritative source for that particular partition.
+Apache Ignite 3 maintains strong consistency through Raft-based replication at the partition level with coordinated leadership management.
 
-Rather than broadcasting to all nodes or guessing, the client consults the Placement Driver – the cluster's address book that tracks which node is currently the primary for each partition. This smart routing eliminates unnecessary network hops and ensures writes always go to the right place.
+Clients locate the primary replica for write operations through the Placement Driver's leadership information. This routing ensures writes reach the authoritative node without unnecessary network hops.
 
-Once the client connects to the primary replica, that node becomes the conductor of a carefully choreographed consensus protocol. The primary doesn't immediately write the data; instead, it first secures a local lock to prevent conflicts, then shares the proposed change with all secondary replicas in the Raft group.
+The primary replica coordinates consensus through the Raft protocol. Write operations acquire local locks, then replicate to secondary replicas before committing. The primary waits for majority acknowledgment before confirming operation success to the client.
 
-Here's where the genius of consensus shines: the primary waits for acknowledgments from a majority of replicas before considering the operation successful. This means that even if some nodes are slow or temporarily unavailable, the operation can proceed as long as most of the replicas agree. Once majority agreement is achieved, the primary commits the data to storage and tells the client the operation succeeded.
-
-The final choreography involves the primary notifying all replicas about the successful commit. This ensures that even the nodes that might have been temporarily slow during the consensus phase eventually become consistent with the committed state. The entire protocol guarantees that data is never lost and that all nodes eventually converge to the same state, while still providing excellent performance through direct primary access.
+This approach provides strong consistency guarantees while maintaining performance through direct primary access. Failed replicas trigger automatic leadership changes through the Placement Driver's lease management system.
 
 ## Component Architecture
 
@@ -998,15 +994,15 @@ This security sequence diagram demonstrates the two-phase security model in Apac
 
 The system employs specialized thread pools for different types of operations to optimize performance and resource utilization.
 
-- **SQL Planning Pool**: 4 threads for query optimization
-- **SQL Execution Pool**: 4 threads for query execution
+- **SQL Planning Pool**: Configurable thread pool for query optimization (default: 4 threads)
+- **SQL Execution Pool**: Configurable thread pool for query execution (default: 4 threads)
 - **Partition Operations**: Dedicated executors for data operations
 - **Raft Operations**: Specialized pools for consensus operations
 - **Network Operations**: Netty event loops for I/O operations
 
 ### Memory Management
 
-- **Page-based Storage**: Configurable page sizes (1KB-16KB)
+- **Page-based Storage**: Efficient page-based memory management
 - **MVCC Version Chains**: Efficient storage of row versions
 - **Connection Pooling**: Resource reuse across client connections
 - **Garbage Collection**: Automated cleanup of old versions and metadata
@@ -1171,31 +1167,35 @@ graph TB
 
 This monitoring and observability diagram presents the observability stack for Apache Ignite 3 operations. The Metrics Collection layer gathers data from four key areas: JVM metrics for runtime health, system metrics for infrastructure monitoring, application metrics for business logic performance, and Raft metrics for consensus system health. The Monitoring Stack follows industry-standard patterns with Prometheus for metrics storage and scraping, Grafana for visualization and dashboards, and Alert Manager for notification and escalation rules. The Logging Infrastructure provides structured JSON logging with aggregation through ELK stack and dedicated audit logging for security events. The Distributed Tracing section enables end-to-end request tracking through OpenTelemetry collection, storage in Jaeger or Zipkin, and span analysis for performance insights. This multi-layered approach ensures complete visibility into system behavior across all operational dimensions.
 
-## Summary and Architectural Benefits
+## Final Thoughts
 
 Apache Ignite 3 represents a significant advancement in distributed database architecture, delivering a platform optimized for modern cloud-native applications and high-performance computing workloads.
 
 ### Key Architectural Strengths
 
-**Distributed-First Design**
+#### Distributed-First Design
+
 - Built from the ground up for horizontal scalability
 - Automatic partition management and rebalancing
 - Strong consistency through Raft consensus
 - Fault tolerance with automatic failover
 
-**Performance Optimization**
+#### Performance Optimization
+
 - MVCC-based concurrency without blocking
 - Pluggable storage engines for different workload patterns
 - Cost-based SQL optimization with distributed execution
 - Partition-aware client routing for minimal network overhead
 
-**Operational Excellence**
+#### Operational Excellence
+
 - Schema-driven data management with automatic validation
 - Unified management through CLI and REST APIs
 - Extensive monitoring and observability features
 - Rolling updates and maintenance mode support
 
-**Developer Experience**
+#### Developer Experience
+
 - Multi-platform native clients with consistent APIs
 - Standard SQL with JDBC/ODBC compatibility
 - Distributed compute with data co-location
