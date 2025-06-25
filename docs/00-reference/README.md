@@ -47,6 +47,17 @@ Distributed storage foundation that powers Apache Ignite 3's data management cap
 - Storage profiles and engine configuration
 - Physical storage implementations and tuning
 
+### [SQL Engine Architecture](./SQL-ENGINE-ARCH.md)
+
+Apache Calcite integration and SQL processing architecture in Ignite 3.
+
+**What you'll learn:**
+
+- Apache Calcite integration and query processing pipeline
+- Cost-based optimization and distributed query planning
+- SQL standard compliance and advanced features
+- Performance considerations and troubleshooting techniques
+
 ### [Technical Features](./TECHNICAL_FEATURES.md)
 
 Feature matrix and capability overview for understanding what's possible with Ignite 3.
