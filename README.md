@@ -1,10 +1,10 @@
 # Apache Ignite 3 Java API Primer
 
-Implementation guidance for Apache Ignite 3's Java API through structured modules and working reference applications. This primer provides Java developers with practical patterns for distributed programming using a consistent music store dataset.
+Learn Apache Ignite 3's Java API through structured learning modules and working code examples. This primer covers distributed data management, schema design, transactions, and performance patterns. All examples use a music store dataset for consistency across modules.
 
 ## Target Audience
 
-Java developers new to Ignite 3 requiring distributed data management patterns through practical, runnable examples.
+Java developers new to Ignite 3 interested in learning high velocity distributed data management patterns through practical, runnable examples.
 
 ## Quick Start
 
@@ -157,99 +157,6 @@ All reference applications are located in [`ignite3-reference-apps/`](./ignite3-
 - **Caching Patterns**: [`09-caching-patterns-app/`](./ignite3-reference-apps/09-caching-patterns-app/) - Cache strategies
 - **File Streaming**: [`10-file-streaming-app/`](./ignite3-reference-apps/10-file-streaming-app/) - File processing with backpressure
 
-## Key Concepts Demonstrated
-
-### Data Colocation for Performance
-
-```java
-// Album data colocates with Artist data for join performance
-@Table(zone = @Zone(value = "MusicStore"),
-       colocateBy = @ColumnRef("ArtistId"))
-public class Album {
-    @Id Integer AlbumId;
-    @Id Integer ArtistId;  // Colocation key
-    String Title;
-}
-```
-
-### Asynchronous Programming Patterns
-
-```java
-// Chain operations without blocking threads
-artists.getAsync(null, artistKey)
-    .thenCompose(artist -> albums.getAllAsync(null, artist.getAlbums()))
-    .thenApply(this::calculateTotalDuration)
-    .thenAccept(duration -> System.out.println("Total: " + duration));
-```
-
-### Multi-Modal API Integration
-
-```java
-// Single-record operations through Table API
-Artist artist = artists.get(null, artistKey);
-
-// Analytics through SQL API
-var topTracks = client.sql().execute(null,
-    "SELECT t.Name, COUNT(il.Quantity) as Purchases " +
-    "FROM Track t JOIN InvoiceLine il ON t.TrackId = il.TrackId " +
-    "GROUP BY t.TrackId ORDER BY Purchases DESC LIMIT 10");
-```
-
----
-
-## Key Ignite 3 Java API Patterns
-
-1. **Dual Mode Support**: All APIs support both synchronous and asynchronous operations
-2. **Builder Pattern**: Extensive use of builders for configuration (Client.Builder, Statement.Builder)
-3. **Resource Management**: AutoCloseable interfaces for resource cleanup
-4. **Type Safety**: Generic types for compile-time type safety
-5. **Fluent APIs**: Method chaining for developer experience
-
-## Main Entry Points Summary
-
-1. **Thin Client**: `IgniteClient.builder().addresses("127.0.0.1:10800").build()`
-2. **Embedded Node**: `IgniteServer.start(nodeName, configPath, workDir)`
-3. **JDBC**: `DriverManager.getConnection("jdbc:ignite:thin://127.0.0.1:10800/")`
-4. **Spring Boot**: Auto-configured `IgniteClient` bean
-
-## API Capabilities
-
-- **Table Operations**: Key-value and record-based data access
-- **SQL Operations**: Full SQL support with DDL/DML/DQL
-- **Compute**: Distributed job execution and MapReduce
-- **Transactions**: ACID transactions with configurable isolation
-- **Streaming**: High-throughput data ingestion
-- **Catalog Management**: Dynamic schema operations
-- **Caching**: Distributed caching with multiple patterns
-- **Security**: Authentication and SSL/TLS support
-
-## Sample Dataset
-
-All examples use a music store dataset with:
-
-### Core Music Entities
-
-- **Artist** → **Album** → **Track** (hierarchical with colocation)
-- **Genre**, **MediaType** (reference data)
-
-### Business Entities
-
-- **Customer** → **Invoice** → **InvoiceLine** (business workflow)
-- **Employee** (organizational hierarchy)
-
-### Playlist Entities
-
-- **Playlist** → **PlaylistTrack** (many-to-many relationships)
-
-This consistent dataset reduces cognitive load and demonstrates distributed application patterns.
-
-## Getting Help
-
-- **Learning Path Questions**: Start with [`modules/README.md`](./docs/README.md) for guidance
-- **Module-Specific Issues**: Check individual module documentation in [`modules/`](./docs/)
-- **Reference App Problems**: See app-specific READMEs in [`ignite3-reference-apps/`](./ignite3-reference-apps/)
-- **Cluster Setup**: Troubleshooting guide in [`00-docker/README.md`](./ignite3-reference-apps/00-docker/README.md)
-
 ## Next Steps
 
 **New to Ignite 3?** Start with the structured learning path:
@@ -257,5 +164,3 @@ This consistent dataset reduces cognitive load and demonstrates distributed appl
 - **[Begin with Module 01: Foundation](./docs/01-foundation/)** - Essential concepts and first connection
 - **[Continue with Module 02: Schema Design](./docs/02-schema-design/)** - Build your data models
 - **[Follow the structured path](./docs/README.md)** - Progress through all modules systematically
-
-**Need immediate results?** Use problem-focused learning to jump to your area of interest.
