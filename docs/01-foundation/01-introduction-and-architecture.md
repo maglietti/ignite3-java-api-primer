@@ -178,12 +178,14 @@ IgniteClient client = IgniteClient.builder()
 ```
 
 **Perfect for:**
+
 - Microservices (each service connects independently)
 - Containers and Kubernetes deployments
 - Development and testing
 - When you want to scale apps and storage separately
 
 **Why it works:**
+
 - Deploy new app versions without touching storage
 - Scale applications based on traffic, storage based on data
 - Simple operational model
@@ -198,11 +200,13 @@ IgniteServer server = IgniteServer.start("myApp", configPath, workDir);
 ```
 
 **Use when:**
+
 - Data locality is critical (compute runs where data lives)
 - Legacy systems that can't be easily separated
 - Single-deployment scenarios
 
 **Trade-offs:**
+
 - App restarts affect cluster membership
 - More complex deployment coordination
 - Higher memory requirements
@@ -221,7 +225,7 @@ graph LR
         LOGIC["Business Logic"]
     end
     
-    subgraph "API Choice Based on Use Case"
+    subgraph "API Choice"
         TABLE["Table API<br/>Objects & Types"]
         SQL["SQL API<br/>Queries & Analytics"] 
         KV["Key-Value API<br/>Cache Operations"]
@@ -291,184 +295,132 @@ RecordView<Artist> tableView = ignite.tables().table("Artist").recordView(Artist
 ResultSet<Artist> sqlResults = ignite.sql().execute(null, "SELECT * FROM Artist", Artist.class);
 ```
 
-## Distribution Zones: Development vs Production
+## Distribution Zones: Getting Started
 
-Zones control how your data spreads across cluster nodes. Choose based on your environment needs:
+Distribution zones control how your data spreads across cluster nodes. For getting started, Ignite 3 provides a default zone that works out of the box:
+
+### Default Zone: Zero Configuration Required
+
+When you create a table without specifying a zone, Ignite uses the default zone:
+
+```java
+@Table  // Uses default zone automatically
+public class Artist {
+    @Id Integer artistId;
+    @Column String name;
+}
+```
+
+**What you get:**
+
+- **1 replica** (no backups)
+- **25 partitions** (good for small to medium datasets)
+- **All nodes included** (uses entire cluster)
+- **Ready immediately** (no setup required)
+
+**Perfect for:**
+
+- Development and learning
+- Proof-of-concept projects
+- Getting started quickly
+
+**Production consideration:** The default zone provides no fault tolerance. If a node fails, you lose data. For production workloads, you'll want custom zones with multiple replicas.
+
+> **Need production-grade storage?** See [Storage System Architecture](../00-reference/STORAGE-SYSTEM-ARCH.md) for complete details on custom zones, partitioning strategies, and fault-tolerant configurations.
+
+## Connection Patterns: Single vs Multi-Node
+
+How you connect to the cluster affects performance. Connecting to all nodes gives you the best experience:
 
 ```mermaid
 graph TB
-    subgraph DEV ["Default Zone (Development)"]
-        N1["Node 1<br/>Artist Data<br/>1 Replica"]
-        N2["Node 2<br/>Album Data<br/>1 Replica"] 
-        N3["Node 3<br/>Track Data<br/>1 Replica"]
+    subgraph "Single-Node Connection (Poor Performance)"
+        APP1["Your Application"] 
+        SINGLE["Single Connection<br/>to Node 1 only"]
+        N1["Node 1"]
+        N2["Node 2"] 
+        N3["Node 3"]
         
-        FAIL["Node Failure"] --> LOST["Data Lost"]
-    end
-    
-    subgraph PROD ["Custom Zone (Production)"]
-        PN1["Node 1<br/>Artist + Backup"]
-        PN2["Node 2<br/>Album + Backup"]
-        PN3["Node 3<br/>Track + Backup"]
+        APP1 --> SINGLE
+        SINGLE --> N1
+        N1 -.->|"Extra hops"| N2
+        N1 -.->|"Extra hops"| N3
         
-        PN1 <--> PN2
-        PN2 <--> PN3
-        PN1 <--> PN3
-        
-        PFAIL["Node Failure"] --> SAFE["Data Survives"]
+        LIMIT["Limitations:<br/>• No partition awareness<br/>• All traffic through one node<br/>• Poor performance"]
     end
 ```
 
-### Default Zone: Fast Start, No Safety Net
+```mermaid
+graph TB
+    subgraph "Multi-Node Connection (Best Performance)"
+        APP2["Your Application"]
+        MULTI["Multi-Node Connection<br/>to All Cluster Nodes"]
+        NN1["Node 1"]
+        NN2["Node 2"] 
+        NN3["Node 3"]
+        
+        APP2 --> MULTI
+        MULTI --> NN1
+        MULTI --> NN2
+        MULTI --> NN3
+        
+        BENEFIT["Benefits:<br/>• Direct partition access<br/>• Automatic failover<br/>• Maximum performance"]
+    end
+```
 
-Perfect for development - zero configuration required:
+### The Right Way to Connect
+
+Always specify all cluster node addresses:
 
 ```java
-@Table(zone = @Zone("default"))  // Uses automatic default zone
+// Good: Connect to all nodes for best performance
+IgniteClient client = IgniteClient.builder()
+    .addresses("node1:10800", "node2:10800", "node3:10800")
+    .build();
+
+// Poor: Single node creates bottlenecks  
+IgniteClient client = IgniteClient.builder()
+    .addresses("node1:10800")  // Only one node - bad performance
+    .build();
+```
+
+**Why this matters:**
+
+- **Direct access**: Your app connects directly to the node that holds the data
+- **Automatic failover**: If one node goes down, your app keeps working
+- **Load distribution**: Requests spread across all available nodes
+
+## Key Patterns for Success
+
+### Connect to All Nodes
+
+```java
+// Production pattern: specify all cluster nodes
+IgniteClient client = IgniteClient.builder()
+    .addresses("node1:10800", "node2:10800", "node3:10800")
+    .build();
+```
+
+### Start with Default Zone
+
+```java
+// Development pattern: use default zone for simplicity
+@Table
 public class Artist {
     @Id Integer artistId;
     @Column String name;
 }
 ```
 
-**Configuration:**
-- 1 replica (no backups)
-- 25 partitions
-- All nodes included
-- Ready immediately
-
-**Use for:**
-- Local development
-- Learning and experimentation  
-- Proof-of-concept work
-- Unit testing
-
-**Reality check:** If a node fails, you lose data. Don't use in production.
-
-### Custom Zones: Production-Ready Storage
-
-For production workloads, create custom zones with fault tolerance:
+### Choose the Right API
 
 ```java
-// Create a production zone with 3 replicas
-@Table(zone = @Zone(value = "MusicStore", storageProfiles = "default"))
-public class Artist {
-    @Id Integer artistId;
-    @Column String name;
-}
+// Table API for direct record access
+Artist artist = artists.get(null, artistKey);
+
+// SQL API for complex queries
+var results = client.sql().execute(null, "SELECT * FROM Artist WHERE...");
 ```
-
-This requires creating the zone first:
-```sql
-CREATE ZONE "MusicStore" WITH 
-    PARTITIONS=50,     -- Split data into 50 pieces
-    REPLICAS=3,        -- Keep 3 copies of each piece  
-    STORAGE_PROFILES='default'
-```
-
-**What happens under the hood:**
-- Your Artist data gets split into 50 partitions using consistent hashing
-- Each partition gets replicated to 3 different nodes
-- If a node fails, data remains available on the other 2 replicas
-- The cluster automatically rebalances data when nodes join or leave
-
-> **Want the full storage story?** See [Storage System Architecture](../00-reference/STORAGE-SYSTEM-ARCH.md) for complete details on partitioning algorithms, storage engines, and data placement strategies.
-
-### Custom Zone Strategy
-
-**What It Is**: Explicitly defined zones with specific replica counts, partition configurations, and node selection criteria tailored to your application requirements.
-
-**Configuration Options**:
-
-- 2+ replicas (fault tolerance)
-- Optimized partition counts for your data size
-- Specific storage profiles
-- Node filtering and placement policies
-- Performance-tuned settings
-
-**When to Use**:
-
-- Production deployments
-- Mission-critical data requiring fault tolerance
-- Performance-sensitive applications
-- Multi-tenant scenarios requiring data isolation
-- Applications with specific compliance requirements
-
-**Benefits**:
-
-- Fault tolerance through multiple replicas
-- Performance optimization for specific workloads
-- Data isolation and security
-- Operational control and predictability
-
-**Trade-offs**:
-
-- Requires explicit configuration
-- Higher resource consumption
-- More complex operational management
-- Increased setup complexity
-
-### Decision Matrix
-
-| Scenario | Zone Strategy | Reasoning |
-|----------|---------------|-----------|
-| Local development | Default | Speed of setup, no fault tolerance needed |
-| Integration testing | Default | Simplified configuration, reproducible environments |
-| Proof of concept | Default | Focus on functionality, not operations |
-| Production API backend | Custom (2-3 replicas) | Fault tolerance, predictable performance |
-| Analytics workload | Custom (optimized partitions) | Performance tuning for large datasets |
-| Multi-tenant SaaS | Custom (per tenant) | Data isolation and security |
-
-## Connection Framework
-
-For optimal performance, Ignite 3 remote clients should connect to all cluster nodes to enable direct partition mapping and eliminate unnecessary network hops.
-
-### Single-Node Connection Limitations
-
-Connecting to only one cluster node results in:
-
-- No automatic discovery of other nodes
-- All operations routed through single connection point
-- Poor performance due to extra network hops
-- No direct partition awareness
-
-### Multi-Node Connection Benefits
-
-Specifying all cluster node addresses enables:
-
-- Direct partition mapping for optimal performance
-- Automatic failover to healthy nodes
-- Load distribution across cluster
-- Maximum throughput for data operations
-
-### Topology Change Considerations
-
-Current limitations require explicit address management:
-
-- No automatic node discovery beyond specified addresses
-- Adding/removing nodes requires application updates
-- DNS-based addressing recommended for dynamic environments
-
-## Key Patterns for Production Success
-
-### Data Colocation Strategy
-
-Store related data together to optimize query performance and reduce network overhead. Colocation keys ensure that related records reside on the same cluster nodes, enabling efficient local operations.
-
-### Performance-First Connection Management
-
-Always specify all cluster node addresses in production deployments. This enables partition awareness and eliminates performance bottlenecks caused by single-point-of-connection architectures.
-
-### Zone-Aware Application Design
-
-Design applications to work with both default and custom zones using the same programming patterns. This enables smooth transitions from development to production without code changes.
-
-### API Integration Patterns
-
-Combine Table API and SQL API based on operation characteristics:
-
-- Use Table API for known-key operations requiring type safety
-- Use SQL API for complex queries, joins, and analytical operations
-- Both APIs access the same underlying distributed data seamlessly
 
 ## Prerequisites
 
