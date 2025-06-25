@@ -12,31 +12,106 @@ By completing this chapter, you will:
 
 ## The Challenge: Building at Scale
 
-Modern applications handle data at scales that traditional databases struggle to support. Consider a music streaming platform serving millions of users. Your application needs to:
+Picture this: you're building a music streaming platform. It starts simple - a few thousand users, basic catalog browsing, simple searches. But success brings complexity:
 
-- Store and retrieve artist catalogs across global regions
-- Process customer purchases with ACID guarantees while maintaining high throughput
-- Generate real-time recommendations by analyzing listening patterns across distributed data
-- Handle massive data ingestion as new tracks and user interactions flow continuously
-- Scale from thousands to millions of concurrent users
+```mermaid
+graph TB
+    subgraph "Growing Challenges"
+        U1["1K Users<br/>Simple Queries"] --> U2["100K Users<br/>Complex Analytics"]
+        U2 --> U3["1M Users<br/>Real-time Recommendations"]
+        U3 --> U4["10M Users<br/>Global Distribution"]
+    end
+    
+    subgraph "Technical Requirements"
+        U4 --> R1["Microsecond Response Times"]
+        U4 --> R2["ACID Transactions"]
+        U4 --> R3["Massive Throughput"]
+        U4 --> R4["Global Availability"]
+    end
+    
+    subgraph "Traditional Database Limits"
+        R1 --> L1["Single Point Bottleneck"]
+        R2 --> L2["Limited Scaling"]
+        R3 --> L3["I/O Constraints"]
+        R4 --> L4["Complex Sharding"]
+    end
+```
 
-These requirements push beyond what traditional databases can deliver. You need a distributed computing platform designed for modern application demands.
+Your application now needs to:
 
-## Apache Ignite 3: Distributed Computing Platform
+- **Store catalogs**: 50M+ tracks across multiple regions, accessible in milliseconds
+- **Process purchases**: Handle 10K concurrent transactions with full ACID guarantees  
+- **Generate recommendations**: Analyze patterns across petabytes of listening data in real-time
+- **Ingest events**: Process millions of play events per hour without dropping data
+- **Scale operations**: Handle traffic spikes during album releases and viral content
 
-Apache Ignite 3 addresses these challenges through a unified platform that combines:
+Traditional databases hit walls. You need a distributed computing platform built for these demands.
 
-### Core Capabilities
+## Apache Ignite 3: Your Distributed Solution
 
-- **In-Memory Data Grid**: Data resides in memory across cluster nodes, providing microsecond access times with persistence for durability.
+Apache Ignite 3 solves these scaling challenges through a unified distributed platform:
 
-- **Distributed SQL Engine**: Execute ANSI-compliant SQL queries across distributed datasets with join optimization and parallel execution.
+```mermaid
+graph TB
+    subgraph "Ignite 3 Architecture"
+        subgraph "Application Layer"
+            APP["Your Java Application"]
+        end
+        
+        subgraph "API Layer"
+            TABLE["Table API<br/>(Objects)"]
+            SQL["SQL API<br/>(Relations)"]
+            KV["Key-Value API<br/>(Cache)"]
+        end
+        
+        subgraph "Compute & Storage"
+            NODE1["Node 1<br/>Data + Compute"]
+            NODE2["Node 2<br/>Data + Compute"] 
+            NODE3["Node 3<br/>Data + Compute"]
+        end
+        
+        APP --> TABLE
+        APP --> SQL
+        APP --> KV
+        
+        TABLE --> NODE1
+        SQL --> NODE2
+        KV --> NODE3
+        
+        NODE1 <--> NODE2
+        NODE2 <--> NODE3
+        NODE1 <--> NODE3
+    end
+```
 
-- **NoSQL Key-Value Store**: Access data through type-safe object-oriented APIs for single-record and batch operations.
+### What This Means for Your Code
 
-- **Compute Engine**: Execute business logic directly on data nodes, eliminating network overhead through colocation.
+Instead of managing database connections, cache layers, and compute frameworks separately:
 
-- **Streaming Engine**: Ingest and process high-velocity data streams with built-in backpressure handling and flow control.
+```java
+// Traditional approach - multiple systems to manage
+Database db = connectToDatabase();
+Cache cache = connectToCache(); 
+ComputeCluster compute = connectToCompute();
+
+// Ignite 3 - unified platform
+IgniteClient ignite = IgniteClient.builder()
+    .addresses("node1:10800", "node2:10800", "node3:10800")
+    .build();
+
+// All capabilities through one connection
+Table<Artist> artists = ignite.tables().table("Artist").recordView(Artist.class);
+SqlStatement analytics = ignite.sql().statementBuilder().query("SELECT...");
+JobExecution<String> recommendation = ignite.compute().submit(nodes, job, args);
+```
+
+### Five Core Capabilities
+
+- **In-Memory Data Grid**: Your data lives in RAM across nodes - microsecond access with optional persistence
+- **Distributed SQL Engine**: Standard SQL that spans the entire cluster automatically
+- **NoSQL Key-Value Store**: Type-safe object APIs for when you know exactly what you want
+- **Compute Engine**: Run your business logic where the data lives - no network penalties
+- **Streaming Engine**: Handle millions of events per second with automatic backpressure
 
 ### Evolution from Ignite 2
 
@@ -47,111 +122,256 @@ If you have worked with version 2 of Ignite in the past, Ignite 3 represents a r
 - **Transaction Semantics**: Consistency guarantees with programming models
 - **Modern Java Integration**: Built-in support for CompletableFuture, type safety, and contemporary frameworks
 
-## Connection Strategy Framework
+## Connection Strategy: Client vs Embedded
 
-Ignite 3 provides two primary connection approaches, each suited for different architectural patterns:
+You have two ways to connect your application to an Ignite 3 cluster. Choose based on your deployment needs:
 
-### Remote Client Pattern (Recommended)
+```mermaid
+graph TB
+    subgraph "Remote Client Pattern (Recommended)"
+        subgraph "Your Applications"
+            APP1["Music API Service"]
+            APP2["Recommendation Service"] 
+            APP3["Analytics Dashboard"]
+        end
+        
+        subgraph "Ignite Cluster"
+            NODE1["Storage Node 1"]
+            NODE2["Storage Node 2"]
+            NODE3["Storage Node 3"]
+        end
+        
+        APP1 -.->|"IgniteClient"| NODE1
+        APP2 -.->|"IgniteClient"| NODE2
+        APP3 -.->|"IgniteClient"| NODE3
+        
+        NODE1 <--> NODE2
+        NODE2 <--> NODE3
+        NODE1 <--> NODE3
+    end
+```
 
-The **IgniteClient** provides optimal separation between application and storage tiers. Applications connect to cluster nodes without becoming part of the cluster topology.
+```mermaid
+graph TB
+    subgraph "Embedded Node Pattern"
+        subgraph "Hybrid App-Storage Nodes"
+            HYBRID1["App + Storage 1"]
+            HYBRID2["App + Storage 2"]
+            HYBRID3["App + Storage 3"]
+        end
+        
+        HYBRID1 <--> HYBRID2
+        HYBRID2 <--> HYBRID3
+        HYBRID1 <--> HYBRID3
+    end
+```
 
-**When to Use:**
+### Remote Client Pattern (Start Here)
 
-- Microservices architectures
-- Containerized deployments
-- Independent application scaling
-- Cloud-native environments
-- Development and testing scenarios
+Your applications connect to the cluster but stay separate from it:
 
-**Benefits:**
+```java
+// Clean separation - app and storage independent
+IgniteClient client = IgniteClient.builder()
+    .addresses("storage1:10800", "storage2:10800", "storage3:10800")
+    .build();
+```
 
-- Applications scale independently from storage
-- Simplified deployment and management
-- No cluster membership overhead
-- Automatic failover across cluster nodes
+**Perfect for:**
+- Microservices (each service connects independently)
+- Containers and Kubernetes deployments
+- Development and testing
+- When you want to scale apps and storage separately
+
+**Why it works:**
+- Deploy new app versions without touching storage
+- Scale applications based on traffic, storage based on data
+- Simple operational model
 
 ### Embedded Node Pattern
 
-The **IgniteServer** integrates applications directly into the cluster topology, making them both consumers and providers of cluster services.
+Your application becomes part of the storage cluster:
 
-**When to Use:**
+```java
+// App and storage lifecycle are joined
+IgniteServer server = IgniteServer.start("myApp", configPath, workDir);
+```
 
-- Maximum data locality requirements
-- Legacy application integration
-- Specialized compute-heavy workloads
+**Use when:**
+- Data locality is critical (compute runs where data lives)
+- Legacy systems that can't be easily separated
 - Single-deployment scenarios
 
 **Trade-offs:**
-
-- Application lifecycle tied to cluster membership
+- App restarts affect cluster membership
 - More complex deployment coordination
-- Higher resource requirements per application instance
+- Higher memory requirements
 
 ### Unified Programming Model
 
 Both connection strategies implement the same Ignite interface, enabling consistent programming patterns regardless of deployment choice. This means you can develop with one pattern and deploy with another based on operational requirements.
 
-## Java API Architecture
+## Java API: Three Ways to Access Your Data
 
-The Ignite 3 Java API follows three core design principles that simplify distributed programming:
+Ignite 3 gives you three APIs to work with the same distributed data. Pick the right tool for each job:
 
-### Multi-modal Access Paradigms
+```mermaid
+graph LR
+    subgraph "Your Java Application"
+        LOGIC["Business Logic"]
+    end
+    
+    subgraph "API Choice Based on Use Case"
+        TABLE["Table API<br/>Objects & Types"]
+        SQL["SQL API<br/>Queries & Analytics"] 
+        KV["Key-Value API<br/>Cache Operations"]
+    end
+    
+    subgraph "Same Distributed Data"
+        DATA["Artist, Album, Track<br/>Tables Across Cluster"]
+    end
+    
+    LOGIC --> TABLE
+    LOGIC --> SQL
+    LOGIC --> KV
+    
+    TABLE --> DATA
+    SQL --> DATA
+    KV --> DATA
+```
 
-Choose the appropriate API for each use case:
+### When to Use Each API
 
-- **Table API**: Object-oriented access through strongly-typed RecordView interfaces handles structured data operations efficiently with compile-time type safety.
+```java
+// Table API - when you know the structure and want type safety
+Artist artist = artists.get(null, artistKey);
+artist.setName("Updated Name");
+artists.upsert(null, artist);
 
-- **SQL API**: Relational access handles complex queries, joins, and analytics using standard ANSI SQL syntax with automatic query optimization.
+// SQL API - when you need complex queries or analytics
+var topTracks = client.sql().execute(null,
+    "SELECT t.Name, COUNT(*) FROM Track t " +
+    "JOIN InvoiceLine il ON t.TrackId = il.TrackId " + 
+    "GROUP BY t.TrackId ORDER BY COUNT(*) DESC LIMIT 10");
 
-- **Key-Value API**: Cache-like operations for basic get/put scenarios with minimal overhead and maximum performance.
+// Key-Value API - when you want simple cache-like operations
+Tuple trackKey = Tuple.create().set("TrackId", 123);
+Tuple trackData = tracks.get(null, trackKey); // Fast key lookup
+```
 
-### Async-First Design
+### Async Operations Everywhere
 
-Every operation supports both synchronous and asynchronous execution patterns:
+Every API supports both sync and async operations:
 
-- **Synchronous Operations**: Use for straightforward scenarios where blocking is acceptable and code readability is prioritized.
+```java
+// Synchronous - blocks until complete
+Artist artist = artists.get(null, key);
 
-- **Asynchronous Operations**: Use CompletableFuture-based operations for high-throughput scenarios, reactive programming, and when you need to compose multiple operations efficiently.
+// Asynchronous - returns immediately  
+CompletableFuture<Artist> future = artists.getAsync(null, key);
+future.thenApply(this::updateArtist)
+      .thenCompose(updated -> artists.upsertAsync(null, updated))
+      .thenRun(() -> System.out.println("Update complete"));
+```
 
-### Strong Type Safety
+### Type Safety Across APIs
 
-Generic APIs ensure compile-time error detection and eliminate runtime type casting. The same Java classes work across Table API and SQL API, providing consistent data models throughout your application.
+Your Java classes work consistently across all APIs:
 
-## Distribution Zone Decision Framework
+```java
+@Table(zone = @Zone("MusicStore"))
+public class Artist {
+    @Id Integer artistId;
+    @Column String name;
+    // ... constructors, getters, setters
+}
 
-Distribution zones control how your data is distributed, replicated, and managed across cluster nodes. Understanding when to use each approach is crucial for both development efficiency and production success.
+// Same class works everywhere:
+RecordView<Artist> tableView = ignite.tables().table("Artist").recordView(Artist.class);
+ResultSet<Artist> sqlResults = ignite.sql().execute(null, "SELECT * FROM Artist", Artist.class);
+```
 
-### Default Zone Strategy
+## Distribution Zones: Development vs Production
 
-**What It Is**: Ignite 3 automatically creates a "Default" zone during cluster initialization with conservative settings optimized for getting started quickly.
+Zones control how your data spreads across cluster nodes. Choose based on your environment needs:
 
-**Configuration**:
+```mermaid
+graph TB
+    subgraph DEV ["Default Zone (Development)"]
+        N1["Node 1<br/>Artist Data<br/>1 Replica"]
+        N2["Node 2<br/>Album Data<br/>1 Replica"] 
+        N3["Node 3<br/>Track Data<br/>1 Replica"]
+        
+        FAIL["Node Failure"] --> LOST["Data Lost"]
+    end
+    
+    subgraph PROD ["Custom Zone (Production)"]
+        PN1["Node 1<br/>Artist + Backup"]
+        PN2["Node 2<br/>Album + Backup"]
+        PN3["Node 3<br/>Track + Backup"]
+        
+        PN1 <--> PN2
+        PN2 <--> PN3
+        PN1 <--> PN3
+        
+        PFAIL["Node Failure"] --> SAFE["Data Survives"]
+    end
+```
 
-- 1 replica (no fault tolerance)
-- 25 partitions (good for small to medium datasets)
-- Includes all cluster nodes
-- Immediate availability (no setup required)
+### Default Zone: Fast Start, No Safety Net
 
-**When to Use**:
+Perfect for development - zero configuration required:
 
-- Development and testing scenarios
-- Learning and experimentation
-- Proof-of-concept implementations
-- Single-node or non-critical deployments
-- Rapid prototyping where setup speed matters more than fault tolerance
+```java
+@Table(zone = @Zone("default"))  // Uses automatic default zone
+public class Artist {
+    @Id Integer artistId;
+    @Column String name;
+}
+```
 
-**Benefits**:
+**Configuration:**
+- 1 replica (no backups)
+- 25 partitions
+- All nodes included
+- Ready immediately
 
-- Zero configuration required
-- Immediate availability
-- Reduced resource overhead
-- Simplified mental model for learning
+**Use for:**
+- Local development
+- Learning and experimentation  
+- Proof-of-concept work
+- Unit testing
 
-**Limitations**:
+**Reality check:** If a node fails, you lose data. Don't use in production.
 
-- No fault tolerance (data loss if node fails)
-- Not suitable for production workloads
-- Limited performance optimization options
+### Custom Zones: Production-Ready Storage
+
+For production workloads, create custom zones with fault tolerance:
+
+```java
+// Create a production zone with 3 replicas
+@Table(zone = @Zone(value = "MusicStore", storageProfiles = "default"))
+public class Artist {
+    @Id Integer artistId;
+    @Column String name;
+}
+```
+
+This requires creating the zone first:
+```sql
+CREATE ZONE "MusicStore" WITH 
+    PARTITIONS=50,     -- Split data into 50 pieces
+    REPLICAS=3,        -- Keep 3 copies of each piece  
+    STORAGE_PROFILES='default'
+```
+
+**What happens under the hood:**
+- Your Artist data gets split into 50 partitions using consistent hashing
+- Each partition gets replicated to 3 different nodes
+- If a node fails, data remains available on the other 2 replicas
+- The cluster automatically rebalances data when nodes join or leave
+
+> **Want the full storage story?** See [Storage System Architecture](../00-reference/STORAGE-SYSTEM-ARCH.md) for complete details on partitioning algorithms, storage engines, and data placement strategies.
 
 ### Custom Zone Strategy
 
