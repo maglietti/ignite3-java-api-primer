@@ -132,29 +132,28 @@ public class DistributedQueryExecution {
 
 ### Cost-Based Optimization
 
-Calcite's cost-based optimizer uses statistics to choose execution plans:
+Calcite's cost-based optimizer uses automatically collected statistics to choose execution plans:
 
 ```java
-// Ignite maintains table statistics for optimization
+// Ignite automatically maintains basic table statistics for optimization
 public class TableStatistics {
-    private final long rowCount;                    // Total rows in table
-    private final Map<String, ColumnStats> columns; // Per-column statistics
+    private final long rowCount;                    // Total rows in table (auto-collected)
     private final double[] partitionSizes;          // Partition size distribution
     
-    // Cost estimation for different access paths
-    public double estimateSelectivity(RexNode predicate) {
-        // Use column histograms and null counts
-        return histogramBasedEstimate(predicate);
+    // Cost estimation uses available statistics
+    public double estimateRowCount() {
+        return rowCount; // Collected automatically during query execution
     }
 }
 ```
 
-**Statistics Used:**
+**Available Statistics (Auto-Collected):**
 
-- **Row Counts**: Total rows per table and partition
-- **Column Statistics**: Null counts, distinct values, histograms
-- **Index Statistics**: Index selectivity and size
+- **Row Counts**: Total rows per table (collected automatically)
 - **Partition Distribution**: Data distribution across nodes
+- **Basic Cardinality**: Table size estimates for join ordering
+
+**Note**: Ignite 3 collects statistics automatically in the background during query execution. There are no manual commands like ANALYZE TABLE to trigger statistics collection.
 
 ### Rule-Based Optimizations
 
@@ -404,23 +403,6 @@ for (String pattern : patterns) {
 }
 ```
 
-### Statistics and Cost Estimation
-
-Accurate statistics improve optimization:
-
-```sql
--- Ignite maintains statistics automatically
-ANALYZE TABLE Artist;
-ANALYZE TABLE Album;  
-ANALYZE TABLE Track;
-
--- Statistics include:
--- - Row counts per table and partition
--- - Column value distributions and histograms  
--- - Index selectivity measurements
--- - Partition size distributions
-```
-
 ### Join Algorithm Selection
 
 Calcite chooses optimal join algorithms based on data size and distribution:
@@ -485,7 +467,6 @@ SQL operations respect Ignite's MVCC transaction model:
 - **Read Operations**: See consistent snapshots as of transaction start time
 - **Write Operations**: Use distributed locking for consistency
 - **DDL Operations**: Coordinate schema changes across all nodes
-
 
 ## Final Thoughts
 
