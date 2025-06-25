@@ -47,9 +47,10 @@
         <module>04-table-api-app</module>
         <module>05-sql-api-app</module>
         <module>06-transactions-app</module>
-        <!-- <module>07-compute-api-app</module> -->
+        <module>07-compute-api-app</module>
         <module>08-data-streaming-app</module>
         <module>09-caching-patterns-app</module>
+        <module>10-file-streaming-app</module>
     </modules>
 
     <dependencyManagement>
