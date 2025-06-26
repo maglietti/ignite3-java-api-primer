@@ -1,6 +1,6 @@
-# Apache Ignite 3 Java API Learning Modules
+# Apache Ignite 3 Java API Primer
 
-This directory contains the structured learning modules for mastering Apache Ignite 3's Java API. Each module builds upon previous concepts while demonstrating practical patterns through working reference applications.
+This collection contains the structured learning modules for mastering Apache Ignite 3's Java API. Each module builds upon previous concepts while demonstrating practical patterns through working reference applications.
 
 ## Module Structure
 
