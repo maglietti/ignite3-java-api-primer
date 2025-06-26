@@ -90,3 +90,4 @@ config.local.*
 *.html
 *.pdf
 mermaid-images/
+_book/

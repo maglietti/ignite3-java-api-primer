@@ -1,42 +1,41 @@
 {
-    "title": "Apache Ignite 3 Java API Primer",
-    "description": "Practical Patterns for Distributed Data Programming",
-    "author": "Apache Ignite Community",
-    "language": "en",
-    "gitbook": ">=3.0.0",
-    "plugins": [
-        "mermaid-gb3",
-        "anchors",
-        "page-toc-button",
-        "expandable-chapters",
-        "chapter-fold",
-        "code",
-        "copy-code-button"
-    ],
-    "pluginsConfig": {
-        "mermaid-gb3": {
-            "theme": "neutral"
-        },
-        "page-toc-button": {
-            "maxTocDepth": 3,
-            "minTocSize": 2
-        }
+  "title": "Apache Ignite 3 Java API Primer",
+  "description": "Practical Patterns for Distributed Data Programming",
+  "author": "Apache Ignite Community",
+  "language": "en",
+  "gitbook": ">=3.0.0",
+  "plugins": [
+    "mermaid",
+    "anchors",
+    "page-toc-button",
+    "expandable-chapters",
+    "chapter-fold",
+    "code"
+  ],
+  "pluginsConfig": {
+    "page-toc-button": {
+      "maxTocDepth": 3,
+      "minTocSize": 2
     },
-    "pdf": {
-        "pageNumbers": true,
-        "fontSize": 12,
-        "fontFamily": "Times",
-        "paperSize": "a4",
-        "chapterMark": "pagebreak",
-        "pageBreaksBefore": "/",
-        "margin": {
-            "right": 62,
-            "left": 62,
-            "top": 56,
-            "bottom": 56
-        }
-    },
-    "variables": {
-        "version": "1.0.0"
+    "mermaid": {
+      "theme": "neutral"
     }
+  },
+  "pdf": {
+    "pageNumbers": true,
+    "fontSize": 12,
+    "fontFamily": "Times",
+    "paperSize": "a4",
+    "chapterMark": "pagebreak",
+    "pageBreaksBefore": "/",
+    "margin": {
+      "right": 62,
+      "left": 62,
+      "top": 56,
+      "bottom": 56
+    }
+  },
+  "variables": {
+    "version": "1.0.0"
+  }
 }
