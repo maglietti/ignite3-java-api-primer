@@ -211,21 +211,23 @@ public class ConsistencyExample {
 }
 ```
 
-#### Isolation Levels
+#### Transaction Types
 
-Ignite 3 supports multiple isolation levels to balance consistency with performance:
+Ignite 3 supports two transaction types that balance consistency with performance:
 
 ```java
-public class IsolationLevels {
+public class TransactionTypes {
     
-    public void demonstrateReadCommitted(IgniteClient client) {
-        TransactionOptions options = TransactionOptions.readCommitted()
-            .timeout(30, TimeUnit.SECONDS);
+    public void demonstrateReadWriteTransaction(IgniteClient client) {
+        // Read-Write transaction: supports modifications, full ACID guarantees
+        TransactionOptions options = new TransactionOptions()
+            .readOnly(false)  // Default: allows modifications
+            .timeoutMillis(30000);
         
         try (Transaction tx = client.transactions().begin(options)) {
             RecordView<Track> tracks = client.tables().table("Track").recordView(Track.class);
             
-            // Read committed: sees only committed changes from other transactions
+            // Read-Write: can modify data within transaction
             Track track = tracks.get(tx, createTrackKey(1));
             
             if (track != null) {
@@ -236,18 +238,20 @@ public class IsolationLevels {
             tx.commit();
             
         } catch (Exception e) {
-            System.err.println("Read committed transaction failed: " + e.getMessage());
+            System.err.println("Read-Write transaction failed: " + e.getMessage());
         }
     }
     
-    public void demonstrateRepeatableRead(IgniteClient client) {
-        TransactionOptions options = TransactionOptions.repeatableRead()
-            .timeout(30, TimeUnit.SECONDS);
+    public void demonstrateReadOnlyTransaction(IgniteClient client) {
+        // Read-Only transaction: snapshot view, better performance, no modifications
+        TransactionOptions options = new TransactionOptions()
+            .readOnly(true)   // Read-only: snapshot consistency
+            .timeoutMillis(30000);
         
         try (Transaction tx = client.transactions().begin(options)) {
             IgniteSql sql = client.sql();
             
-            // Repeatable read: consistent view throughout transaction
+            // Read-Only: provides consistent snapshot view
             ResultSet<SqlRow> firstRead = sql.execute(tx,
                 "SELECT COUNT(*) as TrackCount FROM Track WHERE UnitPrice > ?", 
                 new BigDecimal("1.00"));
@@ -257,20 +261,19 @@ public class IsolationLevels {
             // Simulate some work...
             Thread.sleep(1000);
             
-            // Second read returns same count even if other transactions
-            // modified data (phantom read protection)
+            // Second read sees same snapshot data throughout transaction
             ResultSet<SqlRow> secondRead = sql.execute(tx,
                 "SELECT COUNT(*) as TrackCount FROM Track WHERE UnitPrice > ?", 
                 new BigDecimal("1.00"));
             
             long finalCount = secondRead.next().longValue("TrackCount");
             
-            assert initialCount == finalCount : "Repeatable read violated";
+            assert initialCount == finalCount : "Snapshot consistency maintained";
             
-            tx.commit();
+            tx.commit();  // Read-only transactions still need explicit commit
             
         } catch (Exception e) {
-            System.err.println("Repeatable read transaction failed: " + e.getMessage());
+            System.err.println("Read-Only transaction failed: " + e.getMessage());
         }
     }
     
