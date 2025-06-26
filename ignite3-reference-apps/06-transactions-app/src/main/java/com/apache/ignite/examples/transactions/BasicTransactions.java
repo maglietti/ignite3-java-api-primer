@@ -26,6 +26,8 @@ import org.apache.ignite.tx.IgniteTransactions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.function.Consumer;
+
 /**
  * Basic Transactions - Fundamental transaction operations with Apache Ignite 3.
  * 
@@ -88,24 +90,25 @@ public class BasicTransactions {
     private static void demonstrateCommitTransaction(IgniteTransactions transactions, RecordView<Tuple> artists) {
         System.out.println("\n    --- Successful Transaction (Commit)");
         
-        Transaction tx = transactions.begin();
         try {
-            // Create a test artist
-            Tuple newArtist = Tuple.create()
-                .set("ArtistId", 6001)
-                .set("Name", "Transaction Artist 1");
+            transactions.runInTransaction(tx -> {
+                // Create a test artist
+                Tuple newArtist = Tuple.create()
+                    .set("ArtistId", 6001)
+                    .set("Name", "Transaction Artist 1");
+                
+                // Insert within transaction
+                artists.upsert(tx, newArtist);
+                System.out.println("    >>> Inserted artist in transaction");
+                
+                // Update within same transaction
+                Tuple updatedArtist = newArtist.set("Name", "Updated Transaction Artist 1");
+                artists.upsert(tx, updatedArtist);
+                System.out.println("    >>> Updated artist in transaction");
+                
+                // Transaction commits automatically on successful completion
+            });
             
-            // Insert within transaction
-            artists.upsert(tx, newArtist);
-            System.out.println("    >>> Inserted artist in transaction");
-            
-            // Update within same transaction
-            Tuple updatedArtist = newArtist.set("Name", "Updated Transaction Artist 1");
-            artists.upsert(tx, updatedArtist);
-            System.out.println("    >>> Updated artist in transaction");
-            
-            // Commit the transaction
-            tx.commit();
             System.out.println("    <<< Transaction committed successfully");
             
             // Verify the data persisted
@@ -116,8 +119,7 @@ public class BasicTransactions {
             }
             
         } catch (Throwable e) {
-            tx.rollback();
-            logger.error("Transaction failed, rolled back", e);
+            logger.error("Transaction failed and was automatically rolled back", e);
             throw e;
         }
     }
@@ -125,24 +127,23 @@ public class BasicTransactions {
     private static void demonstrateRollbackTransaction(IgniteTransactions transactions, RecordView<Tuple> artists) {
         System.out.println("\n    --- Failed Transaction (Rollback)");
         
-        Transaction tx = transactions.begin();
         try {
-            // Insert a test artist
-            Tuple newArtist = Tuple.create()
-                .set("ArtistId", 6002)
-                .set("Name", "Transaction Artist 2");
-            
-            artists.upsert(tx, newArtist);
-            System.out.println("    >>> Inserted artist in transaction");
-            
-            // Simulate an error condition
-            System.out.println("    >>> Simulating error condition...");
-            throw new RuntimeException("Simulated business logic error");
+            transactions.runInTransaction((Consumer<Transaction>) tx -> {
+                // Insert a test artist
+                Tuple newArtist = Tuple.create()
+                    .set("ArtistId", 6002)
+                    .set("Name", "Transaction Artist 2");
+                
+                artists.upsert(tx, newArtist);
+                System.out.println("    >>> Inserted artist in transaction");
+                
+                // Simulate an error condition
+                System.out.println("    >>> Simulating error condition...");
+                throw new RuntimeException("Simulated business logic error");
+            });
             
         } catch (Throwable e) {
-            // Rollback on any error
-            tx.rollback();
-            System.out.println("    <<< Transaction rolled back due to error");
+            System.out.println("    <<< Transaction automatically rolled back due to error");
             
             // Verify the data was not persisted
             Tuple key = Tuple.create().set("ArtistId", 6002);
@@ -160,7 +161,7 @@ public class BasicTransactions {
         
         // Demonstrate functional transaction pattern
         try {
-            transactions.runInTransaction(tx -> {
+            transactions.runInTransaction((Consumer<Transaction>) tx -> {
                 // Insert test data
                 Tuple newArtist = Tuple.create()
                     .set("ArtistId", 6003)
@@ -176,7 +177,7 @@ public class BasicTransactions {
             });
             System.out.println("    <<< Transaction committed with runInTransaction");
             
-        } catch (Exception e) {
+        } catch (Throwable e) {
             logger.error("Transaction failed and was automatically rolled back", e);
             System.out.println("    <<< Transaction automatically rolled back");
         }

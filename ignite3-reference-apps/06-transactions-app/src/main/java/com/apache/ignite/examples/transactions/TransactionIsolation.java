@@ -105,23 +105,24 @@ public class TransactionIsolation {
         System.out.println("\n    --- Read Consistency");
         System.out.println("    >>> Demonstrating transaction read consistency");
         
-        // Start a transaction and read data
-        Transaction tx1 = transactions.begin();
+        // Use functional transaction for automatic lifecycle management
         try {
-            Tuple key = Tuple.create().set("ArtistId", 7001);
-            Tuple artist = artists.get(tx1, key);
-            
-            System.out.println("    >>> Transaction 1 reads initial: " + artist.stringValue("Name"));
-            
-            // Read again within the same transaction - should be consistent
-            Tuple artistAgain = artists.get(tx1, key);
-            System.out.println("    >>> Transaction 1 reads again: " + artistAgain.stringValue("Name"));
-            
-            // The transaction sees consistent data throughout its lifetime
-            tx1.commit();
+            transactions.runInTransaction(tx -> {
+                Tuple key = Tuple.create().set("ArtistId", 7001);
+                Tuple artist = artists.get(tx, key);
+                
+                System.out.println("    >>> Transaction reads initial: " + artist.stringValue("Name"));
+                
+                // Read again within the same transaction - should be consistent
+                Tuple artistAgain = artists.get(tx, key);
+                System.out.println("    >>> Transaction reads again: " + artistAgain.stringValue("Name"));
+                
+                // The transaction sees consistent data throughout its lifetime
+                return null;
+            });
             System.out.println("    <<< Transaction maintained read consistency");
         } catch (Throwable e) {
-            tx1.rollback();
+            System.out.println("    !!! Read consistency check failed: " + e.getMessage());
             throw e;
         }
         
@@ -143,34 +144,34 @@ public class TransactionIsolation {
         
         Tuple key = Tuple.create().set("ArtistId", 7001);
         
-        // Sequential transaction updates to avoid deadlocks
-        Transaction tx1 = transactions.begin();
+        // First transaction with functional pattern
         try {
-            Tuple artist1 = artists.get(tx1, key);
-            System.out.println("    >>> Transaction 1 reads: " + artist1.stringValue("Name"));
-            
-            Tuple updated1 = artist1.set("Name", "Updated by Transaction 1");
-            artists.upsert(tx1, updated1);
-            tx1.commit();
+            transactions.runInTransaction(tx -> {
+                Tuple artist1 = artists.get(tx, key);
+                System.out.println("    >>> Transaction 1 reads: " + artist1.stringValue("Name"));
+                
+                Tuple updated1 = artist1.set("Name", "Updated by Transaction 1");
+                artists.upsert(tx, updated1);
+                return null;
+            });
             System.out.println("    <<< Transaction 1 committed successfully");
         } catch (Throwable e) {
-            tx1.rollback();
             logger.warn("Transaction 1 conflict detected", e);
             System.out.println("    !!! Transaction 1 detected conflict: " + e.getMessage());
         }
         
-        // Second transaction
-        Transaction tx2 = transactions.begin();
+        // Second transaction with functional pattern
         try {
-            Tuple artist2 = artists.get(tx2, key);
-            System.out.println("    >>> Transaction 2 reads: " + artist2.stringValue("Name"));
-            
-            Tuple updated2 = artist2.set("Name", "Updated by Transaction 2");
-            artists.upsert(tx2, updated2);
-            tx2.commit();
+            transactions.runInTransaction(tx -> {
+                Tuple artist2 = artists.get(tx, key);
+                System.out.println("    >>> Transaction 2 reads: " + artist2.stringValue("Name"));
+                
+                Tuple updated2 = artist2.set("Name", "Updated by Transaction 2");
+                artists.upsert(tx, updated2);
+                return null;
+            });
             System.out.println("    <<< Transaction 2 committed successfully");
         } catch (Throwable e) {
-            tx2.rollback();
             logger.warn("Transaction 2 conflict detected", e);
             System.out.println("    !!! Transaction 2 detected conflict: " + e.getMessage());
         }

@@ -9,51 +9,96 @@ By completing this chapter, you will:
 - Configure transaction options for different performance requirements
 - Handle complex multi-step business workflows with proper error recovery
 
-## The runInTransaction Pattern
+## Explicit Transaction Management (Advanced)
 
-Most applications benefit from automatic transaction management. The `runInTransaction()` method handles commit/rollback based on your code's success or failure:
+For scenarios requiring fine-grained control over transaction lifecycle, you can manage transactions explicitly. **Note: This approach is generally not recommended** due to increased complexity and error potential.
 
 ```java
 /**
- * Demonstrates automatic transaction management using runInTransaction().
- * This pattern is recommended for most use cases as it handles lifecycle
- * management and provides cleaner code structure.
+ * Demonstrates explicit transaction management patterns.
+ * USE WITH CAUTION: This approach requires careful error handling
+ * and is prone to resource leaks if not implemented correctly.
  */
-public class AutomaticTransactions {
+public class ExplicitTransactionManagement {
     
-    public void createArtistAndAlbum(IgniteClient client) {
+    public void basicExplicitPattern(IgniteClient client) {
+        Transaction tx = null;
         try {
-            client.transactions().runInTransaction(tx -> {
-                RecordView<Artist> artistTable = client.tables().table("Artist").recordView(Artist.class);
-                RecordView<Album> albumTable = client.tables().table("Album").recordView(Album.class);
-                
-                // Create artist
-                Artist artist = new Artist(1001, "Radiohead");
-                artistTable.upsert(tx, artist);
-                
-                // Create album
-                Album album = new Album(2001, 1001, "OK Computer");
-                albumTable.upsert(tx, album);
-                
-                // Transaction commits automatically if no exception is thrown
-                return null;
-            });
+            // 1. Begin transaction
+            tx = client.transactions().begin();
             
+            // 2. Perform operations
+            performBusinessOperations(client, tx);
+            
+            // 3. Commit if all operations succeed
+            tx.commit();
             System.out.println("✓ Transaction completed successfully");
             
-        } catch (Exception e) {
-            System.err.println("✗ Transaction failed and was rolled back: " + e.getMessage());
+        } catch (Throwable e) {
+            System.err.println("✗ Transaction failed: " + e.getMessage());
+            
+            // 4. Rollback on any error
+            if (tx != null) {
+                try {
+                    tx.rollback();
+                } catch (Throwable rollbackError) {
+                    System.err.println("✗ Rollback failed: " + rollbackError.getMessage());
+                }
+            }
         }
+    }
+    
+    public void saferExplicitPattern(IgniteClient client) {
+        // Safer explicit pattern: ensure rollback in finally block
+        Transaction tx = null;
+        boolean committed = false;
+        try {
+            tx = client.transactions().begin();
+            performBusinessOperations(client, tx);
+            tx.commit();
+            committed = true;
+            System.out.println("✓ Transaction completed successfully");
+            
+        } catch (Throwable e) {
+            System.err.println("✗ Transaction failed: " + e.getMessage());
+        } finally {
+            // Ensure rollback if transaction wasn't committed
+            if (tx != null && !committed) {
+                try {
+                    tx.rollback();
+                } catch (Throwable rollbackError) {
+                    System.err.println("✗ Rollback failed: " + rollbackError.getMessage());
+                }
+            }
+        }
+    }
+    
+    private void performBusinessOperations(IgniteClient client, Transaction tx) {
+        RecordView<Customer> customers = client.tables().table("Customer").recordView(Customer.class);
+        IgniteSql sql = client.sql();
+        
+        // Mix Table API and SQL operations in same transaction
+        Customer customer = new Customer(100, "Jane", "Smith", "jane@example.com");
+        customers.upsert(tx, customer);
+        
+        sql.execute(tx, "UPDATE Customer SET Country = ? WHERE CustomerId = ?", "USA", 100);
     }
 }
 ```
 
-**Key advantages of `runInTransaction()`:**
+**When explicit management might be necessary:**
 
-- **Automatic lifecycle**: No need to manually call commit/rollback
-- **Exception safety**: Rollback happens automatically on uncaught exceptions
-- **Cleaner code**: Focus on business logic, not transaction plumbing
-- **Return values**: Can return computed results from the transaction
+- **Complex conditional logic**: Multiple decision points requiring different rollback strategies
+- **Performance optimization**: Reusing transactions across multiple operations
+- **Integration scenarios**: Coordinating with external transaction managers
+- **Debugging purposes**: Fine-grained control for troubleshooting
+
+**Risks of explicit management:**
+
+- **Resource leaks**: Forgetting to close transactions
+- **Inconsistent state**: Improper error handling leaving data corrupted  
+- **Code complexity**: More boilerplate and error-prone patterns
+- **Maintenance burden**: Harder to understand and modify
 
 ## Real-World Scenario: Customer Purchase Workflow
 

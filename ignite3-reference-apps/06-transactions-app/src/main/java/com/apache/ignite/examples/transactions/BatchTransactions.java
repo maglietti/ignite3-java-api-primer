@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * Batch Transactions - Bulk operations within transactions in Apache Ignite 3.
@@ -100,25 +101,25 @@ public class BatchTransactions {
         
         System.out.println("   >>> Prepared " + artistBatch.size() + " artists for batch insert");
         
-        // Execute batch insert in transaction
-        Transaction tx = transactions.begin();
+        // Execute batch insert with functional transaction
         try {
-            long startTime = System.currentTimeMillis();
+            transactions.runInTransaction(tx -> {
+                long startTime = System.currentTimeMillis();
+                
+                for (Tuple artist : artistBatch) {
+                    artists.upsert(tx, artist);
+                }
+                
+                long insertTime = System.currentTimeMillis() - startTime;
+                System.out.println("   >>> Batch insert completed in " + insertTime + "ms");
+                
+                // Transaction commits automatically
+            });
             
-            for (Tuple artist : artistBatch) {
-                artists.upsert(tx, artist);
-            }
+            System.out.println("   <<< Transaction committed successfully");
             
-            long insertTime = System.currentTimeMillis() - startTime;
-            System.out.println("   >>> Batch insert completed in " + insertTime + "ms");
-            
-            tx.commit();
-            long totalTime = System.currentTimeMillis() - startTime;
-            System.out.println("   <<< Transaction committed in " + totalTime + "ms total");
-            
-        } catch (Exception e) {
-            tx.rollback();
-            logger.error("Batch insert failed", e);
+        } catch (Throwable e) {
+            logger.error("Batch insert failed and was automatically rolled back", e);
             throw new RuntimeException("Batch insert failed", e);
         }
         
@@ -129,33 +130,33 @@ public class BatchTransactions {
     private static void demonstrateBatchUpdate(IgniteTransactions transactions, RecordView<Tuple> artists) {
         System.out.println("\n2. Batch Update Transaction:");
         
-        // Update all batch artists in a single transaction
-        Transaction tx = transactions.begin();
+        // Update all batch artists with functional transaction
         try {
-            long startTime = System.currentTimeMillis();
-            int updateCount = 0;
-            
-            for (int id = 9001; id <= 9010; id++) {
-                Tuple key = Tuple.create().set("ArtistId", id);
-                Tuple artist = artists.get(tx, key);
+            int updateCount = transactions.runInTransaction(tx -> {
+                long startTime = System.currentTimeMillis();
+                int count = 0;
                 
-                if (artist != null) {
-                    Tuple updatedArtist = artist.set("Name", "Updated Batch Artist " + id);
-                    artists.upsert(tx, updatedArtist);
-                    updateCount++;
+                for (int id = 9001; id <= 9010; id++) {
+                    Tuple key = Tuple.create().set("ArtistId", id);
+                    Tuple artist = artists.get(tx, key);
+                    
+                    if (artist != null) {
+                        Tuple updatedArtist = artist.set("Name", "Updated Batch Artist " + id);
+                        artists.upsert(tx, updatedArtist);
+                        count++;
+                    }
                 }
-            }
+                
+                long updateTime = System.currentTimeMillis() - startTime;
+                System.out.println("   >>> Batch update of " + count + " records in " + updateTime + "ms");
+                
+                return count; // Transaction commits automatically
+            });
             
-            long updateTime = System.currentTimeMillis() - startTime;
-            System.out.println("   >>> Batch update of " + updateCount + " records in " + updateTime + "ms");
+            System.out.println("   <<< Batch update committed successfully");
             
-            tx.commit();
-            long totalTime = System.currentTimeMillis() - startTime;
-            System.out.println("   <<< Batch update committed in " + totalTime + "ms total");
-            
-        } catch (Exception e) {
-            tx.rollback();
-            logger.error("Batch update failed", e);
+        } catch (Throwable e) {
+            logger.error("Batch update failed and was automatically rolled back", e);
             throw new RuntimeException("Batch update failed", e);
         }
         
@@ -166,32 +167,32 @@ public class BatchTransactions {
     private static void demonstrateBatchErrorHandling(IgniteTransactions transactions, RecordView<Tuple> artists) {
         System.out.println("\n3. Batch Error Handling:");
         
-        // Attempt batch operation with intentional error
-        Transaction tx = transactions.begin();
+        // Attempt batch operation with intentional error using functional transaction
         try {
-            int processedCount = 0;
-            
-            // Process first few records successfully
-            for (int id = 9001; id <= 9005; id++) {
-                Tuple key = Tuple.create().set("ArtistId", id);
-                Tuple artist = artists.get(tx, key);
+            transactions.runInTransaction((Consumer<Transaction>) tx -> {
+                int processedCount = 0;
                 
-                if (artist != null) {
-                    Tuple updatedArtist = artist.set("Name", "Error Test Artist " + id);
-                    artists.upsert(tx, updatedArtist);
-                    processedCount++;
+                // Process first few records successfully
+                for (int id = 9001; id <= 9005; id++) {
+                    Tuple key = Tuple.create().set("ArtistId", id);
+                    Tuple artist = artists.get(tx, key);
+                    
+                    if (artist != null) {
+                        Tuple updatedArtist = artist.set("Name", "Error Test Artist " + id);
+                        artists.upsert(tx, updatedArtist);
+                        processedCount++;
+                    }
                 }
-            }
+                
+                System.out.println("   >>> Processed " + processedCount + " records successfully");
+                
+                // Simulate error during processing
+                System.out.println("   !!! Simulating error during batch processing...");
+                throw new RuntimeException("Simulated batch processing error");
+            });
             
-            System.out.println("   >>> Processed " + processedCount + " records successfully");
-            
-            // Simulate error on record 9006
-            System.out.println("   !!! Simulating error during batch processing...");
-            throw new RuntimeException("Simulated batch processing error");
-            
-        } catch (Exception e) {
-            tx.rollback();
-            System.out.println("   <<< Error detected, transaction rolled back: " + e.getMessage());
+        } catch (Throwable e) {
+            System.out.println("   <<< Error detected, transaction automatically rolled back: " + e.getMessage());
         }
         
         // Verify that no partial updates were committed

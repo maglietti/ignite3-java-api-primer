@@ -135,7 +135,8 @@ In a distributed environment, your data may be spread across multiple cluster no
 public class DistributedAtomicity {
     
     public void demonstrateDistributedAtomicity(IgniteClient client) {
-        try (Transaction tx = client.transactions().begin()) {
+        // Note: Transaction is not AutoCloseable, use runInTransaction() instead
+        client.transactions().runInTransaction((Consumer<Transaction>) tx -> {
             RecordView<Customer> customers = client.tables().table("Customer").recordView(Customer.class);
             RecordView<Invoice> invoices = client.tables().table("Invoice").recordView(Invoice.class);
             RecordView<InvoiceLine> invoiceLines = client.tables().table("InvoiceLine").recordView(InvoiceLine.class);
@@ -156,11 +157,8 @@ public class DistributedAtomicity {
             invoiceLines.upsert(tx, line2);  // May execute on Node 2 (colocated with invoice)
             
             // All nodes coordinate to ensure atomic commit
-            tx.commit();
-            
-        } catch (Exception e) {
-            System.err.println("Distributed transaction failed: " + e.getMessage());
-        }
+            // runInTransaction automatically commits on successful completion
+        });
     }
 }
 ```
@@ -215,6 +213,8 @@ public class ConsistencyExample {
 
 Ignite 3 supports two transaction types that balance consistency with performance:
 
+> **Important Note**: The `Transaction` interface is **not AutoCloseable**. Always use `client.transactions().runInTransaction()` for automatic lifecycle management, or manage explicit transactions carefully with try/catch/finally blocks.
+
 ```java
 public class TransactionTypes {
     
@@ -224,18 +224,20 @@ public class TransactionTypes {
             .readOnly(false)  // Default: allows modifications
             .timeoutMillis(30000);
         
-        try (Transaction tx = client.transactions().begin(options)) {
-            RecordView<Track> tracks = client.tables().table("Track").recordView(Track.class);
-            
-            // Read-Write: can modify data within transaction
-            Track track = tracks.get(tx, createTrackKey(1));
-            
-            if (track != null) {
-                track.setUnitPrice(track.getUnitPrice().add(new BigDecimal("0.10")));
-                tracks.upsert(tx, track);
-            }
-            
-            tx.commit();
+        try {
+            client.transactions().runInTransaction(options, tx -> {
+                RecordView<Track> tracks = client.tables().table("Track").recordView(Track.class);
+                
+                // Read-Write: can modify data within transaction
+                Track track = tracks.get(tx, createTrackKey(1));
+                
+                if (track != null) {
+                    track.setUnitPrice(track.getUnitPrice().add(new BigDecimal("0.10")));
+                    tracks.upsert(tx, track);
+                }
+                
+                return null;  // Transaction commits automatically
+            });
             
         } catch (Exception e) {
             System.err.println("Read-Write transaction failed: " + e.getMessage());
@@ -248,29 +250,35 @@ public class TransactionTypes {
             .readOnly(true)   // Read-only: snapshot consistency
             .timeoutMillis(30000);
         
-        try (Transaction tx = client.transactions().begin(options)) {
-            IgniteSql sql = client.sql();
-            
-            // Read-Only: provides consistent snapshot view
-            ResultSet<SqlRow> firstRead = sql.execute(tx,
-                "SELECT COUNT(*) as TrackCount FROM Track WHERE UnitPrice > ?", 
-                new BigDecimal("1.00"));
-            
-            long initialCount = firstRead.next().longValue("TrackCount");
-            
-            // Simulate some work...
-            Thread.sleep(1000);
-            
-            // Second read sees same snapshot data throughout transaction
-            ResultSet<SqlRow> secondRead = sql.execute(tx,
-                "SELECT COUNT(*) as TrackCount FROM Track WHERE UnitPrice > ?", 
-                new BigDecimal("1.00"));
-            
-            long finalCount = secondRead.next().longValue("TrackCount");
-            
-            assert initialCount == finalCount : "Snapshot consistency maintained";
-            
-            tx.commit();  // Read-only transactions still need explicit commit
+        try {
+            client.transactions().runInTransaction(options, tx -> {
+                IgniteSql sql = client.sql();
+                
+                // Read-Only: provides consistent snapshot view
+                ResultSet<SqlRow> firstRead = sql.execute(tx,
+                    "SELECT COUNT(*) as TrackCount FROM Track WHERE UnitPrice > ?", 
+                    new BigDecimal("1.00"));
+                
+                long initialCount = firstRead.next().longValue("TrackCount");
+                
+                try {
+                    // Simulate some work...
+                    Thread.sleep(1000);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                }
+                
+                // Second read sees same snapshot data throughout transaction
+                ResultSet<SqlRow> secondRead = sql.execute(tx,
+                    "SELECT COUNT(*) as TrackCount FROM Track WHERE UnitPrice > ?", 
+                    new BigDecimal("1.00"));
+                
+                long finalCount = secondRead.next().longValue("TrackCount");
+                
+                assert initialCount == finalCount : "Snapshot consistency maintained";
+                
+                return null;  // Transaction commits automatically
+            });
             
         } catch (Exception e) {
             System.err.println("Read-Only transaction failed: " + e.getMessage());
@@ -314,67 +322,83 @@ public class DurabilityExample {
 }
 ```
 
-## Explicit Transaction Management
+## Functional Transaction Management (Recommended)
 
-### Basic Patterns
+### The runInTransaction Pattern
 
-Explicit transaction management gives you complete control over the transaction lifecycle:
+Most applications benefit from automatic transaction management. The `runInTransaction()` method handles commit/rollback based on your code's success or failure:
 
 ```java
-public class ExplicitTransactionManagement {
+import java.util.function.Consumer;
+
+/**
+ * Demonstrates automatic transaction management using runInTransaction().
+ * This pattern is recommended for most use cases as it handles lifecycle
+ * management and provides cleaner code structure.
+ */
+public class FunctionalTransactions {
     
-    public void basicExplicitPattern(IgniteClient client) {
-        Transaction tx = null;
+    public void createArtistAndAlbum(IgniteClient client) {
         try {
-            // 1. Begin transaction
-            tx = client.transactions().begin();
+            // Use Consumer<Transaction> for void operations (no return value)
+            client.transactions().runInTransaction((Consumer<Transaction>) tx -> {
+                RecordView<Artist> artistTable = client.tables().table("Artist").recordView(Artist.class);
+                RecordView<Album> albumTable = client.tables().table("Album").recordView(Album.class);
+                
+                // Create artist
+                Artist artist = new Artist(1001, "Radiohead");
+                artistTable.upsert(tx, artist);
+                
+                // Create album  
+                Album album = new Album(2001, 1001, "OK Computer");
+                albumTable.upsert(tx, album);
+                
+                // Transaction commits automatically if no exception is thrown
+            });
             
-            // 2. Perform operations
-            performBusinessOperations(client, tx);
-            
-            // 3. Commit if all operations succeed
-            tx.commit();
             System.out.println("✓ Transaction completed successfully");
             
         } catch (Throwable e) {
-            System.err.println("✗ Transaction failed: " + e.getMessage());
-            
-            // 4. Rollback on any error
-            if (tx != null) {
-                try {
-                    tx.rollback();
-                } catch (Throwable rollbackError) {
-                    System.err.println("✗ Rollback failed: " + rollbackError.getMessage());
-                }
-            }
+            System.err.println("✗ Transaction failed and was rolled back: " + e.getMessage());
         }
     }
     
-    public void tryWithResourcesPattern(IgniteClient client) {
-        // Preferred pattern: automatic cleanup with try-with-resources
-        try (Transaction tx = client.transactions().begin()) {
-            performBusinessOperations(client, tx);
-            tx.commit();
-            System.out.println("✓ Transaction completed successfully");
+    public Integer processPurchaseWithReturn(IgniteClient client, Integer customerId) {
+        // Use Function<Transaction, T> for operations that return values
+        return client.transactions().runInTransaction(tx -> {
+            RecordView<Customer> customers = client.tables().table("Customer").recordView(Customer.class);
+            IgniteSql sql = client.sql();
             
-        } catch (Exception e) {
-            System.err.println("✗ Transaction failed: " + e.getMessage());
-            // Transaction automatically rolled back when closed
-        }
-    }
-    
-    private void performBusinessOperations(IgniteClient client, Transaction tx) {
-        RecordView<Customer> customers = client.tables().table("Customer").recordView(Customer.class);
-        IgniteSql sql = client.sql();
-        
-        // Mix Table API and SQL operations in same transaction
-        Customer customer = new Customer(100, "Jane", "Smith", "jane@example.com");
-        customers.upsert(tx, customer);
-        
-        sql.execute(tx, "UPDATE Customer SET Country = ? WHERE CustomerId = ?", "USA", 100);
+            // Mix Table API and SQL operations in same transaction
+            Customer customer = new Customer(customerId, "Jane", "Smith", "jane@example.com");
+            customers.upsert(tx, customer);
+            
+            sql.execute(tx, "UPDATE Customer SET Country = ? WHERE CustomerId = ?", "USA", customerId);
+            
+            return customerId;  // Return value from transaction
+        });
     }
 }
 ```
+
+**Key advantages of `runInTransaction()`:**
+
+- **Automatic lifecycle**: No need to manually call commit/rollback
+- **Exception safety**: Rollback happens automatically on uncaught exceptions  
+- **Cleaner code**: Focus on business logic, not transaction plumbing
+- **Return values**: Can return computed results from the transaction
+- **Less error-prone**: Eliminates common mistakes like forgetting to rollback
+
+> **Lambda Type Resolution**: Due to method overloading, void operations require explicit casting to `(Consumer<Transaction>)` while operations returning values use `Function<Transaction, T>` automatically.
+
+### When to Use Functional Transactions
+
+The `runInTransaction()` pattern is recommended for:
+
+- **Most business operations**: Standard CRUD workflows
+- **Multi-table operations**: Complex business logic requiring consistency
+- **Error-prone scenarios**: Operations that might throw exceptions
+- **Team development**: Reduces transaction management mistakes
 
 ### Advanced Error Handling
 
