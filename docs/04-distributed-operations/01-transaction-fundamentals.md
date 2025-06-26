@@ -167,7 +167,7 @@ public class DistributedAtomicity {
 
 #### Consistency Guarantees
 
-Ignite 3 maintains both **local consistency** (within each node) and **global consistency** (across the distributed system):
+Ignite 3 maintains **strong consistency** across all data throughout the distributed system:
 
 ```java
 public class ConsistencyExample {
