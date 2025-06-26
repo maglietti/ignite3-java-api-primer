@@ -115,7 +115,7 @@ public class BasicTransactions {
                 System.out.println("    <<< Verified: " + result.stringValue("Name"));
             }
             
-        } catch (Exception e) {
+        } catch (Throwable e) {
             tx.rollback();
             logger.error("Transaction failed, rolled back", e);
             throw e;
@@ -139,7 +139,7 @@ public class BasicTransactions {
             System.out.println("    >>> Simulating error condition...");
             throw new RuntimeException("Simulated business logic error");
             
-        } catch (Exception e) {
+        } catch (Throwable e) {
             // Rollback on any error
             tx.rollback();
             System.out.println("    <<< Transaction rolled back due to error");

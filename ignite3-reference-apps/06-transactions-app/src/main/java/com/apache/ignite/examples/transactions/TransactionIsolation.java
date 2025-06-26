@@ -120,7 +120,7 @@ public class TransactionIsolation {
             // The transaction sees consistent data throughout its lifetime
             tx1.commit();
             System.out.println("    <<< Transaction maintained read consistency");
-        } catch (Exception e) {
+        } catch (Throwable e) {
             tx1.rollback();
             throw e;
         }
@@ -153,7 +153,7 @@ public class TransactionIsolation {
             artists.upsert(tx1, updated1);
             tx1.commit();
             System.out.println("    <<< Transaction 1 committed successfully");
-        } catch (Exception e) {
+        } catch (Throwable e) {
             tx1.rollback();
             logger.warn("Transaction 1 conflict detected", e);
             System.out.println("    !!! Transaction 1 detected conflict: " + e.getMessage());
@@ -169,7 +169,7 @@ public class TransactionIsolation {
             artists.upsert(tx2, updated2);
             tx2.commit();
             System.out.println("    <<< Transaction 2 committed successfully");
-        } catch (Exception e) {
+        } catch (Throwable e) {
             tx2.rollback();
             logger.warn("Transaction 2 conflict detected", e);
             System.out.println("    !!! Transaction 2 detected conflict: " + e.getMessage());

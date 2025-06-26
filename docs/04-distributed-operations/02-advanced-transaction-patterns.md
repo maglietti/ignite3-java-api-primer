@@ -22,8 +22,8 @@ Most applications benefit from automatic transaction management. The `runInTrans
 public class AutomaticTransactions {
     
     public void createArtistAndAlbum(IgniteClient client) {
-        boolean success = client.transactions().runInTransaction(tx -> {
-            try {
+        try {
+            client.transactions().runInTransaction(tx -> {
                 RecordView<Artist> artistTable = client.tables().table("Artist").recordView(Artist.class);
                 RecordView<Album> albumTable = client.tables().table("Album").recordView(Album.class);
                 
@@ -35,20 +35,14 @@ public class AutomaticTransactions {
                 Album album = new Album(2001, 1001, "OK Computer");
                 albumTable.upsert(tx, album);
                 
-                // Return true to commit
-                return true;
-                
-            } catch (Exception e) {
-                System.err.println("Error in transaction: " + e.getMessage());
-                // Return false to rollback
-                return false;
-            }
-        });
-        
-        if (success) {
+                // Transaction commits automatically if no exception is thrown
+                return null;
+            });
+            
             System.out.println("✓ Transaction completed successfully");
-        } else {
-            System.out.println("✗ Transaction was rolled back");
+            
+        } catch (Exception e) {
+            System.err.println("✗ Transaction failed and was rolled back: " + e.getMessage());
         }
     }
 }

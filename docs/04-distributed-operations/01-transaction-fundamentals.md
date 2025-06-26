@@ -336,14 +336,14 @@ public class ExplicitTransactionManagement {
             tx.commit();
             System.out.println("✓ Transaction completed successfully");
             
-        } catch (Exception e) {
+        } catch (Throwable e) {
             System.err.println("✗ Transaction failed: " + e.getMessage());
             
             // 4. Rollback on any error
             if (tx != null) {
                 try {
                     tx.rollback();
-                } catch (Exception rollbackError) {
+                } catch (Throwable rollbackError) {
                     System.err.println("✗ Rollback failed: " + rollbackError.getMessage());
                 }
             }
