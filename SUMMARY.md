@@ -33,8 +33,8 @@
 ## Appendices
 
 * [Reference Architecture](docs/00-reference/README.md)
-    * [Ignite 3 Architecture](docs/00-reference/IGNITE3-ARCH.md)
-    * [Java API Architecture](docs/00-reference/JAVA-API-ARCH.md)
-    * [SQL Engine Architecture](docs/00-reference/SQL-ENGINE-ARCH.md)
-    * [Storage System Architecture](docs/00-reference/STORAGE-SYSTEM-ARCH.md)
-    * [Technical Features](docs/00-reference/TECHNICAL_FEATURES.md)
+    * [Ignite 3 Architecture](docs/00-reference/ignite3-arch.md)
+    * [Java API Architecture](docs/00-reference/java-api-arch.md)
+    * [SQL Engine Architecture](docs/00-reference/sql-engine-arch.md)
+    * [Storage System Architecture](docs/00-reference/storage-system-arch.md)
+    * [Technical Features](docs/00-reference/technical-features.md)

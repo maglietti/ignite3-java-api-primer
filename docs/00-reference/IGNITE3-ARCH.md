@@ -341,7 +341,7 @@ The Data Layer manages schema metadata through the catalog manager, maintains in
 
 The Storage Layer implements MVCC for transaction isolation and provides pluggable storage engines. Available engines include RocksDB for persistent storage, aipersist for production persistence, and aimem (default) for high-performance operations. Garbage collection maintains system performance by cleaning obsolete data versions.
 
-> **Storage Details**: For complete information on storage engines, partitioning algorithms, and physical storage layout, see [Storage System Architecture](./STORAGE-SYSTEM-ARCH.md).
+> **Storage Details**: For complete information on storage engines, partitioning algorithms, and physical storage layout, see [Storage System Architecture](./storage-system-arch.md).
 
 The Consensus Layer maintains cluster coordination through Raft protocols, while the Infrastructure Layer provides networking, configuration, and lifecycle management. The Lifecycle Manager coordinates startup and shutdown sequences across all components.
 
@@ -766,7 +766,7 @@ graph TB
 
 This distributed query execution diagram illustrates how Apache Ignite 3 breaks complex queries into fragments that execute across multiple cluster nodes. The Query Coordinator manages the overall execution from a single node, while the Root Fragment coordinates the final result aggregation. Intermediate Fragments on Node 1 and Node 2 perform operations like joins, grouping, or filtering on data from their local Leaf Fragments. Leaf Fragments execute on nodes containing the relevant data partitions, performing table scans and applying predicates. The dotted lines represent data exchange between fragments, with Leaf Fragments sending filtered data to their local Intermediate Fragments, which then aggregate and forward results to the Root Fragment. This architecture minimizes data movement while enabling parallel processing across the cluster.
 
-> **SQL Processing Details**: For complete information on Apache Calcite integration, query optimization, and SQL capabilities, see [SQL Engine Architecture](./SQL-ENGINE-ARCH.md).
+> **SQL Processing Details**: For complete information on Apache Calcite integration, query optimization, and SQL capabilities, see [SQL Engine Architecture](./sql-engine-arch.md).
 
 ## Distributed System Patterns
 

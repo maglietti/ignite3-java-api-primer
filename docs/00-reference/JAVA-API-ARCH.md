@@ -4,7 +4,7 @@
 
 This document examines the Apache Ignite 3 Java API architecture, organizing components into logical layers and documenting their relationships and interaction patterns.
 
-> **Related Architecture**: For distributed system concepts and node architecture, see [Ignite 3 Architecture](./IGNITE3-ARCH.md). For storage implementation details, see [Storage System Architecture](./STORAGE-SYSTEM-ARCH.md).
+> **Related Architecture**: For distributed system concepts and node architecture, see [Ignite 3 Architecture](./ignite3-arch.md). For storage implementation details, see [Storage System Architecture](./storage-system-arch.md).
 
 ## Architecture Layers
 

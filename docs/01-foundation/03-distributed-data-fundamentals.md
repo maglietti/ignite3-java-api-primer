@@ -28,7 +28,7 @@ This worked perfectly for learning the basics. Now you're ready to understand wh
 > [!NOTE]
 > **Distribution Zones**: Think of zones as policies that control where your data lives, how many copies exist, and how it spreads across nodes. They're the foundation of Ignite 3's data placement and performance optimization strategies.
 >
-> For complete architectural details, see [Storage System Architecture](../00-reference/STORAGE-SYSTEM-ARCH.md).
+> For complete architectural details, see [Storage System Architecture](../00-reference/storage-system-arch.md).
 
 ### What Are Distribution Zones?
 
@@ -65,7 +65,7 @@ Each zone controls:
 - **How data spreads** (partition count and Rendezvous distribution)
 - **Storage characteristics** (engine choice: aimem, aipersist, or rocksdb)
 
-> **Deep dive**: See [Storage System Architecture](../00-reference/STORAGE-SYSTEM-ARCH.md) for complete details on partitioning algorithms, storage engines, and data placement strategies.
+> **Deep dive**: See [Storage System Architecture](../00-reference/storage-system-arch.md) for complete details on partitioning algorithms, storage engines, and data placement strategies.
 
 ### Zone Configuration in Action
 
@@ -201,7 +201,7 @@ while (result.hasNext()) {
 
 > **Important**: Ignite 3 normalizes all SQL metadata (table names, column names) to uppercase. When accessing columns via `SqlRow`, always use uppercase names regardless of how they're defined in your schema or query aliases.
 >
-> For complete details on SQL processing, query optimization, and Apache Calcite integration, see [SQL Engine Architecture](../00-reference/SQL-ENGINE-ARCH.md).
+> For complete details on SQL processing, query optimization, and Apache Calcite integration, see [SQL Engine Architecture](../00-reference/sql-engine-arch.md).
 
 **Batch Operations**: Multi-record operations on colocated data are efficient:
 
@@ -289,7 +289,7 @@ public class VersionedRecord {
 - **Linearizability**: Writes appear to happen atomically
 - **Read-your-writes**: Sessions see their own writes immediately
 
-> **Deep Dive**: See [Storage System Architecture](../00-reference/STORAGE-SYSTEM-ARCH.md#multi-version-concurrency-control-mvcc) for complete MVCC implementation details.
+> **Deep Dive**: See [Storage System Architecture](../00-reference/storage-system-arch.md#multi-version-concurrency-control-mvcc) for complete MVCC implementation details.
 
 ## Practical Zone Design Patterns
 

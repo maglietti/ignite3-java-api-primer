@@ -326,7 +326,7 @@ public class Artist {
 
 **Production consideration:** The default zone provides no fault tolerance. If a node fails, you lose data. For production workloads, you'll want custom zones with multiple replicas.
 
-> **Need production-grade storage?** See [Storage System Architecture](../00-reference/STORAGE-SYSTEM-ARCH.md) for complete details on custom zones, partitioning strategies, and fault-tolerant configurations.
+> **Need production-grade storage?** See [Storage System Architecture](../00-reference/storage-system-arch.md) for complete details on custom zones, partitioning strategies, and fault-tolerant configurations.
 
 ## Connection Patterns: Single vs Multi-Node
 

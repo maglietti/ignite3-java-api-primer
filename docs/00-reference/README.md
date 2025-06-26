@@ -14,7 +14,7 @@ This module provides the technical foundation for understanding Apache Ignite 3'
 
 ## Module Contents
 
-### [Ignite 3 Architecture](./IGNITE3-ARCH.md)
+### [Ignite 3 Architecture](./ignite3-arch.md)
 
 Core platform architecture and distributed systems concepts that underpin all Ignite 3 operations.
 
@@ -25,7 +25,7 @@ Core platform architecture and distributed systems concepts that underpin all Ig
 - Node coordination and cluster management
 - Performance characteristics
 
-### [Java API Architecture](./JAVA-API-ARCH.md)
+### [Java API Architecture](./java-api-arch.md)
 
 API design patterns and client programming model for Java development.
 
@@ -36,7 +36,7 @@ API design patterns and client programming model for Java development.
 - Resource management strategies
 - Error handling patterns
 
-### [Storage System Architecture](./STORAGE-SYSTEM-ARCH.md)
+### [Storage System Architecture](./storage-system-arch.md)
 
 Distributed storage foundation that powers Apache Ignite 3's data management capabilities.
 
@@ -47,7 +47,7 @@ Distributed storage foundation that powers Apache Ignite 3's data management cap
 - Storage profiles and engine configuration
 - Physical storage implementations and tuning
 
-### [SQL Engine Architecture](./SQL-ENGINE-ARCH.md)
+### [SQL Engine Architecture](./sql-engine-arch.md)
 
 Apache Calcite integration and SQL processing architecture in Ignite 3.
 
@@ -58,7 +58,7 @@ Apache Calcite integration and SQL processing architecture in Ignite 3.
 - SQL standard compliance and advanced features
 - Performance considerations and troubleshooting techniques
 
-### [Technical Features](./TECHNICAL_FEATURES.md)
+### [Technical Features](./technical-features.md)
 
 Feature matrix and capability overview for understanding what's possible with Ignite 3.
 
@@ -92,5 +92,5 @@ This module provides context for the practical patterns you'll implement in modu
 **Next Steps:**
 
 - **Ready to start hands-on learning?** → [**Module 01: Foundation**](../01-foundation/)
-- **Want to understand fundamentals first?** → [**Ignite 3 Architecture**](./IGNITE3-ARCH.md)
-- **Curious about API design?** → [**Java API Architecture**](./JAVA-API-ARCH.md)
+- **Want to understand fundamentals first?** → [**Ignite 3 Architecture**](./ignite3-arch.md)
+- **Curious about API design?** → [**Java API Architecture**](./java-api-arch.md)

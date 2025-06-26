@@ -8,9 +8,9 @@ This directory contains the structured learning modules for mastering Apache Ign
 
 Technical architecture and API design patterns that guide the entire learning journey.
 
-- [Ignite 3 Architecture](./00-reference/IGNITE3-ARCH.md) - Platform architecture and distributed systems concepts
-- [Java API Architecture](./00-reference/JAVA-API-ARCH.md) - API design patterns and client programming model
-- [Technical Features](./00-reference/TECHNICAL_FEATURES.md) - Feature matrix and capability overview
+- [Ignite 3 Architecture](./00-reference/ignite3-arch.md) - Platform architecture and distributed systems concepts
+- [Java API Architecture](./00-reference/java-api-arch.md) - API design patterns and client programming model
+- [Technical Features](./00-reference/technical-features.md) - Feature matrix and capability overview
 
 ### [01 - Foundation](./01-foundation/)
 

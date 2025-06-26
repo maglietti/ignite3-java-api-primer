@@ -4,7 +4,7 @@
 
 Apache Ignite 3 implements a distributed database platform for high-performance computing applications. The system provides modular architecture with pluggable storage engines, distributed SQL processing, and multi-platform client support.
 
-> **Architecture Context**: For system architecture details, see [Ignite 3 Architecture](./IGNITE3-ARCH.md). For Java API specifics, see [Java API Architecture](./JAVA-API-ARCH.md). For SQL implementation details, see [SQL Engine Architecture](./SQL-ENGINE-ARCH.md).
+> **Architecture Context**: For system architecture details, see [Ignite 3 Architecture](./ignite3-arch.md). For Java API specifics, see [Java API Architecture](./java-api-arch.md). For SQL implementation details, see [SQL Engine Architecture](./sql-engine-arch.md).
 
 ## Architecture Overview
 
