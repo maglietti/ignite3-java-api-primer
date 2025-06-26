@@ -1,155 +1,49 @@
 # Apache Ignite 3 Java API Primer
 
-This collection contains the structured learning modules for mastering Apache Ignite 3's Java API. Each module builds upon previous concepts while demonstrating practical patterns through working reference applications.
+Modern applications demand more than traditional databases can deliver. When data grows beyond single-node capacity, when millisecond response times matter at scale, and when application logic needs to execute close to data, you need a distributed data platform built for performance.
 
-## Module Structure
+Apache Ignite 3 delivers that platform. This primer teaches you how to harness its Java API to build applications that scale horizontally while maintaining ACID transactions, execute distributed computing workloads, and achieve performance that traditional architectures cannot match.
 
-### [00 - Reference](./00-reference/)
+## Why This Primer Exists
 
-Technical architecture and API design patterns that guide the entire learning journey.
+Learning distributed data platforms requires connecting concepts to working code. Academic explanations of distributed systems rarely translate to production applications. Random code samples lack context for real-world usage patterns.
 
-- [Ignite 3 Architecture](./00-reference/ignite3-arch.md) - Platform architecture and distributed systems concepts
-- [Java API Architecture](./00-reference/java-api-arch.md) - API design patterns and client programming model
-- [Technical Features](./00-reference/technical-features.md) - Feature matrix and capability overview
+This primer bridges that gap through structured learning modules that build systematically from connection fundamentals to production-ready patterns. Each concept connects to executable reference applications using a consistent dataset, letting you focus on mastering Ignite 3 rather than context switching between different examples.
 
-### [01 - Foundation](./01-foundation/)
+## What You'll Master
 
-Essential concepts for building distributed applications with Ignite 3.
+**Foundation**: Connect to Ignite 3 clusters, understand distributed data principles, and perform basic operations that form the building blocks for everything else.
 
-- [Introduction and Architecture](./01-foundation/01-introduction-and-architecture.md) - Platform overview and core concepts
-- [Getting Started](./01-foundation/02-getting-started.md) - First connection and basic operations
-- [Distributed Data Fundamentals](./01-foundation/03-distributed-data-fundamentals.md) - Data distribution and consistency patterns
+**Schema Design**: Model data relationships using annotations that optimize for distributed performance. Learn colocation strategies that make complex queries fast and implement schema evolution patterns for production deployment.
 
-### [02 - Schema Design](./02-schema-design/)
+**Data Access**: Choose between Table API and SQL API based on your use case. Handle both synchronous and asynchronous operations efficiently. Execute analytical queries that leverage Ignite 3's distributed architecture.
 
-Schema-as-code patterns for distributed data modeling.
+**Distributed Operations**: Manage ACID transactions across multiple nodes. Implement distributed computing patterns that bring processing to data. Handle complex workflows with proper error recovery.
 
-- [Basic Annotations](./02-schema-design/01-basic-annotations.md) - Core annotations for table creation
-- [Relationships and Colocation](./02-schema-design/02-relationships-and-colocation.md) - Entity relationships and performance optimization
-- [Advanced Annotations](./02-schema-design/03-advanced-annotations.md) - Complex patterns and multi-zone architectures
-- [Schema Evolution](./02-schema-design/04-schema-evolution.md) - DDL generation and production deployment patterns
+**Performance & Scalability**: Optimize data ingestion for high-throughput scenarios. Implement caching strategies that improve application responsiveness. Monitor and tune query performance for production workloads.
 
-### [03 - Data Access APIs](./03-data-access-apis/)
+## Learning Approach
 
-Object-oriented and relational data access patterns.
+This primer uses progressive complexity within a consistent context. Instead of jumping between disconnected examples, you'll work with a music streaming platform dataset throughout all modules. Artist, Album, and Track entities demonstrate real-world relationships while Customer and Invoice workflows show business logic patterns.
 
-- [Table API Operations](./03-data-access-apis/01-table-api-operations.md) - Type-safe record and key-value operations
-- [SQL API Analytics](./03-data-access-apis/02-sql-api-analytics.md) - Complex queries and analytical workloads
-- [SQL API Selection Guide](./03-data-access-apis/03-sql-api-selection-guide.md) - Choosing optimal API patterns for different use cases
+This approach reduces cognitive load while demonstrating how distributed data patterns apply to production applications. You'll understand not just how to use Ignite 3's APIs, but why specific patterns matter for distributed systems.
 
-### [04 - Distributed Operations](./04-distributed-operations/)
+## Prerequisites
 
-Transaction management and distributed computing patterns.
+You need Java 17+ and basic programming experience. Database knowledge helps but isn't required. Understanding distributed systems concepts benefits your learning but isn't essential - the modules introduce these concepts through practical examples.
 
-- [Transaction Fundamentals](./04-distributed-operations/01-transaction-fundamentals.md) - ACID properties and isolation levels
-- [Advanced Transaction Patterns](./04-distributed-operations/02-advanced-transaction-patterns.md) - Complex workflows and error handling
-- [Compute API Processing](./04-distributed-operations/03-compute-api-processing.md) - Distributed job execution and MapReduce patterns
+Docker is required for running Ignite 3 clusters locally, but no prior Docker expertise is needed.
 
-### [05 - Performance and Scalability](./05-performance-scalability/)
+## Starting Your Journey
 
-High-performance patterns for production applications.
+**New to Ignite 3?** Begin with [**Foundation**](./01-foundation/) to establish core concepts through hands-on exercises.
 
-- [Data Streaming](./05-performance-scalability/01-data-streaming.md) - High-throughput data ingestion patterns
-- [Caching Strategies](./05-performance-scalability/02-caching-strategies.md) - Performance optimization through caching
-- [Query Performance](./05-performance-scalability/03-query-performance.md) - Query optimization and monitoring
+**Need architectural context first?** Start with [**Reference Materials**](./00-reference/) to understand platform design before diving into practical implementation.
 
-## Learning Orchestration
+**Working on specific requirements?** Jump directly to the module that matches your current needs, though foundation concepts will help prevent confusion later.
 
-### Self-Paced Learning Framework
+Each module builds on previous concepts while remaining focused on specific learning objectives. Reference applications provide working code that demonstrates the concepts in action.
 
-**Start Here**: [**Module 01: Foundation**](./01-foundation/01-introduction-and-architecture.md)
+---
 
-This primer uses a progressive learning model where each module builds on previous concepts:
-
-**Foundation → Schema → APIs → Operations → Performance**
-
-### Learning Checkpoints
-
-After completing each module, verify your understanding before progressing:
-
-#### Module 01 Complete
-
-When you can:
-
-- Connect to an Ignite 3 cluster
-- Understand distributed data fundamentals  
-- Run basic operations
-
-#### Ready for Module 02: Schema Design
-
-#### Module 02 Complete
-
-When you can:
-
-- Design schema using annotations
-- Implement colocation strategies
-- Deploy schemas programmatically
-
-#### Ready for Module 03: Data Access APIs
-
-#### Module 03 Complete
-
-When you can:
-
-- Choose optimal API patterns
-- Execute efficient queries
-- Handle asynchronous operations
-
-#### Ready for Module 04: Distributed Operations
-
-#### Module 04 Complete
-
-When you can:
-
-- Manage ACID transactions
-- Handle distributed computing workloads
-- Implement error recovery patterns
-
-#### Ready for Module 05: Performance & Scalability
-
-#### Module 05 Complete
-
-When you can:
-
-- Optimize data ingestion performance
-- Implement caching strategies
-- Monitor and tune query performance
-
-### Alternative Learning Paths
-
-**Quick Start**: Need immediate results?
-
-- **I need to connect and store data** → [Module 01](./01-foundation/)
-- **I'm building data models** → [Module 02](./02-schema-design/)  
-- **I need queries** → [Module 03](./03-data-access-apis/)
-- **I need transaction handling** → [Module 04](./04-distributed-operations/)
-- **I need performance tuning** → [Module 05](./05-performance-scalability/)
-
-**Reference Study**: Understanding architecture first?
-
-- Start with [Module 00: Reference](./00-reference/) for architectural context
-- Then follow the standard progression from Module 01
-
-## Reference Applications
-
-Each module connects to working reference applications in [`../ignite3-reference-apps/`](../ignite3-reference-apps/) that demonstrate the concepts through executable code using a consistent music store dataset.
-
-## Technical Standards
-
-All modules follow established patterns:
-
-- **Progressive Complexity**: Simple concepts build to advanced patterns
-- **Real-World Context**: Music streaming platform scenarios throughout
-- **Production Readiness**: Proper error handling, resource management, and best practices
-- **API Focus**: Emphasis on Java API mastery rather than operational concerns
-
-## Dataset Consistency
-
-Examples use a unified music store dataset:
-
-- **Core Entities**: Artist → Album → Track (hierarchical relationships)
-- **Business Entities**: Customer → Invoice workflows
-- **Reference Data**: Genre, MediaType tables
-- **Colocation Strategy**: Related data distributed for performance
-
-This consistent dataset reduces cognitive load and demonstrates distributed application patterns.
+**Ready to begin?** [**Start with Foundation**](./01-foundation/01-introduction-and-architecture.md)
