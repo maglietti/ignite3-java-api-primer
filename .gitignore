@@ -89,3 +89,4 @@ config.local.*
 # Output files
 *.html
 *.pdf
+mermaid-images/

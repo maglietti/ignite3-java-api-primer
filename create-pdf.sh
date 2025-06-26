@@ -17,12 +17,12 @@ OUTPUT_PDF="../ignite3-java-api-primer.pdf"
 echo "--- Assembling markdown files..."
 
 # Start with title page and main README
-cat > "$TEMP_FILE" << 'EOF'
+cat > "$TEMP_FILE" << EOF
 ---
 title: "Apache Ignite 3 Java API Primer"
-subtitle: "A Comprehensive Guide to Distributed Data Programming"
+subtitle: "Practical Patterns for Distributed Data Programming"
 author: "Apache Ignite Community"
-date: "`date +%Y-%m-%d`"
+date: "$(date +%Y-%m-%d)"
 geometry: margin=1in
 fontsize: 11pt
 mainfont: "Times New Roman"
@@ -33,9 +33,9 @@ urlcolor: blue
 toccolor: black
 ---
 
-\newpage
-\tableofcontents
-\newpage
+\\newpage
+\\tableofcontents
+\\newpage
 
 EOF
 
@@ -44,19 +44,7 @@ echo ">>> Adding main documentation overview..."
 cat README.md >> "$TEMP_FILE"
 echo -e "\n\n\\newpage\n" >> "$TEMP_FILE"
 
-# Module 00 - Reference (Architecture overview first)
-echo ">>> Adding Module 00: Reference..."
-echo -e "# Module 00: Reference Architecture\n" >> "$TEMP_FILE"
-cat 00-reference/README.md >> "$TEMP_FILE"
-echo -e "\n\n" >> "$TEMP_FILE"
-
-for file in 00-reference/IGNITE3-ARCH.md 00-reference/JAVA-API-ARCH.md 00-reference/SQL-ENGINE-ARCH.md 00-reference/STORAGE-SYSTEM-ARCH.md 00-reference/TECHNICAL_FEATURES.md; do
-    if [ -f "$file" ]; then
-        echo ">>> Adding $file..."
-        cat "$file" >> "$TEMP_FILE"
-        echo -e "\n\n\\newpage\n" >> "$TEMP_FILE"
-    fi
-done
+# Start with learning modules as main content
 
 # Module 01 - Foundation
 echo ">>> Adding Module 01: Foundation..."
@@ -128,7 +116,86 @@ for file in 05-performance-scalability/01-data-streaming.md 05-performance-scala
     fi
 done
 
+# Appendix - Reference Documentation
+echo ">>> Adding Reference Documentation as Appendix..."
+echo -e "\\appendix\n" >> "$TEMP_FILE"
+echo -e "# Reference Architecture\n" >> "$TEMP_FILE"
+cat 00-reference/README.md >> "$TEMP_FILE"
+echo -e "\n\n" >> "$TEMP_FILE"
+
+for file in 00-reference/IGNITE3-ARCH.md 00-reference/JAVA-API-ARCH.md 00-reference/SQL-ENGINE-ARCH.md 00-reference/STORAGE-SYSTEM-ARCH.md 00-reference/TECHNICAL_FEATURES.md; do
+    if [ -f "$file" ]; then
+        echo ">>> Adding $file..."
+        cat "$file" >> "$TEMP_FILE"
+        echo -e "\n\n\\newpage\n" >> "$TEMP_FILE"
+    fi
+done
+
 echo "--- Generating PDF with Pandoc..."
+
+# Remove emojis and style violations to comply with writing guidelines
+echo ">>> Filtering emojis and style violations..."
+sed -i '' -E 's/[✅❌⚠️✓✗📝🎵💰📊📈🎭🚀🎉]/[X]/g' "$TEMP_FILE"
+sed -i '' -E 's/comprehensive/practical/gi' "$TEMP_FILE"
+sed -i '' -E 's/simplified/streamlined/gi' "$TEMP_FILE"
+
+# Remove any control characters that might cause LaTeX issues
+echo ">>> Cleaning control characters..."
+tr -d '\000-\010\013\014\016-\037' < "$TEMP_FILE" > "$TEMP_FILE.clean"
+mv "$TEMP_FILE.clean" "$TEMP_FILE"
+
+# Convert markdown links to LaTeX cross-references
+echo ">>> Converting internal links..."
+sed -i '' -E 's/\[([^]]+)\]\(\.\/([^)]+)\.md\)/\1 (see Section \\ref{\2})/g' "$TEMP_FILE"
+sed -i '' -E 's/\[([^]]+)\]\(([^)]+)\.md\)/\1 (see Section \\ref{\2})/g' "$TEMP_FILE"
+
+# Process mermaid diagrams if CLI is available
+echo ">>> Checking for mermaid diagram support..."
+if command -v mmdc >/dev/null 2>&1; then
+    echo ">>> Converting mermaid diagrams to images..."
+    
+    # Create temp directory for mermaid images
+    MERMAID_DIR="../mermaid-images"
+    mkdir -p "$MERMAID_DIR"
+    
+    # Extract mermaid blocks and convert to images
+    diagram_count=0
+    temp_output="$TEMP_FILE.mermaid_processed"
+    
+    # Use awk to process mermaid blocks
+    awk '
+    BEGIN { in_mermaid = 0; diagram_count = 0 }
+    /^```mermaid/ {
+        in_mermaid = 1
+        diagram_count++
+        diagram_file = "'$MERMAID_DIR'/diagram_" diagram_count ".mmd"
+        image_file = "'$MERMAID_DIR'/diagram_" diagram_count ".png"
+        system("rm -f " diagram_file)
+        print "![Diagram " diagram_count "](" image_file ")"
+        next
+    }
+    /^```$/ && in_mermaid {
+        in_mermaid = 0
+        # Convert mermaid to PNG using system Chrome
+        cmd = "PUPPETEER_EXECUTABLE_PATH=\"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome\" mmdc -i " diagram_file " -o " image_file " -b white -t neutral 2>/dev/null"
+        if (system(cmd) != 0) {
+            print "    Warning: Failed to convert diagram " diagram_count > "/dev/stderr"
+        }
+        next
+    }
+    in_mermaid {
+        print $0 >> diagram_file
+        next
+    }
+    { print }
+    ' "$TEMP_FILE" > "$temp_output"
+    
+    mv "$temp_output" "$TEMP_FILE"
+    echo "    Converted $diagram_count mermaid diagrams"
+else
+    echo "!!! Mermaid diagrams will appear as code blocks"
+    echo "!!! Install mermaid-cli for diagram rendering: npm install -g @mermaid-js/mermaid-cli"
+fi
 
 # Generate PDF using Pandoc with XeLaTeX
 pandoc "$TEMP_FILE" \
