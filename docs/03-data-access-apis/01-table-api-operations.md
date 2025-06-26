@@ -317,7 +317,7 @@ public class HighPerformanceCache {
         this.artistLookup = artistTable.keyValueView(String.class, Integer.class);
     }
     
-    // Simple cache operations
+    // Simple key-value operations
     public void cacheArtistName(Integer artistId, String name) {
         artistNames.put(null, artistId, name);
     }
@@ -330,7 +330,7 @@ public class HighPerformanceCache {
         artistNames.remove(null, artistId);
     }
     
-    // Bulk cache operations
+    // Bulk key-value operations
     public void loadArtistCache(Map<Integer, String> artistData) {
         artistNames.putAll(null, artistData);
     }

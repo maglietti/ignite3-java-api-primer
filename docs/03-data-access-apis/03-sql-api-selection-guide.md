@@ -22,7 +22,7 @@ Different operations fall into distinct categories based on their complexity and
 
 ```mermaid
 graph TD
-    A["High Performance<br/>Simple Operations"] --> B["KeyValueView<br/>• Single record by key<br/>• Cache-like operations<br/>• High-frequency access"]
+    A["High Performance<br/>Simple Operations"] --> B["KeyValueView<br/>• Single record by key<br/>• Key-value operations<br/>• High-frequency access"]
     
     C["High Performance<br/>Complex Operations"] --> D["SQL API + Colocation<br/>• Joins on colocated data<br/>• Aggregations within partition<br/>• Complex business logic"]
     
@@ -58,7 +58,7 @@ flowchart TD
 
 **Optimal For:**
 
-- Cache operations (session data, user preferences)
+- Key-value operations (session data, user preferences)
 - High-frequency simple lookups
 - Single-field operations
 - Scenarios where object overhead is significant

@@ -228,7 +228,7 @@ graph LR
     subgraph "API Choice"
         TABLE["Table API<br/>Objects & Types"]
         SQL["SQL API<br/>Queries & Analytics"] 
-        KV["Key-Value API<br/>Cache Operations"]
+        KV["Key-Value API<br/>Key-Value Operations"]
     end
     
     subgraph "Same Distributed Data"
@@ -258,7 +258,7 @@ var topTracks = client.sql().execute(null,
     "JOIN InvoiceLine il ON t.TrackId = il.TrackId " + 
     "GROUP BY t.TrackId ORDER BY COUNT(*) DESC LIMIT 10");
 
-// Key-Value API - when you want simple cache-like operations
+// Key-Value API - when you want simple key-value operations
 Tuple trackKey = Tuple.create().set("TrackId", 123);
 Tuple trackData = tracks.get(null, trackKey); // Fast key lookup
 ```

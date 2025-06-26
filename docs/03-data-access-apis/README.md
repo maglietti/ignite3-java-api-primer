@@ -25,7 +25,7 @@ By completing this module, you will:
 
 **What you'll implement:**
 
-- Key-value operations for cache-like performance
+- Key-value operations for high-performance lookups
 - Record operations for full object handling
 - Asynchronous patterns for non-blocking applications
 - Batch operations for high-throughput scenarios
@@ -68,7 +68,7 @@ This module demonstrates data access patterns using the music streaming platform
 
 **Table API examples:**
 
-- High-frequency artist lookups (cache-like operations)
+- High-frequency artist lookups (key-value operations)
 - Customer profile management (object-oriented operations)
 - Session data handling (key-value patterns)
 

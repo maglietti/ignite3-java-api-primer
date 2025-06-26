@@ -19,7 +19,7 @@ Use the Key/Value pattern when you need maximum performance for simple operation
 
 **Perfect for:**
 
-- Cache-like operations (get, put, remove by key)
+- Key-value operations (get, put, remove by key)
 - High-frequency lookups
 - Simple data structures
 - APIs that need sub-millisecond response times
@@ -131,7 +131,7 @@ public class CustomerService {
 - Fastest possible operations
 - Minimal memory usage
 - Optimal for high-frequency simple operations
-- Best for cache-like workloads
+- Best for high-frequency key-value workloads
 
 **Record Advantages:**
 

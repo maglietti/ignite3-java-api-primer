@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * KeyValue Examples - Cache-like operations with Apache Ignite 3.
+ * KeyValue Examples - Key-value operations with Apache Ignite 3.
  * 
  * This class demonstrates key-value access patterns:
  * - Put/get operations
@@ -37,7 +37,7 @@ import java.util.Set;
  * 
  * Learning Focus:
  * - KeyValueView operations
- * - Cache-like usage patterns
+ * - High-performance key-value patterns
  * - Key-based data access
  * - Performance considerations
  */
@@ -50,7 +50,7 @@ public class KeyValueExamples {
         
         System.out.println("=== KeyValue Examples Demo ===");
         System.out.println("Target cluster: " + clusterAddress);
-        System.out.println("Demonstrating cache-like operations with KeyValueView");
+        System.out.println("Demonstrating key-value operations with KeyValueView");
         
         try (IgniteClient client = IgniteClient.builder()
                 .addresses(clusterAddress)
@@ -74,7 +74,7 @@ public class KeyValueExamples {
         // Get a key-value view (Integer key, String value)
         KeyValueView<Integer, String> artistCache = artistTable.keyValueView(Integer.class, String.class);
         
-        System.out.println("\n--- Cache-like Operations ---");
+        System.out.println("\n--- Key-Value Operations ---");
         System.out.println("    Using KeyValueView for high-performance cache patterns");
         
         // Demonstrate basic key-value operations
@@ -88,7 +88,7 @@ public class KeyValueExamples {
 
     private static void demonstrateBasicKeyValue(KeyValueView<Integer, String> artistCache) {
         System.out.println("\n    --- Basic Key-Value Operations");
-        System.out.println("    >>> Storing key-value pairs using cache-like API");
+        System.out.println("    >>> Storing key-value pairs using key-value API");
         
         // PUT: Store key-value pairs
         artistCache.put(null, 5003, "Cache Demo Artist 1");

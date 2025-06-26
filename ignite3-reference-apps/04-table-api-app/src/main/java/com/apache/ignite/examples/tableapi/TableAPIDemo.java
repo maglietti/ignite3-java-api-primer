@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
  * Learning Progression:
  * 1. BasicTableOperations - CRUD operations with Tuples
  * 2. RecordViewExamples - Type-safe POJO operations  
- * 3. KeyValueExamples - Cache-like access patterns
+ * 3. KeyValueExamples - Key-value access patterns
  * 4. AsyncBasicOperations - Asynchronous operation patterns
  * 
  * Each class focuses on demonstrating specific Table API capabilities
