@@ -503,4 +503,3 @@ Understanding these components enables you to:
 - Troubleshoot storage-related issues in production
 
 The storage system's flexibility allows applications to start simple with the default aimem engine and evolve to sophisticated multi-zone architectures with persistent storage as requirements grow.
-

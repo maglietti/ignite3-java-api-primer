@@ -811,4 +811,3 @@ Exception Handlers (.exceptionally(), .handle())
 - **Security**: Authentication and authorization across all access points
 
 This architecture provides a solid foundation for understanding and working with the Apache Ignite 3 Java API ecosystem.
-

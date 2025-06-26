@@ -485,4 +485,3 @@ Understanding this architecture helps you:
 - Make informed decisions about data modeling and partitioning
 
 The deep integration between Calcite and Ignite's distributed storage enables SQL processing that scales horizontally while maintaining ACID properties and consistent performance.
-

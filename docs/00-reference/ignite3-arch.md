@@ -1216,4 +1216,3 @@ The architecture supports diverse application patterns:
 - **Cloud-Native Applications**: Kubernetes-ready with elastic scaling
 
 This architecture demonstrates Apache Ignite 3's approach to building a modern, distributed database system that balances performance, consistency, and scalability while providing robust multi-platform support and extensibility.
-
