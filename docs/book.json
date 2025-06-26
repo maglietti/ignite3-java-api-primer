@@ -5,27 +5,25 @@
   "language": "en",
   "gitbook": ">=3.0.0",
   "plugins": [
-    "mermaid",
+    "mermaid-md-adoc",
     "anchors",
     "page-toc-button",
     "expandable-chapters",
     "chapter-fold",
-    "code"
+    "code",
+    "blockquote-callout"
   ],
   "pluginsConfig": {
     "page-toc-button": {
       "maxTocDepth": 3,
       "minTocSize": 2
-    },
-    "mermaid": {
-      "theme": "neutral"
     }
   },
   "pdf": {
     "pageNumbers": true,
     "fontSize": 12,
     "fontFamily": "Times",
-    "paperSize": "a4",
+    "paperSize": "letter",
     "chapterMark": "pagebreak",
     "pageBreaksBefore": "/",
     "margin": {
