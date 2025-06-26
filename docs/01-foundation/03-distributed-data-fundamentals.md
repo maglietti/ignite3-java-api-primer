@@ -72,7 +72,7 @@ Each zone controls:
 When you create a zone, you're configuring the distributed behavior:
 
 ```sql
--- SQL approach for creating zones
+-- SQL approach for creating zones (STRONG_CONSISTENCY is default)
 CREATE ZONE "MusicStore" WITH 
     PARTITIONS=50,                        -- Split data into 50 partitions
     REPLICAS=3,                           -- Keep 3 copies for fault tolerance
@@ -97,6 +97,51 @@ client.sql().execute(null, createZoneStmt, 50, 3, "default");
 - **Performance**: 50 partitions enable parallel processing across cluster
 - **Storage Control**: Profile choice determines engine (aimem, aipersist, rocksdb)
 - **Node Selection**: Filters ensure data goes to appropriate hardware
+- **Consistency Mode**: Controls behavior when majority of nodes fail
+
+### Consistency Mode Options
+
+Apache Ignite 3 supports two consistency modes that determine behavior during node failures:
+
+#### STRONG_CONSISTENCY (Default)
+
+Ensures strong consistency by requiring a majority of nodes for operations. Partitions become unavailable if the majority of assigned nodes are lost. This is the default behavior for all zones.
+
+```java
+// All zones use STRONG_CONSISTENCY by default
+@Table(zone = @Zone(value = "CriticalData", storageProfiles = "default"))
+public class PaymentTransaction { ... }
+
+// SQL DDL approach (STRONG_CONSISTENCY is default)
+Statement strongConsistencyZone = client.sql().statementBuilder()
+    .query("CREATE ZONE \"CriticalData\" WITH REPLICAS=3, STORAGE_PROFILES='default'")
+    .build();
+```
+
+**Use cases:**
+
+- Financial transactions requiring absolute consistency
+- Business-critical data where accuracy is paramount
+- Systems where temporary unavailability is preferable to data inconsistency
+
+#### HIGH_AVAILABILITY
+
+Prioritizes availability over strict consistency, allowing partitions to remain available for read-write operations even when the majority of assigned nodes are offline. The system reconfigures the RAFT group to include only the available nodes.
+
+```java
+// Configuration available via ALTER ZONE statements
+// Currently, HIGH_AVAILABILITY mode can be configured after zone creation
+Statement alterZoneStmt = client.sql().statementBuilder()
+    .query("ALTER ZONE \"CatalogData\" SET CONSISTENCY MODE HIGH_AVAILABILITY")
+    .build();
+client.sql().execute(null, alterZoneStmt);
+```
+
+**Use cases:**
+
+- Read-heavy catalog data where availability is crucial
+- Content management systems prioritizing uptime
+- Systems where temporary inconsistency is acceptable for continued operation
 
 ### How Data Distributes
 

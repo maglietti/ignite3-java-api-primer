@@ -49,6 +49,7 @@ public class MusicStoreZoneConfiguration {
                 );
                 
                 client.sql().execute(null, createZoneSQL);
+                logger.info("Created distribution zone {} (default STRONG_CONSISTENCY mode)", MUSIC_STORE_ZONE);
             }
         } catch (Exception e) {
             logger.error("Failed to create distribution zone {}: {}", MUSIC_STORE_ZONE, e.getMessage());
@@ -68,6 +69,7 @@ public class MusicStoreZoneConfiguration {
                 );
                 
                 client.sql().execute(null, createZoneSQL);
+                logger.info("Created distribution zone {} (default STRONG_CONSISTENCY mode)", MUSIC_STORE_REPLICATED_ZONE);
             }
         } catch (Exception e) {
             logger.error("Failed to create distribution zone {}: {}", MUSIC_STORE_REPLICATED_ZONE, e.getMessage());
@@ -109,13 +111,15 @@ public class MusicStoreZoneConfiguration {
         try {
             logger.info("Current distribution zones:");
             var resultSet = client.sql().execute(null, 
-                "SELECT name, replicas, partitions FROM SYSTEM.ZONES ORDER BY name");
+                "SELECT name, replicas, partitions, consistency_mode FROM SYSTEM.ZONES ORDER BY name");
             
             resultSet.forEachRemaining(row -> {
                 String name = row.stringValue("name");
                 int replicas = row.intValue("replicas");
                 int partitions = row.intValue("partitions");
-                logger.info("  Zone: {} - Replicas: {}, Partitions: {}", name, replicas, partitions);
+                String consistencyMode = row.stringValue("consistency_mode");
+                logger.info("  Zone: {} - Replicas: {}, Partitions: {}, Consistency: {}", 
+                    name, replicas, partitions, consistencyMode);
             });
         } catch (Exception e) {
             logger.error("Error displaying zone information: {}", e.getMessage());
