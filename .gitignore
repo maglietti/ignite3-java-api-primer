@@ -85,3 +85,7 @@ site/
 # Runtime configuration
 *.properties.local
 config.local.*
+
+# Output files
+*.html
+*.pdf
