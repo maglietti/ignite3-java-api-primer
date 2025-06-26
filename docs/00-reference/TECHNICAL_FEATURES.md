@@ -4,6 +4,8 @@
 
 Apache Ignite 3 implements a distributed database platform for high-performance computing applications. The system provides modular architecture with pluggable storage engines, distributed SQL processing, and multi-platform client support.
 
+> **Architecture Context**: For system architecture details, see [Ignite 3 Architecture](./IGNITE3-ARCH.md). For Java API specifics, see [Java API Architecture](./JAVA-API-ARCH.md). For SQL implementation details, see [SQL Engine Architecture](./SQL-ENGINE-ARCH.md).
+
 ## Architecture Overview
 
 Apache Ignite 3 implements distributed database architecture using consensus-driven coordination, pluggable storage engines, and SQL processing capabilities.
@@ -120,7 +122,7 @@ graph LR
     
     RDB --> VC
     PPM --> VC
-    VPM --> VC
+    AME --> VC
     
     VC --> TS
     TS --> GC
@@ -139,7 +141,7 @@ graph LR
 **Storage Engine Selection**
 - RocksDB: Write-heavy workloads, large datasets, sequential access patterns
 - Persistent PageMemory: Low-latency requirements, complex queries, OLTP workloads
-- Volatile PageMemory: Caching use cases, temporary processing, maximum performance
+- AI Memory: Caching use cases, temporary processing, maximum performance
 
 **Data Organization**
 - Binary Tuple format with O(1) field access via offset tables
@@ -526,9 +528,9 @@ Apache Ignite 3 provides standard database connectivity through JDBC and ODBC in
 
 **Standards Compliance**
 - SQL-92 core feature compliance
-- SQL:1999 features: CTEs, window functions
-- SQL:2003 features: analytical functions
-- SQL:2016 features: JSON support (planned)
+- SQL:1999 features: CTEs
+- SQL:2003 features: JSON support
+- Window functions and analytical functions not supported
 
 **Integration Features**
 - Apache Spark connector for big data processing
@@ -536,4 +538,8 @@ Apache Ignite 3 provides standard database connectivity through JDBC and ODBC in
 - Spring Data support
 - Connection pooling with HikariCP
 
-This enhanced database and SQL feature analysis demonstrates Apache Ignite 3's position as a full-featured distributed SQL database capable of supporting enterprise workloads with strong consistency, advanced query capabilities, and standards compliance.
+## Final Thoughts
+
+Apache Ignite 3 provides a distributed database platform that combines in-memory performance with enterprise reliability requirements. The modular architecture, feature set, and operational capabilities support diverse use cases from transactional applications to analytics platforms.
+
+Key capabilities include pluggable storage engines, SQL support through Apache Calcite, multi-platform client ecosystem, and operational features for production environments. The system scales horizontally while maintaining consistency guarantees for distributed applications requiring performance and reliability.
