@@ -152,6 +152,10 @@ docker-compose down -v  # Remove volumes
 docker-compose up -d    # Start fresh
 ```
 
+## Alternative Installation
+
+For environments where Docker is not available or preferred, see [standalone-setup.md](standalone-setup.md) for instructions on installing and running Apache Ignite 3 natively using ZIP archives, DEB/RPM packages, or building from source.
+
 ---
 
 **⚠️ Important**: Keep this cluster running while working with any reference applications in modules 01-10.

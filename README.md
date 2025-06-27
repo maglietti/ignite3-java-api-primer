@@ -39,6 +39,8 @@ mvn compile exec:java
 2. Choose "Import project from external model" → Maven
 3. Accept default Maven settings and wait for indexing to complete
 
+Alternatively, the project can be imported directly from git: New -> Project From Version Control if you do not want to clone the project locally.
+
 **Configure JDK**:
 
 - File → Project Structure → Project Settings → Project
