@@ -1,4 +1,4 @@
-# Chapter 2.4: Schema Evolution and Migration Patterns
+# Chapter 2.4: Schema Deployment and Access Patterns
 
 ## Learning Objectives
 
