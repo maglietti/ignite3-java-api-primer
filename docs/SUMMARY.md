@@ -13,7 +13,7 @@
     * [Basic Annotations](02-schema-design/01-basic-annotations.md)
     * [Relationships and Colocation](02-schema-design/02-relationships-and-colocation.md)
     * [Advanced Annotations](02-schema-design/03-advanced-annotations.md)
-    * [Schema Evolution](02-schema-design/04-schema-evolution.md)
+    * [Schema Patterns](02-schema-design/04-schema-evolution.md)
 
 * [Data Access APIs](03-data-access-apis/README.md)
     * [Table API Operations](03-data-access-apis/01-table-api-operations.md)

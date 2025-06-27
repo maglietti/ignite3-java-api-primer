@@ -461,4 +461,4 @@ These patterns transform distributed database complexity into high-performance, 
 
 Understanding advanced annotation patterns prepares you for production deployment and access pattern optimization:
 
-- **[Chapter 2.4: Schema Evolution and Migration Patterns](04-schema-evolution.md)** - Learn production patterns for DDL generation, access pattern selection, and schema management in real applications
+- **[Chapter 2.4: Schema Deployment and Access Patterns](04-schema-evolution.md)** - Learn production patterns for DDL generation, access pattern selection, and schema management in real applications

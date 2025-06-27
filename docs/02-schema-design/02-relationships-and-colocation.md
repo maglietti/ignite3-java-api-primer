@@ -413,4 +413,4 @@ Understanding entity relationships and basic colocation strategies prepares you 
 
 - **[Chapter 2.3: Advanced Annotations and Zone Configuration](03-advanced-annotations.md)** - Master complex colocation hierarchies, composite keys, and multi-zone architectures
 
-- **[Chapter 2.4: Schema Evolution and Migration Patterns](04-schema-evolution.md)** - Learn production patterns for DDL generation, access pattern optimization, and schema management
+- **[Chapter 2.4: Schema Deployment and Access Patterns](04-schema-evolution.md)** - Learn production patterns for DDL generation, access pattern optimization, and schema management
