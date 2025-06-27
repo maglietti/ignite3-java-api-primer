@@ -17,7 +17,7 @@
 
 package com.apache.ignite.examples.caching;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
 
@@ -30,7 +30,7 @@ public class UserActivity {
     
     private int customerId;
     private String activityType;
-    private LocalDateTime timestamp;
+    private Instant timestamp;
     private Map<String, Object> metadata;
     private String sessionId;
     private String deviceType;
@@ -69,8 +69,8 @@ public class UserActivity {
     public String getActivityType() { return activityType; }
     public void setActivityType(String activityType) { this.activityType = activityType; }
     
-    public LocalDateTime getTimestamp() { return timestamp; }
-    public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
+    public Instant getTimestamp() { return timestamp; }
+    public void setTimestamp(Instant timestamp) { this.timestamp = timestamp; }
     
     public Map<String, Object> getMetadata() { return metadata; }
     public void setMetadata(Map<String, Object> metadata) { this.metadata = metadata; }
@@ -105,7 +105,7 @@ public class UserActivity {
     public static class Builder {
         private int customerId;
         private String activityType;
-        private LocalDateTime timestamp = LocalDateTime.now();
+        private Instant timestamp = Instant.now();
         private Map<String, Object> metadata;
         private String sessionId;
         private String deviceType;
@@ -120,7 +120,7 @@ public class UserActivity {
             return this;
         }
         
-        public Builder timestamp(LocalDateTime timestamp) {
+        public Builder timestamp(Instant timestamp) {
             this.timestamp = timestamp;
             return this;
         }

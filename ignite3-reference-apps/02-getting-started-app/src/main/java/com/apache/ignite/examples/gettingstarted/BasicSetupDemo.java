@@ -93,14 +93,13 @@ public class BasicSetupDemo {
                 .addresses("localhost:10800", "localhost:10801", "localhost:10802")
                 .build()) {
             
-            // Create zone
-            client.catalog().createZone(
-                ZoneDefinition.builder("Demo")
-                    .ifNotExists()
-                    .replicas(2)
-                    .storageProfiles("default")  // Required parameter!
-                    .build()
-            );
+            // Create zone using catalog DSL
+            ZoneDefinition demoZone = ZoneDefinition.builder("\"Demo\"")
+                .ifNotExists()
+                .replicas(2)
+                .storageProfiles("default")
+                .build();
+            client.catalog().createZone(demoZone);
             
             // Create tables
             client.catalog().dropTable("Author"); //drop if exists
@@ -131,17 +130,19 @@ public class BasicSetupDemo {
             });
             System.out.println("Data inserted with transaction");
             
-            // Query with JOIN
-            var result = client.sql().execute(null,
-                "SELECT a.name, b.title " +
-                "FROM Author a JOIN Book b ON a.id = b.authorId " +
-                "ORDER BY a.name, b.title");
+            // Query with JOIN using StatementBuilder
+            var joinQuery = client.sql().statementBuilder()
+                .query("SELECT a.name, b.title " +
+                       "FROM Author a JOIN Book b ON a.id = b.authorId " +
+                       "ORDER BY a.name, b.title")
+                .build();
+            var result = client.sql().execute(null, joinQuery);
             
             System.out.println("Books by author:");
             while (result.hasNext()) {
                 var row = result.next();
-                System.out.println("  " + row.stringValue("name") + 
-                                 " - " + row.stringValue("title"));
+                System.out.println("  " + row.stringValue("NAME") + 
+                                 " - " + row.stringValue("TITLE"));
             }
             
             System.out.println("Success!");

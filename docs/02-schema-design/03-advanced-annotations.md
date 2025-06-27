@@ -283,14 +283,13 @@ Advanced indexing strategies for complex query patterns:
             }
         ),
         
-        // Unique composite index
+        // Composite index for business constraint enforcement
         @Index(
-            value = "UNQ_InvoiceLine_Invoice_Track",
+            value = "IDX_InvoiceLine_Invoice_Track",
             columns = { 
                 @ColumnRef("InvoiceId"), 
                 @ColumnRef("TrackId") 
-            },
-            unique = true
+            }
         )
     },
     colocateBy = @ColumnRef("InvoiceId")

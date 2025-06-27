@@ -168,7 +168,7 @@ public class Track {
     private LocalDate ReleaseDate;         // SQL: DATE - date only, no time
     
     @Column(value = "LastPlayed", nullable = true)
-    private LocalDateTime LastPlayed;      // SQL: TIMESTAMP - date + time
+    private Instant LastPlayed;            // SQL: TIMESTAMP WITH LOCAL TIME ZONE - global timestamp
     
     @Column(value = "FileSizeBytes", nullable = true)
     private Long FileSizeBytes;            // SQL: BIGINT - 8 bytes, for large numbers
@@ -203,7 +203,8 @@ public class Track {
 **For Dates/Times:**
 
 - **LocalDate**: When you only need the date (birthdays, release dates)
-- **LocalDateTime**: When you need precision timestamps (created_at, updated_at)
+- **LocalDateTime**: For local events tied to specific timezone contexts (scheduled events, New Year at midnight)
+- **Instant**: For precision timestamps and global events (created_at, updated_at, audit logs)
 
 **Network and Storage Impact:**
 

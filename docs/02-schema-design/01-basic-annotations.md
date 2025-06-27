@@ -108,12 +108,12 @@ public class Album {
 **The Power of This Approach:**
 
 - **Single Source of Truth**: Your Java class IS your schema - no synchronization issues
-- **Compile-Time Safety**: Invalid schemas fail at compile time, not runtime
+- **Runtime DDL Generation**: Ignite converts annotations to SQL DDL when tables are created
 - **Performance by Design**: Colocation and indexing strategies are explicit and visible
 - **Environment Consistency**: Same schema definitions work across all environments
 - **Code Locality**: Schema lives next to the code that uses it
 - **Automatic Operations**: Ignite generates DDL, creates indexes, configures distribution
-- **Version Control Integration**: Schema changes are part of your normal code review process
+- **Development Workflow**: Schema changes follow your normal code development process
 
 ### From Development to Production: A Seamless Journey
 
@@ -140,7 +140,7 @@ public class Artist {
 
 **What Happens Next:**
 
-1. **Compile Time**: Annotations are validated - invalid schemas fail to compile
+1. **Development**: Annotations define schema structure alongside your Java code
 2. **Runtime**: Single call creates table: `client.catalog().createTable(Artist.class)`
 3. **Automatic DDL**: Ignite generates optimized SQL DDL from your annotations
 4. **Performance Setup**: Indexes, colocation, and distribution zones are configured automatically
@@ -162,8 +162,7 @@ Understanding how your annotated classes become distributed tables helps you mak
 
 ```mermaid
 flowchart TD
-    A["Developer writes Annotated POJO"] --> B["Compile-time Validation"]
-    B --> C["Application calls createTable"]
+    A["Developer writes Annotated POJO"] --> C["Application calls createTable"]
     C --> D["DDL Generation from Annotations"]
     D --> E["Catalog Registration across Cluster"]
     E --> F["Zone Creation & Configuration"]
@@ -172,20 +171,20 @@ flowchart TD
     H --> I["Ready for Production Use"]
 ```
 
-**1. Development Phase - Compile-Time Safety**
+**1. Development Phase - Schema Definition**
 
 ```java
 @Table(zone = @Zone(value = "MusicStore", storageProfiles = "default"))
 public class Artist {
     @Id @Column(value = "ArtistId", nullable = false)
-    private Integer ArtistId;  // ✓ Valid primary key
+    private Integer ArtistId;  // Primary key definition
     
     @Column(value = "Name", nullable = true, length = 120)
-    private String Name;       // ✓ String with length constraint
+    private String Name;       // String with length constraint
 }
 ```
 
-The Java compiler validates your annotations immediately. Invalid combinations (like missing @Id) cause compilation failure, catching errors before deployment.
+Annotations define the schema structure. Schema validation occurs at runtime when tables are created, ensuring proper distributed table configuration.
 
 **2. Application Startup - Table Creation**
 

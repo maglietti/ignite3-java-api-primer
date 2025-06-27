@@ -17,7 +17,7 @@
 
 package com.apache.ignite.examples.caching;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
 
@@ -31,7 +31,7 @@ public class PlayEvent {
     
     private int customerId;
     private int trackId;
-    private LocalDateTime timestamp;
+    private Instant timestamp;
     private String activityType;
     private Map<String, Object> metadata;
     private int durationSeconds;
@@ -73,8 +73,8 @@ public class PlayEvent {
     public int getTrackId() { return trackId; }
     public void setTrackId(int trackId) { this.trackId = trackId; }
     
-    public LocalDateTime getTimestamp() { return timestamp; }
-    public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
+    public Instant getTimestamp() { return timestamp; }
+    public void setTimestamp(Instant timestamp) { this.timestamp = timestamp; }
     
     public String getActivityType() { return activityType; }
     public void setActivityType(String activityType) { this.activityType = activityType; }
@@ -112,7 +112,7 @@ public class PlayEvent {
     public static class Builder {
         private int customerId;
         private int trackId;
-        private LocalDateTime timestamp = LocalDateTime.now();
+        private Instant timestamp = Instant.now();
         private String activityType = "play";
         private Map<String, Object> metadata;
         private int durationSeconds;
@@ -128,7 +128,7 @@ public class PlayEvent {
             return this;
         }
         
-        public Builder timestamp(LocalDateTime timestamp) {
+        public Builder timestamp(Instant timestamp) {
             this.timestamp = timestamp;
             return this;
         }

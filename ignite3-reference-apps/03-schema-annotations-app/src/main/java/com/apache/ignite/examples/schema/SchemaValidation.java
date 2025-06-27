@@ -26,7 +26,7 @@ import org.apache.ignite.sql.ResultSet;
 import org.apache.ignite.sql.SqlRow;
 import org.apache.ignite.table.RecordView;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 /**
  * Demonstrates Apache Ignite 3 schema validation and DDL generation patterns.
@@ -71,7 +71,7 @@ public class SchemaValidation {
         private String Description;
         
         @Column(value = "CreatedAt", nullable = false)
-        private LocalDateTime CreatedAt;
+        private Instant CreatedAt;
         
         @Column(value = "IsActive", nullable = false)
         private Boolean IsActive;
@@ -82,7 +82,7 @@ public class SchemaValidation {
             this.EntityId = entityId;
             this.Name = name;
             this.Description = description;
-            this.CreatedAt = LocalDateTime.now();
+            this.CreatedAt = Instant.now();
             this.IsActive = isActive;
         }
         
@@ -93,8 +93,8 @@ public class SchemaValidation {
         public void setName(String name) { this.Name = name; }
         public String getDescription() { return Description; }
         public void setDescription(String description) { this.Description = description; }
-        public LocalDateTime getCreatedAt() { return CreatedAt; }
-        public void setCreatedAt(LocalDateTime createdAt) { this.CreatedAt = createdAt; }
+        public Instant getCreatedAt() { return CreatedAt; }
+        public void setCreatedAt(Instant createdAt) { this.CreatedAt = createdAt; }
         public Boolean getIsActive() { return IsActive; }
         public void setIsActive(Boolean isActive) { this.IsActive = isActive; }
         

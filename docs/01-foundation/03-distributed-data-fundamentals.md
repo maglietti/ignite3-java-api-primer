@@ -80,15 +80,17 @@ CREATE ZONE "MusicStore" WITH
     DATA_NODES_FILTER='$.storage == "SSD"' -- Only use SSD nodes
 ```
 
-Or use the programmatic approach with StatementBuilder:
+Or use the programmatic approach with catalog DSL:
 
 ```java
-// Preferred: Use StatementBuilder API for zone creation
-Statement createZoneStmt = client.sql().statementBuilder()
-    .query("CREATE ZONE \"MusicStore\" WITH PARTITIONS=?, REPLICAS=?, STORAGE_PROFILES=?")
+// Preferred: Use catalog DSL for zone creation
+ZoneDefinition zoneDefinition = ZoneDefinition.builder("\"MusicStore\"")
+    .partitions(50)
+    .replicas(3)
+    .storageProfiles("default")
     .build();
 
-client.sql().execute(null, createZoneStmt, 50, 3, "default");
+ignite.catalog().createZone(zoneDefinition);
 ```
 
 **Why This Matters:**
@@ -112,10 +114,12 @@ Ensures strong consistency by requiring a majority of nodes for operations. Part
 @Table(zone = @Zone(value = "CriticalData", storageProfiles = "default"))
 public class PaymentTransaction { ... }
 
-// SQL DDL approach (STRONG_CONSISTENCY is default)
-Statement strongConsistencyZone = client.sql().statementBuilder()
-    .query("CREATE ZONE \"CriticalData\" WITH REPLICAS=3, STORAGE_PROFILES='default'")
+// Catalog DSL approach (STRONG_CONSISTENCY is default)
+ZoneDefinition criticalZone = ZoneDefinition.builder("\"CriticalData\"")
+    .replicas(3)
+    .storageProfiles("default")
     .build();
+ignite.catalog().createZone(criticalZone);
 ```
 
 **Use cases:**
@@ -129,12 +133,20 @@ Statement strongConsistencyZone = client.sql().statementBuilder()
 Prioritizes availability over strict consistency, allowing partitions to remain available for read-write operations even when the majority of assigned nodes are offline. The system reconfigures the RAFT group to include only the available nodes.
 
 ```java
-// Configuration available via ALTER ZONE statements
-// Currently, HIGH_AVAILABILITY mode can be configured after zone creation
-Statement alterZoneStmt = client.sql().statementBuilder()
+// Configuration available via catalog DSL
+ZoneDefinition catalogZone = ZoneDefinition.builder("\"CatalogData\"")
+    .ifNotExists()
+    .partitions(32)
+    .replicas(2)
+    .storageProfiles("default")
+    .build();
+ignite.catalog().createZone(catalogZone);
+
+// Note: Consistency mode configuration via ALTER statements
+Statement alterConsistencyStmt = client.sql().statementBuilder()
     .query("ALTER ZONE \"CatalogData\" SET CONSISTENCY MODE HIGH_AVAILABILITY")
     .build();
-client.sql().execute(null, alterZoneStmt);
+client.sql().execute(null, alterConsistencyStmt);
 ```
 
 **Use cases:**
@@ -244,7 +256,12 @@ while (result.hasNext()) {
 }
 ```
 
-> **Important**: Ignite 3 normalizes all SQL metadata (table names, column names) to uppercase. When accessing columns via `SqlRow`, always use uppercase names regardless of how they're defined in your schema or query aliases.
+> [!NOTE]
+> Ignite 3 follows SQL standard normalization rules for metadata (table names, column names). When accessing columns via `SqlRow`:
+> - `"myColumn"` → `"MYCOLUMN"` (normalized to uppercase)
+> - `"\"MyColumn\""` → `"MyColumn"` (double quotes preserve exact case)
+>
+> Use double quotes in your SQL when you need to preserve case sensitivity for column access.
 >
 > For complete details on SQL processing, query optimization, and Apache Calcite integration, see [SQL Engine Architecture](../00-reference/sql-engine-arch.md).
 
@@ -343,21 +360,27 @@ public class VersionedRecord {
 Real applications use multiple zones optimized for different data characteristics. Each zone uses storage profiles that match their requirements:
 
 ```java
-// Preferred: Use StatementBuilder for zone creation
-Statement businessZoneStmt = client.sql().statementBuilder()
-    .query("CREATE ZONE \"BusinessCritical\" WITH PARTITIONS=?, REPLICAS=?, STORAGE_PROFILES=?")
+// Preferred: Use catalog DSL for zone creation
+ZoneDefinition businessZone = ZoneDefinition.builder("\"BusinessCritical\"")
+    .partitions(25)
+    .replicas(3)
+    .storageProfiles("production_persistent")
     .build();
-client.sql().execute(null, businessZoneStmt, 25, 3, "production_persistent");
+ignite.catalog().createZone(businessZone);
 
-Statement analyticsZoneStmt = client.sql().statementBuilder()
-    .query("CREATE ZONE \"Analytics\" WITH PARTITIONS=?, REPLICAS=?, STORAGE_PROFILES=?")
+ZoneDefinition analyticsZone = ZoneDefinition.builder("\"Analytics\"")
+    .partitions(64)
+    .replicas(2)
+    .storageProfiles("analytics_persistent")
     .build();
-client.sql().execute(null, analyticsZoneStmt, 64, 2, "analytics_persistent");
+ignite.catalog().createZone(analyticsZone);
 
-Statement sessionsZoneStmt = client.sql().statementBuilder()
-    .query("CREATE ZONE \"Sessions\" WITH PARTITIONS=?, REPLICAS=?, STORAGE_PROFILES=?")
+ZoneDefinition sessionsZone = ZoneDefinition.builder("\"Sessions\"")
+    .partitions(50)
+    .replicas(2)
+    .storageProfiles("default")
     .build();
-client.sql().execute(null, sessionsZoneStmt, 50, 2, "default");
+ignite.catalog().createZone(sessionsZone);
 ```
 
 ### Storage Profile Configuration

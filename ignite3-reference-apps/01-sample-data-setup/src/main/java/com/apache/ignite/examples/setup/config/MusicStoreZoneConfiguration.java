@@ -18,6 +18,7 @@
 package com.apache.ignite.examples.setup.config;
 
 import org.apache.ignite.client.IgniteClient;
+import org.apache.ignite.catalog.definitions.ZoneDefinition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,15 +41,14 @@ public class MusicStoreZoneConfiguration {
     public static void createMusicStoreZone(IgniteClient client) {
         try {
             if (!zoneExists(client, MUSIC_STORE_ZONE)) {
-                String createZoneSQL = String.format(
-                    "CREATE ZONE %s WITH " +
-                    "REPLICAS=%d, " +
-                    "PARTITIONS=%d, " +
-                    "STORAGE_PROFILES='default'",
-                    MUSIC_STORE_ZONE, MUSIC_STORE_REPLICAS, DEFAULT_PARTITIONS
-                );
+                ZoneDefinition musicStoreZone = ZoneDefinition.builder('"' + MUSIC_STORE_ZONE + '"')
+                    .ifNotExists()
+                    .replicas(MUSIC_STORE_REPLICAS)
+                    .partitions(DEFAULT_PARTITIONS)
+                    .storageProfiles("default")
+                    .build();
                 
-                client.sql().execute(null, createZoneSQL);
+                client.catalog().createZone(musicStoreZone);
                 logger.info("Created distribution zone {} (default STRONG_CONSISTENCY mode)", MUSIC_STORE_ZONE);
             }
         } catch (Exception e) {
@@ -60,15 +60,14 @@ public class MusicStoreZoneConfiguration {
     public static void createMusicStoreReplicatedZone(IgniteClient client) {
         try {
             if (!zoneExists(client, MUSIC_STORE_REPLICATED_ZONE)) {
-                String createZoneSQL = String.format(
-                    "CREATE ZONE %s WITH " +
-                    "REPLICAS=%d, " +
-                    "PARTITIONS=%d, " +
-                    "STORAGE_PROFILES='default'",
-                    MUSIC_STORE_REPLICATED_ZONE, MUSIC_STORE_REPLICATED_REPLICAS, DEFAULT_PARTITIONS
-                );
+                ZoneDefinition replicatedZone = ZoneDefinition.builder('"' + MUSIC_STORE_REPLICATED_ZONE + '"')
+                    .ifNotExists()
+                    .replicas(MUSIC_STORE_REPLICATED_REPLICAS)
+                    .partitions(DEFAULT_PARTITIONS)
+                    .storageProfiles("default")
+                    .build();
                 
-                client.sql().execute(null, createZoneSQL);
+                client.catalog().createZone(replicatedZone);
                 logger.info("Created distribution zone {} (default STRONG_CONSISTENCY mode)", MUSIC_STORE_REPLICATED_ZONE);
             }
         } catch (Exception e) {
@@ -114,10 +113,10 @@ public class MusicStoreZoneConfiguration {
                 "SELECT name, replicas, partitions, consistency_mode FROM SYSTEM.ZONES ORDER BY name");
             
             resultSet.forEachRemaining(row -> {
-                String name = row.stringValue("name");
-                int replicas = row.intValue("replicas");
-                int partitions = row.intValue("partitions");
-                String consistencyMode = row.stringValue("consistency_mode");
+                String name = row.stringValue("NAME");
+                int replicas = row.intValue("REPLICAS");
+                int partitions = row.intValue("PARTITIONS");
+                String consistencyMode = row.stringValue("CONSISTENCY_MODE");
                 logger.info("  Zone: {} - Replicas: {}, Partitions: {}, Consistency: {}", 
                     name, replicas, partitions, consistencyMode);
             });
