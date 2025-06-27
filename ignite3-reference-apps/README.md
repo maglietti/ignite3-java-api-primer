@@ -4,7 +4,7 @@ Reference applications demonstrating Apache Ignite 3 Java API usage patterns usi
 
 ## Project Overview
 
-This multi-module Maven project provides practical, runnable examples for all major Apache Ignite 3 features:
+This multi-module project provides practical, runnable examples for all major Apache Ignite 3 features, with support for both Maven and Gradle build systems:
 
 - **Schema-as-Code** with annotations
 - **Table API** for object-oriented data access
@@ -14,12 +14,23 @@ This multi-module Maven project provides practical, runnable examples for all ma
 - **Data Streaming** for high-throughput operations
 - **Integration Patterns** with popular frameworks
 
+## Build System Choice
+
+This project supports **both Maven and Gradle** to accommodate different preferences and workflows:
+
+- **Maven**: Traditional Java build tool with XML configuration
+- **Gradle**: Modern build tool with Groovy DSL and included wrapper (no installation required)
+
+**Choose based on your preference** - all examples work identically with either build system. The Gradle wrapper (`./gradlew`) eliminates installation requirements, while Maven may be more familiar to enterprise developers.
+
 ## Quick Start
 
 ### Prerequisites
 
 - Java 17+
-- Maven 3.8+
+- **Build System** (choose one):
+  - Maven 3.8+ 
+  - Gradle (uses included wrapper - no installation required)
 - Docker 20.10.0 or newer & Docker Compose 2.23.1 or newer
 
 For Docker installation instructions, see the [Apache Ignite 3 Docker Installation Guide](https://ignite.apache.org/docs/ignite3/latest/installation/installing-using-docker).
@@ -57,13 +68,20 @@ curl http://localhost:10300/management/v1/cluster/state
 
 1. **Start with complete initialization** (recommended for first-time users):
 
+   **Maven:**
    ```bash
    cd 01-sample-data-setup
    mvn compile exec:java
    ```
 
+   **Gradle:**
+   ```bash
+   ./gradlew :01-sample-data-setup:run
+   ```
+
 2. **Or run with options**:
 
+   **Maven:**
    ```bash
    # Include extended dataset
    mvn compile exec:java -Dexec.args="--extended"
@@ -73,6 +91,18 @@ curl http://localhost:10300/management/v1/cluster/state
    
    # Custom cluster address
    mvn compile exec:java -Dexec.args="192.168.1.100:10800"
+   ```
+
+   **Gradle:**
+   ```bash
+   # Include extended dataset
+   ./gradlew :01-sample-data-setup:run --args="--extended"
+   
+   # Reset existing schema and recreate
+   ./gradlew :01-sample-data-setup:run --args="--reset"
+   
+   # Custom cluster address
+   ./gradlew :01-sample-data-setup:run --args="192.168.1.100:10800"
    ```
 
 ### Project Structure
@@ -352,28 +382,51 @@ Process large CSV files using reactive streams with end-to-end backpressure prop
 
 ---
 
-**Each app runs independently**: `cd [app-directory] && mvn compile exec:java`  
+**Each app runs independently**: See Building and Running section below  
 **Complete sequence**: Follow 1→10 for comprehensive Ignite 3 expertise
 
 ## Building and Running
 
 ### Build All Modules
 
+**Maven:**
 ```bash
 mvn clean compile
 ```
 
+**Gradle:**
+```bash
+./gradlew build
+```
+
 ### Run Specific Application
 
+**Maven:**
 ```bash
 cd [module-name]
 mvn compile exec:java
 ```
 
+**Gradle:**
+```bash
+./gradlew :[module-name]:run
+```
+
+**Examples:**
+- `./gradlew :02-getting-started-app:run`
+- `./gradlew :04-table-api-app:run`
+- `./gradlew :06-transactions-app:run`
+
 ### Run with Custom Cluster Address
 
+**Maven:**
 ```bash
 mvn compile exec:java -Dexec.args="192.168.1.100:10800"
+```
+
+**Gradle:**
+```bash
+./gradlew :[module-name]:run --args="192.168.1.100:10800"
 ```
 
 ## Configuration

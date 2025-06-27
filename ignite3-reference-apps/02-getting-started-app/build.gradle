@@ -1,0 +1,23 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+description = 'Apache Ignite 3 getting started examples and basic operations reference application'
+
+application {
+    mainClass = 'com.apache.ignite.examples.gettingstarted.HelloWorldApp'
+    applicationDefaultJvmArgs = [
+        '--add-opens=java.base/java.lang=ALL-UNNAMED',
+        '--add-opens=java.base/java.lang.invoke=ALL-UNNAMED',
+        '--add-opens=java.base/java.nio=ALL-UNNAMED',
+        '--add-opens=java.base/sun.nio.ch=ALL-UNNAMED'
+    ]
+}
+
+tasks.register('runHelloWorld', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.apache.ignite.examples.gettingstarted.HelloWorldApp'
+    args = ['127.0.0.1:10800']
+    jvmArgs = application.applicationDefaultJvmArgs
+}

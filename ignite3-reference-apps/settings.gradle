@@ -1,0 +1,12 @@
+rootProject.name = 'ignite3-reference-apps'
+
+include '01-sample-data-setup'
+include '02-getting-started-app'
+include '03-schema-annotations-app'
+include '04-table-api-app'
+include '05-sql-api-app'
+include '06-transactions-app'
+include '07-compute-api-app'
+include '08-data-streaming-app'
+include '09-caching-patterns-app'
+include '10-file-streaming-app'

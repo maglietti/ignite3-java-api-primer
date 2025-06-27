@@ -1,0 +1,38 @@
+[versions]
+ignite = "3.0.0"
+slf4j = "2.0.17"
+log4j = "2.24.3"
+junit = "5.11.3"
+assertj = "3.26.3"
+testcontainers = "1.20.4"
+spring-boot = "3.2.11"
+
+[libraries]
+# Apache Ignite 3 Dependencies
+ignite-client = { module = "org.apache.ignite:ignite-client", version.ref = "ignite" }
+ignite-api = { module = "org.apache.ignite:ignite-api", version.ref = "ignite" }
+ignite-jdbc = { module = "org.apache.ignite:ignite-jdbc", version.ref = "ignite" }
+ignite-runner = { module = "org.apache.ignite:ignite-runner", version.ref = "ignite" }
+
+# Logging Dependencies
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+log4j-slf4j2-impl = { module = "org.apache.logging.log4j:log4j-slf4j2-impl", version.ref = "log4j" }
+log4j-core = { module = "org.apache.logging.log4j:log4j-core", version.ref = "log4j" }
+
+# Testing Dependencies
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
+assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj" }
+testcontainers-junit = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
+
+# Spring Boot Dependencies
+spring-boot-starter = { module = "org.springframework.boot:spring-boot-starter", version.ref = "spring-boot" }
+spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "spring-boot" }
+spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "spring-boot" }
+
+[bundles]
+ignite-core = ["ignite-client", "ignite-api"]
+logging = ["slf4j-api", "log4j-slf4j2-impl", "log4j-core"]
+testing = ["junit-jupiter", "assertj-core"]
+
+[plugins]
+spring-boot = { id = "org.springframework.boot", version.ref = "spring-boot" }

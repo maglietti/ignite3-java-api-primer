@@ -1,0 +1,16 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+description = 'Apache Ignite 3 transaction patterns and isolation levels reference application'
+
+application {
+    mainClass = 'com.apache.ignite.examples.transactions.TransactionAPIDemo'
+    applicationDefaultJvmArgs = [
+        '--add-opens=java.base/java.lang=ALL-UNNAMED',
+        '--add-opens=java.base/java.lang.invoke=ALL-UNNAMED',
+        '--add-opens=java.base/java.nio=ALL-UNNAMED',
+        '--add-opens=java.base/sun.nio.ch=ALL-UNNAMED'
+    ]
+}
