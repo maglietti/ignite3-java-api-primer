@@ -9,6 +9,19 @@ By completing this chapter, you will:
 - Configure transaction options for different performance requirements
 - Handle complex multi-step business workflows with proper error recovery
 
+## Working with the Reference Application
+
+The **`06-transactions-app`** demonstrates all advanced transaction patterns covered in this chapter with production-ready music store workflows. Run it alongside your learning to see functional patterns, async operations, and complex error handling in action.
+
+**Quick Start**: After reading this chapter, explore the reference application:
+
+```bash
+cd ignite3-reference-apps/06-transactions-app
+mvn compile exec:java
+```
+
+The reference app shows how the transaction fundamentals from [Chapter 4.1](01-transaction-fundamentals.md) scale to advanced patterns including async operations, retry strategies, and circuit breaker patterns for production resilience.
+
 ## Explicit Transaction Management (Advanced)
 
 For scenarios requiring fine-grained control over transaction lifecycle, you can manage transactions explicitly. **Note: This approach is generally not recommended** due to increased complexity and error potential.

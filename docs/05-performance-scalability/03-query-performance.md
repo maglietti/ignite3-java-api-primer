@@ -11,12 +11,12 @@ By completing this chapter, you will:
 
 ## Working with the Reference Application
 
-The **`10-catalog-management-app`** demonstrates all query optimization patterns covered in this chapter with comprehensive music platform performance examples. Run it alongside your learning to see index optimization, query tuning, and distribution strategies in action.
+The **`05-sql-api-app`** demonstrates query optimization patterns covered in this chapter with comprehensive music analytics and performance examples. Run it alongside your learning to see complex queries, proper indexing usage, and optimization strategies in action.
 
 **Quick Start**: After reading this chapter, explore the reference application:
 
 ```bash
-cd ignite3-reference-apps/10-catalog-management-app
+cd ignite3-reference-apps/05-sql-api-app
 mvn compile exec:java
 ```
 
