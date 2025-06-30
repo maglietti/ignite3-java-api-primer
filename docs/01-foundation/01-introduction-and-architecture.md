@@ -237,11 +237,11 @@ graph LR
 
 ### API Selection Patterns
 
-**Table API** provides type-safe object operations with automatic serialization, optimal for CRUD operations where you know the data structure. Use when you need strong typing, object mapping, and direct record manipulation with minimal overhead.
+**Table API** provides type-safe object operations with automatic serialization, optimal for CRUD operations where you know the data structure. Use when you need strong typing, object mapping, and direct record manipulation with minimal overhead. Choose this for business logic that works with complete entities and when compile-time type safety is more important than raw performance.
 
-**SQL API** enables complex queries and analytics across distributed data using standard SQL syntax. Choose this for aggregations, joins, filtering operations, and any query that benefits from SQL's declarative approach.
+**SQL API** enables complex queries and analytics across distributed data using standard SQL syntax. Choose this for aggregations, joins, filtering operations, and any query that benefits from SQL's declarative approach. Select this when you need to process large datasets with complex business rules or when working with analysts who prefer SQL syntax over programmatic APIs.
 
-**Key-Value API** delivers maximum performance for simple get/put operations using generic Tuple objects. Select this for high-throughput scenarios, caching patterns, or when you need the fastest possible key-based access.
+**Key-Value API** delivers maximum performance for simple get/put operations using generic Tuple objects. Select this for high-throughput scenarios, caching patterns, or when you need the fastest possible key-based access. Use this when microsecond response times matter more than type safety, or when implementing cache-like access patterns where you only need specific field values rather than complete objects.
 
 ```java
 // Table API - type-safe record operations with automatic mapping

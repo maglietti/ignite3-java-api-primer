@@ -6,7 +6,7 @@ Traditional performance solutions add complexity: dedicated caching clusters wit
 
 ## How High-Performance Distribution Works
 
-Ignite 3 handles performance challenges without additional infrastructure layers. Stream millions of play events directly into distributed storage while maintaining ACID consistency. Cache frequently accessed tracks in cluster memory with automatic invalidation. Execute analytical queries across the entire dataset without separate OLAP systems.
+Ignite 3 handles performance challenges without additional infrastructure layers. Traditional solutions require separate message queues because databases cannot handle high-velocity writes, dedicated cache clusters because application-level caching creates consistency problems, and separate analytics databases because transactional systems cannot process analytical workloads efficiently. Ignite eliminates these operational dependencies by combining distributed storage, in-memory processing, and analytical capabilities within a single cluster. Stream millions of play events directly into distributed storage while maintaining ACID consistency. Cache frequently accessed tracks in cluster memory with automatic invalidation. Execute analytical queries across the entire dataset without separate OLAP systems.
 
 All performance optimizations happen within your existing distributed architecture, eliminating external dependencies and reducing operational complexity.
 

@@ -8,7 +8,7 @@ Different needs call for different approaches. Sometimes you know exactly which 
 
 Ignite 3 provides two distinct data access patterns for your distributed music catalog. Table API enables direct object operations with type safety and microsecond latencies. SQL API enables complex analytical queries that span multiple tables and partitions.
 
-Each API optimizes for different access patterns: Table API eliminates object-relational mapping overhead for known-key operations, while SQL API leverages distributed query execution for analytical workloads.
+Each API optimizes for different access patterns: Table API eliminates object-relational mapping overhead for known-key operations, while SQL API enables cross-table joins, aggregations, and filtering operations that would require thousands of individual record retrievals to accomplish manually.
 
 ## Data Access Implementation Patterns
 

@@ -22,7 +22,7 @@ Your Artist class becomes a distributed table with a few simple annotations. You
 
 *Keeping related music together*
 
-Albums belong to Artists, but in distributed storage, they might live on different servers. You'll learn colocation strategies that keep Artist data close to their Albums, enabling fast browsing without network delays.
+Albums belong to Artists, but in distributed storage, they might live on different servers. You'll learn colocation strategies that keep Artist data close to their Albums, enabling fast browsing without network delays. When related data lives on the same node, joins and queries execute locally without network round trips, dramatically reducing latency and increasing throughput for related data operations.
 
 ### Chapter 3: [Advanced Annotations](./03-advanced-annotations.md)
 

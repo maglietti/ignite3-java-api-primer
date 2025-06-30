@@ -80,6 +80,18 @@ Choose the right API based on access patterns and performance requirements:
 - **Analytical Operations**: Reporting and business intelligence queries
 - **Dynamic Queries**: Query structure determined at runtime
 
+**Type Safety Example:**
+
+```java
+// Table API: Compile-time type safety
+RecordView<Artist> artistView = table.recordView(Artist.class);
+Artist artist = artistView.get(null, Tuple.create().set("ArtistId", 1)); // Compile-time validation
+
+// SQL API: Runtime type checking
+SqlRow row = client.sql().execute(null, "SELECT * FROM Artist WHERE ArtistId = ?", 1).next();
+String name = row.stringValue("Name"); // Field name checked at runtime
+```
+
 ## Table API Architecture
 
 The Table API provides two complementary views optimized for different performance scenarios:

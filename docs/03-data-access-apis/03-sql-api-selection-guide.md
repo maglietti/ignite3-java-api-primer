@@ -237,6 +237,27 @@ public class OrderProcessingService {
 
 Order processing combines three API approaches strategically. RecordView handles customer entities with business logic validation. KeyValueView provides high-performance inventory lookups. SQL API calculates complex pricing with customer-specific discounts. Each API handles operations where it provides optimal performance characteristics.
 
+```java
+// SQL API: Analytical operations that complement entity management
+public List<CustomerMetrics> getTopCustomersByGenre(String genre) {
+    String query = sql.statementBuilder()
+        .query("SELECT c.CustomerId, c.FirstName, c.LastName, SUM(il.UnitPrice * il.Quantity) as TotalSpent " +
+               "FROM Customer c JOIN Invoice i ON c.CustomerId = i.CustomerId " +
+               "JOIN InvoiceLine il ON i.InvoiceId = il.InvoiceId " +
+               "JOIN Track t ON il.TrackId = t.TrackId " +
+               "JOIN Genre g ON t.GenreId = g.GenreId " +
+               "WHERE g.Name = ? GROUP BY c.CustomerId, c.FirstName, c.LastName " +
+               "ORDER BY TotalSpent DESC LIMIT 10")
+        .build();
+    
+    try (ResultSet<SqlRow> rs = sql.execute(null, query, genre)) {
+        return extractCustomerMetrics(rs);
+    }
+}
+```
+
+This SQL example demonstrates analytical operations that KeyValueView and RecordView cannot handle efficiently. Complex joins, aggregations, and filtering across multiple tables require SQL's query optimization and server-side processing capabilities.
+
 ### Real-Time Dashboard Implementation
 
 ```java

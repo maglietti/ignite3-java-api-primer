@@ -1008,62 +1008,47 @@ public class AnalyticsErrorHandling {
     public CompletableFuture<Optional<RevenueAnalytics>> calculateComprehensiveRevenueAsync(
             IgniteSql sql, LocalDate startDate, LocalDate endDate) {
         
-        return CompletableFuture.supplyAsync(() -> {
-            Statement revenueAnalyticsQuery = sql.statementBuilder()
-                .query("""
-                    SELECT 
-                        SUM(il.UnitPrice * il.Quantity) as TotalRevenue,
-                        COUNT(DISTINCT i.InvoiceId) as TotalInvoices,
-                        COUNT(DISTINCT i.CustomerId) as UniqueCustomers,
-                        AVG(i.Total) as AvgInvoiceValue,
-                        COUNT(il.InvoiceLineId) as TotalLineItems
-                    FROM InvoiceLine il
-                    JOIN Invoice i ON il.InvoiceId = i.InvoiceId
-                    WHERE i.InvoiceDate >= ? AND i.InvoiceDate <= ?
-                    """)
-                .queryTimeout(45, TimeUnit.SECONDS)
-                .build();
-            
-            try {
-                long analysisStart = System.currentTimeMillis();
-                ResultSet<SqlRow> result = sql.execute(null, revenueAnalyticsQuery, startDate, endDate);
-                
+        Statement revenueAnalyticsQuery = sql.statementBuilder()
+            .query("""
+                SELECT 
+                    SUM(il.UnitPrice * il.Quantity) as TotalRevenue,
+                    COUNT(DISTINCT i.InvoiceId) as TotalInvoices,
+                    COUNT(DISTINCT i.CustomerId) as UniqueCustomers,
+                    AVG(i.Total) as AvgInvoiceValue,
+                    COUNT(il.InvoiceLineId) as TotalLineItems
+                FROM InvoiceLine il
+                JOIN Invoice i ON il.InvoiceId = i.InvoiceId
+                WHERE i.InvoiceDate >= ? AND i.InvoiceDate <= ?
+                """)
+            .queryTimeout(45, TimeUnit.SECONDS)
+            .build();
+        
+        long analysisStart = System.currentTimeMillis();
+        return sql.executeAsync(null, revenueAnalyticsQuery, startDate, endDate)
+            .thenApply(result -> {
                 if (result.hasNext()) {
                     SqlRow row = result.next();
-                    
-                    BigDecimal totalRevenue = row.decimalValue("TOTALREVENUE");
-                    long totalInvoices = row.longValue("TOTALINVOICES");
-                    long uniqueCustomers = row.longValue("UNIQUECUSTOMERS");
-                    BigDecimal avgInvoiceValue = row.decimalValue("AVGINVOICEVALUE");
-                    long totalLineItems = row.longValue("TOTALLINEITEMS");
-                    
                     long analysisTime = System.currentTimeMillis() - analysisStart;
                     
                     RevenueAnalytics analytics = new RevenueAnalytics(
-                        totalRevenue, totalInvoices, uniqueCustomers, 
-                        avgInvoiceValue, totalLineItems, analysisTime,
+                        row.decimalValue("TOTALREVENUE"), 
+                        row.longValue("TOTALINVOICES"),
+                        row.longValue("UNIQUECUSTOMERS"), 
+                        row.decimalValue("AVGINVOICEVALUE"), 
+                        row.longValue("TOTALLINEITEMS"), 
+                        analysisTime,
                         startDate, endDate
                     );
                     
                     return Optional.of(analytics);
                 }
-                
                 return Optional.empty();
-                
-            } catch (SqlTimeoutException e) {
-                System.err.printf("Revenue analytics timeout for period %s to %s: %s%n", 
-                    startDate, endDate, e.getMessage());
+            })
+            .exceptionally(throwable -> {
+                System.err.printf("Revenue analytics async error for period %s to %s: %s%n", 
+                    startDate, endDate, throwable.getMessage());
                 return Optional.empty();
-            } catch (SqlException e) {
-                System.err.printf("Revenue analytics SQL error for period %s to %s: %s%n", 
-                    startDate, endDate, e.getMessage());
-                return Optional.empty();
-            } catch (Exception e) {
-                System.err.printf("Unexpected error in revenue analytics for period %s to %s: %s%n", 
-                    startDate, endDate, e.getMessage());
-                return Optional.empty();
-            }
-        });
+            });
     }
 }
 ```

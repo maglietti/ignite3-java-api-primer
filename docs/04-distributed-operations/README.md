@@ -6,7 +6,7 @@ Traditional distributed systems force you to choose: either give up ACID guarant
 
 ## How Distributed Transactions Work
 
-Ignite 3 implements distributed ACID transactions without coordinator bottlenecks. Purchase workflows execute across multiple cluster nodes while maintaining transaction isolation. When a payment processor fails, the entire transaction rolls back automatically across all participating nodes.
+Ignite 3 implements distributed ACID transactions without coordinator bottlenecks. Each participating node acts as a local coordinator for its data partitions, using Raft consensus to achieve atomic commit decisions across all transaction participants. This eliminates single points of failure and reduces network round-trips compared to traditional two-phase commit architectures that rely on centralized transaction managers. Purchase workflows execute across multiple cluster nodes while maintaining transaction isolation. When a payment processor fails, the entire transaction rolls back automatically across all participating nodes.
 
 Beyond transactions, you can execute compute jobs directly on nodes containing relevant data. Instead of transferring user listening history across the network for recommendation processing, algorithms run where the data resides, eliminating serialization overhead and network latency.
 

@@ -36,7 +36,7 @@ Your Artist entities now reside across three cluster nodes simultaneously, but y
 
 ## Next Implementation Challenge
 
-Your music catalog now operates on distributed storage with improved performance. However, when users navigate from Artist to Album to Track entities, the data may reside on different cluster nodes. Album queries execute on Node 2, Track queries execute on Node 3, creating network latency that degrades your distributed system performance.
+Your music catalog now operates on distributed storage with improved performance. Ignite achieves this transparency through partition-aware routing that automatically directs operations to the correct cluster nodes without application-level changes. When nodes fail, the client automatically reconnects to healthy nodes and continues operations seamlessly. However, when users navigate from Artist to Album to Track entities, the data may reside on different cluster nodes, creating network latency that degrades performance.
 
 Schema design and data colocation strategies address this challenge. You need to configure how entities distribute across the cluster topology.
 
