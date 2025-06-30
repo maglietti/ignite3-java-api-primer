@@ -1,18 +1,12 @@
 # Chapter 1.1: Introduction and Architecture Overview
 
-## Learning Objectives
+Your music streaming platform just crashed. Again. This time it was 50,000 concurrent users trying to browse the latest album release. Your PostgreSQL instance maxed out at 100% CPU, connection pools exhausted, and users got timeout errors instead of music.
 
-By completing this chapter, you will:
+Your monitoring dashboard shows the grim reality: average query time spiked to 8 seconds, memory usage hit 95%, and your read replicas are 45 seconds behind master writes. The DBA is talking about "horizontal sharding with application-level routing logic" - which sounds expensive and complicated.
 
-- Understand Apache Ignite 3's distributed computing capabilities and core use cases
-- Distinguish between connection strategies and their appropriate applications
-- Recognize when to use default zones versus custom zones for different scenarios
-- Understand the Java API architecture and multi-modal access patterns
-- Make informed decisions about deployment patterns for development and production
+## Production Platform Scaling Requirements
 
-## The Challenge: Building at Scale
-
-Picture this: you're building a music streaming platform. It starts simple - a few thousand users, basic catalog browsing, simple searches. But success brings complexity:
+Meanwhile, Spotify serves 400 million active users. Netflix streams globally without crashes. They're not running single PostgreSQL instances with read replicas. They use distributed architecture that scales horizontally.
 
 ```mermaid
 graph TB
@@ -47,9 +41,11 @@ Your application now needs to:
 
 Traditional databases hit walls. You need a distributed computing platform built for these demands.
 
-## Apache Ignite 3: Your Distributed Solution
+## Distributed-First Architecture Implementation
 
-Apache Ignite 3 solves these scaling challenges through a unified distributed platform:
+Traditional scaling approaches create operational complexity: read replicas with replication lag, sharded databases that break cross-shard joins, cache layers with invalidation race conditions, and message queues with delivery semantics.
+
+Ignite 3 implements distributed-first architecture:
 
 ```mermaid
 graph TB
@@ -84,9 +80,9 @@ graph TB
     end
 ```
 
-### What This Means for Your Code
+### Unified API Architecture
 
-Instead of managing database connections, cache layers, and compute frameworks separately:
+Instead of managing separate database connections, cache clusters, and compute frameworks:
 
 ```java
 // Traditional approach - multiple systems to manage
@@ -105,26 +101,21 @@ SqlStatement analytics = ignite.sql().statementBuilder().query("SELECT...");
 JobExecution<String> recommendation = ignite.compute().submit(nodes, job, args);
 ```
 
-### Five Core Capabilities
+### Core Platform Capabilities
 
-- **In-Memory Data Grid**: Your data lives in RAM across nodes - microsecond access with optional persistence
-- **Distributed SQL Engine**: Standard SQL that spans the entire cluster automatically
-- **NoSQL Key-Value Store**: Type-safe object APIs for when you know exactly what you want
-- **Compute Engine**: Run your business logic where the data lives - no network penalties
-- **Streaming Engine**: Handle millions of events per second with automatic backpressure
+**In-memory distributed storage** - Your catalog resides in cluster memory across multiple nodes with microsecond access latencies and optional disk persistence for durability.
 
-### Evolution from Ignite 2
+**Distributed SQL execution** - Standard SQL queries execute across the entire cluster topology automatically, processing data where it resides without network transfer overhead.
 
-If you have worked with version 2 of Ignite in the past, Ignite 3 represents a redesign focused on developer experience and operational management:
+**Type-safe object operations** - Direct key-value access through Java APIs eliminates object-relational mapping complexity for known-key operations.
 
-- **Cleaner Architecture**: Simplified codebase with clear separation between storage, compute, and API layers
-- **Schema Management**: Annotation-driven table creation reduces configuration complexity
-- **Transaction Semantics**: Consistency guarantees with programming models
-- **Modern Java Integration**: Built-in support for CompletableFuture, type safety, and contemporary frameworks
+**Distributed compute execution** - Business logic executes directly on nodes containing relevant data, eliminating network serialization penalties.
 
-## Connection Strategy: Client vs Embedded
+**High-throughput streaming** - Event ingestion handles millions of events per second with automatic backpressure and flow control.
 
-You have two ways to connect your application to an Ignite 3 cluster. Choose based on your deployment needs:
+## Deployment Architecture Patterns
+
+### Remote Client Pattern (Recommended)
 
 ```mermaid
 graph TB
@@ -166,7 +157,7 @@ graph TB
     end
 ```
 
-### Remote Client Pattern (Start Here)
+### Remote Client Implementation
 
 Your applications connect to the cluster but stay separate from it:
 
@@ -177,20 +168,20 @@ IgniteClient client = IgniteClient.builder()
     .build();
 ```
 
-**Perfect for:**
+**Optimal for:**
 
 - Microservices (each service connects independently)
 - Containers and Kubernetes deployments
 - Development and testing
 - When you want to scale apps and storage separately
 
-**Why it works:**
+**Implementation benefits:**
 
 - Deploy new app versions without touching storage
 - Scale applications based on traffic, storage based on data
 - Simple operational model
 
-### Embedded Node Pattern
+### Embedded Node Implementation
 
 Your application becomes part of the storage cluster:
 
@@ -199,13 +190,13 @@ Your application becomes part of the storage cluster:
 IgniteServer server = IgniteServer.start("myApp", configPath, workDir);
 ```
 
-**Use when:**
+**Apply when:**
 
 - Data locality is critical (compute runs where data lives)
 - Legacy systems that can't be easily separated
 - Single-deployment scenarios
 
-**Trade-offs:**
+**Implementation trade-offs:**
 
 - App restarts affect cluster membership
 - More complex deployment coordination
@@ -215,9 +206,9 @@ IgniteServer server = IgniteServer.start("myApp", configPath, workDir);
 
 Both connection strategies implement the same Ignite interface, enabling consistent programming patterns regardless of deployment choice. This means you can develop with one pattern and deploy with another based on operational requirements.
 
-## Java API: Three Ways to Access Your Data
+## Multi-API Data Access Strategy
 
-Ignite 3 gives you three APIs to work with the same distributed data. Pick the right tool for each job:
+Ignite 3 provides three APIs to work with the same distributed data. Pick the right tool for each job:
 
 ```mermaid
 graph LR
@@ -244,7 +235,7 @@ graph LR
     KV --> DATA
 ```
 
-### When to Use Each API
+### API Selection Patterns
 
 ```java
 // Table API - when you know the structure and want type safety
@@ -263,7 +254,7 @@ Tuple trackKey = Tuple.create().set("TrackId", 123);
 Tuple trackData = tracks.get(null, trackKey); // Fast key lookup
 ```
 
-### Async Operations Everywhere
+### Asynchronous Operation Support
 
 Every API supports both sync and async operations:
 
@@ -278,7 +269,7 @@ future.thenApply(this::updateArtist)
       .thenRun(() -> System.out.println("Update complete"));
 ```
 
-### Type Safety Across APIs
+### Cross-API Type Safety
 
 Your Java classes work consistently across all APIs:
 
@@ -295,11 +286,11 @@ RecordView<Artist> tableView = ignite.tables().table("Artist").recordView(Artist
 ResultSet<Artist> sqlResults = ignite.sql().execute(null, "SELECT * FROM Artist", Artist.class);
 ```
 
-## Distribution Zones: Getting Started
+## Distribution Zone Configuration
 
-Distribution zones control how your data spreads across cluster nodes. For getting started, Ignite 3 provides a default zone that works out of the box:
+Distribution zones control how your data spreads across cluster nodes. Ignite 3 provides a default zone that works out of the box:
 
-### Default Zone: Zero Configuration Required
+### Default Zone Implementation
 
 When you create a table without specifying a zone, Ignite uses the default zone:
 
@@ -311,14 +302,14 @@ public class Artist {
 }
 ```
 
-**What you get:**
+**Configuration details:**
 
 - **1 replica** (no backups)
 - **25 partitions** (good for small to medium datasets)
 - **All nodes included** (uses entire cluster)
 - **Ready immediately** (no setup required)
 
-**Perfect for:**
+**Optimal for:**
 
 - Development and learning
 - Proof-of-concept projects
@@ -328,7 +319,7 @@ public class Artist {
 
 > **Need production-grade storage?** See [Storage System Architecture](../00-reference/storage-system-arch.md) for complete details on custom zones, partitioning strategies, and fault-tolerant configurations.
 
-## Connection Patterns: Single vs Multi-Node
+## Cluster Connection Strategies
 
 How you connect to the cluster affects performance. Connecting to all nodes gives you the best experience:
 
@@ -368,7 +359,7 @@ graph TB
     end
 ```
 
-### The Right Way to Connect
+### Multi-Node Connection Implementation
 
 Always specify all cluster node addresses:
 
@@ -384,15 +375,15 @@ IgniteClient client = IgniteClient.builder()
     .build();
 ```
 
-**Why this matters:**
+**Implementation benefits:**
 
 - **Direct access**: Your app connects directly to the node that holds the data
 - **Automatic failover**: If one node goes down, your app keeps working
 - **Load distribution**: Requests spread across all available nodes
 
-## Key Patterns for Success
+## Implementation Pattern Summary
 
-### Connect to All Nodes
+### Multi-Node Connection Pattern
 
 ```java
 // Production pattern: specify all cluster nodes
@@ -401,7 +392,7 @@ IgniteClient client = IgniteClient.builder()
     .build();
 ```
 
-### Start with Default Zone
+### Default Zone Pattern
 
 ```java
 // Development pattern: use default zone for simplicity
@@ -412,7 +403,7 @@ public class Artist {
 }
 ```
 
-### Choose the Right API
+### API Selection Strategy
 
 ```java
 // Table API for direct record access
@@ -422,16 +413,16 @@ Artist artist = artists.get(null, artistKey);
 var results = client.sql().execute(null, "SELECT * FROM Artist WHERE...");
 ```
 
-## Prerequisites
+## Technology Requirements
 
-**Required Technology**:
+**Required software stack:**
 
 - **Java 17+**: Modern JDK
 - **Maven 3.8+**: Build and dependency management
 - **Docker**: Version 20.10.0 or newer (12GB RAM recommended)
 - **Docker Compose**: Version 2.23.1 or newer
 
-**Installation**:
+**Installation approach:**
 
 > [!NOTE]
 > Docker installation is preferred but not required.
@@ -442,18 +433,18 @@ var results = client.sql().execute(null, "SELECT * FROM Artist WHERE...");
 
 Alternative installation methods are available for environments where Docker is not suitable.
 
-**Knowledge Assumptions**:
+**Required knowledge base:**
 
 - Java fundamentals (collections, generics, streams)
 - Basic SQL concepts (SELECT, JOIN, GROUP BY)
 - General understanding of web application architecture
 
-## Next Steps
+## Implementation Path
 
-Understanding these architectural concepts and decision frameworks provides the foundation for hands-on development.
+These architectural concepts and decision frameworks provide the foundation for hands-on development.
 
 Continue with:
 
 - **[Chapter 1.2: Your First Implementation](02-getting-started.md)** - Put these concepts into practice with a working Ignite 3 application using the default zone pattern
 
-- **[Chapter 1.3: Distributed Data Fundamentals](03-distributed-data-fundamentals.md)** - Learn the core concepts of distributed data management and advanced zone configuration patterns
+- **[Chapter 1.3: Distributed Data Fundamentals](03-distributed-data-fundamentals.md)** - Core concepts of distributed data management and advanced zone configuration patterns
