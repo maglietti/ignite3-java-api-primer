@@ -1,67 +1,28 @@
-# Chapter 3.3: Choosing the Right API for Your Use Case
+# Chapter 3.3: API Selection Strategy
 
-## Learning Objectives
+Your mobile app response times degraded after implementing user session management through SQL queries instead of direct key lookups. Meanwhile, your analytics dashboard fails to aggregate sales data efficiently because you're using RecordView operations to load thousands of individual records instead of executing SQL aggregations. These performance problems stem from API selection mismatches that compound under production load.
 
-By completing this chapter, you will:
+Modern distributed applications require different data access patterns for different operations. Session lookups need sub-millisecond key-value performance, business logic operations need type-safe object manipulation, and analytics require SQL aggregation capabilities. Ignite 3 provides three distinct APIs optimized for these different patterns, but selecting the wrong API for each operation creates performance bottlenecks that scale poorly.
 
-- Apply decision frameworks for choosing between Table API and SQL API
-- Understand performance characteristics of different data access patterns
-- Implement hybrid approaches that combine multiple APIs effectively
-- Design optimal data access strategies for common application scenarios
+This chapter demonstrates how to analyze operation characteristics, select optimal APIs, and combine multiple approaches within single applications.
 
-## API Selection Decision Framework
+## Operation Analysis Framework
 
-> [!IMPORTANT]
-> **API Selection Impact**: Choosing the right API for each operation can dramatically affect both development productivity and runtime performance. The patterns in this chapter help you make optimal decisions for each use case.
+Your API selection determines both development efficiency and runtime performance. Each operation type requires different optimization strategies based on data access patterns, object complexity, and performance requirements.
 
-Choosing the right API for each operation significantly impacts both development productivity and runtime performance. This chapter provides practical frameworks for making these decisions.
+**KeyValueView Operations**: Direct partition access with minimal serialization overhead. Optimal for high-frequency lookups, caching patterns, and simple value operations where you have primary keys.
 
-### The Performance-Complexity Matrix
+**RecordView Operations**: Full object serialization with type safety and business logic integration. Optimal for entity management, CRUD operations, and scenarios requiring complete object context.
 
-Different operations fall into distinct categories based on their complexity and performance requirements:
+**SQL Operations**: Query planning and optimization with support for complex joins and aggregations. Optimal for analytics, reporting, and operations spanning multiple entities or requiring aggregation logic.
 
-```mermaid
-graph TD
-    A["High Performance<br/>Simple Operations"] --> B["KeyValueView<br/>• Single record by key<br/>• Key-value operations<br/>• High-frequency access"]
-    
-    C["High Performance<br/>Complex Operations"] --> D["SQL API + Colocation<br/>• Joins on colocated data<br/>• Aggregations within partition<br/>• Complex business logic"]
-    
-    E["Moderate Performance<br/>Simple Operations"] --> F["RecordView<br/>• CRUD with full objects<br/>• Type-safe operations<br/>• Business logic integration"]
-    
-    G["Moderate Performance<br/>Complex Operations"] --> H["SQL API<br/>• Cross-partition joins<br/>• Analytics queries<br/>• Ad-hoc reporting"]
-```
+The wrong API choice creates cascading performance problems. SQL queries for simple key lookups add query planning overhead and network roundtrips. RecordView operations for analytics load excessive data into memory and perform client-side aggregations instead of server-side optimizations.
 
-### Decision Tree for API Selection
+### KeyValueView: Maximum Performance Access
 
-Use this decision tree to choose the optimal API for each operation:
+KeyValueView provides direct partition access with minimal serialization overhead. The API bypasses query planning and object mapping, delivering sub-millisecond operations for primary key lookups. This approach works best when you need maximum performance for simple operations and have primary keys available.
 
-```mermaid
-flowchart TD
-    A["Data Access Operation"] --> B{"Known Primary Key?"}
-    
-    B -->|Yes| C{"Single Record?"}
-    B -->|No| D["SQL API<br/>Complex queries required"]
-    
-    C -->|Yes| E{"Need Full Object?"}
-    C -->|No| F{"Related Records?"}
-    
-    E -->|Yes| G["RecordView<br/>Type-safe CRUD"]
-    E -->|No| H["KeyValueView<br/>Maximum performance"]
-    
-    F -->|Colocated| I["SQL API<br/>Local joins"]
-    F -->|Distributed| J["SQL API<br/>Distributed joins"]
-```
-
-## Performance Characteristics by API
-
-### KeyValueView Performance Profile
-
-**Optimal For:**
-
-- Key-value operations (session data, user preferences)
-- High-frequency simple lookups
-- Single-field operations
-- Scenarios where object overhead is significant
+Session management, feature flags, and cache-aside patterns benefit from KeyValueView's direct access model. The API eliminates object instantiation overhead and transmits only key-value pairs, making it ideal for high-frequency operations where performance matters more than object richness.
 
 ```java
 public class HighPerformanceCache {
@@ -72,7 +33,7 @@ public class HighPerformanceCache {
             .keyValueView(String.class, String.class);
     }
     
-    // Scenario: User session management
+    // Direct session access - no query planning or object instantiation
     public void storeSession(String sessionId, String userId) {
         sessionCache.put(null, sessionId, userId);  // Sub-millisecond operation
     }
@@ -81,7 +42,7 @@ public class HighPerformanceCache {
         return sessionCache.get(null, sessionId);   // Fastest possible lookup
     }
     
-    // Scenario: Feature flags or configuration
+    // Feature flag evaluation with minimal overhead
     public boolean isFeatureEnabled(String featureKey) {
         String value = sessionCache.get(null, featureKey);
         return "true".equals(value);
@@ -89,20 +50,13 @@ public class HighPerformanceCache {
 }
 ```
 
-**Performance Benefits:**
+KeyValueView operations eliminate serialization overhead by transmitting only key-value pairs. Direct partition access bypasses query planning, making these operations optimal for cache-aside patterns and high-frequency lookups where performance requirements exceed object complexity needs.
 
-- **Minimal serialization**: Only key and value transmitted
-- **Direct partition access**: No query planning overhead
-- **Optimal caching**: Perfect for cache-aside patterns
+### RecordView: Type-Safe Entity Operations
 
-### RecordView Performance Profile
+RecordView provides full object serialization with compile-time type safety and IDE integration support. The API handles complete object graphs and enables business logic integration, making it optimal for entity management scenarios where object richness matters more than raw performance.
 
-**Optimal For:**
-
-- Business entity operations
-- Type-safe development
-- Operations requiring full object context
-- Integration with business logic
+Business entity operations, CRUD workflows, and scenarios requiring complete object context benefit from RecordView's type-safe approach. The API provides compile-time error detection and object validation while maintaining reasonable performance for complex entity operations.
 
 ```java
 public class BusinessEntityOperations {
@@ -114,15 +68,15 @@ public class BusinessEntityOperations {
         this.invoices = client.tables().table("Invoice").recordView(Invoice.class);
     }
     
-    // Scenario: Customer management
+    // Full object retrieval with business context
     public Customer getCustomerProfile(Integer customerId) {
         Customer key = new Customer();
         key.setCustomerId(customerId);
-        return customers.get(null, key);  // Type-safe, full object
+        return customers.get(null, key);  // Type-safe, complete object
     }
     
     public void updateCustomerProfile(Customer customer) {
-        // Business logic validation
+        // Business logic validation with compile-time safety
         if (customer.getEmail() == null || !customer.getEmail().contains("@")) {
             throw new IllegalArgumentException("Invalid email address");
         }
@@ -130,7 +84,7 @@ public class BusinessEntityOperations {
         customers.upsert(null, customer);  // Full object update
     }
     
-    // Scenario: Order processing
+    // Complex business workflows with multiple entities
     public void processOrder(Customer customer, Invoice invoice) {
         // Type-safe operations with business context
         customer.setLastOrderDate(LocalDate.now());
@@ -142,20 +96,13 @@ public class BusinessEntityOperations {
 }
 ```
 
-**Performance Benefits:**
+RecordView operations provide compile-time type safety and IDE support for refactoring and development efficiency. Full object context enables business logic integration and validation while maintaining performance suitable for entity management operations.
 
-- **Type safety**: Compile-time error detection
-- **Object context**: Full business logic integration
-- **Development speed**: IDE support and refactoring
+### SQL API: Complex Query Processing
 
-### SQL API Performance Profile
+SQL API provides query planning and optimization with support for complex joins, aggregations, and analytical operations. The API handles cross-partition operations and server-side processing, making it optimal for scenarios requiring flexible query capabilities and data aggregation.
 
-**Optimal For:**
-
-- Complex queries and joins
-- Analytics and reporting
-- Operations requiring aggregation
-- Dynamic query requirements
+Analytics, reporting, and operations spanning multiple entities benefit from SQL's query optimization and aggregation capabilities. The API performs server-side processing to minimize data transfer and supports complex business logic that requires multiple table interactions.
 
 ```java
 public class AnalyticsOperations {
@@ -165,7 +112,7 @@ public class AnalyticsOperations {
         this.sql = client.sql();
     }
     
-    // Scenario: Sales analytics (leverages colocation)
+    // Server-side aggregation with colocation optimization
     public List<ArtistSales> getTopSellingArtists(int limit) {
         String query = """
             SELECT a.Name, COUNT(il.TrackId) as TracksSold, 
@@ -193,7 +140,7 @@ public class AnalyticsOperations {
         return sales;
     }
     
-    // Scenario: Dynamic reporting
+    // Flexible reporting with dynamic parameters
     public BigDecimal calculateRevenue(LocalDate startDate, LocalDate endDate, String genre) {
         String query = """
             SELECT SUM(il.UnitPrice * il.Quantity) as Revenue
@@ -212,15 +159,11 @@ public class AnalyticsOperations {
 }
 ```
 
-**Performance Benefits:**
+SQL operations leverage query optimization and colocation awareness to minimize data movement during complex operations. Server-side aggregation and join processing reduce network traffic while providing flexible query capabilities for analytics and reporting scenarios.
 
-- **Query optimization**: Automatic query planning and optimization
-- **Colocation awareness**: Joins on colocated data execute locally
-- **Flexible queries**: Support for complex analytical operations
+Modern applications require multiple API approaches within single workflows. Order processing combines entity management, high-performance lookups, and complex calculations. Dashboard systems need cached metrics, real-time analytics, and session management. These scenarios demonstrate how to combine APIs strategically for optimal performance.
 
-## Common Application Scenarios
-
-### Scenario 1: E-commerce Order Processing
+### E-commerce Order Processing
 
 ```java
 public class OrderProcessingService {
@@ -238,13 +181,13 @@ public class OrderProcessingService {
     }
     
     public OrderResult processOrder(Integer customerId, List<OrderItem> items) {
-        // 1. RecordView: Get customer (known key, need full object)
+        // RecordView: Customer entity with business logic validation
         Customer customer = getCustomer(customerId);
         if (customer == null) {
             return OrderResult.customerNotFound();
         }
         
-        // 2. KeyValueView: Check inventory (high-performance lookups)
+        // KeyValueView: High-performance inventory checks
         for (OrderItem item : items) {
             Boolean available = inventory.get(null, item.getProductId());
             if (!Boolean.TRUE.equals(available)) {
@@ -252,10 +195,10 @@ public class OrderProcessingService {
             }
         }
         
-        // 3. SQL API: Complex price calculation with discounts
+        // SQL API: Complex pricing with customer-specific discounts
         BigDecimal totalPrice = calculateOrderTotal(customerId, items);
         
-        // 4. RecordView: Create order (full object with business logic)
+        // RecordView: Order creation with business context
         Order order = new Order();
         order.setCustomerId(customerId);
         order.setTotalPrice(totalPrice);
@@ -272,7 +215,7 @@ public class OrderProcessingService {
     }
     
     private BigDecimal calculateOrderTotal(Integer customerId, List<OrderItem> items) {
-        // SQL for complex pricing with customer-specific discounts
+        // Server-side calculation with customer-specific discounts
         String query = """
             SELECT SUM(p.Price * ? * (1 - COALESCE(cd.DiscountPercent, 0) / 100)) as Total
             FROM Product p
@@ -292,7 +235,9 @@ public class OrderProcessingService {
 }
 ```
 
-### Scenario 2: Real-Time Dashboard
+Order processing combines three API approaches strategically. RecordView handles customer entities with business logic validation. KeyValueView provides high-performance inventory lookups. SQL API calculates complex pricing with customer-specific discounts. Each API handles operations where it provides optimal performance characteristics.
+
+### Real-Time Dashboard Implementation
 
 ```java
 public class DashboardService {
@@ -308,15 +253,16 @@ public class DashboardService {
     public DashboardData getDashboardData() {
         DashboardData dashboard = new DashboardData();
         
-        // 1. KeyValueView: High-frequency cached metrics
+        // KeyValueView: High-frequency cached metrics for instant access
         dashboard.setActiveUsers(getCachedMetric("active_users"));
         dashboard.setSystemStatus(getCachedMetric("system_status"));
         
-        // 2. SQL API: Real-time analytics (executed occasionally, cached)
+        // Hybrid approach: Check cache first, calculate if needed
         String recentSalesKey = "recent_sales_" + LocalDate.now();
         String cachedSales = metricsCache.get(null, recentSalesKey);
         
         if (cachedSales == null) {
+            // SQL API: Complex analytics calculation
             BigDecimal sales = calculateRecentSales();
             metricsCache.put(null, recentSalesKey, sales.toString());
             dashboard.setRecentSales(sales);
@@ -346,7 +292,9 @@ public class DashboardService {
 }
 ```
 
-### Scenario 3: User Profile Management
+Dashboard implementation combines caching with analytics. KeyValueView provides instant access to high-frequency metrics like active users and system status. SQL API handles complex calculations when cache misses occur. This hybrid approach delivers consistent performance while maintaining data freshness.
+
+### User Profile Management System
 
 ```java
 public class UserProfileService {
@@ -362,28 +310,28 @@ public class UserProfileService {
     }
     
     public CompleteUserProfile getUserProfile(Integer userId) {
-        // 1. RecordView: Full profile data (complex object)
+        // RecordView: Complete profile object with business context
         UserProfile profile = getProfile(userId);
         if (profile == null) {
             return null;
         }
         
-        // 2. KeyValueView: Fast preference lookup
+        // KeyValueView: High-frequency preference access
         String preferences = preferencesCache.get(null, userId);
         
-        // 3. SQL API: Activity summary (analytical query)
+        // SQL API: Analytical activity summary
         UserActivity activity = getUserActivity(userId);
         
         return new CompleteUserProfile(profile, preferences, activity);
     }
     
     public void updateUserPreferences(Integer userId, String preferences) {
-        // KeyValueView: Fast preference updates
+        // KeyValueView: Instant preference updates
         preferencesCache.put(null, userId, preferences);
     }
     
     public void updateUserProfile(UserProfile profile) {
-        // RecordView: Complex object updates with validation
+        // RecordView: Full object updates with business validation
         if (profile.getEmail() == null || !isValidEmail(profile.getEmail())) {
             throw new IllegalArgumentException("Invalid email");
         }
@@ -427,9 +375,11 @@ public class UserProfileService {
 }
 ```
 
-## Hybrid Approaches
+User profile management separates concerns by data access pattern. RecordView handles complete profile objects with business validation. KeyValueView provides instant preference access for high-frequency operations. SQL API generates activity summaries with complex aggregations. This separation optimizes each operation type while maintaining consistent user experience.
 
-### Combining APIs for Optimal Performance
+## Advanced Multi-API Patterns
+
+### Search and Metadata Enrichment
 
 ```java
 public class OptimizedMusicService {
@@ -445,7 +395,7 @@ public class OptimizedMusicService {
     }
     
     public SearchResults searchTracks(String searchTerm, int limit) {
-        // 1. SQL API: Complex search with ranking
+        // SQL API: Complex search with relevance ranking
         String searchQuery = """
             SELECT t.TrackId, t.Name as TrackName, t.ArtistId,
                    RANK() OVER (ORDER BY 
@@ -464,7 +414,7 @@ public class OptimizedMusicService {
         List<TrackResult> results = new ArrayList<>();
         Set<Integer> artistIds = new HashSet<>();
         
-        // 2. Collect track data and artist IDs
+        // Collect search results and extract artist IDs
         while (searchResult.hasNext()) {
             SqlRow row = searchResult.next();
             
@@ -476,10 +426,10 @@ public class OptimizedMusicService {
             artistIds.add(artistId);
         }
         
-        // 3. KeyValueView: Fast batch lookup for artist names
+        // KeyValueView: Batch lookup for artist names
         Map<Integer, String> artistNames = artistNameCache.getAll(null, artistIds);
         
-        // 4. Combine results
+        // Enrich results with cached artist names
         for (TrackResult result : results) {
             result.setArtistName(artistNames.get(result.getArtistId()));
         }
@@ -488,7 +438,7 @@ public class OptimizedMusicService {
     }
     
     public PlaylistDetails getPlaylistWithMetadata(Integer playlistId) {
-        // 1. SQL API: Get playlist tracks with full details
+        // SQL API: Playlist structure with join optimization
         String playlistQuery = """
             SELECT p.Name as PlaylistName, t.TrackId, t.Name as TrackName,
                    t.Milliseconds, a.Name as ArtistName
@@ -525,7 +475,7 @@ public class OptimizedMusicService {
             ));
         }
         
-        // 2. RecordView: Get full track objects for additional metadata
+        // RecordView: Additional metadata for complete track objects
         Collection<Track> trackKeys = trackIds.stream()
             .map(id -> {
                 Track key = new Track();
@@ -536,7 +486,7 @@ public class OptimizedMusicService {
         
         Collection<Track> fullTracks = tracks.getAll(null, trackKeys);
         
-        // 3. Combine for complete playlist details
+        // Combine SQL results with RecordView metadata
         Map<Integer, Track> trackMap = fullTracks.stream()
             .collect(Collectors.toMap(Track::getTrackId, t -> t));
         
@@ -553,45 +503,39 @@ public class OptimizedMusicService {
 }
 ```
 
-## Performance Optimization Guidelines
+Advanced patterns combine multiple APIs within single operations for optimal performance. Search operations use SQL for complex ranking while leveraging KeyValueView for metadata enrichment. Playlist operations combine SQL joins with RecordView batch lookups to minimize network roundtrips while maximizing data completeness.
 
-### API Selection Best Practices
+## Performance Anti-Patterns
 
-1. **Start with the simplest API that meets your requirements**
-2. **Use KeyValueView for high-frequency simple operations**
-3. **Use RecordView for business logic integration**
-4. **Use SQL API for complex queries and analytics**
-5. **Combine APIs in the same application for optimal performance**
-
-### Common Anti-Patterns to Avoid
+Your API selection mistakes create performance bottlenecks that compound under load. Using SQL for simple key lookups adds unnecessary query planning overhead. Using RecordView for analytics forces client-side aggregation of massive datasets. These anti-patterns demonstrate common mismatches between operation requirements and API capabilities.
 
 ```java
-// ANTI-PATTERN: Using SQL for simple key lookups
-public class AntiPatterns {
+public class APISelectionAntiPatterns {
     
-    // DON'T: Use SQL for simple key-based access
-    public String getArtistNameBad(IgniteSql sql, Integer artistId) {
+    // ANTI-PATTERN: SQL queries for simple key lookups
+    public String getArtistNameInefficient(IgniteSql sql, Integer artistId) {
+        // Adds query planning overhead for simple operation
         ResultSet<SqlRow> result = sql.execute(null, 
             "SELECT Name FROM Artist WHERE ArtistId = ?", artistId);
         return result.hasNext() ? result.next().stringValue("Name") : null;
     }
     
-    // DO: Use KeyValueView for simple access
-    public String getArtistNameGood(KeyValueView<Integer, String> artistNames, Integer artistId) {
-        return artistNames.get(null, artistId);
+    // OPTIMIZED: Direct key access for maximum performance
+    public String getArtistNameOptimized(KeyValueView<Integer, String> artistNames, Integer artistId) {
+        return artistNames.get(null, artistId);  // Sub-millisecond access
     }
     
-    // DON'T: Use RecordView for analytics
-    public BigDecimal calculateTotalRevenueBad(RecordView<InvoiceLine> invoiceLines) {
-        // This would require loading ALL invoice lines into memory!
+    // ANTI-PATTERN: RecordView for large-scale analytics
+    public BigDecimal calculateTotalRevenueInefficient(RecordView<InvoiceLine> invoiceLines) {
+        // Forces massive data transfer and client-side aggregation
         Collection<InvoiceLine> allLines = invoiceLines.getAll(null, getAllKeys());
         return allLines.stream()
             .map(line -> line.getUnitPrice().multiply(BigDecimal.valueOf(line.getQuantity())))
             .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
     
-    // DO: Use SQL for analytics
-    public BigDecimal calculateTotalRevenueGood(IgniteSql sql) {
+    // OPTIMIZED: Server-side aggregation with SQL
+    public BigDecimal calculateTotalRevenueOptimized(IgniteSql sql) {
         ResultSet<SqlRow> result = sql.execute(null,
             "SELECT SUM(UnitPrice * Quantity) as Total FROM InvoiceLine");
         return result.hasNext() ? result.next().decimalValue("Total") : BigDecimal.ZERO;
@@ -599,41 +543,37 @@ public class AntiPatterns {
 }
 ```
 
-## Making the Right Choice
+These anti-patterns create performance problems that scale poorly under production load. SQL queries for simple lookups waste processing cycles on unnecessary query planning. RecordView analytics operations transfer excessive data across the network and perform aggregations that should execute server-side.
 
-The key to optimal API selection is understanding your specific use case characteristics:
+## API Selection Strategy
 
-**Choose KeyValueView when:**
+Your operation characteristics determine optimal API choice. Analyze data access patterns, performance requirements, and object complexity to match operations with appropriate APIs.
 
-- You have the primary key
-- You need maximum performance
-- You're working with simple values
-- You're implementing caching patterns
+**KeyValueView Selection Criteria:**
+- Primary key available for direct access
+- Performance requirements exceed 1000 operations per second
+- Simple value operations without complex object relationships
+- Caching patterns and session management scenarios
 
-**Choose RecordView when:**
+**RecordView Selection Criteria:**
+- Complete object context required for business logic
+- Type safety and compile-time validation important
+- CRUD operations with business rule enforcement
+- Development productivity matters more than raw performance
 
-- You need full object functionality
-- You want type safety and IDE support
-- You're implementing business logic
-- You're doing CRUD operations
+**SQL API Selection Criteria:**
+- Complex queries spanning multiple entities
+- Analytics and aggregation requirements
+- Dynamic query construction needed
+- Cross-partition operations unavoidable
 
-**Choose SQL API when:**
+**Multi-API Strategy:**
+- Combine approaches within single applications for optimal performance
+- Use each API where it provides maximum advantage
+- Design data access layers that leverage API strengths strategically
 
-- You need complex queries or joins
-- You're doing analytics or reporting
-- You don't have primary keys
-- You need flexible, dynamic queries
+Modern distributed applications achieve optimal performance by matching operation characteristics with appropriate API capabilities. The most effective implementations combine all three approaches, selecting APIs based on specific operation requirements rather than architectural uniformity.
 
-**Combine APIs when:**
+Your API selection directly impacts application performance, development productivity, and operational complexity. Choose APIs that match operation characteristics while considering long-term maintenance and scaling requirements.
 
-- Different operations have different performance requirements
-- You can optimize different parts of your workflow
-- You want to leverage the strengths of each approach
-
-The most effective applications use all three approaches strategically, choosing the right tool for each specific operation.
-
-## Series Conclusion
-
-You've now mastered Ignite 3's complete data access layer, from object-oriented operations through complex analytics to optimal API selection. This foundation prepares you for the advanced distributed features covered in the remaining modules.
-
-- **Continue Learning**: **[Module 4: Distributed Operations](../04-distributed-operations/01-transaction-fundamentals.md)** - Build on your data access knowledge to master transactions, distributed processing, and advanced distributed patterns
+**Next Steps**: **[Module 4: Distributed Operations](../04-distributed-operations/01-transaction-fundamentals.md)** demonstrates how data access patterns integrate with transaction management, distributed processing, and consistency guarantees across multiple nodes.

@@ -1,19 +1,12 @@
-# Chapter 4.3: Compute API for Distributed Processing
+# Chapter 4.3: Distributed Computing
 
-## Learning Objectives
+Your recommendation algorithm takes 45 minutes to process because it transfers terabytes of user data across the network instead of running computations where data resides. Your monthly analytics job consumes more bandwidth than your production workload, dragging down system performance for hours.
 
-By completing this chapter, you will:
-
-- Implement distributed job execution with data locality awareness
-- Master job targeting strategies for optimal performance
-- Apply MapReduce patterns for large-scale analytics
-- Handle asynchronous job execution and result aggregation
+The Compute API solves these bottlenecks by executing code directly on cluster nodes where data lives, eliminating data movement and enabling massive parallel processing. This transforms single-node processing limitations into distributed intelligence that scales with your data.
 
 ## Working with the Reference Application
 
-The **`07-compute-api-app`** demonstrates all Compute API patterns covered in this chapter with sophisticated music analytics examples. Run it alongside your learning to see distributed job execution, data locality patterns, and result aggregation in action.
-
-**Quick Start**: After reading this chapter, explore the reference application:
+The **`07-compute-api-app`** demonstrates distributed job execution, data locality patterns, and result aggregation with music analytics examples. The application handles automatic job deployment using the `ComputeJobDeployment` utility class with REST API integration.
 
 ```bash
 cd ignite3-reference-apps/07-compute-api-app
@@ -21,15 +14,15 @@ mvn package
 mvn compile exec:java
 ```
 
-**Job Deployment Requirement**: Standalone Ignite clusters require job classes to be deployed before execution. The application uses the `ComputeJobDeployment` utility class for automatic REST API deployment with fallback options.
+Job deployment handles both automatic and manual scenarios:
 
-**Automatic Deployment** (recommended):
+**Automatic Deployment**:
 ```bash
 # Application handles deployment automatically
 mvn package && mvn compile exec:java
 ```
 
-**Manual Deployment** (if needed):
+**Manual Deployment**:
 ```bash
 # Using included deployment script
 ./deploy-jar.sh compute-jobs 1.0.0 target/07-compute-api-app-1.0.0.jar
@@ -39,12 +32,9 @@ docker run --rm -it --network=host -e LANG=C.UTF-8 -e LC_ALL=C.UTF-8 apacheignit
 cluster unit deploy compute-jobs /path/to/target/07-compute-api-app-1.0.0.jar
 ```
 
-The reference app shows how the data consistency from [Chapter 4.1](01-transaction-fundamentals.md) enables reliable distributed processing workflows, building on the schema and data access patterns from previous modules.
+The reference app builds on the data consistency patterns from [Chapter 4.1](01-transaction-fundamentals.md) to create reliable distributed processing workflows.
 
-## Overview: Compute API Architecture
-
-> [!NOTE]
-> **Distributed Processing**: The Compute API enables running code directly on cluster nodes where your data resides, eliminating data movement and enabling massive parallel processing capabilities.
+## Architecture
 
 The Compute API provides a framework for executing code across cluster nodes with sophisticated targeting and result management:
 
@@ -75,18 +65,17 @@ graph TB
     end
 ```
 
-**Key Design Principles:**
+Three core capabilities solve distributed computing problems:
 
 - **Data Locality**: Jobs execute where data resides, minimizing network overhead
-- **Multiple Targeting**: From specific nodes to intelligent data-aware placement
+- **Multiple Targeting**: From specific nodes to intelligent data-aware placement  
 - **Result Management**: Synchronous, asynchronous, and job control patterns
-- **Type Safety**: Strong typing for job inputs, outputs, and execution context
 
 ## Job Submission Patterns
 
 ### Basic Job Execution
 
-The fundamental pattern involves creating a job descriptor and selecting an execution target:
+When your analytics queries consume excessive bandwidth transferring data for computation, jobs execute directly on data nodes. The fundamental pattern creates a job descriptor and selects an execution target:
 
 ```java
 import org.apache.ignite.compute.ComputeJob;
@@ -141,16 +130,15 @@ try (IgniteClient ignite = IgniteClient.builder()
 }
 ```
 
-**Key Concepts:**
+This pattern eliminates network transfers for data processing:
 
-- **ComputeJob Interface**: Your job implements `ComputeJob<InputType, OutputType>`
+- **ComputeJob Interface**: Jobs implement `ComputeJob<InputType, OutputType>` for type safety
 - **JobExecutionContext**: Provides access to the full Ignite API within the job
-- **Type Safety**: Strong typing ensures compile-time correctness for inputs and outputs
-- **Resource Access**: Jobs can execute SQL queries, access tables, and use other Ignite features
+- **Resource Access**: Jobs execute SQL queries and access tables locally
 
 ### Deployment Units and Job Class Management
 
-For standalone Ignite clusters, job classes must be deployed before execution using deployment units. The reference application includes a `ComputeJobDeployment` utility class that handles this automatically:
+Standalone Ignite clusters require job classes deployed before execution using deployment units. The reference application includes a `ComputeJobDeployment` utility class that handles this automatically:
 
 ```java
 import org.apache.ignite.deployment.DeploymentUnit;
@@ -175,7 +163,7 @@ public class ComputeExample {
 }
 ```
 
-**Deployment Workflow for Standalone Clusters:**
+**Deployment Workflow:**
 
 1. **Build JAR**: Package job classes into a JAR file
    ```bash
@@ -184,7 +172,7 @@ public class ComputeExample {
 
 2. **Deploy JAR**: Use REST API, CLI, or Docker CLI to deploy the JAR to the cluster
 
-   **REST API (Recommended for Automation):**
+   **REST API**:
    ```bash
    # Deploy via HTTP REST API
    curl -X POST \
@@ -193,7 +181,7 @@ public class ComputeExample {
      -F "unitContent=@target/app-1.0.0.jar"
    ```
 
-   **CLI Options:**
+   **CLI Options**:
    ```bash
    # Using local CLI
    ignite cluster unit deploy compute-jobs target/app-1.0.0.jar
@@ -238,18 +226,18 @@ public void deployJobClasses(Path jarPath) throws Exception {
 }
 ```
 
-**Deployment Strategy Guidelines:**
+**Deployment Strategies:**
 
-- **Automated Environments**: Use REST API for CI/CD pipeline integration and programmatic deployment
-- **Development**: Applications can automatically deploy JARs before job execution
-- **Production**: Use proper deployment units with deployed JARs for isolation and versioning
-- **Error Handling**: Applications should provide fallback instructions when REST API deployment fails
+- **Automated Environments**: Use REST API for CI/CD pipeline integration
+- **Development**: Applications automatically deploy JARs before job execution
+- **Production**: Use deployment units with deployed JARs for isolation and versioning
+- **Error Handling**: Provide fallback instructions when REST API deployment fails
 
 ### Job Targeting Strategies
 
 #### Any Node Execution
 
-For compute work that doesn't depend on specific data location:
+When compute work doesn't depend on specific data location, target any available node for optimal load distribution:
 
 ```java
 // CPU-intensive job that doesn't require data access
@@ -280,7 +268,7 @@ Map<String, Integer> analysis = ignite.compute().execute(target, job, albums);
 
 #### Specific Node Targeting
 
-When you need to target nodes with specific characteristics:
+Target nodes with specific characteristics or resource requirements:
 
 ```java
 // Target nodes based on resource availability or node characteristics
@@ -308,7 +296,7 @@ if (specificNode.isPresent()) {
 
 ### Colocated Job Execution
 
-The most powerful feature of Ignite 3's Compute API is data-aware job placement. Jobs execute on nodes where the relevant data resides:
+Data-aware job placement eliminates network bottlenecks by executing jobs on nodes where relevant data resides. This transforms bandwidth-constrained analytics into local processing:
 
 ```java
 // Job that analyzes sales data for a specific artist
@@ -370,7 +358,7 @@ System.out.println("Sales report for " + report.getArtistName() +
     ": " + report.getTotalRevenue() + " total revenue");
 ```
 
-**Data Locality Benefits:**
+This eliminates the primary bottleneck in distributed analytics:
 
 - **Network Efficiency**: Data doesn't cross network boundaries for processing
 - **Performance**: Local data access is orders of magnitude faster than remote
@@ -378,7 +366,7 @@ System.out.println("Sales report for " + report.getArtistName() +
 
 ### Broadcast Execution Patterns
 
-When you need to execute jobs across all nodes or all data partitions:
+Execute jobs across all nodes or all data partitions for cluster-wide operations and comprehensive data analysis:
 
 ```java
 // Job that calculates local statistics on each node
@@ -427,7 +415,7 @@ TrackStatistics globalStats = nodeStats.stream()
 System.out.println("Global track statistics: " + globalStats);
 ```
 
-**Broadcast Patterns:**
+Broadcast patterns enable cluster-wide analytics:
 
 - **Cluster-wide Operations**: Execute on all cluster nodes
 - **Partition-aware Broadcast**: Execute on nodes that hold specific table data
@@ -437,7 +425,7 @@ System.out.println("Global track statistics: " + globalStats);
 
 ### Non-blocking Job Execution
 
-For applications that can't afford to block on job execution:
+Applications that can't afford to block on job execution use asynchronous patterns to maintain responsiveness:
 
 ```java
 // Submit multiple analysis jobs asynchronously
@@ -471,7 +459,7 @@ allComplete.thenRun(() -> {
 
 ### Job Execution Management
 
-For long-running jobs that require monitoring and control:
+Long-running jobs require monitoring and control to track progress and handle failures:
 
 ```java
 // Required imports for job control
@@ -502,7 +490,7 @@ resultFuture.thenAccept(result -> {
 // execution.cancel(); // Implementation depends on job design
 ```
 
-**Job Control Features:**
+Job control features handle complex execution scenarios:
 
 - **State Monitoring**: Track job progress and status
 - **Result Management**: Handle results when jobs complete
@@ -512,7 +500,7 @@ resultFuture.thenAccept(result -> {
 
 ### Distributed Analytics with Map-Reduce
 
-For complex analytics that require map-reduce style processing:
+Complex analytics requiring map-reduce processing distributes computation across nodes, then aggregates results for massive parallel analysis:
 
 ```java
 // Map phase: Analyze tracks by genre on each node
@@ -573,6 +561,8 @@ globalGenreStats.entrySet().stream()
 ```
 
 ### Advanced Processing Patterns
+
+Recommendation engines and machine learning workloads require sophisticated distributed processing that combines multiple data sources and applies complex algorithms:
 
 ```java
 // Complex recommendation engine using distributed processing
@@ -706,6 +696,8 @@ recommendations.forEach(rec ->
 ## Error Handling and Fault Tolerance
 
 ### Job Failure Handling
+
+Distributed jobs face network failures, node outages, and resource constraints. Robust error handling with retry logic ensures job completion despite failures:
 
 ```java
 public class RobustComputeService {
@@ -862,11 +854,11 @@ class Recommendation {
 
 The Compute API transforms single-node processing limitations into distributed intelligence, enabling analytics and processing that scales with your data across the cluster while maintaining the performance benefits of data locality.
 
-## Important Implementation Notes
+## Implementation Considerations
 
-### SQL Reserved Words in Ignite 3
+### SQL Reserved Words in Compute Jobs
 
-When writing SQL queries within compute jobs, avoid using reserved words in AS clauses. Ignite 3 will reject queries with reserved word aliases:
+Ignite 3 rejects SQL queries with reserved word aliases. When writing SQL queries within compute jobs, use descriptive aliases instead of reserved words:
 
 ```java
 // ❌ Incorrect - will cause parsing errors
@@ -882,7 +874,7 @@ try (ResultSet<SqlRow> result = sql.execute(null, "SELECT COUNT(*) as track_coun
 }
 ```
 
-**Common reserved words to avoid in AS clauses:**
+**Reserved words to avoid in AS clauses:**
 
 - `count`, `sum`, `avg`, `min`, `max`
 - `value`, `data`, `key`, `index`
@@ -890,7 +882,7 @@ try (ResultSet<SqlRow> result = sql.execute(null, "SELECT COUNT(*) as track_coun
 
 ### Serialization Patterns
 
-Use string-based serialization for distributed job results:
+String-based serialization provides reliable distributed job results across different JVM versions and configurations:
 
 ```java
 // String-based results
@@ -908,8 +900,8 @@ public static class ComplexJob implements ComputeJob<Void, Map<String, List<Inte
 }
 ```
 
-## Module Conclusion
+The Compute API transforms single-node processing limitations into distributed intelligence, enabling analytics and processing that scales with your data across the cluster while maintaining the performance benefits of data locality.
 
-You've now mastered the complete distributed operations foundation in Ignite 3, from ACID transactions through advanced patterns to distributed processing. This prepares you for the performance and scalability patterns covered in the remaining modules.
+Moving beyond distributed operations, the next module addresses the performance bottlenecks that emerge as data volume and processing demands grow.
 
-- **Continue Learning**: **[Module 5: Performance and Scalability](../05-performance-scalability/01-data-streaming.md)** - Apply your distributed operations knowledge to master high-throughput data ingestion, caching strategies, and performance optimization techniques
+**Continue to**: **[Module 5: Performance and Scalability](../05-performance-scalability/01-data-streaming.md)** - Master high-throughput data ingestion, caching strategies, and performance optimization techniques that handle massive data volumes and concurrent workloads.

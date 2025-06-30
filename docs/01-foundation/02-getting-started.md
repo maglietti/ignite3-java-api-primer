@@ -1,33 +1,16 @@
 # Chapter 1.2: Getting Started with Your First Application
 
-## Learning Objectives
+Your development environment fails to connect to the Ignite cluster because of Docker networking issues, or your first table creation fails with schema validation errors. Connection attempts timeout, your annotated classes don't generate tables, or CRUD operations throw partition mapping exceptions. 
 
-By completing this chapter, you will:
+The cluster runs but your application can't find any nodes. Multi-node addressing configuration is incorrect, resource cleanup patterns cause memory leaks, or the client connects to only one node instead of establishing partition awareness across the cluster.
 
-- Create your first connection to an Ignite 3 cluster using multi-node addressing
-- Define and create tables using annotations with the default zone
-- Perform basic CRUD operations using both Table and SQL APIs
-- Understand resource management and proper cleanup patterns
-- Apply the concepts from Chapter 1.1 in a working application
-
-## Working with the Reference Application
-
-The **`02-getting-started-app`** provides a complete working example of the concepts covered in this chapter. You can run it alongside your learning to see these patterns in action with the full music store dataset.
-
-**Quick Start**: After reading this chapter, run the reference application:
-
-```bash
-cd ignite3-reference-apps/02-getting-started-app
-mvn compile exec:java
-```
-
-The reference app demonstrates the connection patterns, schema creation, and CRUD operations that scale from the Book examples here to the Artist-Album-Track hierarchy.
+This chapter solves these first-application problems through proper cluster setup, correct connection patterns, and working schema definitions.
 
 ## Environment Setup
 
-### Dependencies You Need
+### Client Library Configuration
 
-For any Ignite 3 application, you need one dependency:
+Maven builds fail with missing dependencies because your POM lacks the client library. Add the single required dependency:
 
 ```xml
 <dependency>
@@ -37,16 +20,17 @@ For any Ignite 3 application, you need one dependency:
 </dependency>
 ```
 
-The client library includes everything needed to connect, define schemas, and perform operations.
+This provides the complete client API for connections, schema operations, and data access.
 
-### Running Cluster Setup
+### Cluster Bootstrap Process
 
-Before your first application, you need an Ignite 3 cluster running. The fastest approach uses Docker:
+Applications fail to connect because no cluster exists. Docker provides the fastest cluster setup:
 
 **Prerequisites**: 
 
-- Docker 20.10.0 or newer and Docker Compose 2.23.1 or newer
-- See [Apache Ignite 3 Docker Installation Guide](https://ignite.apache.org/docs/ignite3/latest/installation/installing-using-docker) for setup instructions
+- Docker 20.10.0+ and Docker Compose 2.23.1+
+- Network ports 10300-10302 and 10800-10802 available
+- See [Apache Ignite 3 Docker Installation Guide](https://ignite.apache.org/docs/ignite3/latest/installation/installing-using-docker) for platform-specific setup
 
 #### Unix-based Systems (Linux, macOS)
 
@@ -55,30 +39,30 @@ Before your first application, you need an Ignite 3 cluster running. The fastest
 git clone <this-repo>
 cd ignite3-reference-apps/00-docker
 
-# Automated setup (recommended)
+# Automated setup
 ./init-cluster.sh
 ```
 
-The `init-cluster.sh` script automatically detects your Docker Compose environment and creates a 3-node cluster perfect for development and learning.
+The script detects your Docker Compose version and creates a 3-node cluster with proper networking configuration.
 
-#### Windows and Other Systems
+#### Windows and Manual Setup
 
-**Option 1: Manual Docker Setup**
+**Docker Compose Approach**
 
 ```bash
 # Clone and navigate to Docker setup
 git clone <this-repo>
 cd ignite3-reference-apps/00-docker
 
-# Start the cluster (use docker-compose or docker compose based on your installation)
+# Start containers (use your Docker Compose command)
 docker-compose up -d
 # OR: docker compose up -d
 ```
 
-Wait 30-60 seconds for containers to start, then initialize using PowerShell:
+Wait 30-60 seconds for container startup, then initialize with PowerShell:
 
 ```powershell
-# Initialize cluster using PowerShell (Windows 10+)
+# Initialize cluster using REST API
 $body = @{
     metaStorageNodes = @("node1", "node2", "node3")
     cmgNodes = @("node1", "node2", "node3")
@@ -88,15 +72,15 @@ $body = @{
 Invoke-RestMethod -Uri "http://localhost:10300/management/v1/cluster/init" -Method POST -Body $body -ContentType "application/json"
 ```
 
-**Option 2: Alternative Installation**
+**Native Installation Alternative**
 
-For non-Docker setups, follow the platform-specific installation instructions at [https://ignite.apache.org/docs/ignite3/latest/installation/](https://ignite.apache.org/docs/ignite3/latest/installation/).
+For production environments or non-Docker setups, use platform-specific installation from [https://ignite.apache.org/docs/ignite3/latest/installation/](https://ignite.apache.org/docs/ignite3/latest/installation/).
 
-## Core Concepts in Practice
+## Connection Patterns
 
-### Your First Connection
+### Multi-Node Client Configuration
 
-Connecting to Ignite 3 requires understanding how client connections work with cluster topology. Based on the concepts from Chapter 1.1, we'll use multi-node addressing for optimal performance:
+Connection failures occur when applications use single-node addressing, causing partition awareness problems and failover issues. Proper client setup requires multi-node configuration:
 
 ```java
 try (IgniteClient client = IgniteClient.builder()
@@ -110,16 +94,16 @@ try (IgniteClient client = IgniteClient.builder()
 // Client automatically closes and cleans up resources
 ```
 
-**Why Multi-Node Addressing Matters:**
+**Multi-Node Addressing Requirements:**
 
-- **Partition Awareness**: Client connects to all nodes for direct partition mapping
-- **Try-with-resources**: Ensures proper cleanup even if exceptions occur  
-- **Failover**: Multiple addresses provide redundancy if individual nodes are unavailable
-- **Performance**: Implements the connection performance framework from Chapter 1.1
+- **Partition Awareness**: Client discovers partition locations across all nodes
+- **Resource Management**: Try-with-resources prevents connection leaks
+- **Failover Capability**: Multiple addresses provide redundancy when nodes fail
+- **Performance Optimization**: Direct partition routing eliminates network hops
 
-### Using the Default Zone
+### Schema Definition with Default Zone
 
-Following the decision framework from Chapter 1.1, we'll use the default zone for this first implementation since we're in a development/learning scenario:
+Table creation fails when zone configuration is missing or incorrect. The default zone solves initial setup problems by providing automatic zone management:
 
 ```java
 @Table  // No zone specification = uses default zone
@@ -155,18 +139,18 @@ public class Book {
 }
 ```
 
-**What This Achieves:**
+**Default Zone Benefits:**
 
-- **Zero Zone Configuration**: Uses the automatically created default zone
-- **Type Safety**: Your schema is validated at compile time
-- **Automatic DDL**: Ignite generates the table structure
-- **Performance**: Annotations drive indexing and partitioning strategies
+- **Zero Configuration**: Uses automatically created default zone
+- **Compile-time Validation**: Schema validated during compilation
+- **Automatic DDL**: Table structure generated from annotations
+- **Partition Strategy**: Annotations control partitioning and indexing
 
-## Your First Complete Application
+## Complete Working Application
 
-### Complete Working Example
+### Functional Implementation
 
-Here's a complete Ignite 3 application that implements the concepts from Chapter 1.1:
+Applications fail when connection patterns, schema definitions, or API usage contain errors. This complete implementation demonstrates working patterns:
 
 ```java
 package com.example;
@@ -254,23 +238,23 @@ public class HelloIgnite {
 }
 ```
 
-### What This Example Shows
+### Implementation Analysis
 
-This application demonstrates the practical implementation of Chapter 1.1 concepts:
+This application solves common first-application problems:
 
-1. **Multi-node Connection**: Implements the connection performance framework for partition awareness
-2. **Default Zone Usage**: Applies the zone decision framework for development scenarios
-3. **Schema Definition**: Uses annotation-driven table creation with zero configuration
-4. **Multi-modal API**: Demonstrates both Table API and SQL API accessing the same data
-5. **Type Safety**: Shows compile-time type checking throughout the data flow
+1. **Multi-node Connection**: Establishes partition awareness across cluster nodes
+2. **Default Zone Usage**: Eliminates zone configuration complexity for development
+3. **Schema Definition**: Uses annotation-driven table creation without manual DDL
+4. **Multi-modal API**: Demonstrates Table API and SQL API accessing the same data
+5. **Type Safety**: Provides compile-time validation throughout the data pipeline
 
-### Running the Example
+### Execution Process
 
 ```bash
 # 1. Start cluster (reference Docker setup)
 cd ignite3-reference-apps/00-docker && ./init-cluster.sh
 
-# 2. Run the application
+# 2. Compile and run the application
 javac -cp ignite-client-3.0.0.jar HelloIgnite.java
 java -cp .:ignite-client-3.0.0.jar HelloIgnite
 ```
@@ -288,20 +272,20 @@ All books via SQL:
 Success! Default zone pattern working perfectly.
 ```
 
-## Understanding What Happened
+## Technical Implementation Details
 
-### Implementing the Default Zone Strategy
+### Default Zone Strategy
 
-The example demonstrates the default zone strategy from Chapter 1.1:
+The implementation demonstrates how default zone usage eliminates configuration complexity:
 
-- **Zero Configuration**: No zone creation code needed - Ignite 3 handles this automatically
-- **Immediate Availability**: Table creation succeeds immediately using the pre-existing default zone
-- **Development Focus**: Perfect for learning without operational complexity
-- **Performance**: Still benefits from multi-node connection patterns
+- **Zero Configuration**: No zone creation code required - Ignite 3 provides this automatically
+- **Immediate Availability**: Table creation succeeds using the pre-existing default zone
+- **Development Efficiency**: Removes operational complexity while maintaining functionality
+- **Performance Retention**: Multi-node connection patterns still provide optimization benefits
 
-### Connection Pattern in Action
+### Distributed Connection Architecture  
 
-The multi-node connection demonstrates the connection performance framework:
+The multi-node connection establishes partition awareness across the cluster:
 
 ```mermaid
 flowchart TD
@@ -316,15 +300,15 @@ flowchart TD
     DefaultZone --> BookTable["Book Table Partitions"]
 ```
 
-**Benefits Realized:**
+**Operational Benefits:**
 
-- **Partition Awareness**: Client knows exactly which node owns which data partitions
-- **No Extra Hops**: Direct routing to the correct node for each operation
-- **Automatic Failover**: If one node fails, operations continue seamlessly
+- **Partition Awareness**: Client maps data partitions to specific nodes
+- **Direct Routing**: Operations route directly to partition-owning nodes
+- **Transparent Failover**: Node failures trigger automatic connection redistribution
 
-### API Integration Pattern
+### Unified API Access Pattern
 
-The example shows how the same data model works across APIs:
+The implementation demonstrates how both APIs access the same distributed data:
 
 ```java
 // Table API - type-safe object operations
@@ -334,40 +318,40 @@ Book book = books.get(null, new Book(1, null, null));
 var result = client.sql().execute(null, "SELECT id, title, author FROM Book");
 ```
 
-This demonstrates the unified programming model where:
+This unified programming model provides:
 
-- Table API provides type safety for known-key operations
+- Table API delivers type safety for key-based operations
 - SQL API enables complex queries and analytics
-- Both APIs access the same underlying distributed data seamlessly
+- Both APIs access identical underlying distributed partitions
 
-## Building Production Readiness
+## Production Scaling Patterns
 
-While this example uses the default zone for development, the patterns you've learned scale directly to production:
+The development patterns demonstrated here scale directly to production environments without code changes:
 
-### Next Steps in Your Learning Journey
+### Pattern Continuity
 
-The foundation you've built here supports everything that follows:
+The implementation foundation supports production requirements:
 
-1. **Same Connection Patterns**: Multi-node addressing works identically in production
-2. **Same Programming Model**: Table and SQL APIs remain consistent across zone types
-3. **Same Data Models**: Your POJO classes work with any zone configuration
-4. **Production Transition**: Moving to custom zones requires only zone creation, not code changes
+1. **Connection Patterns**: Multi-node addressing transfers directly to production clusters
+2. **Programming Model**: Table and SQL APIs remain consistent across zone configurations
+3. **Data Models**: POJO classes function with any zone setup
+4. **Transition Path**: Moving to custom zones requires only zone creation, not application changes
 
-### When You'll Need Custom Zones
+### Custom Zone Requirements
 
-Based on the decision framework from Chapter 1.1, you'll create custom zones when you need:
+Production environments require custom zones when applications need:
 
-- **Fault Tolerance**: Multiple replicas for production data protection
-- **Performance Tuning**: Optimized partition counts for specific workloads  
-- **Data Isolation**: Separate zones for different data tiers or tenants
-- **Compliance Requirements**: Specific data residency or security needs
+- **Fault Tolerance**: Multiple replicas for data protection and availability
+- **Performance Optimization**: Tuned partition counts for specific workload patterns
+- **Data Isolation**: Separate zones for different data tiers or tenant isolation
+- **Compliance Controls**: Specific data residency or security requirements
 
 ## Next Steps
 
-The patterns you've mastered form the foundation for everything that follows:
+The connection and schema patterns established here provide the foundation for advanced distributed data operations:
 
-**Continue Building**: These basic patterns scale directly to production applications
+**Advanced Data Distribution**: These patterns support complex production scenarios
 
-- **[Chapter 1.3: Distributed Data Fundamentals](03-distributed-data-fundamentals.md)** - Learn about custom zones, replication strategies, and advanced data distribution patterns
+- **[Chapter 1.3: Distributed Data Fundamentals](03-distributed-data-fundamentals.md)** - Custom zones, replication strategies, and advanced data distribution patterns for production workloads
 
-- **Practice with Production Patterns**: The [reference applications](../ignite3-reference-apps/) provide working examples using custom zones and the complete music store dataset, showing how these basic patterns scale to production scenarios
+**Production Implementation**: The [reference applications](../ignite3-reference-apps/) demonstrate these patterns with custom zones and the complete music store dataset, showing how development patterns scale to production requirements

@@ -1,38 +1,16 @@
 # Chapter 1.3: Distributed Data Fundamentals
 
-## Learning Objectives
+Your Artist data is distributed across nodes but queries for related Albums hit multiple partitions, causing network overhead and performance degradation. When you join Artist, Album, and Track tables, the query coordinator must fetch data from different nodes, serialize results across the network, and reassemble them before returning results.
 
-By completing this chapter, you will:
+This fundamental challenge affects every distributed application: how to place related data together while maintaining even distribution, fault tolerance, and query performance.
 
-- Understand how data distributes across cluster nodes and partitions
-- Recognize the role of distribution zones in controlling data placement
-- Apply replication strategies for fault tolerance and performance
-- Design for data colocation to optimize query performance
+## Understanding Data Distribution
 
-## From Simple Storage to Distributed Intelligence
+Data distribution problems emerge immediately when you move beyond single-node storage. Without understanding distribution mechanics, your application may work in development but fail to scale in production.
 
-In [Chapter 1.2](02-getting-started.md), you created your first table with a simple zone configuration:
+### Distribution Zones Control Data Placement
 
-```java
-@Table(zone = @Zone(value = "QuickStart", storageProfiles = "default"))
-public class Book {
-    @Id private Integer id;
-    @Column(length = 100) private String title;
-}
-```
-
-This worked perfectly for learning the basics. Now you're ready to understand what happens behind this simple annotation and how it enables applications that scale to millions of operations per second.
-
-## Understanding Distribution Zones
-
-> [!NOTE]
-> **Distribution Zones**: Think of zones as policies that control where your data lives, how many copies exist, and how it spreads across nodes. They're the foundation of Ignite 3's data placement and performance optimization strategies.
->
-> For complete architectural details, see [Storage System Architecture](../00-reference/storage-system-arch.md).
-
-### What Are Distribution Zones?
-
-Distribution zones are logical containers that define how your data spreads across cluster nodes. Behind the scenes, Ignite 3 uses the **Rendezvous (Highest Random Weight) algorithm** to ensure consistent data placement without requiring coordination between nodes.
+Distribution zones define the physical and logical characteristics of how your data spreads across cluster nodes. Behind the scenes, Ignite 3 uses the **Rendezvous (Highest Random Weight) algorithm** to ensure consistent data placement without requiring coordination between nodes.
 
 ```mermaid
 graph TB
@@ -58,29 +36,16 @@ graph TB
     ZONE --> N3
 ```
 
-Each zone controls:
+Each zone controls four critical aspects of data distribution:
 
 - **Where** your data lives (node selection and filtering)
 - **How many copies** exist (replica count for fault tolerance)
 - **How data spreads** (partition count and Rendezvous distribution)
 - **Storage characteristics** (engine choice: aimem, aipersist, or rocksdb)
 
-> **Deep dive**: See [Storage System Architecture](../00-reference/storage-system-arch.md) for complete details on partitioning algorithms, storage engines, and data placement strategies.
+### Zone Configuration Implementation
 
-### Zone Configuration in Action
-
-When you create a zone, you're configuring the distributed behavior:
-
-```sql
--- SQL approach for creating zones (STRONG_CONSISTENCY is default)
-CREATE ZONE "MusicStore" WITH 
-    PARTITIONS=50,                        -- Split data into 50 partitions
-    REPLICAS=3,                           -- Keep 3 copies for fault tolerance
-    STORAGE_PROFILES='aipersist_profile', -- Use persistent storage engine
-    DATA_NODES_FILTER='$.storage == "SSD"' -- Only use SSD nodes
-```
-
-Or use the programmatic approach with catalog DSL:
+Create zones programmatically using the catalog DSL:
 
 ```java
 // Preferred: Use catalog DSL for zone creation
@@ -93,44 +58,44 @@ ZoneDefinition zoneDefinition = ZoneDefinition.builder("\"MusicStore\"")
 ignite.catalog().createZone(zoneDefinition);
 ```
 
-**Why This Matters:**
+Or use SQL for administrative operations:
+
+```sql
+-- SQL approach for creating zones (STRONG_CONSISTENCY is default)
+CREATE ZONE "MusicStore" WITH 
+    PARTITIONS=50,                        -- Split data into 50 partitions
+    REPLICAS=3,                           -- Keep 3 copies for fault tolerance
+    STORAGE_PROFILES='aipersist_profile', -- Use persistent storage engine
+    DATA_NODES_FILTER='$.storage == "SSD"' -- Only use SSD nodes
+```
+
+This configuration provides:
 
 - **Fault Tolerance**: 3 replicas mean your data survives 2 node failures
 - **Performance**: 50 partitions enable parallel processing across cluster
-- **Storage Control**: Profile choice determines engine (aimem, aipersist, rocksdb)
+- **Storage Control**: Profile choice determines engine behavior
 - **Node Selection**: Filters ensure data goes to appropriate hardware
-- **Consistency Mode**: Controls behavior when majority of nodes fail
 
-### Consistency Mode Options
+### Consistency Mode Selection
 
 Apache Ignite 3 supports two consistency modes that determine behavior during node failures:
 
 #### STRONG_CONSISTENCY (Default)
-
-Ensures strong consistency by requiring a majority of nodes for operations. Partitions become unavailable if the majority of assigned nodes are lost. This is the default behavior for all zones.
+Ensures strong consistency by requiring a majority of nodes for operations. Partitions become unavailable if the majority of assigned nodes are lost.
 
 ```java
 // All zones use STRONG_CONSISTENCY by default
 @Table(zone = @Zone(value = "CriticalData", storageProfiles = "default"))
 public class PaymentTransaction { ... }
-
-// Catalog DSL approach (STRONG_CONSISTENCY is default)
-ZoneDefinition criticalZone = ZoneDefinition.builder("\"CriticalData\"")
-    .replicas(3)
-    .storageProfiles("default")
-    .build();
-ignite.catalog().createZone(criticalZone);
 ```
 
-**Use cases:**
-
+Use STRONG_CONSISTENCY for:
 - Financial transactions requiring absolute consistency
 - Business-critical data where accuracy is paramount
 - Systems where temporary unavailability is preferable to data inconsistency
 
 #### HIGH_AVAILABILITY
-
-Prioritizes availability over strict consistency, allowing partitions to remain available for read-write operations even when the majority of assigned nodes are offline. The system reconfigures the RAFT group to include only the available nodes.
+Prioritizes availability over strict consistency, allowing partitions to remain available for read-write operations even when the majority of assigned nodes are offline.
 
 ```java
 // Configuration available via catalog DSL
@@ -149,13 +114,12 @@ Statement alterConsistencyStmt = client.sql().statementBuilder()
 client.sql().execute(null, alterConsistencyStmt);
 ```
 
-**Use cases:**
-
+Use HIGH_AVAILABILITY for:
 - Read-heavy catalog data where availability is crucial
 - Content management systems prioritizing uptime
 - Systems where temporary inconsistency is acceptable for continued operation
 
-### How Data Distributes
+### Physical Data Distribution
 
 ```mermaid
 flowchart TD
@@ -166,15 +130,14 @@ flowchart TD
     A --> F["Hash Partition 31<br/>Nodes: 1, 2, 3"]
 ```
 
-Each partition has:
-
+Each partition maintains:
 - **Primary replica**: Handles writes and coordinates reads
 - **Backup replicas**: Provide fault tolerance and read scaling
 - **Hash-based assignment**: Ensures even distribution
 
-## Data Colocation Strategies
+## Solving Colocation Problems
 
-### The Performance Problem
+### The Cross-Partition Query Problem
 
 Without careful design, related data spreads randomly across nodes, forcing expensive network operations:
 
@@ -187,11 +150,11 @@ Collection<Track> tracks = tracks.getAll(null,
     albums.stream().flatMap(a -> a.getTrackIds()));     // Nodes 1, 2, 3
 ```
 
-Each operation might hit different nodes, creating network overhead.
+Each operation might hit different nodes, creating network overhead and increasing latency. Query joins across partitions require expensive data movement and coordination.
 
-### The Colocation Solution
+### Implementing Data Colocation
 
-Colocation keeps related data together on the same nodes:
+Colocation keeps related data together on the same nodes by using consistent partition keys:
 
 ```java
 @Table(zone = @Zone(value = "MusicStore", storageProfiles = "default"),
@@ -229,9 +192,9 @@ flowchart LR
     end
 ```
 
-### Colocation Benefits
+### Local Join Execution
 
-**Local Joins**: Queries involving related tables execute locally:
+Colocated data enables local joins that execute on a single node:
 
 ```java
 // Preferred: Use StatementBuilder for complex queries
@@ -262,10 +225,10 @@ while (result.hasNext()) {
 > - `"\"MyColumn\""` → `"MyColumn"` (double quotes preserve exact case)
 >
 > Use double quotes in your SQL when you need to preserve case sensitivity for column access.
->
-> For complete details on SQL processing, query optimization, and Apache Calcite integration, see [SQL Engine Architecture](../00-reference/sql-engine-arch.md).
 
-**Batch Operations**: Multi-record operations on colocated data are efficient:
+### Batch Operation Efficiency
+
+Multi-record operations on colocated data execute efficiently:
 
 ```java
 // All these operations happen on the same node
@@ -274,11 +237,36 @@ albums.getAll(null, artistAlbumKeys);
 tracks.getAll(null, artistTrackKeys);
 ```
 
-## Replication and Consistency
+## Managing Replication and Consistency
 
-### Replica Configuration
+### Primary Replica Management
 
-Different applications need different replication strategies. Ignite 3 uses a **Placement Driver** to ensure exactly one primary replica per partition handles writes:
+The Placement Driver coordinates primary replica selection using time-limited leases to ensure exactly one primary replica per partition handles writes:
+
+```mermaid
+graph TB
+    subgraph "Primary Replica Lifecycle"
+        MONITOR["Placement Driver<br/>Monitors Topology"] --> SELECT["Select Primary<br/>from Available Replicas"]
+        SELECT --> GRANT["Grant Lease<br/>(time-limited)"]
+        GRANT --> KEEPALIVE["Primary Sends<br/>Keep-alive Messages"]
+        KEEPALIVE --> RENEW["Lease Renewal"]
+        RENEW --> KEEPALIVE
+        
+        GRANT --> EXPIRE["Lease Expiration"]
+        EXPIRE --> FAILOVER["Automatic Failover"]
+        FAILOVER --> SELECT
+    end
+```
+
+**Lease Management Benefits:**
+- **Split-brain Prevention**: Only one valid primary per partition
+- **Automatic Failover**: Failed primaries detected via lease expiration
+- **No Coordination Overhead**: Secondaries don't need to coordinate
+- **Consistent Writes**: All writes go through the primary replica
+
+### Replica Strategy Configuration
+
+Different applications need different replication strategies:
 
 ```sql
 -- High availability music catalog
@@ -297,35 +285,9 @@ CREATE ZONE "UserActivity" WITH
     REPLICAS=2;                     -- Balance performance and safety
 ```
 
-### Primary Replica Management
-
-The Placement Driver coordinates primary replica selection using time-limited leases:
-
-```mermaid
-graph TB
-    subgraph "Primary Replica Lifecycle"
-        MONITOR["Placement Driver<br/>Monitors Topology"] --> SELECT["Select Primary<br/>from Available Replicas"]
-        SELECT --> GRANT["Grant Lease<br/>(time-limited)"]
-        GRANT --> KEEPALIVE["Primary Sends<br/>Keep-alive Messages"]
-        KEEPALIVE --> RENEW["Lease Renewal"]
-        RENEW --> KEEPALIVE
-        
-        GRANT --> EXPIRE["Lease Expiration"]
-        EXPIRE --> FAILOVER["Automatic Failover"]
-        FAILOVER --> SELECT
-    end
-```
-
-**Lease Management Benefits:**
-
-- **Split-brain Prevention**: Only one valid primary per partition
-- **Automatic Failover**: Failed primaries detected via lease expiration
-- **No Coordination Overhead**: Secondaries don't need to coordinate
-- **Consistent Writes**: All writes go through the primary replica
-
 ### Transaction Consistency with MVCC
 
-Ignite 3 uses **Multi-Version Concurrency Control (MVCC)** to handle concurrent access:
+Ignite 3 uses **Multi-Version Concurrency Control (MVCC)** to handle concurrent access without blocking:
 
 ```java
 // Each record maintains multiple versions with timestamps
@@ -337,27 +299,23 @@ public class VersionedRecord {
 }
 ```
 
-**MVCC Benefits:**
-
+**MVCC provides:**
 - **Read Operations**: See committed versions as of transaction timestamp
 - **Write Operations**: Create new versions without blocking readers
 - **Garbage Collection**: Configurable cleanup removes old versions
 - **Isolation**: Transactions see consistent snapshots
 
 **Consistency Guarantees:**
-
 - **ACID Transactions**: Full transactional semantics across partitions
 - **Snapshot Isolation**: Readers see consistent data without locking
 - **Linearizability**: Writes appear to happen atomically
 - **Read-your-writes**: Sessions see their own writes immediately
 
-> **Deep Dive**: See [Storage System Architecture](../00-reference/storage-system-arch.md#multi-version-concurrency-control-mvcc) for complete MVCC implementation details.
+## Designing Multi-Zone Architectures
 
-## Practical Zone Design Patterns
+### Zone Strategy Patterns
 
-### Multi-Zone Architecture
-
-Real applications use multiple zones optimized for different data characteristics. Each zone uses storage profiles that match their requirements:
+Real applications use multiple zones optimized for different data characteristics:
 
 ```java
 // Preferred: Use catalog DSL for zone creation
@@ -385,7 +343,7 @@ ignite.catalog().createZone(sessionsZone);
 
 ### Storage Profile Configuration
 
-Before creating zones, configure storage profiles on cluster nodes:
+Configure storage profiles on cluster nodes before creating zones:
 
 ```bash
 # Configure persistent storage for production data
@@ -401,30 +359,12 @@ ignite node config update "ignite.storage.profiles: {
 }"
 ```
 
-**Storage Engine Selection Guide:**
-
+**Storage Engine Selection:**
 - **aimem** (default): Development, caching, temporary data (no persistence)
 - **aipersist**: Production applications requiring data durability
 - **rocksdb**: Experimental engine for write-heavy workloads
 
-**Creating Reusable Statement Patterns:**
-
-```java
-// Create domain-specific builders for consistent configuration
-public static Statement.StatementBuilder musicStoreQuery() {
-    return client.sql().statementBuilder()
-        .defaultSchema("MUSIC_STORE")
-        .pageSize(100)
-        .queryTimeout(30, TimeUnit.SECONDS);
-}
-
-// Use for zone operations
-Statement zoneStmt = musicStoreQuery()
-    .query("CREATE ZONE ? WITH PARTITIONS=?, REPLICAS=?, STORAGE_PROFILES=?")
-    .build();
-```
-
-### Zone-Table Mapping
+### Zone-Table Mapping Strategy
 
 ```java
 // Business entities use persistent storage for durability
@@ -447,14 +387,13 @@ public class UserSession { ... }
 ```
 
 **Zone Assignment Principles:**
-
 - **Match storage to durability needs**: Use aipersist for data that must survive restarts
 - **Optimize for access patterns**: More partitions for parallel processing
 - **Consider fault tolerance**: More replicas for critical data
 
-## Performance Through Design
+## Optimizing Partition Distribution
 
-### Understanding Data Distribution
+### Understanding the Rendezvous Algorithm
 
 Ignite 3 uses the **Rendezvous (Highest Random Weight) algorithm** to distribute data consistently across nodes:
 
@@ -469,15 +408,14 @@ graph TB
 ```
 
 **Algorithm Benefits:**
-
 - **Consistent Assignment**: Same key always maps to same nodes
 - **No Coordination**: Nodes independently calculate assignments
 - **Minimal Movement**: Only affected partitions rebalance when topology changes
 - **Even Distribution**: Load spreads evenly across available nodes
 
-### Partition Key Selection
+### Partition Key Selection Strategy
 
-Choose partition keys that work with the Rendezvous algorithm:
+Choose partition keys that work effectively with the Rendezvous algorithm:
 
 ```java
 // Good: Random distribution across all partitions
@@ -497,13 +435,12 @@ public class Track {
 ```
 
 **Partitioning Best Practices:**
-
 - **Avoid Hot Partitions**: Don't use sequential keys that concentrate on few partitions
 - **Consider Colocation**: Group related data for local joins
 - **Plan for Growth**: Choose partition counts that accommodate future scaling
 - **Monitor Distribution**: Use cluster tools to verify even load distribution
 
-### Query-Driven Design
+### Query-Driven Colocation Design
 
 Design colocation based on your most important queries:
 
@@ -521,11 +458,9 @@ public class Purchase { ... }
 public class PlaylistTrack { ... }
 ```
 
-## Learning Through Practice
+## Development Environment Setup
 
-### Development Environment Setup
-
-The complete setup provides a rich learning experience with realistic data distribution:
+The complete setup provides distributed data experience with realistic distribution effects:
 
 ```bash
 cd ignite3-java-api-primer/00-docker
@@ -536,14 +471,13 @@ mvn compile exec:java
 ```
 
 **What This Establishes:**
-
 - **3-Node Cluster**: Production-ready distributed setup with automatic failover
 - **Multiple Storage Engines**: Experience with aimem (default) and aipersist storage
 - **Colocated Data**: Artist-Album-Track hierarchies optimized for performance
 - **Realistic Scale**: Sample data that demonstrates distribution effects
 - **Zone Strategies**: Multiple zones using different storage profiles
 
-**Cluster Configuration:**
+**Verify Cluster Configuration:**
 
 ```bash
 # Verify cluster status and partition distribution
@@ -554,12 +488,8 @@ ignite cluster partition states --zone-name default
 ignite node config show --filter storage
 ```
 
-### Next Steps in Your Learning Journey
+---
 
-Understanding distributed data fundamentals prepares you for schema design and data access patterns:
+These distributed data fundamentals solve the core problem of placing related data together while maintaining fault tolerance and performance. Understanding how zones control data placement, how colocation eliminates network overhead, and how replication provides consistency enables you to design schemas that scale effectively.
 
-**[Module 2: Schema Design](../02-schema-design/01-basic-annotations.md)** - Apply these concepts to build production-ready schemas using annotations
-
-**[Module 3: Data Access APIs](../03-data-access-apis/01-table-api-operations.md)** - Use Table and SQL APIs effectively with distributed data
-
-The foundation is complete. You understand how Ignite 3 distributes data, handles failures, and optimizes performance through intelligent placement. These concepts underlie everything you'll build in the modules ahead.
+Next, apply these concepts to build production-ready schemas using annotations in **[Chapter 2.1: Basic Annotations](../02-schema-design/01-basic-annotations.md)**.

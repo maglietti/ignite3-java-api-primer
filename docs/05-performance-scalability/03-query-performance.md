@@ -1,38 +1,12 @@
 # Chapter 5.3: Query Performance and Index Optimization
 
-## Learning Objectives
+Your marketing analytics queries take 30 seconds to complete because they scan entire tables instead of using optimized indexes and partition pruning. Customer searches for "rock albums" return results after 5-10 seconds while competitors deliver instant responses. These query performance problems occur when distributed applications grow beyond initial datasets, requiring systematic optimization of SQL execution paths, index design, and data distribution strategies.
 
-By completing this chapter, you will:
+Query optimization in distributed systems involves understanding how data flows across partitions, how indexes accelerate filtering operations, and how zone configuration affects execution planning. The techniques in this chapter address specific performance bottlenecks that emerge as applications scale from thousands to millions of records.
 
-- Optimize SQL query performance with proper indexing strategies
-- Understand query execution plans and performance bottlenecks
-- Implement efficient data retrieval patterns for music applications
-- Configure distribution zones for optimal query performance
+## Query Execution Analysis
 
-## Working with the Reference Application
-
-The **`05-sql-api-app`** demonstrates query optimization patterns covered in this chapter with comprehensive music analytics and performance examples. Run it alongside your learning to see complex queries, proper indexing usage, and optimization strategies in action.
-
-**Quick Start**: After reading this chapter, explore the reference application:
-
-```bash
-cd ignite3-reference-apps/05-sql-api-app
-mvn compile exec:java
-```
-
-The reference app shows how the caching optimizations from [Chapter 5.2](02-caching-strategies.md) integrate with query performance patterns, demonstrating the complete performance optimization lifecycle for music platforms.
-
-## The Query Performance Challenge
-
-As music streaming platforms grow from thousands to millions of tracks, query performance becomes critical. A user searching for "love songs from the 80s" expects instant results across millions of tracks, while recommendation engines analyze listening patterns in real-time. The difference between sub-second and multi-second response times determines user satisfaction and platform success.
-
-Query optimization requires understanding both the data patterns and access requirements specific to music platforms. Catalog searches require different optimization strategies than analytics queries, and recommendation algorithms have unique performance characteristics.
-
-## Understanding Query Execution in Distributed Systems
-
-### Query Analysis Fundamentals
-
-Before optimizing queries, understanding how Ignite 3 processes distributed queries helps identify performance bottlenecks:
+Distributed query execution performance depends on understanding how operations flow across cluster nodes, which tables participate in joins, and where filtering occurs in the execution pipeline. Query analysis reveals whether operations execute efficiently or create bottlenecks through excessive data movement and inefficient filtering.
 
 ```java
 import org.apache.ignite.sql.IgniteSql;
@@ -228,11 +202,11 @@ public class QueryAnalysisDemo {
 }
 ```
 
-## Index Design and Creation
+## Strategic Index Design
 
-### Strategic Index Planning
+Music platform queries fail performance requirements because they lack indexes that match access patterns. Artist searches scan entire tables instead of using name-based indexes. Album lookups perform inefficient joins without composite indexes on artist-album relationships. Genre browsing queries aggregate data without indexes that support grouping operations.
 
-Effective indexing requires understanding your application's query patterns. Music platforms typically have distinct access patterns that benefit from specific indexing strategies:
+Strategic index design addresses these bottlenecks by creating indexes that align with query filtering, joining, and sorting requirements:
 
 ```java
 import org.apache.ignite.catalog.IgniteCatalog;
@@ -464,11 +438,11 @@ public class MusicPlatformIndexStrategy {
 }
 ```
 
-## Query Optimization Patterns
+## Join Optimization Patterns
 
-### Efficient Join Strategies
+Multi-table queries produce slow response times because joins execute in suboptimal order, moving large datasets across network boundaries instead of filtering early and joining smaller result sets. Join optimization requires understanding how distributed systems execute table operations and how query order affects data movement patterns.
 
-Music platforms frequently join multiple tables for comprehensive results. Understanding join optimization helps create responsive queries:
+Efficient join strategies reduce network traffic and processing overhead by implementing proper filtering sequences and leveraging data colocation:
 
 ```java
 /**
@@ -758,11 +732,11 @@ class TrackRecommendation {
 }
 ```
 
-## Distribution Zone Optimization
+## Distribution Zone Configuration
 
-### Zone Configuration for Query Performance
+Query performance degrades when data distribution doesn't match access patterns. Catalog queries execute slowly because data spreads across too many partitions without sufficient replicas for read scaling. Analytics operations fail to leverage parallelism because partition counts are too low for large-scale aggregations. Customer transaction queries suffer from inconsistent performance due to inappropriate replication strategies.
 
-Distribution zones affect query performance by determining data placement and replication strategies:
+Zone configuration optimizes query execution by aligning data placement with operational requirements:
 
 ```java
 import org.apache.ignite.catalog.definitions.ZoneDefinition;
@@ -855,10 +829,10 @@ public class DistributionZoneOptimization {
 }
 ```
 
-Query performance optimization transforms how music platforms handle user interactions and business operations. By implementing strategic indexing, efficient join patterns, and zone-aware distribution, applications can deliver sub-second responses even as data grows to millions of records.
+Query performance optimization requires systematic application of indexing strategies, join optimization, and distribution zone configuration. These techniques transform slow analytical queries into responsive operations that deliver sub-second results even across millions of records.
 
-## Module Conclusion
+The performance optimization patterns in this module—from high-throughput streaming through intelligent caching to query optimization—establish the foundation for production deployment and operational management covered in the final module.
 
-You've now mastered the complete performance and scalability foundation in Ignite 3, from high-throughput data streaming through intelligent caching to query optimization. This prepares you for the production concerns and operational patterns covered in the final module.
+## Next Steps
 
-- **Continue Learning**: **[Module 6: Production Concerns](../06-production-concerns/01-deployment-patterns.md)** - Apply your performance optimization knowledge to master production deployment, monitoring, and operational management patterns
+**[Chapter 6.1: Production Deployment Patterns](../06-production-concerns/01-deployment-patterns.md)** - Apply query optimization knowledge to production deployment scenarios, including monitoring query performance and managing distributed cluster operations.
