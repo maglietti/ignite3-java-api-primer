@@ -519,8 +519,6 @@ These patterns eliminate the three primary performance bottlenecks: network roun
 
 ## Next Steps
 
-Object-oriented data access solves application-level performance problems, but analytical queries require different approaches:
+With object-oriented data access patterns established, explore complementary SQL capabilities for analytical operations that require complex queries and joins:
 
-**[Chapter 3.2: SQL API for Analytics and Reporting](02-sql-api-analytics.md)** - Complex queries, joins, and analytical operations using the SQL API
-
-**[Chapter 3.3: Choosing the Right API](03-sql-api-selection-guide.md)** - Decision frameworks for optimal API selection based on performance requirements
+**[Chapter 3.2: SQL API for Analytics and Reporting](02-sql-api-analytics.md)** - Complex queries, joins, and analytical operations that leverage distributed SQL processing for comprehensive data analysis

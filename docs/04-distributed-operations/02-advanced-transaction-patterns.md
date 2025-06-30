@@ -1,20 +1,24 @@
-# Chapter 4.2: Advanced Transaction Patterns
+# Chapter 4.2: Transaction Use Cases and Applied Patterns
 
 Your complex purchase workflow deadlocks when multiple users simultaneously buy tracks from the same album because of improper transaction ordering across distributed nodes. Customer sessions timeout while waiting for nested transaction chains to complete. Your application crashes during peak sales when distributed transaction failures cascade through the system without proper recovery patterns.
 
-These problems require advanced transaction patterns that handle distributed coordination, non-blocking operations, and resilient error recovery. Building on the [transaction fundamentals](01-transaction-fundamentals.md), this chapter demonstrates how to implement production-grade distributed transaction workflows that scale under concurrent load.
+These problems require applied transaction patterns that handle real-world business scenarios, non-blocking operations, and resilient error recovery. Building on the [transaction fundamentals](01-transaction-fundamentals.md), this chapter demonstrates how to implement distributed transaction workflows for common business use cases that scale under concurrent load.
+
+## Applied Transaction Patterns
+
+This chapter focuses on practical transaction patterns for common business scenarios in distributed music store operations. These patterns demonstrate how to apply the distributed transaction fundamentals to real-world use cases that require coordinated operations across multiple tables and cluster nodes.
 
 ## Explicit Transaction Lifecycle Control
 
-Complex workflows require precise control over transaction boundaries to prevent resource leaks and ensure proper rollback sequences across distributed operations. When multiple decision points determine different rollback strategies, explicit transaction management provides the necessary control.
+Business workflows with complex decision trees require precise control over transaction boundaries to prevent resource leaks and ensure proper rollback sequences across distributed operations. When purchase validation involves multiple steps with different rollback strategies, explicit transaction management provides the necessary control.
 
 ```java
 /**
- * Explicit transaction patterns for complex workflow control.
- * Manages transaction lifecycle manually when conditional logic
+ * Explicit transaction patterns for business workflow control.
+ * Manages transaction lifecycle manually when purchase validation
  * requires different rollback strategies across distributed operations.
  */
-public class ExplicitTransactionManagement {
+public class BusinessWorkflowTransactions {
     
     public void basicExplicitPattern(IgniteClient client) {
         Transaction tx = null;
@@ -27,17 +31,17 @@ public class ExplicitTransactionManagement {
             
             // 3. Commit if all operations succeed
             tx.commit();
-            System.out.println("✓ Transaction completed successfully");
+            System.out.println("Transaction completed successfully");
             
         } catch (Throwable e) {
-            System.err.println("✗ Transaction failed: " + e.getMessage());
+            System.err.println("Transaction failed: " + e.getMessage());
             
             // 4. Rollback on any error
             if (tx != null) {
                 try {
                     tx.rollback();
                 } catch (Throwable rollbackError) {
-                    System.err.println("✗ Rollback failed: " + rollbackError.getMessage());
+                    System.err.println("Rollback failed: " + rollbackError.getMessage());
                 }
             }
         }
@@ -52,17 +56,17 @@ public class ExplicitTransactionManagement {
             performBusinessOperations(client, tx);
             tx.commit();
             committed = true;
-            System.out.println("✓ Transaction completed successfully");
+            System.out.println("Transaction completed successfully");
             
         } catch (Throwable e) {
-            System.err.println("✗ Transaction failed: " + e.getMessage());
+            System.err.println("Transaction failed: " + e.getMessage());
         } finally {
             // Ensure rollback if transaction wasn't committed
             if (tx != null && !committed) {
                 try {
                     tx.rollback();
                 } catch (Throwable rollbackError) {
-                    System.err.println("✗ Rollback failed: " + rollbackError.getMessage());
+                    System.err.println("Rollback failed: " + rollbackError.getMessage());
                 }
             }
         }
@@ -81,13 +85,13 @@ public class ExplicitTransactionManagement {
 }
 ```
 
-Explicit transaction management becomes necessary when conditional workflow logic requires different rollback strategies or when coordinating with external transaction managers. The pattern provides fine-grained control but requires careful resource management to prevent transaction leaks and data inconsistency in distributed environments.
+Explicit transaction management becomes necessary when business workflow logic requires different rollback strategies based on validation results, payment processing outcomes, or inventory availability checks. The pattern provides fine-grained control but requires careful resource management to prevent transaction leaks and data inconsistency in distributed environments.
 
-## Multi-Table Transaction Coordination
+## Business Use Case: Customer Purchase Workflow
 
 Customer purchase workflows fail when partial updates leave orphaned invoice records without corresponding line items, or when concurrent purchases create race conditions that double-charge customers. Distributed nodes must coordinate multiple table updates atomically to maintain data consistency.
 
-The purchase workflow requires coordinated updates across invoice, line item, and inventory tables. Any failure must rollback all changes to prevent data corruption and customer billing errors.
+This common e-commerce use case demonstrates how to coordinate updates across invoice, line item, and inventory tables. Any failure must rollback all changes to prevent data corruption and customer billing errors.
 
 ```java
 /**
@@ -117,7 +121,7 @@ public class CustomerPurchaseWorkflow {
                 invoice.setTotal(BigDecimal.ZERO);  // Will calculate later
                 
                 invoiceTable.upsert(tx, invoice);
-                System.out.println("📝 Created invoice " + invoiceId);
+                System.out.println("Created invoice " + invoiceId);
                 
                 // Step 2: Add line items and calculate total
                 BigDecimal totalAmount = BigDecimal.ZERO;
@@ -144,20 +148,20 @@ public class CustomerPurchaseWorkflow {
                     
                     invoiceLineTable.upsert(tx, lineItem);
                     totalAmount = totalAmount.add(unitPrice);
-                    System.out.println("🎵 Added track " + trackId + " ($" + unitPrice + ")");
+                    System.out.println("Added track " + trackId + " ($" + unitPrice + ")");
                 }
                 
                 // Step 3: Update invoice with calculated total
                 invoice.setTotal(totalAmount);
                 invoiceTable.upsert(tx, invoice);
                 
-                System.out.println("💰 Invoice total: $" + totalAmount);
-                System.out.println("✓ Purchase completed successfully");
+                System.out.println("Invoice total: $" + totalAmount);
+                System.out.println("Purchase completed successfully");
                 
                 return invoiceId;
                 
             } catch (Exception e) {
-                System.err.println("✗ Purchase failed: " + e.getMessage());
+                System.err.println("Purchase failed: " + e.getMessage());
                 throw e;  // This will trigger rollback
             }
         });
@@ -173,19 +177,19 @@ public class CustomerPurchaseWorkflow {
 }
 ```
 
-This pattern demonstrates coordinated distributed updates where invoice creation, line item insertion, and total calculation execute atomically. If track price lookup fails or line item creation encounters errors, the entire transaction rolls back, preventing orphaned invoices and billing inconsistencies.
+This business use case demonstrates coordinated distributed updates where invoice creation, line item insertion, and total calculation execute atomically. If track price lookup fails or line item creation encounters errors, the entire transaction rolls back, preventing orphaned invoices and billing inconsistencies. This pattern is essential for any multi-step business process that spans multiple tables.
 
-## Transaction Timeout and Isolation Control
+## Business Use Case: Operational vs. Analytical Transactions
 
-Long-running transactions block distributed resources and cause system-wide performance degradation. Quick operations need short timeouts to fail fast, while complex analytics require extended timeouts to complete across multiple nodes. TransactionOptions provides precise control over transaction behavior for different workflow requirements.
+Different business operations have different performance and timeout requirements. Quick customer updates need short timeouts to fail fast, while complex monthly reports require extended timeouts to complete across multiple nodes. TransactionOptions provides precise control over transaction behavior for different business workflow requirements.
 
 ```java
 /**
- * Transaction timeout patterns for different operation types.
+ * Transaction timeout patterns for different business operations.
  * Prevents resource blocking while ensuring sufficient time
- * for legitimate distributed operations to complete.
+ * for operational updates vs. analytical reports to complete.
  */
-public class TransactionTimeouts {
+public class BusinessOperationTimeouts {
     
     public void quickUpdate(IgniteClient client) {
         // Short timeout for simple operations
@@ -230,7 +234,7 @@ public class TransactionTimeouts {
             
             if (stats.hasNext()) {
                 SqlRow row = stats.next();
-                System.out.printf("📊 Music Store Statistics:%n");
+                System.out.printf("Music Store Statistics:%n");
                 System.out.printf("   Artists: %d%n", row.longValue("artist_count"));
                 System.out.printf("   Albums: %d%n", row.longValue("album_count"));
                 System.out.printf("   Tracks: %d%n", row.longValue("track_count"));
@@ -243,17 +247,17 @@ public class TransactionTimeouts {
 }
 ```
 
-### Read-Only Transaction Optimization
+### Business Use Case: Consistent Reporting
 
-Read-only transactions avoid write locks and conflict detection overhead, enabling consistent multi-table queries without blocking concurrent updates. This optimization significantly improves performance for reporting and analytics workloads.
+Read-only transactions avoid write locks and conflict detection overhead, enabling consistent multi-table reports without blocking concurrent customer purchases and updates. This optimization significantly improves performance for business intelligence and analytics workloads.
 
 ```java
 /**
- * Read-only transaction patterns for consistent multi-table analytics.
+ * Read-only transaction patterns for business reporting and analytics.
  * Eliminates write lock overhead while maintaining snapshot consistency
- * across distributed query operations.
+ * across distributed music store reporting operations.
  */
-public class ReadOnlyTransactions {
+public class BusinessReportingTransactions {
     
     public void generateMonthlySalesReport(IgniteClient client) {
         TransactionOptions readOnlyOptions = TransactionOptions.readOnly()
@@ -263,7 +267,7 @@ public class ReadOnlyTransactions {
             IgniteSql sql = client.sql();
             
             // All queries in the same transaction see consistent data
-            System.out.println("📈 Generating Monthly Sales Report...");
+            System.out.println("Generating Monthly Sales Report...");
             
             // Top selling tracks
             ResultSet<SqlRow> topTracks = sql.execute(tx, """
@@ -277,7 +281,7 @@ public class ReadOnlyTransactions {
                 LIMIT 10
                 """, LocalDate.now().minusMonths(1));
             
-            System.out.println("🎵 Top Selling Tracks:");
+            System.out.println("Top Selling Tracks:");
             while (topTracks.hasNext()) {
                 SqlRow track = topTracks.next();
                 System.out.printf("   %s: %d sales%n", 
@@ -297,7 +301,7 @@ public class ReadOnlyTransactions {
                 ORDER BY revenue DESC
                 """, LocalDate.now().minusMonths(1));
             
-            System.out.println("🎭 Revenue by Genre:");
+            System.out.println("Revenue by Genre:");
             while (genreRevenue.hasNext()) {
                 SqlRow genre = genreRevenue.next();
                 System.out.printf("   %s: $%.2f%n", 
@@ -311,26 +315,26 @@ public class ReadOnlyTransactions {
 }
 ```
 
-## Asynchronous Transaction Patterns
+## Business Use Case: High-Throughput Order Processing
 
-Thread pool exhaustion occurs when synchronous transactions block waiting for distributed operations to complete. High-throughput applications require non-blocking patterns that release threads while operations execute across cluster nodes. Proper async implementation uses native transaction APIs rather than wrapping synchronous calls.
+Thread pool exhaustion occurs when synchronous transactions block waiting for distributed operations to complete during peak sales periods. High-throughput music store applications require non-blocking patterns that release threads while purchase operations execute across cluster nodes. Proper async implementation uses native transaction APIs rather than wrapping synchronous calls.
 
-### Non-Blocking Transaction Execution
+### Non-Blocking Order Processing
 
-Native async transaction APIs prevent thread blocking while distributed operations complete. Using `transactions.beginAsync()` directly avoids the overhead and resource contention of thread pool wrapping patterns.
+Native async transaction APIs prevent thread blocking while distributed purchase operations complete. Using `transactions.beginAsync()` directly avoids the overhead and resource contention of thread pool wrapping patterns during high-volume sales periods.
 
 ```java
 /**
- * Non-blocking transaction patterns for high-throughput operations.
- * Prevents thread pool exhaustion by using native async APIs
+ * Non-blocking transaction patterns for high-throughput order processing.
+ * Prevents thread pool exhaustion during peak sales by using native async APIs
  * instead of wrapping synchronous calls with CompletableFuture.
  */
-public class AsyncTransactionPatterns {
+public class HighThroughputOrderProcessing {
     
     public CompletableFuture<Void> createArtistAsync(IgniteClient client, String artistName) {
         return client.transactions().beginAsync()
             .thenCompose(tx -> {
-                System.out.println("🚀 Starting async transaction for: " + artistName);
+                System.out.println("Starting async transaction for: " + artistName);
                 
                 RecordView<Artist> artistTable = client.tables().table("Artist").recordView(Artist.class);
                 Artist artist = new Artist(generateArtistId(), artistName);
@@ -338,11 +342,11 @@ public class AsyncTransactionPatterns {
                 // Chain async operations without blocking
                 return artistTable.upsertAsync(tx, artist)
                     .thenCompose(ignored -> {
-                        System.out.println("✓ Artist created: " + artistName);
+                        System.out.println("Artist created: " + artistName);
                         return tx.commitAsync();
                     })
                     .exceptionally(throwable -> {
-                        System.err.println("✗ Failed to create artist: " + throwable.getMessage());
+                        System.err.println("Failed to create artist: " + throwable.getMessage());
                         try {
                             tx.rollback(); // Synchronous rollback in error path
                         } catch (Exception rollbackError) {
@@ -368,7 +372,7 @@ public class AsyncTransactionPatterns {
             // Wait for all operations to complete
             return CompletableFuture.allOf(operations.toArray(new CompletableFuture[0]))
                 .thenApply(ignored -> {
-                    System.out.println("✓ Created " + artistNames.size() + " artists");
+                    System.out.println("Created " + artistNames.size() + " artists");
                     return "Success: " + artistNames.size() + " artists created";
                 });
         });
@@ -380,15 +384,15 @@ public class AsyncTransactionPatterns {
 }
 ```
 
-### Complex Async Workflow Coordination
+### Complex Business Workflow Coordination
 
 ```java
 /**
- * Multi-stage async transaction workflows for complex business processes.
- * Coordinates validation, creation, payment, and inventory operations
+ * Multi-stage async transaction workflows for complete purchase processes.
+ * Coordinates customer validation, invoice creation, payment processing, and inventory updates
  * without blocking threads during distributed execution.
  */
-public class AdvancedAsyncPatterns {
+public class AsyncPurchaseWorkflow {
     
     public CompletableFuture<PurchaseResult> processAsyncPurchase(
             IgniteClient client, Integer customerId, List<PurchaseItem> items) {
@@ -508,17 +512,17 @@ class Payment {
 }
 ```
 
-## Distributed Transaction Resilience
+## Business Use Case: Resilient Transaction Processing
 
-Transaction failures cascade through distributed systems when temporary network partitions, node failures, or deadlock situations occur. Resilient patterns implement retry strategies with exponential backoff and circuit breakers to handle transient failures while preventing system overload during extended outages.
+Transaction failures cascade through distributed music store systems when temporary network partitions, node failures, or high-concurrency deadlock situations occur during peak sales events. Resilient patterns implement retry strategies with exponential backoff and circuit breakers to handle transient failures while maintaining customer experience during system stress.
 
 ```java
 /**
- * Retry strategies for transient distributed transaction failures.
+ * Retry strategies for transient business transaction failures.
  * Implements exponential backoff with jitter to prevent thundering herd
- * problems when multiple nodes retry simultaneously.
+ * problems when multiple customers retry purchases simultaneously.
  */
-public class TransactionRetryPatterns {
+public class ResilientBusinessTransactions {
     
     public <T> CompletableFuture<T> executeWithRetry(
             IgniteClient client, 
@@ -570,15 +574,15 @@ public class TransactionRetryPatterns {
 }
 ```
 
-### Circuit Breaker for Transaction Protection
+### Circuit Breaker for Customer Protection
 
 ```java
 /**
- * Circuit breaker pattern prevents cascading failures when distributed
- * transaction errors exceed threshold. Fails fast during outages to
- * protect system resources and provide predictable error responses.
+ * Circuit breaker pattern prevents cascading failures when business
+ * transaction errors exceed threshold during system stress. Fails fast during outages to
+ * protect system resources and provide predictable customer experience.
  */
-public class TransactionCircuitBreaker {
+public class BusinessTransactionCircuitBreaker {
     private enum State { CLOSED, OPEN, HALF_OPEN }
     
     private State state = State.CLOSED;
@@ -627,6 +631,8 @@ public class TransactionCircuitBreaker {
 }
 ```
 
-These advanced patterns solve the distributed transaction challenges that cause application failures under concurrent load. Explicit lifecycle control prevents resource leaks, async patterns eliminate thread pool exhaustion, and resilience patterns handle network partitions and node failures.
+These applied transaction patterns solve the real-world business challenges that cause customer-facing failures under concurrent load. Explicit lifecycle control prevents resource leaks during complex purchase flows, async patterns eliminate thread pool exhaustion during peak sales, and resilience patterns maintain customer experience during system stress.
 
-The next chapter demonstrates how these transaction patterns enable reliable distributed computing operations across cluster nodes.
+The patterns demonstrated in this chapter provide the foundation for implementing reliable business workflows in distributed environments. By focusing on practical use cases like purchase processing, reporting, and high-throughput operations, these patterns bridge the gap between distributed transaction theory and production business applications.
+
+The next chapter demonstrates how these transaction coordination patterns enable reliable distributed computing operations across cluster nodes for advanced data processing workloads.

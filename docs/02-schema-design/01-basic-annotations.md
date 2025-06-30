@@ -2,7 +2,29 @@
 
 Your Artist data is now distributed across the cluster, but when users browse Albums by artist, the queries hit different nodes to join related data. Response times spike under load because the database can't execute efficient joins when Artist and Album records are scattered across separate partitions.
 
-This is where Ignite 3's annotation-based schema design transforms your distributed architecture. Instead of managing separate DDL scripts and hoping for optimal data placement, annotations embed your performance strategy directly into your Java classes.
+## The Distributed Schema Management Problem
+
+Distributed databases create schema management challenges that don't exist in single-server databases:
+
+**Schema Fragmentation:** Your table definitions, indexes, constraints, and performance optimizations scatter across SQL files, configuration files, and documentation. Changes require coordinating updates across multiple systems.
+
+**Deployment Complexity:** Schema changes need synchronized deployment across all cluster nodes. Inconsistent schema versions between nodes cause query failures and data corruption.
+
+**Performance Blind Spots:** Critical performance decisions like colocation strategies and index placement live in separate configuration files, disconnected from your business logic. Developers can't see how schema choices affect query performance.
+
+**Environment Inconsistency:** Development uses different schema configurations than production. Testing environments don't catch performance problems because they use different data placement strategies.
+
+## How Ignite 3 Annotations Solve Schema Distribution Problems
+
+Ignite 3's annotation-based schema design eliminates these distributed schema management problems by embedding your complete data strategy directly into your Java classes.
+
+**Single Source of Truth:** Your Java class IS your schema. All table structure, constraints, indexes, and performance optimizations live in one place with compile-time validation.
+
+**Automatic DDL Generation:** Ignite converts annotations to optimized SQL DDL and deploys it consistently across all cluster nodes. No manual schema synchronization.
+
+**Performance by Design:** Colocation strategies, zone configurations, and indexing decisions become part of your code. Developers see the performance impact of schema choices immediately.
+
+**Environment Consistency:** The same annotated classes work identically in development, testing, and production. Schema-related bugs disappear.
 
 ## Working with the Reference Application
 
@@ -15,7 +37,7 @@ mvn compile exec:java
 
 The reference app shows how the Book example from [Chapter 1.2](../01-foundation/02-getting-started.md) scales to Artist-Album-Track hierarchies with colocation and distribution zones.
 
-## How Schema-as-Code Eliminates Distribution Complexity
+## Implementation: Schema-as-Code Pattern
 
 Your Book entity from [Chapter 1.2](../01-foundation/02-getting-started.md) demonstrated the fundamental pattern:
 
@@ -27,20 +49,11 @@ public class Book {
 }
 ```
 
-This worked for a single table. But when your application grows to handle Artist → Album → Track relationships, the challenges multiply:
+This approach scales to complex entity relationships while maintaining performance and consistency:
 
-- **Data Fragmentation**: Related entities scatter across different nodes
-- **Join Performance**: Queries span multiple partitions for simple operations
-- **Schema Consistency**: DDL scripts become environment-specific nightmares
-- **Deployment Friction**: Schema changes require coordinated database migrations
+### Traditional vs Annotation-Based Schema Management
 
-## How Annotations Solve Distributed Schema Problems
-
-Traditional database development forces you to manage schemas across multiple locations. You write SQL DDL scripts, maintain migration files, and coordinate schema changes between environments. In distributed databases, this complexity explodes.
-
-### The Traditional Fragmented Approach
-
-Your schema information lives in multiple disconnected files:
+**Traditional Approach Problems:**
 
 ```sql
 -- In schema.sql
@@ -61,9 +74,7 @@ Problems with this approach:
 - Manual synchronization between environments
 - Performance optimizations hidden in separate configuration
 
-### How Ignite 3 Unifies Schema Definition
-
-Annotations consolidate everything into your Java classes:
+**Ignite 3 Annotation Solution:**
 
 ```java
 // Complete schema definition in one place

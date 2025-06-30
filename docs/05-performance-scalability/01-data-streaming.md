@@ -13,35 +13,176 @@ cd ignite3-reference-apps/08-data-streaming-app
 mvn compile exec:java
 ```
 
-## Streaming Architecture and Data Flow
+## Streaming Fundamentals: Reactive Data Processing
 
-The Data Streaming API routes high-volume operations through reactive streams that optimize batch processing and partition locality:
+### The Streaming Problem
+
+Traditional database insert operations become bottlenecks when processing millions of events per hour. Each INSERT statement requires:
+
+- Network round trip to the cluster
+- Transaction coordination across nodes  
+- Individual acknowledgment back to the client
+- Separate partition routing for each record
+
+At scale, this creates exponential overhead. A music platform processing 500,000 concurrent users during an album release would generate 2.5 million individual database operations in the first hour, overwhelming network capacity and exhausting connection pools.
+
+### Reactive Streaming Solutions
+
+Ignite 3's Data Streaming API implements the Reactive Streams Specification to solve high-throughput ingestion through four key principles:
+
+**1. Asynchronous Processing**
+Streams operate on separate threads from application logic, preventing blocking operations that would freeze user interfaces during bulk data processing.
+
+**2. Non-blocking Backpressure**
+When consumers cannot keep up with producers, the system applies backpressure by slowing data production rather than dropping events or exhausting memory.
+
+**3. Demand-driven Flow Control**
+Consumers signal their capacity to producers, ensuring data flows at sustainable rates that match downstream processing capabilities.
+
+**4. Fault Tolerance**
+Streaming operations include built-in retry mechanisms with exponential backoff to handle network partitions and temporary node failures.
+
+### Ignite 3's Streaming Architecture
+
+The streaming system processes data through three connected stages:
+
+```mermaid
+graph LR
+    A["Data Source<br/>Events/Records"] --> B["Publisher<br/>Flow Control"]
+    B --> C["Batch Processor<br/>Partition Routing"]
+    C --> D["Target Tables<br/>Distributed Storage"]
+    
+    style A fill:#e1f5fe
+    style B fill:#f3e5f5
+    style C fill:#e8f5e8
+    style D fill:#fff3e0
+```
+
+**Data Source**: Applications generate events at variable rates, from steady user interactions to burst loads during peak traffic.
+
+**Publisher**: Flow.Publisher implementations manage data production rates and coordinate with downstream consumers through backpressure signals.
+
+**Batch Processor**: DataStreamerItem objects group operations by partition affinity and optimize network utilization through intelligent batching.
+
+**Target Tables**: RecordView and KeyValueView APIs apply batched operations to distributed tables while maintaining consistency.
+
+### Backpressure Management in Ignite 3
+
+Ignite 3 implements sophisticated backpressure handling that prevents system overload:
 
 ```mermaid
 graph TB
-    subgraph DSF ["Data Streaming Flow"]
-        A[Data Source] --> B[Flow.Publisher]
-        B --> C[DataStreamerItem]
-        C --> D[Partition Router]
-        D --> E[Batch Processor]
-        E --> F[Target Tables]
-    end
-
-    subgraph SC ["Streaming Components"]
-        G[DataStreamerTarget] --> H[RecordView/KeyValueView]
-        I[DataStreamerOptions] --> J[Performance Tuning]
-        K[DataStreamerReceiver] --> L[Custom Processing]
-        M[Flow API] --> N[Backpressure Control]
-    end
-
-    subgraph OT ["Operation Types"]
-        O[PUT Operations] --> P[Insert/Update Records]
-        Q[REMOVE Operations] --> R[Delete Records]
-        S[Mixed Operations] --> T[Batch Different Operations]
-    end
+    A["High-Rate Producer"] --> B["Flow Publisher"]
+    B --> C{"Buffer Status"}
+    C -->|"Available"| D["Submit to Stream"]
+    C -->|"Full"| E["Apply Backpressure"]
+    E --> F["Slow Producer Rate"]
+    F --> G["Monitor System Load"]
+    G --> H{"Load Decreased?"}
+    H -->|"Yes"| I["Increase Rate"]
+    H -->|"No"| J["Maintain Slow Rate"]
+    I --> B
+    J --> B
+    
+    style C fill:#ffecb3
+    style E fill:#ffcdd2
+    style G fill:#e1f5fe
 ```
 
-The streaming architecture addresses performance bottlenecks through reactive streams built on Java's Flow API for natural backpressure handling. Intelligent batching groups records by partition to minimize network traffic, while data locality routing ensures records reach their target nodes efficiently. Performance controls tune batch sizes, parallelism levels, and flow rates to match system capacity.
+Backpressure mechanisms work through several feedback loops:
+
+- **Buffer Monitoring**: Publishers track buffer utilization and signal capacity constraints to producers
+- **Rate Adaptation**: Producer threads respond to capacity signals by increasing or decreasing event generation rates
+- **Demand Signaling**: Consumers request specific numbers of items, preventing unlimited data buffering
+- **Load Balancing**: The system distributes backpressure across multiple producer threads to maintain overall throughput
+
+### Exponential Backoff Algorithm
+
+When streaming operations encounter failures, Ignite 3 applies exponential backoff to prevent overwhelming struggling nodes:
+
+```java
+// Backoff calculation: delay = baseDelay * (2^retryAttempt) + jitter
+long delay = 1000 * (1L << retryAttempt) + random.nextInt(500);
+```
+
+The backoff algorithm serves multiple purposes:
+
+**Failure Recovery**: Temporary network issues or node overload can resolve themselves given sufficient time
+**Resource Protection**: Prevents failed operations from consuming excessive system resources through repeated immediate retries
+**Distributed Coordination**: Reduces thundering herd effects when multiple clients experience similar failures
+**Progressive Delay**: Increases delay exponentially (1s, 2s, 4s, 8s) to give systems time to recover
+
+Jitter adds randomness to prevent synchronized retry attempts across multiple clients that could create periodic load spikes.
+
+## Core Streaming API Components
+
+Before implementing streaming solutions, understanding the key API components helps architect effective data ingestion patterns.
+
+### DataStreamerItem: Operation Wrapper
+
+DataStreamerItem wraps individual operations and specifies their type:
+
+```java
+// PUT operation (insert/update)
+DataStreamerItem<Tuple> putItem = DataStreamerItem.of(recordTuple);
+
+// REMOVE operation (delete)
+DataStreamerItem<Tuple> removeItem = DataStreamerItem.removed(keyTuple);
+```
+
+PUT operations handle both inserts and updates automatically. If a record with the same primary key exists, it gets updated; otherwise, a new record is inserted. REMOVE operations delete records by primary key, ignoring non-existent keys without errors.
+
+### DataStreamerOptions: Performance Configuration
+
+DataStreamerOptions controls streaming performance characteristics:
+
+```java
+DataStreamerOptions options = DataStreamerOptions.builder()
+    .pageSize(2000)                     // Records per batch
+    .perPartitionParallelOperations(4)  // Concurrent operations per partition
+    .autoFlushInterval(500)             // Automatic flush timeout (ms)
+    .retryLimit(16)                     // Maximum retry attempts
+    .build();
+```
+
+**pageSize**: Balances throughput and memory usage. Larger batches improve network efficiency but consume more memory.
+
+**perPartitionParallelOperations**: Controls parallelism per partition. Higher values increase throughput but may overwhelm individual nodes.
+
+**autoFlushInterval**: Forces batch processing after specified milliseconds, preventing indefinite buffering of partial batches.
+
+**retryLimit**: Maximum retry attempts for failed operations before giving up. Higher values improve resilience but may delay error reporting.
+
+### Flow.Publisher: Data Production Control
+
+Java's Flow.Publisher interface provides reactive streaming with built-in backpressure:
+
+```java
+SubmissionPublisher<DataStreamerItem<Tuple>> publisher = new SubmissionPublisher<>();
+
+// Submit operations to stream
+publisher.submit(DataStreamerItem.of(trackEvent));
+
+// Signal completion
+publisher.close();
+```
+
+SubmissionPublisher handles subscriber coordination, demand signaling, and buffer management automatically. Applications focus on data production while the publisher manages flow control.
+
+### RecordView Streaming Integration
+
+RecordView.streamData() connects publishers to target tables:
+
+```java
+RecordView<Tuple> eventsView = client.tables()
+    .table("TrackEvents")
+    .recordView();
+
+CompletableFuture<Void> streamingResult = eventsView
+    .streamData(publisher, options);
+```
+
+The streaming operation returns immediately with a CompletableFuture that completes when all data has been processed or an error occurs.
 
 ## Building High-Throughput Streaming Operations
 
@@ -366,6 +507,52 @@ public class RealTimeEventStreamer {
 
 ## Handling System Overload Through Backpressure
 
+Understanding backpressure is essential for building resilient streaming systems that maintain performance under variable load conditions.
+
+### How Backpressure Works
+
+Backpressure prevents system overload through coordinated communication between data producers and consumers:
+
+1. **Demand Signaling**: Consumers request specific numbers of items they can process
+2. **Buffer Monitoring**: Producers track buffer utilization and detect capacity constraints  
+3. **Rate Adaptation**: Production rates adjust based on consumer capacity signals
+4. **Flow Control**: The system maintains sustainable throughput without dropping data
+
+When a music streaming platform experiences traffic spikes, backpressure prevents catastrophic failures by automatically slowing data production to match processing capacity.
+
+### The Backpressure Flow in Practice
+
+```mermaid
+sequenceDiagram
+    participant P as Producer
+    participant Pub as Publisher
+    participant Sub as Subscriber
+    participant I as Ignite Cluster
+    
+    P->>Pub: Submit 10,000 events
+    Pub->>Sub: onSubscribe()
+    Sub->>Pub: request(1000)
+    
+    loop Process 1000 items
+        Pub->>Sub: onNext(item)
+        Sub->>I: Store in cluster
+        I-->>Sub: Acknowledgment
+    end
+    
+    Note over Sub: Buffer getting full
+    Sub->>Pub: request(500)
+    Note over Pub: Reduced demand detected
+    Pub->>P: Apply backpressure
+    
+    P->>P: Reduce production rate
+    
+    Note over Sub: Buffer space available
+    Sub->>Pub: request(1000)
+    Pub->>P: Increase rate allowed
+```
+
+This interaction shows how backpressure creates a feedback loop that prevents buffer overflows and maintains system stability.
+
 ### Adaptive Flow Management
 
 Peak traffic events like album releases generate event bursts that can overwhelm downstream processing capacity. Without proper flow control, systems either drop events or exhaust memory trying to buffer unlimited data. Adaptive publishers implement backpressure mechanisms that slow data production when consumers signal capacity constraints:
@@ -619,16 +806,41 @@ enum EventType {
 
 ## Streaming Patterns for Production Scale
 
-Data streaming solves the fundamental challenge of processing millions of concurrent user events without creating system bottlenecks. Reactive streams provide natural backpressure handling that prevents memory exhaustion during traffic bursts. Intelligent batching groups operations by partition affinity to minimize network overhead and maximize cluster utilization. Mixed operation support enables complete event lifecycle processing within single streaming sessions.
+Data streaming addresses the fundamental scaling challenge of processing millions of concurrent user events through several key patterns:
 
-The error recovery patterns ensure data integrity during network partitions and node failures through retry logic and exponential backoff strategies. Adaptive flow control responds to downstream capacity constraints to prevent system overload while maintaining consistent throughput.
+### Performance Optimization Strategies
 
-High-throughput streaming enables music platforms to handle album release traffic, migrate legacy data, and process continuous user interactions without dropping events or blocking operational workloads. These patterns provide the foundation for real-time analytics and personalized recommendations that depend on timely event processing.
+**Batch Size Tuning**: Larger batches (2000-5000 records) improve network efficiency but increase memory usage and latency. Smaller batches (500-1000 records) provide faster response times but generate more network traffic.
+
+**Partition Awareness**: Group related records by partition affinity to minimize cross-partition transactions. Music events colocated by ArtistId or CustomerId process more efficiently than randomly distributed records.
+
+**Parallelism Control**: Balance perPartitionParallelOperations with cluster capacity. Higher parallelism increases throughput but may overwhelm individual nodes during peak traffic.
+
+**Flow Control**: Implement demand-based producers that respond to backpressure signals rather than generating unlimited data streams.
+
+### Reliability Patterns
+
+**Retry with Exponential Backoff**: Handle transient failures through progressive retry delays that prevent overwhelming struggling nodes while allowing recovery time.
+
+**Error Isolation**: Process streams in smaller batches to isolate errors and prevent single failures from affecting large data sets.
+
+**Buffer Management**: Monitor publisher buffer utilization and implement overflow handling strategies that gracefully degrade performance rather than dropping events.
+
+**Health Monitoring**: Track streaming metrics (throughput, error rates, buffer utilization) to detect performance degradation before it impacts users.
+
+### Operational Considerations
+
+High-throughput streaming enables music platforms to:
+
+- Handle album release traffic spikes without dropping events
+- Migrate terabytes of historical data without blocking live operations  
+- Process continuous user interactions for real-time analytics
+- Maintain ACID consistency while achieving millions of operations per hour
+
+These patterns provide the foundation for scalable data ingestion that supports real-time personalization, fraud detection, and operational analytics at music streaming scale.
 
 ## Next Steps
 
-Streaming operations generate large volumes of frequently accessed data that requires intelligent caching strategies to maintain query performance:
+With high-throughput data streaming established, implement intelligent caching strategies that optimize access patterns for the large volumes of frequently requested data generated by streaming operations:
 
-- **[Chapter 5.2: Caching Strategies and Performance Optimization](02-caching-strategies.md)** - Implement data access patterns that complement streaming operations with intelligent caching for frequently requested content
-
-- **[Chapter 5.3: Query Performance and Index Optimization](03-query-performance.md)** - Optimize SQL performance and indexing strategies for high-volume streaming data patterns
+**[Chapter 5.2: Caching Strategies and Performance Optimization](02-caching-strategies.md)** - Implement data access patterns that complement streaming operations with intelligent caching for frequently requested content and query result optimization

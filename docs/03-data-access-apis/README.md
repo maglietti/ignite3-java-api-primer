@@ -24,11 +24,11 @@ Your mobile application needs Artist entity retrieval for user ID 42's favorite 
 
 Marketing requires complex analytics across Artist-Album-Track relationships with aggregation functions and filtering conditions. Configure distributed SQL execution that processes queries across multiple cluster nodes without data transfer overhead.
 
-### Chapter 3: [API Selection Guide](./03-sql-api-selection-guide.md)
+### Chapter 3: [Data Access API Decision Guide](./03-sql-api-selection-guide.md)
 
-*Optimize API selection for performance requirements*
+*Strategic framework for selecting optimal data access APIs*
 
-Different application layers require different access patterns. Configure Table API for mobile applications requiring millisecond response times and SQL API for analytical dashboards processing complex aggregations across distributed datasets.
+Match operation characteristics with appropriate API capabilities using decision criteria and performance patterns. Learn when to use KeyValueView for high-performance lookups, RecordView for business logic operations, and SQL API for complex analytics.
 
 ## Production Data Access Challenges
 

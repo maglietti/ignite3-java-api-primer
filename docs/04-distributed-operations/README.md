@@ -18,11 +18,11 @@ Beyond transactions, you can execute compute jobs directly on nodes containing r
 
 Your purchase workflows need atomic execution across payment processing, library updates, and analytics increments. Configure transaction boundaries and isolation levels that maintain consistency without coordinator bottlenecks.
 
-### Chapter 2: [Advanced Transaction Patterns](./02-advanced-transaction-patterns.md)
+### Chapter 2: [Transaction Use Cases and Applied Patterns](./02-advanced-transaction-patterns.md)
 
-*Implement complex transactional workflows*
+*Apply transactions to real-world business scenarios*
 
-Handle playlist creation workflows that span user preferences, track availability, and recommendation updates. Configure transaction retry logic and deadlock resolution for production transaction loads.
+Handle purchase workflows that span customer validation, payment processing, and library updates. Implement high-throughput order processing and resilient transaction patterns for production business loads.
 
 ### Chapter 3: [Compute API Processing](./03-compute-api-processing.md)
 

@@ -4,7 +4,55 @@ Your popular tracks are being loaded from disk storage repeatedly because cache 
 
 This happens because traditional application architectures treat caching as an afterthought rather than designing for distributed data access patterns from the start. Your music streaming platform processes millions of catalog requests daily, but without intelligent caching strategies, each popular artist lookup becomes a costly database operation multiplied across your entire user base.
 
-The solution involves implementing coordinated caching patterns that eliminate redundant data access while maintaining consistency across distributed systems. Ignite 3's distributed caching capabilities provide the foundation for cache-aside patterns that serve popular content instantly, write-through patterns that maintain data consistency across updates, and write-behind patterns that handle high-volume event processing without database contention.
+## Ignite 3's Table-Based Caching Architecture
+
+Ignite 3 approaches caching differently from traditional cache-aside layers by treating cache as native distributed tables rather than external storage. This architecture eliminates the complexity of managing separate cache and database systems while providing the performance benefits of in-memory data access.
+
+Instead of maintaining separate cache infrastructure, Ignite 3 tables function as both cache and storage, with configurable persistence layers that determine whether data resides in memory, on disk, or both. This unified approach simplifies cache management while providing ACID transaction guarantees across cached data.
+
+The table-based architecture supports multiple access patterns through different APIs:
+
+- **KeyValueView**: Direct key-value access for simple cache operations
+- **RecordView**: Object-oriented access with full POJO support
+- **SQL API**: Query-based access for complex cache operations
+
+This design enables caching strategies that leverage Ignite's distributed computing capabilities, transaction support, and query optimization while maintaining the simplicity of traditional cache operations.
+
+## Caching Fundamentals in Distributed Systems
+
+Effective caching strategies must address three core challenges that become amplified in distributed environments: consistency, availability, and partition tolerance. These challenges directly impact how music streaming platforms handle catalog data, user sessions, and event processing.
+
+### Cache Consistency Patterns
+
+Distributed caching requires coordinated consistency strategies that balance performance with data accuracy. Different data types require different consistency guarantees based on their usage patterns and business requirements.
+
+**Strong Consistency**: Critical for customer profiles, subscription status, and billing information where stale data creates business problems. Updates must be visible immediately across all nodes.
+
+**Eventual Consistency**: Suitable for catalog data, play counts, and recommendation systems where slight delays don't impact user experience. Updates propagate eventually while maintaining high availability.
+
+**Weak Consistency**: Appropriate for analytics data, usage statistics, and non-critical metrics where approximate values are acceptable for performance gains.
+
+### Cache Invalidation Strategies
+
+Cache invalidation complexity grows exponentially with data relationships and distributed system scale. Music streaming platforms must handle cascading invalidations when artist data changes affect albums, tracks, playlists, and recommendation algorithms.
+
+**Time-based Expiration**: Simple but wasteful for data with unpredictable change patterns. Popular artist data may remain valid for months while promotional content becomes stale within hours.
+
+**Event-based Invalidation**: Reactive approach that invalidates cache entries when source data changes. Requires reliable event propagation across distributed systems.
+
+**Version-based Invalidation**: Uses data versioning to determine cache freshness. Enables fine-grained cache control but requires version tracking infrastructure.
+
+### Performance vs. Consistency Trade-offs
+
+Caching strategies must balance response time requirements against data consistency needs. Music streaming platforms face different trade-offs across various functional areas:
+
+**Catalog Browsing**: Favors performance over consistency. Users accept slightly stale artist information for sub-100ms browse responses.
+
+**User Authentication**: Requires strong consistency. Subscription status changes must be immediately visible to prevent access control issues.
+
+**Analytics Processing**: Balances both concerns. Real-time dashboards need recent data but can tolerate some staleness for improved query performance.
+
+The solution involves implementing coordinated caching patterns that eliminate redundant data access while maintaining appropriate consistency guarantees for different data types. Ignite 3's distributed caching capabilities provide the foundation for cache-aside patterns that serve popular content instantly, write-through patterns that maintain data consistency across updates, and write-behind patterns that handle high-volume event processing without database contention.
 
 ## How Cache-Aside Patterns Eliminate Database Pressure
 
@@ -754,4 +802,4 @@ Caching optimization sets the foundation for comprehensive performance tuning th
 
 **[Chapter 5.3: Query Performance and Index Optimization](03-query-performance.md)** details SQL performance tuning techniques that work with your caching patterns to eliminate remaining database bottlenecks.
 
-**[Chapter 6.1: Production Deployment Patterns](../06-production-concerns/01-deployment-patterns.md)** covers deploying and managing these performance optimizations in production environments with proper monitoring and scaling strategies.
+**[Chapter 4.3: Compute API for Distributed Processing](../04-distributed-operations/03-compute-api-processing.md)** demonstrates how to combine these caching patterns with distributed computing for advanced performance optimization scenarios.

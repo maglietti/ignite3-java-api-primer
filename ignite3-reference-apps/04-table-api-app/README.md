@@ -126,14 +126,23 @@ Main demonstration application that orchestrates all patterns:
 
 ## Key Decision Points
 
-### When to Use Table API
+### When to Use Table API vs SQL API vs Key-Value API
 
 ✅ **Table API Excels For**:
-- Known primary keys
-- Single record operations
+- Known primary keys with complete records
+- Single record operations with POJOs
 - Type safety requirements
 - Object-oriented domain models
+- Complex entity relationships
 - High-performance point operations
+
+✅ **Key-Value API Excels For**:
+- Simple cache-like operations
+- High-frequency get/put patterns
+- Minimal overhead operations
+- Working with partial data
+- Explicit null value handling
+- Direct key-value access without object mapping
 
 ⚠️ **Consider SQL API For**:
 - Complex JOINs across tables
@@ -141,6 +150,7 @@ Main demonstration application that orchestrates all patterns:
 - Range queries with WHERE clauses
 - Dynamic queries at runtime
 - Analytical operations
+- Ad-hoc queries and reporting
 
 ### RecordView vs KeyValueView
 

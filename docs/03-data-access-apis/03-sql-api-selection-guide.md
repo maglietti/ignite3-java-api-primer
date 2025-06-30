@@ -1,10 +1,39 @@
-# Chapter 3.3: API Selection Strategy
+# Chapter 3.3: Data Access API Decision Guide
 
 Your mobile app response times degraded after implementing user session management through SQL queries instead of direct key lookups. Meanwhile, your analytics dashboard fails to aggregate sales data efficiently because you're using RecordView operations to load thousands of individual records instead of executing SQL aggregations. These performance problems stem from API selection mismatches that compound under production load.
 
 Modern distributed applications require different data access patterns for different operations. Session lookups need sub-millisecond key-value performance, business logic operations need type-safe object manipulation, and analytics require SQL aggregation capabilities. Ignite 3 provides three distinct APIs optimized for these different patterns, but selecting the wrong API for each operation creates performance bottlenecks that scale poorly.
 
 This chapter demonstrates how to analyze operation characteristics, select optimal APIs, and combine multiple approaches within single applications.
+
+## API Decision Framework
+
+Your operation characteristics determine optimal API choice. Analyze data access patterns, performance requirements, and object complexity to match operations with appropriate APIs.
+
+**KeyValueView Selection Criteria:**
+- Primary key available for direct access
+- Performance requirements exceed 1000 operations per second
+- Simple value operations without complex object relationships
+- Caching patterns and session management scenarios
+
+**RecordView Selection Criteria:**
+- Complete object context required for business logic
+- Type safety and compile-time validation important
+- CRUD operations with business rule enforcement
+- Development productivity matters more than raw performance
+
+**SQL API Selection Criteria:**
+- Complex queries spanning multiple entities
+- Analytics and aggregation requirements
+- Dynamic query construction needed
+- Cross-partition operations unavoidable
+
+**Multi-API Strategy:**
+- Combine approaches within single applications for optimal performance
+- Use each API where it provides maximum advantage
+- Design data access layers that leverage API strengths strategically
+
+Modern distributed applications achieve optimal performance by matching operation characteristics with appropriate API capabilities. The most effective implementations combine all three approaches, selecting APIs based on specific operation requirements rather than architectural uniformity.
 
 ## Operation Analysis Framework
 
@@ -566,34 +595,7 @@ public class APISelectionAntiPatterns {
 
 These anti-patterns create performance problems that scale poorly under production load. SQL queries for simple lookups waste processing cycles on unnecessary query planning. RecordView analytics operations transfer excessive data across the network and perform aggregations that should execute server-side.
 
-## API Selection Strategy
-
-Your operation characteristics determine optimal API choice. Analyze data access patterns, performance requirements, and object complexity to match operations with appropriate APIs.
-
-**KeyValueView Selection Criteria:**
-- Primary key available for direct access
-- Performance requirements exceed 1000 operations per second
-- Simple value operations without complex object relationships
-- Caching patterns and session management scenarios
-
-**RecordView Selection Criteria:**
-- Complete object context required for business logic
-- Type safety and compile-time validation important
-- CRUD operations with business rule enforcement
-- Development productivity matters more than raw performance
-
-**SQL API Selection Criteria:**
-- Complex queries spanning multiple entities
-- Analytics and aggregation requirements
-- Dynamic query construction needed
-- Cross-partition operations unavoidable
-
-**Multi-API Strategy:**
-- Combine approaches within single applications for optimal performance
-- Use each API where it provides maximum advantage
-- Design data access layers that leverage API strengths strategically
-
-Modern distributed applications achieve optimal performance by matching operation characteristics with appropriate API capabilities. The most effective implementations combine all three approaches, selecting APIs based on specific operation requirements rather than architectural uniformity.
+## Implementation Guidelines
 
 Your API selection directly impacts application performance, development productivity, and operational complexity. Choose APIs that match operation characteristics while considering long-term maintenance and scaling requirements.
 

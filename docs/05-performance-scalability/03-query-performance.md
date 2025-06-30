@@ -8,435 +8,244 @@ Query optimization in distributed systems involves understanding how data flows 
 
 Distributed query execution performance depends on understanding how operations flow across cluster nodes, which tables participate in joins, and where filtering occurs in the execution pipeline. Query analysis reveals whether operations execute efficiently or create bottlenecks through excessive data movement and inefficient filtering.
 
-```java
-import org.apache.ignite.sql.IgniteSql;
-import org.apache.ignite.sql.ResultSet;
-import org.apache.ignite.sql.SqlRow;
-import org.apache.ignite.sql.Statement;
+### Basic Performance Measurement
 
+Track query execution characteristics to identify performance bottlenecks:
+
+```java
 /**
- * Query analysis and performance monitoring for music platform operations.
- * Demonstrates techniques for understanding query execution characteristics.
+ * Basic query performance measurement for optimization analysis.
  */
-public class QueryAnalysisDemo {
+public class QueryTimingAnalysis {
     
     private final IgniteSql sql;
     
-    public QueryAnalysisDemo(IgniteClient client) {
+    public QueryTimingAnalysis(IgniteClient client) {
         this.sql = client.sql();
     }
     
     /**
-     * Analyze track search query performance.
-     * Demonstrates measuring execution time and result characteristics.
+     * Measure query execution time and result characteristics.
      */
-    public void analyzeTrackSearchQuery(String searchTerm) {
-        String query = """
-            SELECT t.TrackId, t.Name, ar.Name as ArtistName, al.Title as AlbumTitle
-            FROM Track t
-            JOIN Album al ON t.AlbumId = al.AlbumId  
-            JOIN Artist ar ON al.ArtistId = ar.ArtistId
-            WHERE LOWER(t.Name) LIKE LOWER(?)
-            ORDER BY ar.Name, al.Title, t.Name
-            LIMIT 50
-            """;
-        
+    public QueryMetrics analyzeQuery(String query, Object... params) {
         long startTime = System.nanoTime();
+        int resultCount = 0;
+        long firstResultTime = 0;
         
-        try (ResultSet<SqlRow> results = sql.execute(null, query, "%" + searchTerm + "%")) {
-            int resultCount = 0;
-            long firstResultTime = 0;
-            
+        try (ResultSet<SqlRow> results = sql.execute(null, query, params)) {
             while (results.hasNext()) {
                 SqlRow row = results.next();
                 
                 if (resultCount == 0) {
                     firstResultTime = System.nanoTime();
                 }
-                
                 resultCount++;
-                
-                // Process result (would display in real application)
-                String trackInfo = String.format("%s by %s from %s", 
-                    row.stringValue("Name"),
-                    row.stringValue("ArtistName"), 
-                    row.stringValue("AlbumTitle"));
             }
-            
-            long totalTime = System.nanoTime() - startTime;
-            long timeToFirstResult = firstResultTime > 0 ? firstResultTime - startTime : 0;
-            
-            System.out.printf("Track search analysis:%n");
-            System.out.printf("  Search term: '%s'%n", searchTerm);
-            System.out.printf("  Results found: %d%n", resultCount);
-            System.out.printf("  Total execution time: %.2f ms%n", totalTime / 1_000_000.0);
-            System.out.printf("  Time to first result: %.2f ms%n", timeToFirstResult / 1_000_000.0);
-            
-        } catch (Exception e) {
-            System.err.println("Query analysis failed: " + e.getMessage());
-        }
-    }
-    
-    /**
-     * Analyze genre-based analytics query performance.
-     * Shows how complex aggregation queries perform across distributed data.
-     */
-    public void analyzeGenreAnalyticsQuery() {
-        String query = """
-            SELECT 
-                g.Name as Genre,
-                COUNT(t.TrackId) as TrackCount,
-                COUNT(DISTINCT ar.ArtistId) as ArtistCount,
-                AVG(t.UnitPrice) as AvgPrice,
-                SUM(COALESCE(il.Quantity, 0)) as TotalSales
-            FROM Genre g
-            LEFT JOIN Track t ON g.GenreId = t.GenreId
-            LEFT JOIN Album al ON t.AlbumId = al.AlbumId
-            LEFT JOIN Artist ar ON al.ArtistId = ar.ArtistId
-            LEFT JOIN InvoiceLine il ON t.TrackId = il.TrackId
-            GROUP BY g.GenreId, g.Name
-            HAVING COUNT(t.TrackId) > 0
-            ORDER BY TotalSales DESC, TrackCount DESC
-            """;
-        
-        long startTime = System.nanoTime();
-        
-        try (ResultSet<SqlRow> results = sql.execute(null, query)) {
-            int genreCount = 0;
-            long aggregationData = 0;
-            
-            while (results.hasNext()) {
-                SqlRow row = results.next();
-                genreCount++;
-                
-                // Track data volume for analysis
-                aggregationData += row.longValue("TrackCount");
-                
-                if (genreCount <= 10) { // Show top 10 genres
-                    System.out.printf("  %s: %d tracks, %d artists, %.2f avg price, %d sales%n",
-                        row.stringValue("Genre"),
-                        row.longValue("TrackCount"),
-                        row.longValue("ArtistCount"), 
-                        row.doubleValue("AvgPrice"),
-                        row.longValue("TotalSales"));
-                }
-            }
-            
-            long totalTime = System.nanoTime() - startTime;
-            
-            System.out.printf("Genre analytics analysis:%n");
-            System.out.printf("  Genres processed: %d%n", genreCount);
-            System.out.printf("  Total tracks aggregated: %d%n", aggregationData);
-            System.out.printf("  Execution time: %.2f ms%n", totalTime / 1_000_000.0);
-            
-        } catch (Exception e) {
-            System.err.println("Analytics query analysis failed: " + e.getMessage());
-        }
-    }
-    
-    /**
-     * Compare query performance with different WHERE clause strategies.
-     * Shows impact of different filtering approaches on execution time.
-     */
-    public void compareFilteringStrategies(int artistId) {
-        // Strategy 1: Direct filter on indexed column
-        String indexedQuery = """
-            SELECT COUNT(*) as TrackCount
-            FROM Track t
-            JOIN Album al ON t.AlbumId = al.AlbumId
-            WHERE al.ArtistId = ?
-            """;
-        
-        // Strategy 2: Filter with function call (less efficient)
-        String functionQuery = """
-            SELECT COUNT(*) as TrackCount  
-            FROM Track t
-            JOIN Album al ON t.AlbumId = al.AlbumId
-            WHERE CAST(al.ArtistId AS VARCHAR) = CAST(? AS VARCHAR)
-            """;
-        
-        // Strategy 3: Subquery approach
-        String subqueryQuery = """
-            SELECT COUNT(*) as TrackCount
-            FROM Track t
-            WHERE t.AlbumId IN (
-                SELECT AlbumId FROM Album WHERE ArtistId = ?
-            )
-            """;
-        
-        System.out.printf("Comparing filtering strategies for artist %d:%n", artistId);
-        
-        long time1 = measureQueryTime(indexedQuery, artistId);
-        long time2 = measureQueryTime(functionQuery, artistId);  
-        long time3 = measureQueryTime(subqueryQuery, artistId);
-        
-        System.out.printf("  Direct indexed filter: %.2f ms%n", time1 / 1_000_000.0);
-        System.out.printf("  Function-based filter: %.2f ms%n", time2 / 1_000_000.0);
-        System.out.printf("  Subquery approach: %.2f ms%n", time3 / 1_000_000.0);
-        
-        // Identify best approach
-        long fastest = Math.min(time1, Math.min(time2, time3));
-        String recommendation = "unknown";
-        if (fastest == time1) recommendation = "Direct indexed filter (optimal)";
-        else if (fastest == time2) recommendation = "Function-based filter"; 
-        else if (fastest == time3) recommendation = "Subquery approach";
-        
-        System.out.printf("  Recommended approach: %s%n", recommendation);
-    }
-    
-    private long measureQueryTime(String query, Object... params) {
-        long startTime = System.nanoTime();
-        
-        try (ResultSet<SqlRow> results = sql.execute(null, query, params)) {
-            // Process all results to ensure complete execution
-            while (results.hasNext()) {
-                results.next();
-            }
-        } catch (Exception e) {
-            System.err.println("Query measurement failed: " + e.getMessage());
-            return Long.MAX_VALUE;
         }
         
-        return System.nanoTime() - startTime;
+        long totalTime = System.nanoTime() - startTime;
+        long timeToFirstResult = firstResultTime > 0 ? firstResultTime - startTime : 0;
+        
+        return new QueryMetrics(resultCount, totalTime, timeToFirstResult);
     }
 }
+
+class QueryMetrics {
+    public final int resultCount;
+    public final long totalTimeNanos;
+    public final long timeToFirstResultNanos;
+    
+    // Constructor and helper methods for displaying metrics...
+}
 ```
+
+### Filter Strategy Comparison
+
+Different filtering approaches have vastly different performance characteristics:
+
+```java
+/**
+ * Compare filtering strategies to identify optimal query patterns.
+ */
+public void compareFilteringStrategies(int artistId) {
+    QueryTimingAnalysis analyzer = new QueryTimingAnalysis(client);
+    
+    // Strategy 1: Direct indexed filter (optimal)
+    String indexedQuery = """
+        SELECT COUNT(*) FROM Track t
+        JOIN Album al ON t.AlbumId = al.AlbumId
+        WHERE al.ArtistId = ?
+        """;
+    
+    // Strategy 2: Function-based filter (suboptimal)
+    String functionQuery = """
+        SELECT COUNT(*) FROM Track t
+        JOIN Album al ON t.AlbumId = al.AlbumId
+        WHERE CAST(al.ArtistId AS VARCHAR) = CAST(? AS VARCHAR)
+        """;
+    
+    QueryMetrics indexed = analyzer.analyzeQuery(indexedQuery, artistId);
+    QueryMetrics function = analyzer.analyzeQuery(functionQuery, artistId);
+    
+    System.out.printf("Direct filter: %.2f ms%n", indexed.totalTimeNanos / 1_000_000.0);
+    System.out.printf("Function filter: %.2f ms%n", function.totalTimeNanos / 1_000_000.0);
+}
+```
+
+### Analytics Query Performance
+
+Complex aggregation queries require special attention for distributed execution:
+
+```java
+/**
+ * Analyze performance of analytics queries across distributed data.
+ */
+public void analyzeGenreAnalytics() {
+    String analyticsQuery = """
+        SELECT 
+            g.Name as Genre,
+            COUNT(t.TrackId) as TrackCount,
+            AVG(t.UnitPrice) as AvgPrice
+        FROM Genre g
+        LEFT JOIN Track t ON g.GenreId = t.GenreId
+        GROUP BY g.GenreId, g.Name
+        ORDER BY TrackCount DESC
+        """;
+    
+    QueryMetrics metrics = analyzeQuery(analyticsQuery);
+    
+    // Analytics queries should complete in under 1 second for good UX
+    if (metrics.totalTimeNanos > 1_000_000_000) {
+        System.out.println("Analytics query exceeds 1s - consider optimization");
+    }
+}
 
 ## Strategic Index Design
 
 Music platform queries fail performance requirements because they lack indexes that match access patterns. Artist searches scan entire tables instead of using name-based indexes. Album lookups perform inefficient joins without composite indexes on artist-album relationships. Genre browsing queries aggregate data without indexes that support grouping operations.
 
-Strategic index design addresses these bottlenecks by creating indexes that align with query filtering, joining, and sorting requirements:
+Strategic index design addresses these bottlenecks by creating indexes that align with query filtering, joining, and sorting requirements.
+
+### Search Pattern Indexes
+
+Create indexes that support common search operations:
 
 ```java
-import org.apache.ignite.catalog.IgniteCatalog;
-import org.apache.ignite.catalog.IndexType;
-import org.apache.ignite.catalog.definitions.IndexDefinition;
-
 /**
- * Strategic index design for music platform query optimization.
- * Demonstrates creating indexes that align with common access patterns.
+ * Create indexes optimized for catalog browsing and search.
  */
-public class MusicPlatformIndexStrategy {
+public void createSearchIndexes() {
+    IgniteCatalog catalog = client.catalog();
     
-    private final IgniteCatalog catalog;
-    private final IgniteSql sql;
+    // Artist name search index
+    IndexDefinition artistNameIndex = IndexDefinition.builder("idx_artist_name")
+        .tableName("Artist")
+        .type(IndexType.SORTED)
+        .columns("Name")
+        .build();
     
-    public MusicPlatformIndexStrategy(IgniteClient client) {
-        this.catalog = client.catalog();
-        this.sql = client.sql();
-    }
+    // Composite album search index (artist + title)
+    IndexDefinition albumSearchIndex = IndexDefinition.builder("idx_album_search")
+        .tableName("Album")
+        .type(IndexType.SORTED)
+        .columns("ArtistId", "Title") // Supports artist-specific album queries
+        .build();
     
-    /**
-     * Create catalog search indexes for fast text-based queries.
-     * Optimizes artist, album, and track name searches.
-     */
-    public void createCatalogSearchIndexes() {
-        try {
-            // Artist name index for artist search
-            IndexDefinition artistNameIndex = IndexDefinition.builder("idx_artist_name")
-                .tableName("Artist")
-                .type(IndexType.SORTED)
-                .columns("Name")
-                .build();
-            
-            catalog.createIndexAsync(artistNameIndex)
-                .thenRun(() -> System.out.println("Created artist name index"))
-                .exceptionally(throwable -> {
-                    if (!isIndexExists(throwable)) {
-                        System.err.println("Failed to create artist name index: " + throwable.getMessage());
-                    }
-                    return null;
-                });
-            
-            // Album title and artist composite index
-            IndexDefinition albumSearchIndex = IndexDefinition.builder("idx_album_search")
-                .tableName("Album")
-                .type(IndexType.SORTED)
-                .columns("ArtistId", "Title") // Composite key for efficient filtering
-                .build();
-            
-            catalog.createIndexAsync(albumSearchIndex)
-                .thenRun(() -> System.out.println("Created album search index"))
-                .exceptionally(throwable -> {
-                    if (!isIndexExists(throwable)) {
-                        System.err.println("Failed to create album search index: " + throwable.getMessage());
-                    }
-                    return null;
-                });
-            
-            // Track search with multiple access patterns
-            IndexDefinition trackNameIndex = IndexDefinition.builder("idx_track_name")
-                .tableName("Track")
-                .type(IndexType.SORTED)
-                .columns("Name")
-                .build();
-            
-            IndexDefinition trackGenreIndex = IndexDefinition.builder("idx_track_genre")
-                .tableName("Track")
-                .type(IndexType.SORTED)
-                .columns("GenreId", "UnitPrice") // Genre browsing with price sorting
-                .build();
-            
-            CompletableFuture.allOf(
-                catalog.createIndexAsync(trackNameIndex),
-                catalog.createIndexAsync(trackGenreIndex)
-            ).thenRun(() -> System.out.println("Created track search indexes"))
-            .exceptionally(throwable -> {
-                System.err.println("Some track indexes may have failed: " + throwable.getMessage());
-                return null;
-            });
-            
-        } catch (Exception e) {
-            System.err.println("Error creating catalog search indexes: " + e.getMessage());
-        }
-    }
+    // Track genre browsing index
+    IndexDefinition trackGenreIndex = IndexDefinition.builder("idx_track_genre")
+        .tableName("Track")
+        .type(IndexType.SORTED)
+        .columns("GenreId", "UnitPrice") // Genre filtering with price sorting
+        .build();
     
-    /**
-     * Create analytics indexes for business intelligence queries.
-     * Optimizes reporting and dashboard queries.
-     */
-    public void createAnalyticsIndexes() {
-        try {
-            // Customer purchase analysis
-            IndexDefinition customerPurchaseIndex = IndexDefinition.builder("idx_customer_purchases")
-                .tableName("Invoice")
-                .type(IndexType.SORTED)
-                .columns("CustomerId", "InvoiceDate") // Customer purchase history
-                .build();
-            
-            // Sales analysis by date and total
-            IndexDefinition salesAnalysisIndex = IndexDefinition.builder("idx_sales_analysis")
-                .tableName("Invoice") 
-                .type(IndexType.SORTED)
-                .columns("InvoiceDate", "Total") // Time-series sales analysis
-                .build();
-            
-            // Track popularity analysis
-            IndexDefinition trackPopularityIndex = IndexDefinition.builder("idx_track_popularity")
-                .tableName("InvoiceLine")
-                .type(IndexType.SORTED)
-                .columns("TrackId", "Quantity") // Track sales performance
-                .build();
-            
-            CompletableFuture.allOf(
-                catalog.createIndexAsync(customerPurchaseIndex),
-                catalog.createIndexAsync(salesAnalysisIndex),
-                catalog.createIndexAsync(trackPopularityIndex)
-            ).thenRun(() -> System.out.println("Created analytics indexes"))
-            .exceptionally(throwable -> {
-                System.err.println("Some analytics indexes may have failed: " + throwable.getMessage());
-                return null;
-            });
-            
-        } catch (Exception e) {
-            System.err.println("Error creating analytics indexes: " + e.getMessage());
-        }
-    }
+    // Create indexes asynchronously
+    CompletableFuture.allOf(
+        catalog.createIndexAsync(artistNameIndex),
+        catalog.createIndexAsync(albumSearchIndex),
+        catalog.createIndexAsync(trackGenreIndex)
+    ).thenRun(() -> System.out.println("Search indexes created successfully"));
+}
+```
+
+### Analytics Indexes
+
+Optimize business intelligence and reporting queries:
+
+```java
+/**
+ * Create indexes for analytics and reporting queries.
+ */
+public void createAnalyticsIndexes() {
+    // Customer purchase history index
+    IndexDefinition customerHistoryIndex = IndexDefinition.builder("idx_customer_history")
+        .tableName("Invoice")
+        .type(IndexType.SORTED)
+        .columns("CustomerId", "InvoiceDate") // Customer activity over time
+        .build();
     
-    /**
-     * Create specialized indexes for recommendation engines.
-     * Optimizes queries that power music recommendations.
-     */
-    public void createRecommendationIndexes() {
-        try {
-            // User listening patterns - what customers bought together
-            IndexDefinition userPatternIndex = IndexDefinition.builder("idx_user_listening_patterns")
-                .tableName("InvoiceLine")
-                .type(IndexType.SORTED)
-                .columns("TrackId", "InvoiceId") // Track co-purchase analysis
-                .build();
-            
-            // Genre preferences for collaborative filtering  
-            IndexDefinition genrePreferenceIndex = IndexDefinition.builder("idx_genre_preferences")
-                .tableName("Track")
-                .type(IndexType.SORTED)
-                .columns("GenreId", "AlbumId", "TrackId") // Genre-based recommendations
-                .build();
-            
-            // Artist discovery patterns
-            IndexDefinition artistDiscoveryIndex = IndexDefinition.builder("idx_artist_discovery")
-                .tableName("Album")
-                .type(IndexType.SORTED)
-                .columns("ArtistId", "AlbumId") // Artist discography navigation
-                .build();
-            
-            CompletableFuture.allOf(
-                catalog.createIndexAsync(userPatternIndex),
-                catalog.createIndexAsync(genrePreferenceIndex),
-                catalog.createIndexAsync(artistDiscoveryIndex)
-            ).thenRun(() -> System.out.println("Created recommendation indexes"))
-            .exceptionally(throwable -> {
-                System.err.println("Some recommendation indexes may have failed: " + throwable.getMessage());
-                return null;
-            });
-            
-        } catch (Exception e) {
-            System.err.println("Error creating recommendation indexes: " + e.getMessage());
-        }
-    }
+    // Sales analysis index
+    IndexDefinition salesIndex = IndexDefinition.builder("idx_sales_analysis")
+        .tableName("Invoice")
+        .type(IndexType.SORTED)
+        .columns("InvoiceDate", "Total") // Time-series sales reporting
+        .build();
     
-    /**
-     * Validate index effectiveness with sample queries.
-     * Tests whether created indexes improve query performance.
-     */
-    public void validateIndexEffectiveness() {
-        System.out.println("Validating index effectiveness...");
-        
-        // Test artist search performance
-        long artistSearchTime = measureQueryTime(
-            "SELECT * FROM Artist WHERE Name LIKE 'A%' ORDER BY Name LIMIT 10"
-        );
-        System.out.printf("Artist search with index: %.2f ms%n", artistSearchTime / 1_000_000.0);
-        
-        // Test album lookup performance  
-        long albumLookupTime = measureQueryTime(
-            "SELECT * FROM Album WHERE ArtistId = ? ORDER BY Title",
-            1
-        );
-        System.out.printf("Album lookup with index: %.2f ms%n", albumLookupTime / 1_000_000.0);
-        
-        // Test genre browsing performance
-        long genreBrowseTime = measureQueryTime(
-            "SELECT * FROM Track WHERE GenreId = ? ORDER BY UnitPrice LIMIT 20",
-            1
-        );
-        System.out.printf("Genre browse with index: %.2f ms%n", genreBrowseTime / 1_000_000.0);
-        
-        // Test analytics query performance
-        long analyticsTime = measureQueryTime(
-            "SELECT COUNT(*), AVG(Total) FROM Invoice WHERE InvoiceDate >= ? AND InvoiceDate < ?",
-            java.time.LocalDate.now().minusMonths(1),
-            java.time.LocalDate.now()
-        );
-        System.out.printf("Analytics query with index: %.2f ms%n", analyticsTime / 1_000_000.0);
-    }
+    // Track popularity index
+    IndexDefinition popularityIndex = IndexDefinition.builder("idx_track_popularity")
+        .tableName("InvoiceLine")
+        .type(IndexType.SORTED)
+        .columns("TrackId", "Quantity") // Track sales performance
+        .build();
     
-    private long measureQueryTime(String query, Object... params) {
-        long startTime = System.nanoTime();
-        
-        try (ResultSet<SqlRow> results = sql.execute(null, query, params)) {
-            int count = 0;
-            while (results.hasNext()) {
-                results.next();
-                count++;
-            }
-            // Include result count in timing to ensure full execution
-        } catch (Exception e) {
-            System.err.println("Query validation failed: " + e.getMessage());
-            return Long.MAX_VALUE;
-        }
-        
-        return System.nanoTime() - startTime;
-    }
+    catalog.createIndexAsync(customerHistoryIndex);
+    catalog.createIndexAsync(salesIndex);
+    catalog.createIndexAsync(popularityIndex);
+}
+```
+
+### Index Effectiveness Validation
+
+Test index performance improvements:
+
+```java
+/**
+ * Validate that indexes improve query performance.
+ */
+public void validateIndexes() {
+    QueryTimingAnalysis analyzer = new QueryTimingAnalysis(client);
     
-    private boolean isIndexExists(Throwable throwable) {
-        return throwable != null && 
-               throwable.getMessage() != null && 
-               throwable.getMessage().toLowerCase().contains("already exists");
+    // Test artist search performance
+    QueryMetrics artistSearch = analyzer.analyzeQuery(
+        "SELECT * FROM Artist WHERE Name LIKE ? ORDER BY Name LIMIT 10", 
+        "A%"
+    );
+    
+    // Test album lookup performance
+    QueryMetrics albumLookup = analyzer.analyzeQuery(
+        "SELECT * FROM Album WHERE ArtistId = ? ORDER BY Title", 
+        1
+    );
+    
+    System.out.printf("Artist search: %.2f ms%n", 
+        artistSearch.totalTimeNanos / 1_000_000.0);
+    System.out.printf("Album lookup: %.2f ms%n", 
+        albumLookup.totalTimeNanos / 1_000_000.0);
+    
+    // Good performance targets: < 100ms for search, < 50ms for lookups
+    if (artistSearch.totalTimeNanos > 100_000_000) {
+        System.out.println("Artist search may need additional optimization");
     }
 }
 ```
+
+### Index Design Guidelines
+
+Choose index strategies based on query patterns:
+
+- **Single-column indexes**: Use for simple equality and range queries
+- **Composite indexes**: Use for multi-column WHERE clauses and sorting
+- **Order matters**: Place most selective columns first in composite indexes
+- **Covering indexes**: Include additional columns to avoid table lookups
 
 ## Join Optimization Patterns
 
@@ -732,6 +541,270 @@ class TrackRecommendation {
 }
 ```
 
+## Query Execution Plan Analysis
+
+Before optimizing queries through indexes or zone configuration, understanding how Ignite 3 executes SQL operations provides insight into performance bottlenecks. The `EXPLAIN PLAN FOR` functionality reveals query execution paths, join strategies, and resource usage patterns that identify optimization opportunities.
+
+Query execution plans show whether operations scan entire tables or use indexes, how joins execute across distributed data, and where filtering occurs in the execution pipeline. This analysis guides decisions about index creation, query restructuring, and zone configuration adjustments.
+
+```java
+/**
+ * Query execution plan analysis for music platform optimization.
+ * Demonstrates using EXPLAIN PLAN FOR to understand query performance characteristics.
+ */
+public class QueryExecutionPlanAnalysis {
+    
+    private final IgniteSql sql;
+    
+    public QueryExecutionPlanAnalysis(IgniteClient client) {
+        this.sql = client.sql();
+    }
+    
+    /**
+     * Analyze execution plan for artist search query.
+     * Shows how text search operations execute across distributed data.
+     */
+    public void analyzeArtistSearchPlan(String searchTerm) {
+        String query = """
+            SELECT ar.ArtistId, ar.Name, COUNT(al.AlbumId) as AlbumCount
+            FROM Artist ar
+            LEFT JOIN Album al ON ar.ArtistId = al.ArtistId
+            WHERE LOWER(ar.Name) LIKE LOWER(?)
+            GROUP BY ar.ArtistId, ar.Name
+            ORDER BY ar.Name
+            """;
+        
+        System.out.println("=== Artist Search Query Execution Plan ===");
+        analyzeQueryExecutionPlan("EXPLAIN PLAN FOR " + query, "%" + searchTerm + "%");
+        
+        // Compare with indexed vs non-indexed scenarios
+        System.out.println("\n--- Execution Plan Analysis ---");
+        System.out.println("Key observations to look for:");
+        System.out.println("- Table scan vs index scan operations");
+        System.out.println("- Join algorithm selection (nested loop, hash, merge)");
+        System.out.println("- Filter pushdown effectiveness");
+        System.out.println("- Sort operation placement and cost");
+        System.out.println("- Network data movement patterns");
+    }
+    
+    /**
+     * Analyze execution plan for customer purchase analytics.
+     * Demonstrates how complex aggregation queries execute.
+     */
+    public void analyzeCustomerAnalyticsPlan(int customerId) {
+        String query = """
+            SELECT 
+                c.CustomerId,
+                c.FirstName,
+                c.LastName,
+                COUNT(i.InvoiceId) as PurchaseCount,
+                SUM(i.Total) as TotalSpent,
+                AVG(i.Total) as AvgPurchase,
+                COUNT(DISTINCT t.GenreId) as GenresDiversit
+            FROM Customer c
+            JOIN Invoice i ON c.CustomerId = i.CustomerId
+            JOIN InvoiceLine il ON i.InvoiceId = il.InvoiceId
+            JOIN Track t ON il.TrackId = t.TrackId
+            WHERE c.CustomerId = ?
+            GROUP BY c.CustomerId, c.FirstName, c.LastName
+            """;
+        
+        System.out.println("=== Customer Analytics Query Execution Plan ===");
+        analyzeQueryExecutionPlan("EXPLAIN PLAN FOR " + query, customerId);
+        
+        System.out.println("\n--- Aggregation Plan Analysis ---");
+        System.out.println("Optimization indicators:");
+        System.out.println("- Hash aggregation vs sort-based aggregation");
+        System.out.println("- Join order optimization based on selectivity");
+        System.out.println("- Predicate pushdown to reduce intermediate results");
+        System.out.println("- Parallel execution across partitions");
+    }
+    
+    /**
+     * Compare execution plans for different query formulations.
+     * Shows how query structure affects execution strategy.
+     */
+    public void compareQueryFormulations() {
+        System.out.println("=== Query Formulation Comparison ===");
+        
+        // Approach 1: Subquery with EXISTS
+        String existsQuery = """
+            SELECT ar.ArtistId, ar.Name
+            FROM Artist ar
+            WHERE EXISTS (
+                SELECT 1 FROM Album al 
+                JOIN Track t ON al.AlbumId = t.AlbumId
+                WHERE al.ArtistId = ar.ArtistId 
+                AND t.UnitPrice > 1.0
+            )
+            ORDER BY ar.Name
+            """;
+        
+        // Approach 2: JOIN with DISTINCT
+        String joinQuery = """
+            SELECT DISTINCT ar.ArtistId, ar.Name
+            FROM Artist ar
+            JOIN Album al ON ar.ArtistId = al.ArtistId
+            JOIN Track t ON al.AlbumId = t.AlbumId
+            WHERE t.UnitPrice > 1.0
+            ORDER BY ar.Name
+            """;
+        
+        // Approach 3: Window function approach
+        String windowQuery = """
+            SELECT ArtistId, Name
+            FROM (
+                SELECT 
+                    ar.ArtistId, 
+                    ar.Name,
+                    ROW_NUMBER() OVER (PARTITION BY ar.ArtistId ORDER BY ar.ArtistId) as rn
+                FROM Artist ar
+                JOIN Album al ON ar.ArtistId = al.ArtistId
+                JOIN Track t ON al.AlbumId = t.AlbumId
+                WHERE t.UnitPrice > 1.0
+            ) ranked
+            WHERE rn = 1
+            ORDER BY Name
+            """;
+        
+        System.out.println("\n--- EXISTS Subquery Approach ---");
+        analyzeQueryExecutionPlan("EXPLAIN PLAN FOR " + existsQuery);
+        
+        System.out.println("\n--- JOIN with DISTINCT Approach ---");
+        analyzeQueryExecutionPlan("EXPLAIN PLAN FOR " + joinQuery);
+        
+        System.out.println("\n--- Window Function Approach ---");
+        analyzeQueryExecutionPlan("EXPLAIN PLAN FOR " + windowQuery);
+        
+        System.out.println("\n--- Comparison Guidelines ---");
+        System.out.println("Evaluate plans based on:");
+        System.out.println("- Estimated row counts at each step");
+        System.out.println("- Join algorithm efficiency");
+        System.out.println("- Sort and aggregation placement");
+        System.out.println("- Overall execution cost estimates");
+    }
+    
+    /**
+     * Analyze execution plan for genre popularity query.
+     * Demonstrates plan analysis for complex analytical workloads.
+     */
+    public void analyzeGenrePopularityPlan() {
+        String complexAnalyticsQuery = """
+            WITH genre_sales AS (
+                SELECT 
+                    g.GenreId,
+                    g.Name as GenreName,
+                    COUNT(il.InvoiceLineId) as SalesCount,
+                    SUM(il.Quantity * il.UnitPrice) as Revenue,
+                    COUNT(DISTINCT i.CustomerId) as UniqueCustomers
+                FROM Genre g
+                JOIN Track t ON g.GenreId = t.GenreId
+                JOIN InvoiceLine il ON t.TrackId = il.TrackId
+                JOIN Invoice i ON il.InvoiceId = i.InvoiceId
+                GROUP BY g.GenreId, g.Name
+            ),
+            genre_rankings AS (
+                SELECT 
+                    *,
+                    RANK() OVER (ORDER BY Revenue DESC) as RevenueRank,
+                    RANK() OVER (ORDER BY SalesCount DESC) as SalesRank
+                FROM genre_sales
+            )
+            SELECT 
+                GenreId,
+                GenreName,
+                SalesCount,
+                Revenue,
+                UniqueCustomers,
+                RevenueRank,
+                SalesRank,
+                (RevenueRank + SalesRank) / 2.0 as CompositeScore
+            FROM genre_rankings
+            WHERE RevenueRank <= 10 OR SalesRank <= 10
+            ORDER BY CompositeScore
+            """;
+        
+        System.out.println("=== Complex Analytics Query Execution Plan ===");
+        analyzeQueryExecutionPlan("EXPLAIN PLAN FOR " + complexAnalyticsQuery);
+        
+        System.out.println("\n--- Complex Query Plan Analysis ---");
+        System.out.println("Advanced optimization patterns:");
+        System.out.println("- CTE materialization vs inline expansion");
+        System.out.println("- Window function execution strategy");
+        System.out.println("- Hash vs sort-based operations");
+        System.out.println("- Partition pruning effectiveness");
+        System.out.println("- Memory usage for intermediate results");
+    }
+    
+    /**
+     * Execute and analyze query execution plan.
+     * Helper method that displays execution plan details.
+     */
+    private void analyzeQueryExecutionPlan(String explainQuery, Object... params) {
+        try (ResultSet<SqlRow> planResults = sql.execute(null, explainQuery, params)) {
+            
+            System.out.println("Query Execution Plan:");
+            int stepNumber = 1;
+            
+            while (planResults.hasNext()) {
+                SqlRow planRow = planResults.next();
+                
+                // The exact column names may vary based on Ignite 3 implementation
+                // Common execution plan information typically includes:
+                String planStep = planRow.stringValue(0); // Plan step description
+                
+                System.out.printf("%2d. %s%n", stepNumber++, planStep);
+            }
+            
+        } catch (Exception e) {
+            System.err.println("Failed to analyze execution plan: " + e.getMessage());
+            System.err.println("Note: EXPLAIN PLAN FOR syntax may vary by Ignite 3 version");
+        }
+    }
+    
+    /**
+     * Practical query optimization workflow using execution plans.
+     * Demonstrates step-by-step optimization process.
+     */
+    public void demonstrateOptimizationWorkflow() {
+        System.out.println("=== Query Optimization Workflow ===");
+        
+        System.out.println("\n1. Baseline Query Analysis");
+        System.out.println("   - Run EXPLAIN PLAN FOR on current query");
+        System.out.println("   - Identify table scans and expensive operations");
+        System.out.println("   - Note join algorithms and sort operations");
+        
+        System.out.println("\n2. Index Impact Assessment");
+        System.out.println("   - Create candidate indexes");
+        System.out.println("   - Re-run EXPLAIN PLAN FOR with indexes");
+        System.out.println("   - Compare execution plans before/after");
+        
+        System.out.println("\n3. Query Restructuring Evaluation");
+        System.out.println("   - Test alternative query formulations");
+        System.out.println("   - Analyze plans for each approach");
+        System.out.println("   - Select approach with optimal plan");
+        
+        System.out.println("\n4. Zone Configuration Validation");
+        System.out.println("   - Verify partition pruning effectiveness");
+        System.out.println("   - Check parallel execution utilization");
+        System.out.println("   - Validate data locality optimizations");
+        
+        System.out.println("\n5. Performance Verification");
+        System.out.println("   - Execute optimized query with timing");
+        System.out.println("   - Compare actual vs estimated costs");
+        System.out.println("   - Monitor resource utilization patterns");
+        
+        System.out.println("\nExecution Plan Key Indicators:");
+        System.out.println("✓ Index scans instead of table scans");
+        System.out.println("✓ Hash joins for large datasets");
+        System.out.println("✓ Merge joins for sorted inputs");
+        System.out.println("✓ Early filtering (predicate pushdown)");
+        System.out.println("✓ Parallel execution across partitions");
+        System.out.println("✓ Minimal data movement between nodes");
+    }
+}
+```
+
 ## Distribution Zone Configuration
 
 Query performance degrades when data distribution doesn't match access patterns. Catalog queries execute slowly because data spreads across too many partitions without sufficient replicas for read scaling. Analytics operations fail to leverage parallelism because partition counts are too low for large-scale aggregations. Customer transaction queries suffer from inconsistent performance due to inappropriate replication strategies.
@@ -829,7 +902,9 @@ public class DistributionZoneOptimization {
 }
 ```
 
-Query performance optimization requires systematic application of indexing strategies, join optimization, and distribution zone configuration. These techniques transform slow analytical queries into responsive operations that deliver sub-second results even across millions of records.
+Query performance optimization requires systematic application of execution plan analysis, indexing strategies, join optimization, and distribution zone configuration. These techniques transform slow analytical queries into responsive operations that deliver sub-second results even across millions of records.
+
+The `EXPLAIN PLAN FOR` functionality provides the foundation for understanding query execution characteristics, enabling data-driven optimization decisions rather than guesswork. Combined with strategic indexing and zone configuration, execution plan analysis creates a complete methodology for query performance optimization.
 
 The performance optimization patterns in this module—from high-throughput streaming through intelligent caching to query optimization—establish the foundation for production deployment and operational management covered in the final module.
 

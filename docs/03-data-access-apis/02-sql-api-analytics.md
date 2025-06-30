@@ -66,7 +66,7 @@ public class PartitionAwareSQLQueries {
         try {
             IgniteSql sql = client.sql();
             
-            // ✅ OPTIMAL: Query uses colocation key (ArtistId) for partition pruning
+            // OPTIMAL: Query uses colocation key (ArtistId) for partition pruning
             // All Artist-Album-Track data colocated by ArtistId routes to single partition
             Statement colocatedQuery = sql.statementBuilder()
                 .query("""
@@ -157,7 +157,7 @@ Parameter binding enables query plan caching and prevents SQL injection, but als
 public class PartitionOptimizedBinding {
     
     public void demonstrateOptimalBinding(IgniteSql sql) {
-        // ✅ OPTIMAL: Colocation key parameter enables partition pruning
+        // OPTIMAL: Colocation key parameter enables partition pruning
         // Query planner can route directly to partition containing ArtistId=42
         Statement partitionPrunedQuery = sql.statementBuilder()
             .query("""
@@ -173,18 +173,18 @@ public class PartitionOptimizedBinding {
         // Executes on single partition - consistent sub-millisecond performance
         ResultSet<SqlRow> result = sql.execute(null, partitionPrunedQuery, 42);
         
-        // ✅ OPTIMAL: IN clause with colocation keys for parallel execution
+        // OPTIMAL: IN clause with colocation keys for parallel execution
         // Query planner routes each ArtistId to its partition in parallel
         ResultSet<SqlRow> multiArtist = sql.execute(null,
             "SELECT ArtistId, Name FROM Artist WHERE ArtistId IN (?, ?, ?)",
             1, 5, 10);
         
-        // ⚠️ SUBOPTIMAL: Non-colocation key parameters force full table scan
+        // SUBOPTIMAL: Non-colocation key parameters force full table scan
         // Query must check all partitions because Genre is not colocation key
         ResultSet<SqlRow> genreQuery = sql.execute(null,
             "SELECT * FROM Track WHERE GenreId = ?", 1);
         
-        // ❌ DANGEROUS: String concatenation prevents query plan caching
+        // DANGEROUS: String concatenation prevents query plan caching
         // Also vulnerable to SQL injection
         // String query = "SELECT * FROM Artist WHERE Name = '" + artistName + "'";
     }
@@ -846,13 +846,13 @@ public class AnalyticsPerformanceOptimization {
             
             // Identify performance concerns in execution plan
             if (planStep.contains("BROADCAST")) {
-                System.out.println("⚠️  Warning: Broadcast join detected - may impact performance");
+                System.out.println("Warning: Broadcast join detected - may impact performance");
             }
             if (planStep.contains("FULL_SCAN")) {
-                System.out.println("⚠️  Warning: Full table scan - consider adding indexes");
+                System.out.println("Warning: Full table scan - consider adding indexes");
             }
             if (planStep.contains("SORT")) {
-                System.out.println("ℹ️  Info: Sort operation - consider indexed ordering");
+                System.out.println("Info: Sort operation - consider indexed ordering");
             }
         }
         

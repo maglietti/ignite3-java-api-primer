@@ -4,6 +4,65 @@ Your production schema change just broke the mobile app because column additions
 
 This scenario happens when teams don't understand schema evolution patterns in distributed systems. Unlike traditional databases where schema changes affect a single server, distributed changes must coordinate across multiple nodes while maintaining compatibility with applications that might be at different deployment versions.
 
+## Recommended Approach: Code-First Schema Evolution
+
+**The recommended approach for production schema evolution in Ignite 3 is code-first evolution with automatic DDL generation.** This approach treats your annotated Java classes as the single source of truth for schema definition, eliminating the synchronization problems that cause most production schema failures.
+
+### Why Code-First Evolution Works
+
+Manual DDL changes cause production problems when:
+- Multiple developers modify schemas independently, creating inconsistent environments
+- Application code and database schema get out of sync during deployments
+- Rolling deployments fail because schema versions don't match application expectations
+- Rollback procedures must coordinate both database and application changes
+
+Code-first evolution solves these problems by:
+- Making your Java code the definitive schema definition
+- Ensuring application and schema are always synchronized
+- Enabling atomic rollbacks of both code and schema changes
+- Preventing environment drift through version-controlled schema definitions
+
+### Core Implementation Pattern
+
+The recommended pattern uses annotated entity classes with systematic deployment:
+
+```java
+// Your annotated class is the schema source of truth
+@Table(
+    zone = @Zone(value = "MusicStore", storageProfiles = "default"),
+    indexes = { @Index(value = "IDX_ArtistName", columns = { @ColumnRef("Name") }) }
+)
+public class Artist {
+    @Id
+    @Column(value = "ArtistId", nullable = false)
+    private Integer ArtistId;
+    
+    @Column(value = "Name", nullable = true, length = 120)
+    private String Name;
+}
+
+// Deployment creates schema from annotations
+public class SchemaDeployment {
+    public static void deployProduction(IgniteClient client) {
+        // Pre-deployment validation catches errors early
+        SchemaValidator.validateSchemaAnnotations();
+        
+        // Systematic deployment handles dependencies correctly
+        client.catalog().createTable(Artist.class);
+        
+        // Post-deployment verification ensures success
+        verifyDeployment(client);
+    }
+}
+```
+
+**Evolution Benefits:**
+- Schema always matches application code exactly
+- No manual DDL synchronization between environments
+- Version control tracks all schema changes through code changes
+- Impossible to deploy applications with mismatched schemas
+- Simplified rollback procedures (schema and code rollback together)
+
 ## Access Pattern Selection for Evolution Safety
 
 Different access patterns handle schema evolution differently. Key/Value patterns provide more flexibility during schema changes, while Record patterns offer stronger type safety but require more careful coordination during evolution.
@@ -123,11 +182,19 @@ public class CustomerService {
 - Better development experience
 - Requires coordinated deployments for schema changes
 
-## Automatic DDL Generation for Safe Evolution
+### Choosing the Right Pattern for Evolution
 
-Manual DDL changes often cause production problems when multiple developers modify schemas independently, leading to inconsistent table structures across environments. Automatic DDL generation from annotated classes prevents these synchronization issues by making your Java code the single source of truth for schema definition.
+**For systems requiring frequent schema changes and high availability during updates**: Use Key/Value patterns combined with code-first schema evolution. This combination provides maximum flexibility during rolling deployments while maintaining schema consistency through version-controlled annotations.
 
-### DDL Generation Process and Evolution Safety
+**For systems with stable schemas and strong type safety requirements**: Use Record patterns with carefully coordinated deployment procedures. Ensure thorough testing of schema changes in staging environments that mirror production deployment processes.
+
+**Recommended hybrid approach**: Use Key/Value patterns for high-frequency operational data and Record patterns for configuration or reference data that changes infrequently. This balances evolution flexibility with development experience.
+
+## Implementing Code-First Schema Evolution
+
+The code-first approach requires systematic implementation to handle the complexity of distributed deployments. These patterns ensure your schema evolution maintains consistency across environments and provides clear error handling when problems occur.
+
+### DDL Generation Process
 
 When you call `client.catalog().createTable(Artist.class)`, the system generates DDL that matches your current class definition exactly:
 
@@ -578,26 +645,29 @@ public class Track {
 - **Dangerous changes**: Remove columns, add non-null columns, change data types
 - **Breaking changes**: Modify primary keys, change colocation, alter constraints
 
-## Managing Production Schema Evolution
+## Best Practices Summary
 
-These patterns prevent the common scenario where schema changes break production deployments:
+**Recommended Approach: Code-First Schema Evolution**
 
-**Systematic Validation:**
-- Pre-deployment annotation validation catches configuration errors
-- Health checks ensure cluster readiness before schema changes
-- Post-deployment verification confirms successful evolution
+The patterns in this chapter center around one core principle: **treat your annotated Java classes as the single source of truth for schema definition**. This code-first approach eliminates the synchronization problems that cause most production schema failures.
 
-**Safe Evolution Strategy:**
-- Code-first schema definition prevents environment drift
-- Environment-specific configurations avoid resource conflicts
-- Additive-only changes maintain backward compatibility
+**Implementation Strategy:**
+- Use annotated entity classes to define schemas
+- Deploy with systematic validation and dependency management
+- Combine with appropriate access patterns for your evolution requirements
+- Implement environment-specific configurations for different deployment targets
 
-**Recovery Procedures:**
-- Clear error messages and logging enable quick troubleshooting
-- Rollback capability through version control integration
-- Partial failure detection prevents incomplete deployments
+**Evolution Safety Rules:**
+- **Safe changes**: Add nullable columns, increase column lengths, add indexes
+- **Dangerous changes**: Remove columns, add non-null columns, change data types
+- **Breaking changes**: Modify primary keys, change colocation, alter constraints
 
-When you follow these patterns, schema evolution becomes a controlled process that maintains system availability while enabling continuous development. The key is treating schema changes as potentially breaking operations that require the same careful coordination as any other distributed system change.
+**Access Pattern Selection:**
+- **Key/Value patterns**: Maximum evolution flexibility for frequently changing schemas
+- **Record patterns**: Type safety for stable schemas with coordinated deployment processes
+- **Hybrid approach**: Key/Value for operational data, Record for reference data
+
+When you follow this code-first approach with systematic deployment procedures, schema evolution becomes a controlled process that maintains system availability while enabling continuous development. The key is treating schema changes as potentially breaking operations that require the same careful coordination as any other distributed system change.
 
 ## Next Steps
 

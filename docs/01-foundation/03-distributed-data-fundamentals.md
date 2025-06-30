@@ -343,21 +343,7 @@ ignite.catalog().createZone(sessionsZone);
 
 ### Storage Profile Configuration
 
-Configure storage profiles on cluster nodes before creating zones:
-
-```bash
-# Configure persistent storage for production data
-ignite node config update "ignite.storage.profiles: {
-    production_persistent: {
-        engine: aipersist,
-        size: 8589934592    # 8GB cache for hot data
-    },
-    analytics_persistent: {
-        engine: aipersist,
-        size: 4294967296    # 4GB cache for analytics
-    }
-}"
-```
+Storage profiles are configured during cluster initialization. The default profile using the aimem engine is available immediately. For production environments requiring persistent storage, storage profiles are configured through cluster management APIs or configuration files during node startup.
 
 **Storage Engine Selection:**
 - **aimem** (default): Development, caching, temporary data (no persistence)
@@ -479,14 +465,7 @@ mvn compile exec:java
 
 **Verify Cluster Configuration:**
 
-```bash
-# Verify cluster status and partition distribution
-ignite cluster status
-ignite cluster partition states --zone-name default
-
-# Check storage profiles and engines
-ignite node config show --filter storage
-```
+Cluster configuration and partition distribution can be monitored through the Java client APIs and management endpoints. The connection patterns established in previous chapters provide the foundation for cluster monitoring and health checks through programmatic interfaces.
 
 ---
 

@@ -36,51 +36,128 @@ The reference app builds on the data consistency patterns from [Chapter 4.1](01-
 
 ## Architecture
 
-The Compute API provides a framework for executing code across cluster nodes with sophisticated targeting and result management:
+The Compute API provides a framework for executing code across cluster nodes with sophisticated targeting and result management.
+
+### Core Compute Components
+
+The fundamental components work together to enable distributed job execution:
+
+```mermaid
+graph LR
+    A[IgniteCompute] --> B[JobTarget]
+    A --> C[JobDescriptor]
+    A --> D[JobExecution]
+    
+    B --> B1[Target Selection]
+    C --> C1[Job Definition]
+    D --> D1[Result Management]
+```
+
+**IgniteCompute** serves as the entry point for all compute operations, coordinating job submission and execution across the cluster. **JobTarget** specifies where jobs should run, **JobDescriptor** defines what jobs should execute, and **JobExecution** manages running jobs and their results.
+
+### Job Targeting Options
+
+Different targeting strategies optimize job placement for various scenarios:
 
 ```mermaid
 graph TB
-    subgraph CCI ["Core Compute Interfaces"]
-        A[IgniteCompute] --> B[JobTarget]
-        A --> C[JobDescriptor]
-        A --> D[JobExecution]
-        B --> E[anyNode/colocated/broadcast]
-        C --> F[ComputeJob implementation]
-        D --> G[result/state/control]
-    end
-
-    subgraph JTS ["Job Targeting Strategies"]
-        H[Node Selection] --> I[anyNode - load balancing]
-        H --> J[node - specific targeting]
-        K[Data Locality] --> L[colocated - data-aware execution]
-        M[Broadcast] --> N[table - partition-aware broadcast]
-        M --> O[nodes - cluster-wide broadcast]
-    end
-
-    subgraph EP ["Execution Patterns"]
-        P[Synchronous] --> Q[execute - blocking results]
-        R[Asynchronous] --> S[executeAsync - non-blocking]
-        T[Managed] --> U[submitAsync - job control]
-        V[MapReduce] --> W[map reduce aggregate]
-    end
+    A[Job Targeting] --> B[Node Selection]
+    A --> C[Data Locality]
+    A --> D[Broadcast Patterns]
+    
+    B --> B1[anyNode - load balancing]
+    B --> B2[node - specific targeting]
+    
+    C --> C1[colocated - data-aware execution]
+    
+    D --> D1[nodes - cluster-wide broadcast]
+    D --> D2[table - partition-aware broadcast]
 ```
 
-Three core capabilities solve distributed computing problems:
+**Node Selection** distributes work across available nodes for optimal resource utilization. **Data Locality** executes jobs where relevant data resides, eliminating network transfers. **Broadcast Patterns** enable cluster-wide operations and comprehensive data analysis.
+
+### Execution Patterns
+
+Multiple execution approaches handle different application requirements:
+
+```mermaid
+graph TB
+    A[Execution Patterns] --> B[Synchronous]
+    A --> C[Asynchronous] 
+    A --> D[Managed Jobs]
+    A --> E[MapReduce]
+    
+    B --> B1[execute - blocking results]
+    C --> C1[executeAsync - non-blocking]
+    D --> D1[submitAsync - job control]
+    E --> E1[map reduce aggregate]
+```
+
+**Synchronous** execution blocks until jobs complete and return results directly. **Asynchronous** execution enables non-blocking operations with CompletableFuture results. **Managed Jobs** provide execution control for monitoring and cancellation. **MapReduce** patterns distribute computation and aggregate results across multiple nodes.
+
+These three core capabilities solve distributed computing problems:
 
 - **Data Locality**: Jobs execute where data resides, minimizing network overhead
 - **Multiple Targeting**: From specific nodes to intelligent data-aware placement  
 - **Result Management**: Synchronous, asynchronous, and job control patterns
 
-## Job Submission Patterns
+## Job Submission Workflow
 
-### Basic Job Execution
+### Basic Job Submission
 
-When your analytics queries consume excessive bandwidth transferring data for computation, jobs execute directly on data nodes. The fundamental pattern creates a job descriptor and selects an execution target:
+**Problem**: Your analytics platform processes customer listening data by pulling millions of track records from distributed nodes to a central processing server. This creates a bottleneck where network bandwidth limits analysis speed, and the central server becomes overwhelmed handling data from multiple customers simultaneously. A simple track duration calculation for 10,000 tracks requires transferring megabytes of data across the network just to perform basic arithmetic.
+
+**Solution**: Execute computation directly on the nodes where data resides, eliminating network transfer overhead and distributing processing load across the cluster.
+
+All distributed compute operations follow a standard workflow: create a job, define a target, and execute. This foundational pattern applies to every compute scenario regardless of complexity:
 
 ```java
+import org.apache.ignite.client.IgniteClient;
 import org.apache.ignite.compute.ComputeJob;
 import org.apache.ignite.compute.JobExecutionContext;
-import org.apache.ignite.compute.BroadcastJobTarget;
+import org.apache.ignite.compute.JobDescriptor;
+import org.apache.ignite.compute.JobTarget;
+
+// Step 1: Create a job class that implements ComputeJob
+public class SimpleMessageJob implements ComputeJob<String, String> {
+    @Override
+    public CompletableFuture<String> executeAsync(JobExecutionContext context, String message) {
+        return CompletableFuture.completedFuture("Processed: " + message);
+    }
+}
+
+// Step 2: Connect to cluster and submit job
+try (IgniteClient ignite = IgniteClient.builder()
+        .addresses("localhost:10800")
+        .build()) {
+    
+    // Step 3: Create job descriptor
+    JobDescriptor<String, String> job = JobDescriptor.builder(SimpleMessageJob.class).build();
+    
+    // Step 4: Define execution target
+    JobTarget target = JobTarget.anyNode(ignite.clusterNodes());
+    
+    // Step 5: Execute job and get result
+    String result = ignite.compute().execute(target, job, "Hello World");
+    System.out.println("Result: " + result);
+}
+```
+
+**Standard Workflow Steps:**
+
+1. **Job Implementation**: Create a class implementing `ComputeJob<InputType, OutputType>`
+2. **Client Connection**: Establish connection to the Ignite cluster
+3. **Job Descriptor**: Create descriptor that defines the job class and configuration
+4. **Target Selection**: Choose where the job executes (any node, specific node, or data-colocated)
+5. **Job Execution**: Submit job and receive results
+
+This five-step pattern forms the foundation for all compute operations.
+
+### Data Processing Job Example
+
+When your analytics queries consume excessive bandwidth transferring data for computation, jobs execute directly on data nodes using the same foundational workflow:
+
+```java
 import org.apache.ignite.sql.IgniteSql;
 import org.apache.ignite.sql.ResultSet;
 import org.apache.ignite.sql.SqlRow;
@@ -110,17 +187,11 @@ public class TrackDurationJob implements ComputeJob<List<Integer>, Double> {
     }
 }
 
-// Required imports for job submission
-import org.apache.ignite.client.IgniteClient;
-import org.apache.ignite.compute.JobDescriptor;
-import org.apache.ignite.compute.JobTarget;
-
-// Connect to Ignite cluster and submit job
+// Follow the same five-step workflow
 try (IgniteClient ignite = IgniteClient.builder()
         .addresses("localhost:10800")
         .build()) {
     
-    // Submit job to any available node
     JobDescriptor<List<Integer>, Double> job = JobDescriptor.builder(TrackDurationJob.class).build();
     JobTarget target = JobTarget.anyNode(ignite.clusterNodes());
     List<Integer> trackIds = Arrays.asList(1, 2, 3, 4, 5);
@@ -130,11 +201,16 @@ try (IgniteClient ignite = IgniteClient.builder()
 }
 ```
 
-This pattern eliminates network transfers for data processing:
+**Key Concepts:**
 
 - **ComputeJob Interface**: Jobs implement `ComputeJob<InputType, OutputType>` for type safety
 - **JobExecutionContext**: Provides access to the full Ignite API within the job
 - **Resource Access**: Jobs execute SQL queries and access tables locally
+- **Data Processing**: Eliminates network transfers by processing data where it resides
+
+## Job Submission Patterns
+
+Now that you understand the basic workflow, these patterns show how to adapt the five-step process for different execution scenarios.
 
 ### Deployment Units and Job Class Management
 
@@ -237,7 +313,11 @@ public void deployJobClasses(Path jarPath) throws Exception {
 
 #### Any Node Execution
 
-When compute work doesn't depend on specific data location, target any available node for optimal load distribution:
+**Problem**: Your music platform needs to analyze album titles for keyword trends, but this CPU-intensive text processing doesn't require database access. Running these computations on your application servers creates resource contention with user-facing requests, while your Ignite cluster nodes have available CPU capacity.
+
+**Solution**: Distribute CPU-intensive work that doesn't require data access across available cluster nodes, balancing load and freeing application servers for user requests.
+
+Target any available node for optimal load distribution:
 
 ```java
 // CPU-intensive job that doesn't require data access
@@ -268,6 +348,10 @@ Map<String, Integer> analysis = ignite.compute().execute(target, job, albums);
 
 #### Specific Node Targeting
 
+**Problem**: Your recommendation engine requires nodes with large memory allocations and specialized ML libraries, while your cluster contains both high-memory compute nodes and standard data nodes. Generic job targeting might place memory-intensive ML algorithms on nodes without sufficient resources, causing out-of-memory errors or poor performance.
+
+**Solution**: Direct jobs to nodes with specific hardware characteristics, software configurations, or resource availability to match workload requirements with appropriate infrastructure.
+
 Target nodes with specific characteristics or resource requirements:
 
 ```java
@@ -296,7 +380,11 @@ if (specificNode.isPresent()) {
 
 ### Colocated Job Execution
 
-Data-aware job placement eliminates network bottlenecks by executing jobs on nodes where relevant data resides. This transforms bandwidth-constrained analytics into local processing:
+**Problem**: Your artist sales analytics require joining data from Artist, Album, Track, and InvoiceLine tables. When these related tables are distributed across different nodes, complex queries trigger massive network traffic as data moves between nodes for joins and aggregations. A sales report for a single artist might require transferring thousands of records across the network, multiplying response times and consuming bandwidth.
+
+**Solution**: Execute jobs on the node where the primary data (Artist) is stored, ensuring all related data is available locally through colocation. This eliminates cross-node data transfer and leverages local storage performance.
+
+Data-aware job placement transforms bandwidth-constrained analytics into local processing:
 
 ```java
 // Job that analyzes sales data for a specific artist
@@ -366,7 +454,11 @@ This eliminates the primary bottleneck in distributed analytics:
 
 ### Broadcast Execution Patterns
 
-Execute jobs across all nodes or all data partitions for cluster-wide operations and comprehensive data analysis:
+**Problem**: Your music platform needs to calculate global statistics like total track count, average song duration, and play count distributions across the entire catalog. Traditional approaches either pull all data to a single node (overwhelming that node and the network) or execute separate queries from the client (requiring multiple round trips and partial result aggregation).
+
+**Solution**: Execute the same job on every node in the cluster, allowing each node to process its local data portion, then aggregate results. This parallelizes the work across all available resources while maintaining data locality.
+
+Execute jobs across all nodes or all data partitions for cluster-wide operations:
 
 ```java
 // Job that calculates local statistics on each node
@@ -425,7 +517,11 @@ Broadcast patterns enable cluster-wide analytics:
 
 ### Non-blocking Job Execution
 
-Applications that can't afford to block on job execution use asynchronous patterns to maintain responsiveness:
+**Problem**: Your music streaming application generates artist sales reports for multiple artists simultaneously when users request analytics dashboards. Blocking on each report generation creates a cascading delay where later reports wait for earlier ones to complete, leading to poor user experience as dashboard loading times become unpredictable and potentially very long.
+
+**Solution**: Submit multiple jobs asynchronously and process results as they become available, allowing the application to remain responsive and handle multiple operations concurrently.
+
+Applications that require responsiveness use asynchronous patterns to avoid blocking:
 
 ```java
 // Submit multiple analysis jobs asynchronously
@@ -459,7 +555,11 @@ allComplete.thenRun(() -> {
 
 ### Job Execution Management
 
-Long-running jobs require monitoring and control to track progress and handle failures:
+**Problem**: Your nightly batch processing generates comprehensive music catalog analytics that can take hours to complete. Without visibility into job progress, you can't determine if jobs are progressing normally, stuck, or failed. When issues occur, you have no way to cancel runaway jobs or retry failed operations, potentially wasting cluster resources or requiring full system restarts.
+
+**Solution**: Use job execution controls to monitor progress, track status, and manage long-running operations with proper lifecycle management.
+
+Long-running jobs require monitoring and control capabilities:
 
 ```java
 // Required imports for job control
@@ -500,7 +600,11 @@ Job control features handle complex execution scenarios:
 
 ### Distributed Analytics with Map-Reduce
 
-Complex analytics requiring map-reduce processing distributes computation across nodes, then aggregates results for massive parallel analysis:
+**Problem**: Your music platform needs to analyze genre popularity across millions of tracks and customer purchases. This requires grouping tracks by genre, calculating statistics like play counts and sales figures, then aggregating results across the entire dataset. Processing this sequentially would take hours, while pulling all data to one location would overwhelm both network and processing resources.
+
+**Solution**: Implement a map-reduce pattern where each node analyzes its local data portion (map phase), then results are combined across nodes (reduce phase). This maximizes parallelism while minimizing data transfer.
+
+Complex analytics distribute computation across nodes, then aggregate results:
 
 ```java
 // Map phase: Analyze tracks by genre on each node
@@ -562,7 +666,11 @@ globalGenreStats.entrySet().stream()
 
 ### Advanced Processing Patterns
 
-Recommendation engines and machine learning workloads require sophisticated distributed processing that combines multiple data sources and applies complex algorithms:
+**Problem**: Your recommendation engine must analyze individual customer purchase history, identify similar customers based on genre preferences, and generate personalized track recommendations. This involves multiple complex queries, correlation analysis, and algorithmic processing that becomes computationally expensive when scaled across millions of customers. Processing each recommendation request from a central server creates bottlenecks and doesn't scale with user growth.
+
+**Solution**: Create sophisticated distributed processing workflows that combine multiple analytical steps, leverage data colocation for performance, and distribute the computational load across cluster nodes.
+
+Recommendation engines require sophisticated distributed processing workflows:
 
 ```java
 // Complex recommendation engine using distributed processing
@@ -861,12 +969,12 @@ The Compute API transforms single-node processing limitations into distributed i
 Ignite 3 rejects SQL queries with reserved word aliases. When writing SQL queries within compute jobs, use descriptive aliases instead of reserved words:
 
 ```java
-// ❌ Incorrect - will cause parsing errors
+// Incorrect - will cause parsing errors
 try (ResultSet<SqlRow> result = sql.execute(null, "SELECT COUNT(*) as count FROM Track")) {
     // This will fail with "Encountered 'count' at line 1, column 20"
 }
 
-// ✅ Correct - use descriptive aliases
+// Correct - use descriptive aliases
 try (ResultSet<SqlRow> result = sql.execute(null, "SELECT COUNT(*) as track_count FROM Track")) {
     if (result.hasNext()) {
         return (int) result.next().longValue("track_count");
