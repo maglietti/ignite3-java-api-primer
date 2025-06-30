@@ -1,115 +1,64 @@
 # Module 01: Foundation
 
-*Essential concepts for building distributed applications with Apache Ignite 3*
-
-## About This Module
-
-This foundational module introduces you to Apache Ignite 3 through practical, hands-on experience. You'll establish your development environment, make your first connection, and understand the core concepts that make distributed data management possible.
-
-**Start here if you're new to Ignite 3** - this module builds the essential knowledge foundation for all advanced topics.
-
-## Learning Objectives
+## What You'll Accomplish
 
 By completing this module, you will:
 
-- Understand what makes Ignite 3 unique among distributed data platforms
-- Connect to an Ignite 3 cluster and perform basic operations
-- Recognize how data distribution and consistency work in practice
-- Feel confident progressing to schema design and advanced APIs
+- Connect to Apache Ignite 3 clusters and perform basic distributed operations
+- Create your first distributed tables with proper zone configuration
+- Understand data distribution patterns across cluster nodes
+- Build the foundation for schema design and advanced API usage
 
-## Module Journey
+## Building on Previous Knowledge
+
+This module assumes basic Java programming experience and familiarity with database concepts. No distributed systems knowledge is required - these concepts are introduced through practical examples using music store data.
+
+## Module Overview
+
+Foundation establishes core patterns for distributed data management. You'll work with Artist, Album, and Track entities throughout this module, building practical experience with connection management, table creation, and data operations that form the basis for all advanced Ignite 3 development.
+
+## Implementation Pattern
 
 ### Chapter 1: [Introduction and Architecture](./01-introduction-and-architecture.md)
 
-*Discover what Ignite 3 can do for your applications*
+**What You'll Learn:** Platform capabilities and deployment patterns for distributed data applications
 
-**What you'll understand:**
-
-- Why distributed data management matters
-- How Ignite 3 differs from traditional databases
-- When to choose Ignite 3 for your projects
-- Core platform capabilities and use cases
-
-**Time investment:** 15-20 minutes reading
+**Implementation Focus:** Understanding connection strategies and zone configuration patterns that enable distributed operations
 
 ### Chapter 2: [Getting Started](./02-getting-started.md)
 
-*Build your first working Ignite 3 application*
+**What You'll Build:** Working Ignite 3 application with cluster connection and basic table operations
 
-**What you'll accomplish:**
-
-- Set up your development environment
-- Connect to a running Ignite 3 cluster
-- Create your first distributed table
-- Store and retrieve data successfully
-
-**Time investment:** 30-45 minutes hands-on
+**Implementation Focus:** Practical development environment setup and first distributed table implementation
 
 **Reference Application:** [`02-getting-started-app/`](../../ignite3-reference-apps/02-getting-started-app/)
 
 ### Chapter 3: [Distributed Data Fundamentals](./03-distributed-data-fundamentals.md)
 
-*Understand how distributed systems work in practice*
+**What You'll Understand:** Data distribution mechanics and consistency patterns across cluster nodes
 
-**What you'll grasp:**
+**Implementation Focus:** Performance considerations and resilience patterns for production applications
 
-- How data gets distributed across cluster nodes
-- Why consistency matters and how Ignite 3 maintains it
-- How to think about performance in distributed environments
-- Common patterns for building resilient applications
+## Real-world Application
 
-**Time investment:** 20-25 minutes reading + exploration
+The music store dataset provides consistent context throughout your learning journey. Artist, Album, and Track entities demonstrate distributed data relationships while Customer and Invoice workflows show business logic patterns.
 
-## Hands-On Learning
-
-This module emphasizes practical experience. You'll work with a music store dataset that continues throughout all modules, reducing cognitive load and letting you focus on learning Ignite 3 concepts.
-
-**Sample entities:**
-
-- **Artist** - Individual musicians and bands
-- **Album** - Music releases with metadata
-- **Track** - Individual songs with pricing
-
-These entities demonstrate real-world relationships and distributed data patterns you'll encounter in production applications.
+This approach reduces cognitive load by maintaining familiar entities while you focus on mastering Ignite 3 distributed data patterns.
 
 ## Prerequisites
 
-**Technical requirements:**
-
 - Java 17 or later
 - Maven 3.8 or later
-- Docker (for running Ignite 3 cluster)
+- Docker for running Ignite 3 cluster
 
-**Knowledge assumptions:**
+## What You've Learned → Next Steps
 
-- Basic Java programming
-- Familiarity with databases (SQL helpful but not required)
-- Understanding of basic distributed systems concepts (beneficial but not essential)
-
-## Success Indicators
-
-**You're ready for Module 02** when you can:
-
-- Explain why Ignite 3 is valuable for distributed applications
-- Start an Ignite 3 cluster and connect a Java client
-- Create a simple table and perform basic operations
-- Understand how data gets distributed across nodes
-
-## Common Questions
-
-**Q: Do I need distributed systems experience?**
-A: No. This module introduces concepts progressively with practical examples.
-
-**Q: Can I skip to advanced modules?**
-A: While possible, the foundation concepts here prevent confusion later.
-
-**Q: How long does this module take?**
-A: Most learners complete it in 1-2 hours, including hands-on exercises.
+Foundation module establishes connection patterns, basic table operations, and data distribution understanding. This knowledge enables schema design patterns in Module 02, where you'll learn annotation-driven table creation and colocation strategies for performance optimization.
 
 ---
 
-**Navigation:**
+**Module Navigation:**
 
-← [**Reference Materials**](../00-reference/) | **Foundation** | [**Schema Design**](../02-schema-design/) →
+← [Reference Materials](../00-reference/) | **Foundation** | [Schema Design](../02-schema-design/) →
 
-**Start Learning:** [**Introduction and Architecture**](./01-introduction-and-architecture.md)
+**Start Implementation:** [Introduction and Architecture](./01-introduction-and-architecture.md)

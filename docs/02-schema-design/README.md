@@ -1,138 +1,67 @@
 # Module 02: Schema Design
 
-*Schema-as-code patterns for distributed data modeling*
-
-## About This Module
-
-This module transforms how you think about database schema design. Instead of writing SQL DDL scripts and managing schema across environments, you'll learn to define your distributed data models directly in Java using annotations.
-
-**Essential for all Ignite 3 development** - schema design determines your application's performance, scalability, and maintainability.
-
-## Learning Objectives
+## What You'll Accomplish
 
 By completing this module, you will:
 
-- Master the six core annotations for distributed table design
-- Implement colocation strategies that optimize query performance
-- Deploy schemas programmatically across different environments
-- Understand how to evolve schemas safely in production
+- Design distributed tables using annotation-driven schema patterns
+- Implement colocation strategies that optimize join performance across nodes
+- Model data relationships for distributed environments
+- Apply schema evolution patterns for production deployment scenarios
 
-## Module Journey
+## Building on Previous Knowledge
+
+This module builds directly on Foundation concepts of connection management and basic table operations. You'll use the same music store entities (Artist, Album, Track) while learning how annotations control data distribution and performance characteristics across cluster nodes.
+
+## Module Overview
+
+Schema Design transforms basic table creation into production-ready distributed data models. Through annotations, you'll control data placement, optimize query patterns, and implement relationships that perform efficiently across multiple nodes while maintaining data consistency.
+
+## Implementation Pattern
 
 ### Chapter 1: [Basic Annotations](./01-basic-annotations.md)
 
-*Master the fundamental building blocks of schema-as-code*
+**What You'll Learn:** Core annotations for table creation and distribution control
 
-**What you'll master:**
-
-- `@Table`, `@Zone`, `@Column`, `@Id` annotations
-- How annotations eliminate schema synchronization issues
-- Creating your first production-ready table definitions
-- Understanding the journey from annotations to distributed tables
-
-**Key concepts:** Schema-as-code, annotation validation, DDL generation
+**Implementation Focus:** Building production-ready table definitions with proper zone configuration using music store entities
 
 ### Chapter 2: [Relationships and Colocation](./02-relationships-and-colocation.md)
 
-*Design entity relationships that perform at scale*
+**What You'll Build:** Artist-Album-Track hierarchy with optimized data placement for join performance
 
-**What you'll implement:**
-
-- Artist → Album → Track hierarchies with proper colocation
-- Using `@ColumnRef` and `colocateBy` for performance optimization
-- Composite primary keys for distributed relationships
-- Real-world music platform entity design
-
-**Key concepts:** Data colocation, performance optimization, entity relationships
+**Implementation Focus:** Colocation strategies that minimize network overhead for related data queries
 
 ### Chapter 3: [Advanced Annotations](./03-advanced-annotations.md)
 
-*Handle complex scenarios with sophisticated patterns*
+**What You'll Apply:** Multi-level colocation patterns and indexing strategies for complex data relationships
 
-**What you'll build:**
-
-- Multi-zone architectures for different data types
-- Advanced indexing strategies with `@Index`
-- Complex primary key patterns for distributed systems
-- Production-grade schema configurations
-
-**Key concepts:** Distribution zones, indexing strategies, advanced patterns
+**Implementation Focus:** Production-grade performance optimization through annotation-driven configuration
 
 ### Chapter 4: [Schema Evolution](./04-schema-evolution.md)
 
-*Deploy and evolve schemas in production environments*
+**What You'll Understand:** Safe schema modification patterns for production distributed environments
 
-**What you'll accomplish:**
+**Implementation Focus:** Migration strategies that maintain data consistency across cluster nodes
+## Real-world Application
 
-- Automatic DDL generation from annotated classes
-- Production deployment patterns with error handling
-- Schema validation and integrity checking
-- Environment-specific configuration management
+The music store dataset demonstrates schema design patterns through entity progression: Artist entities establish basic patterns, Album entities show colocation strategies, and Track entities demonstrate complex relationships. Customer and Invoice entities provide business logic context.
 
-**Key concepts:** DDL generation, deployment automation, schema validation
-
-## Hands-On Learning
-
-This module uses the music store dataset to demonstrate real-world schema design decisions:
-
-**Entity progression:**
-
-1. **Simple entities** (Artist) - Basic annotation patterns
-2. **Related entities** (Album) - Colocation and relationships  
-3. **Complex hierarchies** (Track) - Advanced patterns
-4. **Business entities** (Customer, Invoice) - Production scenarios
-
-Each chapter builds upon the previous, creating a complete distributed data model.
+This progression builds from simple annotation patterns to production-ready distributed schema design while maintaining consistent data context.
 
 ## Reference Application
 
 **[`03-schema-annotations-app/`](../../ignite3-reference-apps/03-schema-annotations-app/)**
 
-This reference application demonstrates all schema design patterns in working code:
+Working implementation of all schema design patterns covered in this module, demonstrating annotation-driven table creation, colocation strategies, and production deployment procedures.
 
-- Complete entity definitions with all annotation patterns
-- Colocation strategies and performance optimizations
-- Production deployment procedures
-- Schema evolution examples
+## What You've Learned → Next Steps
 
-Run alongside your learning to see concepts in executable form.
-
-## Design Philosophy
-
-**Schema-as-Code Benefits:**
-
-- **Single source of truth** - Your Java classes ARE your schema
-- **Compile-time safety** - Invalid schemas fail at compile time
-- **Environment consistency** - Same definitions work everywhere
-- **Performance by design** - Colocation and indexing explicit and visible
-
-**Performance-First Approach:**
-
-- Colocation strategies designed into the schema
-- Distribution zones planned for workload patterns
-- Indexing strategies aligned with query requirements
-
-## Success Indicators
-
-**You're ready for Module 03** when you can:
-
-- Define complete entity models using annotations
-- Implement colocation strategies for related data
-- Deploy schemas programmatically with error handling
-- Understand how schema decisions impact performance
-
-## Building Toward Production
-
-This module prepares you for production-grade schema management:
-
-- **Module 03** will leverage these schemas for efficient data access
-- **Module 04** will build transactions around these entity relationships
-- **Module 05** will optimize the performance characteristics you define here
+Schema Design module establishes annotation-driven table creation, colocation strategies, and data relationship modeling. This knowledge enables efficient data access patterns in Module 03, where you'll learn Table API and SQL API operations optimized for the distributed schemas you've designed.
 
 ---
 
-**Navigation:**
+**Module Navigation:**
 
-← [**Foundation**](../01-foundation/) | **Schema Design** | [**Data Access APIs**](../03-data-access-apis/) →
+← [Foundation](../01-foundation/) | **Schema Design** | [Data Access APIs](../03-data-access-apis/) →
 
-**Start Learning:** [**Basic Annotations**](./01-basic-annotations.md)
+**Start Implementation:** [Basic Annotations](./01-basic-annotations.md)
