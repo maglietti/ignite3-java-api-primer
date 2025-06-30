@@ -1,88 +1,53 @@
 # Module 05: Performance and Scalability
 
-## What You'll Accomplish
+Your music platform now handles distributed transactions and compute workloads efficiently. But production traffic is different from development testing. You're seeing 10 million play events per hour, recommendation queries timing out under analytical load, and users complaining about slow track loading during peak traffic.
 
-By completing this module, you will:
+Traditional performance solutions add complexity: dedicated caching clusters with invalidation logic, message queues with delivery guarantees, and separate analytics databases with ETL pipelines. Each layer introduces latency, consistency challenges, and operational overhead.
 
-- Build high-throughput data streaming pipelines for real-time ingestion
-- Implement caching patterns that optimize application response times
-- Apply query optimization techniques for analytical workloads
-- Design scalable architectures that handle production traffic patterns
+## How High-Performance Distribution Works
 
-## Building on Previous Knowledge
+Ignite 3 handles performance challenges without additional infrastructure layers. Stream millions of play events directly into distributed storage while maintaining ACID consistency. Cache frequently accessed tracks in cluster memory with automatic invalidation. Execute analytical queries across the entire dataset without separate OLAP systems.
 
-This module builds on Distributed Operations patterns, optimizing the transaction and processing workflows you've implemented. You'll enhance the music store application with high-performance data ingestion, caching strategies, and query optimization techniques.
+All performance optimizations happen within your existing distributed architecture, eliminating external dependencies and reducing operational complexity.
 
-## Module Overview
-
-Performance and Scalability transforms functional applications into production-ready systems. Through streaming, caching, and optimization patterns, you'll implement the performance characteristics required for real-world distributed applications.
-
-## Implementation Pattern
+## Performance Implementation Patterns
 
 ### Chapter 1: [Data Streaming](./01-data-streaming.md)
 
-**What You'll Build:** High-throughput streaming pipelines for real-time data ingestion
+*Configure high-throughput event ingestion*
 
-**Implementation Focus:** Streaming patterns that handle millions of events while maintaining data consistency
-- Error handling and retry strategies for data streams
-
-**Key concepts:** Data streaming, ingestion optimization, throughput maximization
-
-**Essential for:** Real-time applications, high-volume data processing, IoT scenarios
+Your platform generates 10 million play events per hour during peak traffic. Traditional message queues introduce latency and require separate persistence layers. Configure Ignite 3 streaming to handle this throughput directly into distributed storage with millisecond latencies.
 
 ### Chapter 2: [Caching Strategies](./02-caching-strategies.md)
 
-*Optimize performance through intelligent caching*
+*Implement intelligent memory management*
 
-**What you'll implement:**
-
-- Write-through and write-behind caching patterns
-- Cache invalidation and consistency strategies
-- Near-cache optimization for hot data
-- Cache performance monitoring and tuning
-
-**Key concepts:** Caching patterns, performance optimization, data freshness
-
-**Essential for:** Read-heavy workloads, performance-critical applications, user experience optimization
+Users expect instant track loading, but disk access creates unacceptable latency. Configure write-through and write-behind caching patterns that keep frequently accessed tracks in cluster memory while maintaining consistency across all nodes.
 
 ### Chapter 3: [Query Performance](./03-query-performance.md)
 
-*Monitor, analyze, and optimize query execution*
+*Optimize analytical query execution*
 
-**What you'll master:**
+Marketing needs real-time analytics across millions of listening sessions, but queries timeout under load. Configure index strategies and query execution plans that process analytical workloads efficiently across distributed data.
 
-- Query execution plan analysis
-- Index optimization strategies
-- Performance monitoring and alerting
-- Query tuning methodologies
+## Production-Scale Performance
 
-**Key concepts:** Query optimization, performance monitoring, index strategies
+Your music platform now handles millions of concurrent users with distributed storage, optimized schemas, efficient data access, and robust transactional workflows. These performance optimizations complete your production-ready architecture.
 
-**Essential for:** Analytics workloads, complex queries, performance troubleshooting
+## Implementation References
 
-## Real-world Application
+**[`08-data-streaming-app/`](../../ignite3-reference-apps/08-data-streaming-app/)** and **[`09-caching-patterns-app/`](../../ignite3-reference-apps/09-caching-patterns-app/)**
 
-The music store data demonstrates performance patterns through realistic streaming platform scenarios: real-time play event ingestion establishes high-throughput streaming patterns, popular track caching shows intelligent caching strategies, and complex recommendation queries demonstrate query optimization techniques.
+Complete high-throughput streaming and intelligent caching implementations demonstrating production-scale performance patterns.
 
-This practical progression builds from basic operations to production-ready performance optimization while maintaining consistent music streaming context.
+## Implementation Complete
 
-## Reference Application
+You've now implemented a complete distributed music platform: foundational cluster connectivity, optimized schema design with data colocation, efficient table and SQL API usage, distributed transactions and compute jobs, and high-performance streaming with intelligent caching.
 
-**[`08-data-streaming-app/`](../../ignite3-reference-apps/08-data-streaming-app/)**
-
-Working implementation of data streaming patterns with high-throughput ingestion techniques, error handling strategies, and performance monitoring using realistic music streaming data volumes.
-
-**[`09-caching-patterns-app/`](../../ignite3-reference-apps/09-caching-patterns-app/)**
-
-Caching strategy implementations with performance optimization examples, cache monitoring techniques, and intelligent eviction policies using music store access patterns.
-
-## What You've Learned → Next Steps
-
-Performance and Scalability module establishes production-ready optimization techniques for streaming, caching, and query performance. This knowledge completes your Apache Ignite 3 mastery, enabling you to build and optimize distributed applications that handle real-world traffic patterns and data volumes efficiently.
+Your platform handles millions of users, processes millions of events per hour, and maintains ACID consistency across distributed nodes - all within a unified distributed architecture.
 
 ---
 
-**Module Navigation:**
 ← [Distributed Operations](../04-distributed-operations/) | **Performance & Scalability**
 
-**Start Implementation:** [Data Streaming](./01-data-streaming.md)
+[Data Streaming](./01-data-streaming.md)

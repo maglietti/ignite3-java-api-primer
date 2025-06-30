@@ -1,88 +1,51 @@
 # Module 04: Distributed Operations
 
-## What You'll Accomplish
+Your music platform now handles fast lookups and complex queries across distributed storage. But real applications need more than individual operations - they need transactional workflows. When users purchase music, you need to charge their card, update their library, and increment sales analytics atomically. When one step fails, everything must rollback consistently.
 
-By completing this module, you will:
+Traditional distributed systems force you to choose: either give up ACID guarantees for eventual consistency, or accept the complexity of two-phase commit protocols with coordinator nodes and timeout handling.
 
-- Implement ACID transactions across distributed tables with proper isolation
-- Build distributed computing patterns that process data where it resides
-- Apply advanced error handling and recovery strategies for production scenarios
-- Design resilient operations that maintain consistency across cluster nodes
+## How Distributed Transactions Work
 
-## Building on Previous Knowledge
+Ignite 3 implements distributed ACID transactions without coordinator bottlenecks. Purchase workflows execute across multiple cluster nodes while maintaining transaction isolation. When a payment processor fails, the entire transaction rolls back automatically across all participating nodes.
 
-This module builds on Data Access API patterns, extending basic CRUD operations with transaction management and distributed processing. You'll use the same music store entities while implementing complex business workflows that span multiple tables and nodes.
+Beyond transactions, you can execute compute jobs directly on nodes containing relevant data. Instead of transferring user listening history across the network for recommendation processing, algorithms run where the data resides, eliminating serialization overhead and network latency.
 
-## Module Overview
-
-Distributed Operations extends single-table operations into multi-table workflows and distributed processing patterns. Through transaction management and compute API usage, you'll implement business logic that maintains ACID properties across distributed data.
-
-## Implementation Pattern
+## Implementation Patterns
 
 ### Chapter 1: [Transaction Fundamentals](./01-transaction-fundamentals.md)
 
-**What You'll Learn:** ACID transaction patterns for distributed data consistency
+*Configure ACID transactions across distributed nodes*
 
-**Implementation Focus:** Transaction lifecycle management with proper resource handling and error recovery
-- Transaction boundaries and performance considerations
-
-**Key concepts:** ACID properties, isolation levels, distributed consistency
-
-**Essential for:** Data integrity, concurrent access, business logic implementation
+Your purchase workflows need atomic execution across payment processing, library updates, and analytics increments. Configure transaction boundaries and isolation levels that maintain consistency without coordinator bottlenecks.
 
 ### Chapter 2: [Advanced Transaction Patterns](./02-advanced-transaction-patterns.md)
 
-*Handle complex workflows and error scenarios*
+*Implement complex transactional workflows*
 
-**What you'll master:**
-
-- Multi-table transaction workflows
-- Compensation patterns for failed operations
-- Retry strategies and circuit breaker patterns
-- Transaction performance optimization
-
-**Key concepts:** Error handling, resilience patterns, transaction optimization
-
-**Essential for:** Production robustness, complex business workflows
+Handle playlist creation workflows that span user preferences, track availability, and recommendation updates. Configure transaction retry logic and deadlock resolution for production transaction loads.
 
 ### Chapter 3: [Compute API Processing](./03-compute-api-processing.md)
 
-*Distribute processing across the cluster*
+*Execute algorithms where data resides*
 
-**What you'll build:**
+Process recommendation algorithms directly on nodes containing user listening data. Deploy compute jobs that execute locally on each partition, eliminating network transfer overhead for large dataset processing.
 
-- Distributed job execution patterns
-- MapReduce-style processing workflows
-- Data-local compute for performance optimization
-- Fault-tolerant processing pipelines
+## Production Transaction Challenges
 
-**Key concepts:** Distributed computing, data locality, fault tolerance
+Your music platform now handles complex purchase workflows and recommendation processing across distributed nodes. User activity generates millions of transactions per hour, requiring optimized performance while maintaining transactional consistency.
 
-**Essential for:** Large-scale data processing, compute-intensive workloads
+## Implementation References
 
-## Real-world Application
+**[`06-transactions-app/`](../../ignite3-reference-apps/06-transactions-app/)** and **[`07-compute-api-app/`](../../ignite3-reference-apps/07-compute-api-app/)**
 
-The music store data demonstrates distributed operations through business workflow complexity: Customer purchase transactions establish ACID patterns across multiple tables, playlist management shows concurrent access handling, and music recommendation processing demonstrates distributed compute patterns.
+Complete transaction and compute implementations showing ACID workflow patterns and compute job deployment across cluster nodes.
 
-This practical progression builds from single-table operations to complex multi-table workflows while maintaining data consistency and performance.
+## Next Implementation Challenge
 
-## Reference Application
-
-**[`06-transactions-app/`](../../ignite3-reference-apps/06-transactions-app/)**
-
-Working implementation of transaction management patterns with error handling strategies, multi-table workflow examples, and resilience patterns using the music store business logic.
-
-**[`07-compute-api-app/`](../../ignite3-reference-apps/07-compute-api-app/)**
-
-Distributed computing examples with data-local processing patterns, fault-tolerant job execution, and distributed analytics using music store data processing scenarios.
-
-## What You've Learned → Next Steps
-
-Distributed Operations module establishes transaction management patterns and distributed processing capabilities. This knowledge enables performance optimization in Module 05, where you'll learn to scale these distributed operations through streaming, caching, and query optimization techniques.
+Transactional workflows and compute jobs now execute efficiently across your distributed cluster. However, production traffic generates millions of events per hour - play events, purchase transactions, user interactions. Your system needs high-throughput streaming and intelligent caching to handle this scale while maintaining the transactional consistency you've implemented.
 
 ---
 
-**Module Navigation:**
-← [Data Access APIs](../03-data-access-apis/) | **Distributed Operations** | [Performance & Scalability](../05-performance-scalability/) →
+← [Data Access APIs](../03-data-access-apis/) | **Distributed Operations** | [Performance and Scalability](../05-performance-scalability/) →
 
-**Start Implementation:** [Transaction Fundamentals](./01-transaction-fundamentals.md)
+[Transaction Fundamentals](./01-transaction-fundamentals.md)

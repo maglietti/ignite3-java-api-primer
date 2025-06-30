@@ -1,67 +1,56 @@
 # Module 02: Schema Design
 
-## What You'll Accomplish
+Your music platform has basic storage, but now you need real relationships. Artists release Albums, Albums contain Tracks, and your users expect lightning-fast browsing through these connections. 
 
-By completing this module, you will:
+The challenge? These relationships need to work across distributed storage. When an Artist's albums span multiple servers, how do you keep related data together for performance? When users browse from Artist to Album to Track, how do you avoid network delays?
 
-- Design distributed tables using annotation-driven schema patterns
-- Implement colocation strategies that optimize join performance across nodes
-- Model data relationships for distributed environments
-- Apply schema evolution patterns for production deployment scenarios
+## The Schema Story
 
-## Building on Previous Knowledge
+This is where schema design becomes your secret weapon. Instead of writing SQL scripts and hoping for the best, you'll define your data relationships directly in Java code. Annotations tell Ignite 3 exactly how to distribute your music catalog for optimal performance.
 
-This module builds directly on Foundation concepts of connection management and basic table operations. You'll use the same music store entities (Artist, Album, Track) while learning how annotations control data distribution and performance characteristics across cluster nodes.
+You'll start with simple Artist entities, then build Album relationships that stay close to their Artists, and finally create Track hierarchies that enable fast music browsing across your entire distributed platform.
 
-## Module Overview
-
-Schema Design transforms basic table creation into production-ready distributed data models. Through annotations, you'll control data placement, optimize query patterns, and implement relationships that perform efficiently across multiple nodes while maintaining data consistency.
-
-## Implementation Pattern
+## Building Your Music Schema
 
 ### Chapter 1: [Basic Annotations](./01-basic-annotations.md)
 
-**What You'll Learn:** Core annotations for table creation and distribution control
+*From Java classes to distributed tables*
 
-**Implementation Focus:** Building production-ready table definitions with proper zone configuration using music store entities
+Your Artist class becomes a distributed table with a few simple annotations. You'll discover how @Table, @Zone, @Column, and @Id transform plain Java objects into schema definitions that deploy consistently across any environment.
 
 ### Chapter 2: [Relationships and Colocation](./02-relationships-and-colocation.md)
 
-**What You'll Build:** Artist-Album-Track hierarchy with optimized data placement for join performance
+*Keeping related music together*
 
-**Implementation Focus:** Colocation strategies that minimize network overhead for related data queries
+Albums belong to Artists, but in distributed storage, they might live on different servers. You'll learn colocation strategies that keep Artist data close to their Albums, enabling fast browsing without network delays.
 
 ### Chapter 3: [Advanced Annotations](./03-advanced-annotations.md)
 
-**What You'll Apply:** Multi-level colocation patterns and indexing strategies for complex data relationships
+*Optimizing for real-world music platforms*
 
-**Implementation Focus:** Production-grade performance optimization through annotation-driven configuration
+Your platform grows complex - multiple zones for different data types, indexes for fast searches, composite keys for complex relationships. You'll handle these advanced patterns while maintaining the simplicity of annotation-driven design.
 
 ### Chapter 4: [Schema Evolution](./04-schema-evolution.md)
 
-**What You'll Understand:** Safe schema modification patterns for production distributed environments
+*Growing your platform safely*
 
-**Implementation Focus:** Migration strategies that maintain data consistency across cluster nodes
-## Real-world Application
+Success means change. New features require new columns, performance improvements need new indexes. You'll learn how to evolve your schema safely while keeping your distributed music platform running.
+## Your Evolving Platform
 
-The music store dataset demonstrates schema design patterns through entity progression: Artist entities establish basic patterns, Album entities show colocation strategies, and Track entities demonstrate complex relationships. Customer and Invoice entities provide business logic context.
-
-This progression builds from simple annotation patterns to production-ready distributed schema design while maintaining consistent data context.
+What starts as simple Artist storage becomes a sophisticated music platform. Each schema decision - how Albums relate to Artists, how Tracks connect to Albums, how indexes speed up searches - shapes your platform's performance and capabilities.
 
 ## Reference Application
 
 **[`03-schema-annotations-app/`](../../ignite3-reference-apps/03-schema-annotations-app/)**
 
-Working implementation of all schema design patterns covered in this module, demonstrating annotation-driven table creation, colocation strategies, and production deployment procedures.
+See all the schema patterns in working code - from basic Artist tables to complex Track hierarchies with optimized colocation.
 
-## What You've Learned → Next Steps
+## Where This Takes You
 
-Schema Design module establishes annotation-driven table creation, colocation strategies, and data relationship modeling. This knowledge enables efficient data access patterns in Module 03, where you'll learn Table API and SQL API operations optimized for the distributed schemas you've designed.
+With your music schema optimized for distributed performance, you'll want to access this data efficiently. That's where data access APIs come in - taking advantage of the colocation and relationships you've designed to build fast, responsive music applications.
 
 ---
 
-**Module Navigation:**
-
 ← [Foundation](../01-foundation/) | **Schema Design** | [Data Access APIs](../03-data-access-apis/) →
 
-**Start Implementation:** [Basic Annotations](./01-basic-annotations.md)
+[Basic Annotations](./01-basic-annotations.md)

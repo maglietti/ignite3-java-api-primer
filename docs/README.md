@@ -1,22 +1,30 @@
 # Apache Ignite 3 Java API Primer
 
-Apache Ignite 3 enables applications that scale horizontally while maintaining ACID transactions and executing distributed computing workloads. This primer teaches practical Java API patterns through hands-on implementation using consistent music store data.
+Your music streaming platform just hit 10 million users. Your single PostgreSQL instance is buckling under the load. Reads are slow, writes are slower, and your recommendation engine times out trying to analyze listening patterns across millions of tracks.
 
-## Learning Approach
+Traditional solutions create new problems: read replicas introduce replication lag, horizontal sharding breaks referential integrity, and caching layers require complex invalidation logic.
 
-This primer uses progressive complexity within consistent context. You'll work with Artist, Album, and Track entities throughout all modules, building from basic connections to production-ready distributed applications. This approach reduces cognitive load while demonstrating how distributed data patterns apply to real applications.
+## How Ignite 3 Solves This
 
-## Implementation Path
+**In-memory distributed storage** - Load your entire music catalog into cluster memory. Track lookups that took 50ms from disk storage now execute in microseconds from distributed memory.
 
-**Module 01 - Foundation**: Connection patterns, basic table operations, and data distribution understanding
+**Distributed SQL execution** - Execute queries across the entire cluster topology. Finding all jazz albums from the 1960s processes data locally on each node instead of transferring massive result sets across the network.
 
-**Module 02 - Schema Design**: Annotation-driven table creation, colocation strategies, and data relationship modeling
+**Compute colocation** - Run recommendation algorithms directly on nodes containing user data. Processing happens where data resides, eliminating network serialization overhead.
 
-**Module 03 - Data Access APIs**: Table API and SQL API operations optimized for distributed schemas
+**Distributed ACID transactions** - Purchase workflows execute atomically across multiple nodes. Payment processing and library updates maintain transactional consistency without eventual consistency compromises.
 
-**Module 04 - Distributed Operations**: Transaction management and distributed computing patterns for business workflows
+## How to Build This
 
-**Module 05 - Performance and Scalability**: High-throughput streaming, caching strategies, and query optimization for production workloads
+**Foundation** - Implement distributed storage across multiple nodes while maintaining ACID transaction semantics for your music catalog.
+
+**Schema Design** - Configure data colocation strategies to keep Artists, Albums, and Tracks on the same cluster nodes for optimal join performance.
+
+**Data Access** - Implement both key-value operations for mobile applications and distributed SQL queries for analytics workloads.
+
+**Distributed Operations** - Build transactional workflows that span multiple nodes and implement compute jobs that process data where it resides.
+
+**Performance** - Configure high-throughput data streaming for real-time event ingestion while maintaining strict consistency guarantees.
 
 ## Prerequisites
 
@@ -24,14 +32,14 @@ This primer uses progressive complexity within consistent context. You'll work w
 - Basic Java programming experience
 - Docker for running Ignite 3 cluster
 
-## Getting Started
+## Implementation Path
 
-**New to Ignite 3?** Begin with [Foundation](./01-foundation/) to establish connection patterns and basic operations.
+New to distributed systems? Start with [Foundation](./01-foundation/) to configure cluster connectivity and implement distributed table operations.
 
-**Need architecture context?** Review [Reference Materials](./00-reference/) for platform design overview before implementation.
+Need architectural context? Review [Reference Materials](./00-reference/) for system design details before implementation.
 
-**Working on specific patterns?** Jump to the relevant module, though Foundation concepts enable advanced patterns.
+Building specific features? Navigate directly to the relevant implementation patterns.
 
 ---
 
-**Start Implementation:** [Foundation - Introduction and Architecture](./01-foundation/01-introduction-and-architecture.md)
+[Start implementing](./01-foundation/01-introduction-and-architecture.md)

@@ -1,64 +1,53 @@
 # Module 01: Foundation
 
-## What You'll Accomplish
+Your music platform's PostgreSQL instance just crashed under the load of 50,000 concurrent connections attempting to browse artists. Read replicas lag 30 seconds behind master writes, cache hit ratios are below acceptable thresholds, and your DBA is proposing horizontal sharding with application-level routing.
 
-By completing this module, you will:
+Meanwhile, Spotify serves 400 million active users. Netflix streams globally. They're not running single-instance databases.
 
-- Connect to Apache Ignite 3 clusters and perform basic distributed operations
-- Create your first distributed tables with proper zone configuration
-- Understand data distribution patterns across cluster nodes
-- Build the foundation for schema design and advanced API usage
+## How Distributed Architecture Works
 
-## Building on Previous Knowledge
+Traditional scaling introduces operational complexity: read replicas with replication lag, sharded databases that break cross-shard joins, cache layers with invalidation race conditions, and application logic that grows more complex with each scaling layer.
 
-This module assumes basic Java programming experience and familiarity with database concepts. No distributed systems knowledge is required - these concepts are introduced through practical examples using music store data.
+Ignite 3 implements a different architecture. Your data resides natively across multiple cluster nodes. Applications connect to the cluster topology, not individual instances. When you persist an Artist entity, the cluster automatically distributes it across nodes based on partitioning algorithms. When you execute Album queries, the cluster processes requests across all nodes in parallel.
 
-## Module Overview
+No replication lag. No manual shard management. No cache invalidation complexity. Just distributed storage that presents a unified interface to your application layer.
 
-Foundation establishes core patterns for distributed data management. You'll work with Artist, Album, and Track entities throughout this module, building practical experience with connection management, table creation, and data operations that form the basis for all advanced Ignite 3 development.
-
-## Implementation Pattern
+## Implementation Steps
 
 ### Chapter 1: [Introduction and Architecture](./01-introduction-and-architecture.md)
 
-**What You'll Learn:** Platform capabilities and deployment patterns for distributed data applications
+*Configure distributed storage architecture*
 
-**Implementation Focus:** Understanding connection strategies and zone configuration patterns that enable distributed operations
+Your monitoring dashboard shows connection pool exhaustion and query timeouts. Users are experiencing page load failures. Configure Ignite 3 cluster topology to distribute load across multiple nodes while maintaining application simplicity.
 
 ### Chapter 2: [Getting Started](./02-getting-started.md)
 
-**What You'll Build:** Working Ignite 3 application with cluster connection and basic table operations
+*Implement distributed music catalog storage*
 
-**Implementation Focus:** Practical development environment setup and first distributed table implementation
+Configure cluster connectivity and implement distributed table operations. Connect to a live Ignite cluster and persist Artist entities across multiple nodes. No connection pool limits, no replication lag, no cache layer complexity.
 
-**Reference Application:** [`02-getting-started-app/`](../../ignite3-reference-apps/02-getting-started-app/)
+**Implementation Reference:** [`02-getting-started-app/`](../../ignite3-reference-apps/02-getting-started-app/)
 
 ### Chapter 3: [Distributed Data Fundamentals](./03-distributed-data-fundamentals.md)
 
-**What You'll Understand:** Data distribution mechanics and consistency patterns across cluster nodes
+*Understand partition distribution and consistency*
 
-**Implementation Focus:** Performance considerations and resilience patterns for production applications
+Your Artist entities now reside across three cluster nodes simultaneously, but your application code remains unchanged. Examine the partitioning algorithms and consistency mechanisms that enable this transparent distribution.
 
-## Real-world Application
+## Next Implementation Challenge
 
-The music store dataset provides consistent context throughout your learning journey. Artist, Album, and Track entities demonstrate distributed data relationships while Customer and Invoice workflows show business logic patterns.
+Your music catalog now operates on distributed storage with improved performance. However, when users navigate from Artist to Album to Track entities, the data may reside on different cluster nodes. Album queries execute on Node 2, Track queries execute on Node 3, creating network latency that degrades your distributed system performance.
 
-This approach reduces cognitive load by maintaining familiar entities while you focus on mastering Ignite 3 distributed data patterns.
+Schema design and data colocation strategies address this challenge. You need to configure how entities distribute across the cluster topology.
 
 ## Prerequisites
 
 - Java 17 or later
-- Maven 3.8 or later
-- Docker for running Ignite 3 cluster
-
-## What You've Learned → Next Steps
-
-Foundation module establishes connection patterns, basic table operations, and data distribution understanding. This knowledge enables schema design patterns in Module 02, where you'll learn annotation-driven table creation and colocation strategies for performance optimization.
+- Maven 3.8 or later  
+- Docker for cluster deployment
 
 ---
 
-**Module Navigation:**
-
 ← [Reference Materials](../00-reference/) | **Foundation** | [Schema Design](../02-schema-design/) →
 
-**Start Implementation:** [Introduction and Architecture](./01-introduction-and-architecture.md)
+[Introduction and Architecture](./01-introduction-and-architecture.md)
