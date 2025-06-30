@@ -237,21 +237,27 @@ graph LR
 
 ### API Selection Patterns
 
-```java
-// Table API - when you know the structure and want type safety
-Artist artist = artists.get(null, artistKey);
-artist.setName("Updated Name");
-artists.upsert(null, artist);
+**Table API** provides type-safe object operations with automatic serialization, optimal for CRUD operations where you know the data structure. Use when you need strong typing, object mapping, and direct record manipulation with minimal overhead.
 
-// SQL API - when you need complex queries or analytics
+**SQL API** enables complex queries and analytics across distributed data using standard SQL syntax. Choose this for aggregations, joins, filtering operations, and any query that benefits from SQL's declarative approach.
+
+**Key-Value API** delivers maximum performance for simple get/put operations using generic Tuple objects. Select this for high-throughput scenarios, caching patterns, or when you need the fastest possible key-based access.
+
+```java
+// Table API - type-safe record operations with automatic mapping
+Artist artist = artists.get(null, artistKey);  // Direct object retrieval
+artist.setName("Updated Name");
+artists.upsert(null, artist);  // Type-safe updates
+
+// SQL API - declarative queries with complex logic and joins
 var topTracks = client.sql().execute(null,
     "SELECT t.Name, COUNT(*) FROM Track t " +
     "JOIN InvoiceLine il ON t.TrackId = il.TrackId " + 
     "GROUP BY t.TrackId ORDER BY COUNT(*) DESC LIMIT 10");
 
-// Key-Value API - when you want simple key-value operations
+// Key-Value API - high-performance generic operations with minimal overhead
 Tuple trackKey = Tuple.create().set("TrackId", 123);
-Tuple trackData = tracks.get(null, trackKey); // Fast key lookup
+Tuple trackData = tracks.get(null, trackKey);  // Fastest key-based access
 ```
 
 ### Asynchronous Operation Support
@@ -259,14 +265,22 @@ Tuple trackData = tracks.get(null, trackKey); // Fast key lookup
 Every API supports both sync and async operations:
 
 ```java
-// Synchronous - blocks until complete
+// Table API - Synchronous blocks until complete
 Artist artist = artists.get(null, key);
 
-// Asynchronous - returns immediately  
+// Table API - Asynchronous returns immediately  
 CompletableFuture<Artist> future = artists.getAsync(null, key);
 future.thenApply(this::updateArtist)
       .thenCompose(updated -> artists.upsertAsync(null, updated))
       .thenRun(() -> System.out.println("Update complete"));
+
+// SQL API - Same async pattern applies
+CompletableFuture<SqlResultSet> sqlFuture = client.sql().executeAsync(null, "SELECT * FROM Artist");
+sqlFuture.thenAccept(results -> processResults(results));
+
+// Key-Value API - Same async pattern applies  
+CompletableFuture<Tuple> kvFuture = tracks.getAsync(null, trackKey);
+kvFuture.thenCompose(data -> tracks.putAsync(null, trackKey, updatedData));
 ```
 
 ### Cross-API Type Safety
@@ -284,6 +298,10 @@ public class Artist {
 // Same class works everywhere:
 RecordView<Artist> tableView = ignite.tables().table("Artist").recordView(Artist.class);
 ResultSet<Artist> sqlResults = ignite.sql().execute(null, "SELECT * FROM Artist", Artist.class);
+
+// Key-Value API accesses same data via Tuples:
+KeyValueView<Tuple, Tuple> kvView = ignite.tables().table("Artist").keyValueView();
+Tuple artistData = kvView.get(null, Tuple.create().set("artistId", 1)); // Same underlying data
 ```
 
 ## Distribution Zone Configuration
