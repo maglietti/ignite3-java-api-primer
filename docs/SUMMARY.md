@@ -30,6 +30,8 @@
   * [Designing Effective Caching Strategies](05-performance-scalability/02-caching-strategies.md)
   * [Optimizing Query Performance](05-performance-scalability/03-query-performance.md)
 
+* [From Learning to Production](06-primer-conclusion.md)
+
 ## Technical Reference
 
 * [Architecture Reference](00-reference/README.md)
