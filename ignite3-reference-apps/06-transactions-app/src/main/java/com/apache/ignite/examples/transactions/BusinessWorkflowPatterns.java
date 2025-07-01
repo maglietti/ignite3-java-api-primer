@@ -227,18 +227,17 @@ public class BusinessWorkflowPatterns {
     }
 
     private void quickCustomerUpdate(IgniteClient client) {
-        TransactionOptions quickOptions = TransactionOptions.readWrite()
-            .timeout(5, TimeUnit.SECONDS);
+        TransactionOptions quickOptions = new TransactionOptions();
         
         try {
-            client.transactions().runInTransaction(quickOptions, tx -> {
+            client.transactions().runInTransaction(tx -> {
                 IgniteSql sql = client.sql();
                 
                 // Simple customer update operation
                 Statement updateStmt = sql.statementBuilder()
-                    .query("UPDATE Customer SET LastUpdated = ? WHERE CustomerId = ?")
+                    .query("UPDATE Customer SET Company = ? WHERE CustomerId = ?")
                     .build();
-                long updated = sql.execute(tx, updateStmt, LocalDateTime.now(), 1).affectedRows();
+                long updated = sql.execute(tx, updateStmt, "Updated Company " + java.time.LocalDateTime.now(), 1).affectedRows();
                 
                 System.out.println("    <<< Quick update completed: " + updated + " customer updated");
                 return true;
@@ -249,11 +248,10 @@ public class BusinessWorkflowPatterns {
     }
 
     private void complexAnalyticsReport(IgniteClient client) {
-        TransactionOptions analyticsOptions = TransactionOptions.readOnly()
-            .timeout(60, TimeUnit.SECONDS);
+        TransactionOptions analyticsOptions = new TransactionOptions().readOnly(true);
         
         try {
-            client.transactions().runInTransaction(analyticsOptions, tx -> {
+            client.transactions().runInTransaction(tx -> {
                 IgniteSql sql = client.sql();
                 
                 // Complex multi-table analysis
@@ -413,6 +411,7 @@ public class BusinessWorkflowPatterns {
         
         // Execute operations through circuit breaker
         for (int i = 1; i <= 3; i++) {
+            final int artistId = i; // Capture loop variable
             try {
                 CompletableFuture<String> result = circuitBreaker.executeTransaction(
                     client,
@@ -421,7 +420,7 @@ public class BusinessWorkflowPatterns {
                         Statement stmt = sql.statementBuilder()
                             .query("SELECT Name FROM Artist WHERE ArtistId = ?")
                             .build();
-                        ResultSet<SqlRow> rs = sql.execute(tx, stmt, i);
+                        ResultSet<SqlRow> rs = sql.execute(tx, stmt, artistId);
                         
                         if (rs.hasNext()) {
                             return "Artist: " + rs.next().stringValue("Name");
@@ -467,7 +466,7 @@ public class BusinessWorkflowPatterns {
                 int maxRetries,
                 int currentAttempt) {
             
-            return client.transactions().runInTransactionAsync(operation)
+            return client.transactions().runInTransactionAsync(tx -> CompletableFuture.supplyAsync(() -> operation.apply(tx)))
                 .exceptionallyCompose(throwable -> {
                     if (currentAttempt >= maxRetries) {
                         return CompletableFuture.failedFuture(throwable);
@@ -477,7 +476,7 @@ public class BusinessWorkflowPatterns {
                         long delay = calculateBackoffDelay(currentAttempt);
                         
                         return CompletableFuture
-                            .delayedExecutor(delay, TimeUnit.MILLISECONDS)
+                            .supplyAsync(() -> null, CompletableFuture.delayedExecutor(delay, TimeUnit.MILLISECONDS))
                             .thenCompose(ignored -> 
                                 executeWithRetryInternal(client, operation, maxRetries, currentAttempt + 1));
                     } else {
@@ -527,7 +526,7 @@ public class BusinessWorkflowPatterns {
                 }
             }
             
-            return client.transactions().runInTransactionAsync(operation)
+            return client.transactions().runInTransactionAsync(tx -> CompletableFuture.supplyAsync(() -> operation.apply(tx)))
                 .thenApply(result -> {
                     onSuccess();
                     return result;
