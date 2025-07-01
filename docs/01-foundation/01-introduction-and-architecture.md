@@ -373,12 +373,14 @@ public class Artist {
 
 **Production consideration:** The default zone provides no fault tolerance. If a node fails, you lose data. For production workloads, you'll want custom zones with multiple replicas.
 
+> [!IMPORTANT]
 > **Need production-grade storage?** See [Storage System Architecture](../00-reference/storage-system-arch.md) for complete details on custom zones, partitioning strategies, and fault-tolerant configurations.
 
 ## Cluster Connectivity
 
 Your application connects to the Ignite cluster through the client library, which handles communication with distributed nodes automatically. Connection setup determines both performance characteristics and reliability - proper configuration enables partition-aware routing and automatic failover when nodes fail.
 
+> [!TIP]
 > **Implementation Details**: Chapter 1.2 covers complete connection setup including multi-node addressing, resource management, and practical troubleshooting for connection issues.
 
 ## Architecture Implementation Summary
