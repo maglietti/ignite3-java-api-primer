@@ -13,14 +13,7 @@ Data distribution problems emerge immediately when you move beyond single-node s
 Distribution zones define the physical and logical characteristics of how your data spreads across cluster nodes. Behind the scenes, Ignite 3 uses the **Rendezvous (Highest Random Weight) algorithm** to ensure consistent data placement without requiring coordination between nodes.
 
 ```mermaid
-graph TB
-    subgraph "Zone Configuration Controls"
-        ZONE["Distribution Zone<br/>'MusicStore'"] --> REPLICAS["Replicas: 3<br/>Fault tolerance"]
-        ZONE --> PARTITIONS["Partitions: 50<br/>Parallel processing"]
-        ZONE --> STORAGE["Storage Profile<br/>aipersist engine"]
-        ZONE --> FILTER["Node Filter<br/>SSD nodes only"]
-    end
-    
+graph LR
     subgraph "Physical Distribution Result"
         N1["Node 1<br/>Partitions: 1,4,7..."]
         N2["Node 2<br/>Partitions: 2,5,8..."]
@@ -29,6 +22,13 @@ graph TB
         N1 <--> N2
         N2 <--> N3
         N1 <--> N3
+    end
+    
+    subgraph "Zone Configuration Controls"
+        ZONE["Distribution Zone<br/>'MusicStore'"] --> REPLICAS["Replicas: 3<br/>Fault tolerance"]
+        ZONE --> PARTITIONS["Partitions: 50<br/>Parallel processing"]
+        ZONE --> STORAGE["Storage Profile<br/>aipersist engine"]
+        ZONE --> FILTER["Node Filter<br/>SSD nodes only"]
     end
     
     ZONE --> N1
@@ -81,6 +81,7 @@ This configuration provides:
 Apache Ignite 3 supports two consistency modes that determine behavior during node failures:
 
 #### STRONG_CONSISTENCY (Default)
+
 Ensures strong consistency by requiring a majority of nodes for operations. Partitions become unavailable if the majority of assigned nodes are lost.
 
 ```java
@@ -90,11 +91,13 @@ public class PaymentTransaction { ... }
 ```
 
 Use STRONG_CONSISTENCY for:
+
 - Financial transactions requiring absolute consistency
 - Business-critical data where accuracy is paramount
 - Systems where temporary unavailability is preferable to data inconsistency
 
 #### HIGH_AVAILABILITY
+
 Prioritizes availability over strict consistency, allowing partitions to remain available for read-write operations even when the majority of assigned nodes are offline.
 
 ```java
@@ -115,6 +118,7 @@ client.sql().execute(null, alterConsistencyStmt);
 ```
 
 Use HIGH_AVAILABILITY for:
+
 - Read-heavy catalog data where availability is crucial
 - Content management systems prioritizing uptime
 - Systems where temporary inconsistency is acceptable for continued operation
@@ -131,6 +135,7 @@ flowchart TD
 ```
 
 Each partition maintains:
+
 - **Primary replica**: Handles writes and coordinates reads
 - **Backup replicas**: Provide fault tolerance and read scaling
 - **Hash-based assignment**: Ensures even distribution
@@ -219,9 +224,12 @@ while (result.hasNext()) {
 }
 ```
 
-> [!NOTE]
-> Ignite 3 follows SQL standard normalization rules for metadata (table names, column names). When accessing columns via `SqlRow`:
-> - `"myColumn"` → `"MYCOLUMN"` (normalized to uppercase)
+> [!IMPORTANT]
+> Ignite 3 follows SQL standard normalization rules for metadata (table names, column names).
+>
+> When accessing columns via `SqlRow`:
+>
+> - `"myColumn"` → `"MYCOLUMN"` (normalized to **uppercase**)
 > - `"\"MyColumn\""` → `"MyColumn"` (double quotes preserve exact case)
 >
 > Use double quotes in your SQL when you need to preserve case sensitivity for column access.
@@ -259,6 +267,7 @@ graph TB
 ```
 
 **Lease Management Benefits:**
+
 - **Split-brain Prevention**: Only one valid primary per partition
 - **Automatic Failover**: Failed primaries detected via lease expiration
 - **No Coordination Overhead**: Secondaries don't need to coordinate
@@ -300,12 +309,14 @@ public class VersionedRecord {
 ```
 
 **MVCC provides:**
+
 - **Read Operations**: See committed versions as of transaction timestamp
 - **Write Operations**: Create new versions without blocking readers
 - **Garbage Collection**: Configurable cleanup removes old versions
 - **Isolation**: Transactions see consistent snapshots
 
 **Consistency Guarantees:**
+
 - **ACID Transactions**: Full transactional semantics across partitions
 - **Snapshot Isolation**: Readers see consistent data without locking
 - **Linearizability**: Writes appear to happen atomically
@@ -346,6 +357,7 @@ ignite.catalog().createZone(sessionsZone);
 Storage profiles are configured during cluster initialization. The default profile using the aimem engine is available immediately. For production environments requiring persistent storage, storage profiles are configured through cluster management APIs or configuration files during node startup.
 
 **Storage Engine Selection:**
+
 - **aimem** (default): Development, caching, temporary data (no persistence)
 - **aipersist**: Production applications requiring data durability
 - **rocksdb**: Experimental engine for write-heavy workloads
@@ -373,6 +385,7 @@ public class UserSession { ... }
 ```
 
 **Zone Assignment Principles:**
+
 - **Match storage to durability needs**: Use aipersist for data that must survive restarts
 - **Optimize for access patterns**: More partitions for parallel processing
 - **Consider fault tolerance**: More replicas for critical data
@@ -394,6 +407,7 @@ graph TB
 ```
 
 **Algorithm Benefits:**
+
 - **Consistent Assignment**: Same key always maps to same nodes
 - **No Coordination**: Nodes independently calculate assignments
 - **Minimal Movement**: Only affected partitions rebalance when topology changes
@@ -421,6 +435,7 @@ public class Track {
 ```
 
 **Partitioning Best Practices:**
+
 - **Avoid Hot Partitions**: Don't use sequential keys that concentrate on few partitions
 - **Consider Colocation**: Group related data for local joins
 - **Plan for Growth**: Choose partition counts that accommodate future scaling
@@ -457,6 +472,7 @@ mvn compile exec:java
 ```
 
 **What This Establishes:**
+
 - **3-Node Cluster**: Production-ready distributed setup with automatic failover
 - **Multiple Storage Engines**: Experience with aimem (default) and aipersist storage
 - **Colocated Data**: Artist-Album-Track hierarchies optimized for performance
