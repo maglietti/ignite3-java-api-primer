@@ -60,52 +60,49 @@ if (artist != null) {
 
 The Table API eliminates three performance penalties: SQL parsing overhead, result set iteration, and manual object mapping. For applications serving high-frequency requests, this translates to 50-70% latency reduction.
 
-## API Selection for Performance Requirements
+## When to Use Table API
 
-Choose the right API based on access patterns and performance requirements:
+The Table API excels in scenarios requiring type-safe object operations with complete entity context:
 
-**Use Table API When:**
+**Ideal Table API Scenarios:**
+- **Business Entity Management**: User profiles, product catalogs, order processing
+- **Type Safety Critical**: Applications requiring compile-time validation
+- **Complex Object Relationships**: POJOs with nested business logic
+- **CRUD Operations**: Complete create, read, update, delete workflows
+- **Development Productivity**: Rapid development with object-oriented patterns
 
-- **Known Primary Keys**: You know exactly which records to fetch
-- **Single Record Operations**: Working with individual entities
-- **Type Safety Critical**: Compile-time validation prevents runtime errors
-- **Complex Object Graphs**: POJOs with nested relationships
-- **High-Performance Point Operations**: Direct key-based access
+**Table API vs Other Approaches:**
+- **vs Key-Value Operations**: Use Table API when you need complete object context, not just field access
+- **vs SQL Operations**: Use Table API for known-key operations, SQL for complex queries and analytics
 
-**Use SQL API When:**
-
-- **Complex Queries**: JOIN operations across multiple tables
-- **Aggregate Functions**: COUNT, SUM, AVG, GROUP BY operations
-- **Range Queries**: WHERE clauses with conditions beyond exact key match
-- **Analytical Operations**: Reporting and business intelligence queries
-- **Dynamic Queries**: Query structure determined at runtime
-
-**Type Safety Example:**
+**Type Safety Benefits:**
 
 ```java
-// Table API: Compile-time type safety
+// Table API: Compile-time type safety with complete objects
 RecordView<Artist> artistView = table.recordView(Artist.class);
-Artist artist = artistView.get(null, Tuple.create().set("ArtistId", 1)); // Compile-time validation
+Artist artist = artistView.get(null, createArtistKey(1)); // Full object with business logic
 
-// SQL API: Runtime type checking
-SqlRow row = client.sql().execute(null, "SELECT * FROM Artist WHERE ArtistId = ?", 1).next();
-String name = row.stringValue("Name"); // Field name checked at runtime
+// Business logic integration
+if (artist != null && artist.hasAlbums()) {
+    artist.updateLastAccessTime();
+    artistView.upsert(null, artist);
+}
 ```
 
 ## Table API Architecture
 
-The Table API provides two complementary views optimized for different performance scenarios:
+The Table API provides object-oriented access to distributed tables through RecordView operations:
 
 ```mermaid
 graph TD
-    A["Table<br/>(Physical Storage)"] --> B["RecordView&lt;Artist&gt;<br/>(Complete Records)"]
-    A --> C["KeyValueView&lt;Integer, String&gt;<br/>(Key-Value Pairs)"]
+    A["Table<br/>(Physical Storage)"] --> B["RecordView&lt;Artist&gt;<br/>(Complete Object Operations)"]
     
-    B --> D["Full Object Operations<br/>get(), upsert(), delete()"]
-    C --> E["High-Performance Operations<br/>put(), get(), remove()"]
+    B --> C["Type-Safe Operations<br/>get(), upsert(), delete()"]
+    B --> D["Bulk Operations<br/>getAll(), upsertAll()"]
+    B --> E["Async Operations<br/>getAsync(), upsertAsync()"]
 ```
 
-**RecordView** handles complete objects for business logic requiring full entity state. **KeyValueView** provides minimal-overhead operations for caching and high-throughput scenarios where only specific fields are needed.
+**RecordView** provides complete object context for business logic that requires full entity state, type safety, and integration with object-oriented application design patterns.
 
 ## RecordView: Complete Object Operations
 
@@ -293,53 +290,63 @@ class ArtistWithAlbums {
 }
 ```
 
-## KeyValueView: Minimal-Overhead Operations
+## Business Logic Integration Patterns
 
-When applications need single-field access or caching patterns, KeyValueView eliminates object serialization overhead. This approach reduces memory allocation and provides microsecond-level response times for high-frequency operations:
+Table API operations integrate seamlessly with business logic through complete object context and type safety:
 
 ```java
-public class HighPerformanceCache {
-    private final KeyValueView<Integer, String> artistNames;
-    private final KeyValueView<String, Integer> artistLookup;
+public class ArtistBusinessService {
+    private final RecordView<Artist> artists;
+    private final RecordView<Album> albums;
     
-    public HighPerformanceCache(IgniteClient client) {
-        Table artistTable = client.tables().table("Artist");
-        this.artistNames = artistTable.keyValueView(Integer.class, String.class);
+    public ArtistBusinessService(IgniteClient client) {
+        this.artists = client.tables().table("Artist").recordView(Artist.class);
+        this.albums = client.tables().table("Album").recordView(Album.class);
+    }
+    
+    // Business logic with complete object context
+    public boolean promoteArtistToFeatured(Integer artistId) {
+        Artist artist = findArtist(artistId);
+        if (artist == null) {
+            return false;
+        }
         
-        // Note: This assumes you have a separate table/view for reverse lookup
-        // In practice, you might use SQL API for this kind of lookup
-        this.artistLookup = artistTable.keyValueView(String.class, Integer.class);
+        // Business logic using complete object state
+        if (artist.getAlbumCount() >= 5 && artist.getTotalSales() > 1000000) {
+            artist.setFeaturedStatus(true);
+            artist.setPromotionDate(LocalDate.now());
+            artists.upsert(null, artist);
+            return true;
+        }
+        
+        return false;
     }
     
-    // Simple key-value operations
-    public void cacheArtistName(Integer artistId, String name) {
-        artistNames.put(null, artistId, name);
+    // Complex business workflows
+    public ArtistProfile createCompleteArtistProfile(Integer artistId) {
+        Artist artist = findArtist(artistId);
+        if (artist == null) {
+            return null;
+        }
+        
+        // Business object composition
+        ArtistProfile profile = new ArtistProfile();
+        profile.setArtist(artist);
+        profile.setTotalAlbums(artist.getAlbumCount());
+        profile.setAverageRating(calculateAverageRating(artist));
+        
+        return profile;
     }
     
-    public String getArtistName(Integer artistId) {
-        return artistNames.get(null, artistId);
+    private Artist findArtist(Integer artistId) {
+        Artist key = new Artist();
+        key.setArtistId(artistId);
+        return artists.get(null, key);
     }
     
-    public void removeArtistFromCache(Integer artistId) {
-        artistNames.remove(null, artistId);
-    }
-    
-    // Bulk key-value operations
-    public void loadArtistCache(Map<Integer, String> artistData) {
-        artistNames.putAll(null, artistData);
-    }
-    
-    public Map<Integer, String> getMultipleArtists(Collection<Integer> artistIds) {
-        return artistNames.getAll(null, artistIds);
-    }
-    
-    // Conditional operations
-    public boolean updateArtistNameIfExists(Integer artistId, String newName) {
-        return artistNames.replace(null, artistId, newName);
-    }
-    
-    public String setArtistNameIfAbsent(Integer artistId, String name) {
-        return artistNames.putIfAbsent(null, artistId, name);
+    private double calculateAverageRating(Artist artist) {
+        // Business logic implementation
+        return 4.2; // Simplified example
     }
 }
 ```
@@ -516,4 +523,10 @@ for (Integer id : artistIds) {
 ```
 
 These patterns eliminate the three primary performance bottlenecks: network round-trips, thread blocking, and memory allocation overhead.
+
+The Table API provides the foundation for object-oriented distributed applications where complete entity context and type safety drive development productivity. When you need business logic integration with full object state, RecordView operations deliver both performance and maintainability.
+
+---
+
+**Next**: [SQL API Analytics](02-sql-api-analytics.md) - Complex query processing and distributed analytics that leverage your optimized schema design for reporting and business intelligence operations.
 

@@ -5,30 +5,31 @@
 ## Ignite 3 Java API Primer
 
 * [Platform Foundation](01-foundation/README.md)
-  * [Platform Architecture and Connection Patterns](01-foundation/01-introduction-and-architecture.md)
+  * [Introduction and Architecture Overview](01-foundation/01-introduction-and-architecture.md)
   * [Your First Ignite 3 Application](01-foundation/02-getting-started.md)
-  * [Understanding Distributed Data Concepts](01-foundation/03-distributed-data-fundamentals.md)
+  * [Distributed Data Fundamentals](01-foundation/03-distributed-data-fundamentals.md)
 
 * [Data Schema Design](02-schema-design/README.md)
-  * [Creating Tables with Annotations](02-schema-design/01-basic-annotations.md)
-  * [Implementing Data Colocation Strategies](02-schema-design/02-relationships-and-colocation.md)
-  * [Configuring Zones and Storage Profiles](02-schema-design/03-advanced-annotations.md)
-  * [Managing Schema Changes in Production](02-schema-design/04-schema-evolution.md)
+  * [Basic Annotations and Table Creation](02-schema-design/01-basic-annotations.md)
+  * [Relationships and Colocation Strategies](02-schema-design/02-relationships-and-colocation.md)
+  * [Advanced Annotations and Zone Configuration](02-schema-design/03-advanced-annotations.md)
+  * [Schema Changes](02-schema-design/04-schema-evolution.md)
 
 * [Data Access Patterns](03-data-access-apis/README.md)
-  * [Working with the Table API](03-data-access-apis/01-table-api-operations.md)
-  * [Building SQL-Based Analytics](03-data-access-apis/02-sql-api-analytics.md)
-  * [Data Access API Decision Guide](03-data-access-apis/03-sql-api-selection-guide.md)
+  * [Table API for Object-Oriented Operations](03-data-access-apis/01-table-api-operations.md)
+  * [SQL API for Analytics and Reporting](03-data-access-apis/02-sql-api-analytics.md)
+  * [Key-Value Operations for Maximum Performance](03-data-access-apis/03-key-value-operations.md)
+  * [Data Access API Decision Guide](03-data-access-apis/04-api-decision-guide.md)
 
 * [Distributed Computing](04-distributed-operations/README.md)
-  * [Implementing ACID Transactions](04-distributed-operations/01-transaction-fundamentals.md)
+  * [Transaction Fundamentals](04-distributed-operations/01-transaction-fundamentals.md)
   * [Transaction Use Cases and Applied Patterns](04-distributed-operations/02-advanced-transaction-patterns.md)
-  * [Distributed Processing with Compute API](04-distributed-operations/03-compute-api-processing.md)
+  * [Distributed Computing](04-distributed-operations/03-compute-api-processing.md)
 
 * [Performance Optimization](05-performance-scalability/README.md)
-  * [Implementing Data Streaming Pipelines](05-performance-scalability/01-data-streaming.md)
-  * [Designing Effective Caching Strategies](05-performance-scalability/02-caching-strategies.md)
-  * [Optimizing Query Performance](05-performance-scalability/03-query-performance.md)
+  * [Data Streaming and High-Throughput Ingestion](05-performance-scalability/01-data-streaming.md)
+  * [Caching Strategies and Performance Optimization](05-performance-scalability/02-caching-strategies.md)
+  * [Query Performance and Index Optimization](05-performance-scalability/03-query-performance.md)
 
 * [From Learning to Production](06-primer-conclusion.md)
 

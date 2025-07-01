@@ -30,7 +30,7 @@ Albums belong to Artists, but in distributed storage, they might live on differe
 
 Your platform grows complex - multiple zones for different data types, indexes for fast searches, composite keys for complex relationships. You'll handle these advanced patterns while maintaining the simplicity of annotation-driven design.
 
-### Chapter 4: [Schema Evolution](./04-schema-evolution.md)
+### Chapter 4: [Schema Changes](./04-schema-evolution.md)
 
 *Growing your platform safely*
 

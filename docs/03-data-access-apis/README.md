@@ -6,17 +6,17 @@ Different needs call for different approaches. Sometimes you know exactly which 
 
 ## How Data Access APIs Work
 
-Ignite 3 provides two distinct data access patterns for your distributed music catalog. Table API enables direct object operations with type safety and microsecond latencies. SQL API enables complex analytical queries that span multiple tables and partitions.
+Ignite 3 provides three distinct data access patterns for your distributed music catalog. Key-Value API enables ultra-fast direct key lookups with minimal overhead. Table API provides object-oriented operations with type safety and business logic integration. SQL API enables complex analytical queries that span multiple tables and partitions.
 
-Each API optimizes for different access patterns: Table API eliminates object-relational mapping overhead for known-key operations, while SQL API enables cross-table joins, aggregations, and filtering operations that would require thousands of individual record retrievals to accomplish manually.
+Each API optimizes for different access patterns: Key-Value operations provide maximum performance for cache-like access, Table API eliminates object-relational mapping overhead for entity operations, and SQL API enables cross-table joins, aggregations, and filtering operations that would require thousands of individual record retrievals to accomplish manually.
 
 ## Data Access Implementation Patterns
 
 ### Chapter 1: [Table API Operations](./01-table-api-operations.md)
 
-*Configure direct object operations with type safety*
+*Configure object-oriented data access with type safety*
 
-Your mobile application needs Artist entity retrieval for user ID 42's favorite band. No complex joins, just direct key-based access to specific records. Implement RecordView and KeyValueView patterns that leverage your colocation strategies for single-partition operations.
+Your mobile application needs complete Artist entity operations for user profiles and music library management. Implement RecordView patterns for type-safe business logic that leverage your colocation strategies for single-partition operations.
 
 ### Chapter 2: [SQL API Analytics](./02-sql-api-analytics.md)
 
@@ -24,11 +24,17 @@ Your mobile application needs Artist entity retrieval for user ID 42's favorite 
 
 Marketing requires complex analytics across Artist-Album-Track relationships with aggregation functions and filtering conditions. Configure distributed SQL execution that processes queries across multiple cluster nodes without data transfer overhead.
 
-### Chapter 3: [Data Access API Decision Guide](./03-sql-api-selection-guide.md)
+### Chapter 3: [Key-Value Operations](./03-key-value-operations.md)
+
+*Maximize performance with direct field access*
+
+Your application needs 50,000 session lookups per second and instant feature flag checks. Implement KeyValueView patterns that eliminate object serialization overhead for sub-millisecond performance in caching, session management, and configuration scenarios.
+
+### Chapter 4: [Data Access API Decision Guide](./04-api-decision-guide.md)
 
 *Strategic framework for selecting optimal data access APIs*
 
-Match operation characteristics with appropriate API capabilities using decision criteria and performance patterns. Learn when to use KeyValueView for high-performance lookups, RecordView for business logic operations, and SQL API for complex analytics.
+Match operation characteristics with appropriate API capabilities using decision criteria and performance patterns. Learn when to use Key-Value operations for maximum performance, Table API for business logic operations, and SQL API for complex analytics and reporting.
 
 ## Production Data Access Challenges
 
@@ -38,7 +44,7 @@ Your music platform now efficiently accesses distributed data through both direc
 
 **[`04-table-api-app/`](../../ignite3-reference-apps/04-table-api-app/)** and **[`05-sql-api-app/`](../../ignite3-reference-apps/05-sql-api-app/)**
 
-Complete Table API and SQL API implementations demonstrating type-safe operations and distributed query execution patterns.
+Complete Table API, Key-Value, and SQL API implementations demonstrating object-oriented operations, high-performance key-value access, and distributed query execution patterns.
 
 ## Next Implementation Challenge
 

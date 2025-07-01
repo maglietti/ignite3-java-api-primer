@@ -1055,3 +1055,7 @@ public class AnalyticsErrorHandling {
 
 The SQL API enables production-scale analytical workloads through partition-aware query planning, distributed aggregation, and optimized result processing. These patterns address the performance and reliability challenges that emerge when running complex analytics across distributed datasets.
 
+---
+
+**Next**: [Key-Value Operations](03-key-value-operations.md) - Maximum performance data access for caching, session management, and high-frequency operations that require minimal overhead.
+

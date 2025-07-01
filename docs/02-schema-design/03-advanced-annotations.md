@@ -395,4 +395,4 @@ The result transforms distributed complexity into predictable single-partition o
 
 ---
 
-**Next**: [Schema Deployment and Access Patterns](04-schema-evolution.md) - Production deployment patterns, DDL generation strategies, and access pattern optimization for real applications.
+**Next**: [Schema Changes](04-schema-evolution.md) - Production deployment patterns, DDL generation strategies, and access pattern optimization for real applications.

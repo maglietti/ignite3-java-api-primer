@@ -1,4 +1,4 @@
-# Chapter 3.3: Data Access API Decision Guide
+# Chapter 3.4: Data Access API Decision Guide
 
 Your mobile app response times degraded after implementing user session management through SQL queries instead of direct key lookups. Meanwhile, your analytics dashboard fails to aggregate sales data efficiently because you're using RecordView operations to load thousands of individual records instead of executing SQL aggregations. These performance problems stem from API selection mismatches that compound under production load.
 
