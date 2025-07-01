@@ -337,7 +337,7 @@ flowchart TD
 
 ### Unified API Access Model
 
-The implementation demonstrates how both APIs access the same distributed data:
+The implementation demonstrates how the Table and SQL APIs can access the same distributed data:
 
 ```java
 // Table API - type-safe object operations
@@ -352,28 +352,6 @@ This unified programming model provides:
 - Table API delivers type safety for key-based operations
 - SQL API enables complex queries and analytics
 - Both APIs access identical underlying distributed partitions
-
-## Production Scaling Approach
-
-The development approaches demonstrated here scale directly to production environments without code changes:
-
-### Implementation Continuity
-
-The implementation foundation supports production requirements:
-
-1. **Connection Configuration**: Multi-node addressing transfers directly to production clusters
-2. **Programming Model**: Table and SQL APIs remain consistent across zone configurations
-3. **Data Models**: POJO classes function with any zone setup
-4. **Transition Path**: Moving to custom zones requires only zone creation, not application changes
-
-### Custom Zone Requirements
-
-Production environments require custom zones when applications need:
-
-- **Fault Tolerance**: Multiple replicas for data protection and availability
-- **Performance Optimization**: Tuned partition counts for specific workload characteristics
-- **Data Isolation**: Separate zones for different data tiers or tenant isolation
-- **Compliance Controls**: Specific data residency or security requirements
 
 ## Next Steps
 
