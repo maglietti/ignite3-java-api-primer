@@ -23,7 +23,6 @@
 
 * [Distributed Computing](04-distributed-operations/README.md)
   * [Transaction Fundamentals](04-distributed-operations/01-transaction-fundamentals.md)
-  * [Transaction Use Cases and Applied Patterns](04-distributed-operations/02-advanced-transaction-patterns.md)
   * [Distributed Computing](04-distributed-operations/03-compute-api-processing.md)
 
 * [Performance Optimization](05-performance-scalability/README.md)

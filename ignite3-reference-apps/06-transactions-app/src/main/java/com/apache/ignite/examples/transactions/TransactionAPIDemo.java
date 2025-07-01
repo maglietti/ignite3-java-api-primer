@@ -61,6 +61,9 @@ public class TransactionAPIDemo {
                 
             runDemo("Batch Transactions", 
                 () -> BatchTransactions.main(new String[]{clusterAddress}));
+                
+            runDemo("Business Workflow Patterns", 
+                () -> BusinessWorkflowPatterns.main(new String[]{clusterAddress}));
             
             System.out.println();
             System.out.println("=== Transaction API Demo completed successfully ===");
@@ -78,13 +81,14 @@ public class TransactionAPIDemo {
             case "Transaction Isolation": return "2";
             case "Async Transactions": return "3";
             case "Batch Transactions": return "4";
+            case "Business Workflow Patterns": return "5";
             default: return "?";
         }
     }
 
     private static void runDemo(String name, Runnable demo) {
         System.out.println();
-        System.out.println("=== [" + getCurrentStep(name) + "/4] " + name + " ===");
+        System.out.println("=== [" + getCurrentStep(name) + "/5] " + name + " ===");
         
         try {
             demo.run();

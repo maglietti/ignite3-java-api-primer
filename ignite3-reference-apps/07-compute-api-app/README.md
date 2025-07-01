@@ -74,7 +74,30 @@ Deployment utilities for cluster management:
 - **Development Support**: Automatic deployment detection
 - **Production Patterns**: Deployment unit management
 
-### 6. ComputeAPIDemo - Complete Demonstration (90 lines)
+### 6. ProductionComputePatterns - Production-Scale Patterns (650+ lines)
+
+Production-ready compute patterns for real-world music streaming platforms:
+
+- **Large-scale Recommendation Processing**: Handle millions of user profiles with distributed algorithms
+- **Performance-optimized Data Colocation**: Artist-specific analytics with optimized job placement
+- **Advanced MapReduce Workflows**: Complex analytics with custom aggregation patterns
+- **Circuit Breaker Patterns**: Protect system resources from cascading failures
+- **Performance Monitoring**: Track job execution metrics and resource utilization
+- **Cross-node Result Coordination**: Merge and aggregate results from distributed processing
+- **Key Concepts**: Production resilience, scalability patterns, real-world scenarios
+
+### 7. MusicPlatformIntelligence - Documentation-Aligned Examples (500+ lines)
+
+Code examples that directly match the enhanced documentation patterns:
+
+- **ArtistPopularityJob**: Artist analytics demonstrating data movement to computation movement
+- **UserRecommendationJob**: User-specific recommendations with data locality optimization
+- **DistributedRecommendationProcessor**: Concurrent user processing with async patterns
+- **MusicTrendMapReduceExample**: Platform-wide MapReduce analytics for trend detection
+- **ResilientMusicJobProcessor**: Production error handling with exponential backoff retry
+- **Key Concepts**: Documentation alignment, music platform narrative, real-world intelligence
+
+### 8. ComputeAPIDemo - Complete Demonstration (130+ lines)
 
 Main orchestrator that runs all compute patterns in educational progression with detailed output formatting.
 
@@ -426,6 +449,9 @@ mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.compute.AdvancedCompu
 
 # Multi-step workflows
 mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.compute.ComputeJobWorkflows"
+
+# Production-scale patterns
+mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.compute.ProductionComputePatterns"
 ```
 
 ## Related Modules

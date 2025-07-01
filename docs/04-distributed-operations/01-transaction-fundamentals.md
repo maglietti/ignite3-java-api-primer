@@ -1,8 +1,8 @@
-# Chapter 4.1: Transaction Fundamentals
+# Chapter 4.1: Transaction Fundamentals and Applied Patterns
 
 A customer clicks "Buy Album" for a $12.99 purchase. Your application must create an invoice, add line items for each track, update inventory counts, and add tracks to the customer's library. Without proper transaction management, a failure between any of these steps leaves your data in an inconsistent state.
 
-This chapter covers transaction fundamentals: what transactions are, why they're essential, and how to use them correctly in distributed systems.
+This chapter covers transaction fundamentals, what transactions are, why they're essential, and how to apply them correctly in distributed systems through practical business patterns.
 
 ## What Are Transactions?
 
@@ -271,6 +271,172 @@ client.transactions().runInTransaction(options, tx -> {
 });
 ```
 
+## Applied Transaction Patterns
+
+Building on the fundamentals, these patterns address common business scenarios that require coordinated operations across multiple tables and cluster nodes.
+
+### Customer Purchase Workflow
+
+E-commerce workflows require coordinating updates across invoice, line item, and inventory tables atomically:
+
+```java
+public Integer processPurchase(IgniteClient client, Integer customerId, List<Integer> trackIds) {
+    return client.transactions().runInTransaction(tx -> {
+        RecordView<Invoice> invoiceTable = client.tables().table("Invoice").recordView(Invoice.class);
+        RecordView<InvoiceLine> invoiceLineTable = client.tables().table("InvoiceLine").recordView(InvoiceLine.class);
+        IgniteSql sql = client.sql();
+        
+        // Step 1: Create the invoice
+        Integer invoiceId = generateInvoiceId();
+        Invoice invoice = new Invoice();
+        invoice.setInvoiceId(invoiceId);
+        invoice.setCustomerId(customerId);
+        invoice.setInvoiceDate(LocalDate.now());
+        invoiceTable.upsert(tx, invoice);
+        
+        // Step 2: Add line items and calculate total
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        for (Integer trackId : trackIds) {
+            // Get track price using SQL in the same transaction
+            Statement trackStmt = sql.statementBuilder()
+                .query("SELECT UnitPrice FROM Track WHERE TrackId = ?")
+                .build();
+            ResultSet<SqlRow> trackResult = sql.execute(tx, trackStmt, trackId);
+            
+            if (!trackResult.hasNext()) {
+                throw new IllegalArgumentException("Track not found: " + trackId);
+            }
+            
+            BigDecimal unitPrice = trackResult.next().decimalValue("UnitPrice");
+            
+            // Create line item
+            InvoiceLine lineItem = new InvoiceLine();
+            lineItem.setInvoiceId(invoiceId);
+            lineItem.setTrackId(trackId);
+            lineItem.setUnitPrice(unitPrice);
+            lineItem.setQuantity(1);
+            
+            invoiceLineTable.upsert(tx, lineItem);
+            totalAmount = totalAmount.add(unitPrice);
+        }
+        
+        // Step 3: Update invoice with calculated total
+        invoice.setTotal(totalAmount);
+        invoiceTable.upsert(tx, invoice);
+        
+        return invoiceId;
+    });
+}
+```
+
+This pattern ensures that invoice creation, line item insertion, and total calculation execute atomically. If any step fails, the entire transaction rolls back, preventing orphaned invoices and billing inconsistencies.
+
+### Transaction Timeout Configuration
+
+Different business operations require different timeout configurations:
+
+```java
+// Quick operations - short timeout for fast failure
+TransactionOptions quickOptions = TransactionOptions.readWrite()
+    .timeout(5, TimeUnit.SECONDS);
+
+client.transactions().runInTransaction(quickOptions, tx -> {
+    // Simple customer update
+    RecordView<Customer> customers = client.tables().table("Customer").recordView(Customer.class);
+    Customer customer = customers.get(tx, customerKey);
+    customer.setLastLogin(LocalDateTime.now());
+    customers.upsert(tx, customer);
+    return true;
+});
+
+// Complex analytics - longer timeout for completion
+TransactionOptions analyticsOptions = TransactionOptions.readOnly()
+    .timeout(60, TimeUnit.SECONDS);
+
+client.transactions().runInTransaction(analyticsOptions, tx -> {
+    // Complex multi-table analysis
+    IgniteSql sql = client.sql();
+    // Perform comprehensive analytics queries
+    return generateAnalyticsReport(sql, tx);
+});
+```
+
+### Asynchronous Transaction Patterns
+
+High-throughput applications benefit from non-blocking transaction patterns:
+
+```java
+// Create multiple artists asynchronously
+public CompletableFuture<String> createMultipleArtistsAsync(
+        IgniteClient client, List<String> artistNames) {
+    
+    return client.transactions().runInTransactionAsync(tx -> {
+        RecordView<Artist> artistTable = client.tables().table("Artist").recordView(Artist.class);
+        
+        // Create all artists in parallel within the same transaction
+        List<CompletableFuture<Void>> operations = artistNames.stream()
+            .map(name -> {
+                Artist artist = new Artist(generateArtistId(), name);
+                return artistTable.upsertAsync(tx, artist);
+            })
+            .collect(Collectors.toList());
+        
+        // Wait for all operations to complete
+        return CompletableFuture.allOf(operations.toArray(new CompletableFuture[0]))
+            .thenApply(ignored -> "Success: " + artistNames.size() + " artists created");
+    });
+}
+```
+
+### Error Handling and Resilience
+
+Production applications require robust error handling with retry logic:
+
+```java
+public <T> CompletableFuture<T> executeWithRetry(
+        IgniteClient client, 
+        Function<Transaction, T> operation,
+        int maxRetries) {
+    
+    return executeWithRetryInternal(client, operation, maxRetries, 0);
+}
+
+private <T> CompletableFuture<T> executeWithRetryInternal(
+        IgniteClient client,
+        Function<Transaction, T> operation,
+        int maxRetries,
+        int currentAttempt) {
+    
+    return client.transactions().runInTransactionAsync(operation)
+        .exceptionallyCompose(throwable -> {
+            if (currentAttempt >= maxRetries) {
+                return CompletableFuture.failedFuture(throwable);
+            }
+            
+            if (isRetryableException(throwable)) {
+                long delay = calculateBackoffDelay(currentAttempt);
+                return CompletableFuture
+                    .delayedExecutor(delay, TimeUnit.MILLISECONDS)
+                    .thenCompose(ignored -> 
+                        executeWithRetryInternal(client, operation, maxRetries, currentAttempt + 1));
+            } else {
+                return CompletableFuture.failedFuture(throwable);
+            }
+        });
+}
+```
+
+## Working with the Reference Application
+
+The **`06-transactions-app`** demonstrates these patterns with complete working implementations:
+
+```bash
+cd ignite3-reference-apps/06-transactions-app
+mvn compile exec:java
+```
+
+The reference application includes business workflow examples, async patterns, error handling strategies, and performance optimization techniques.
+
 ## Best Practices
 
 1. **Use automatic transaction management** - Prevents resource leaks and ensures proper cleanup
@@ -278,4 +444,12 @@ client.transactions().runInTransaction(options, tx -> {
 3. **Use read-only transactions for queries** - Better performance when no modifications needed
 4. **Handle specific exceptions** - Retry on conflicts, fail fast on business rule violations
 5. **Prepare data outside transactions** - Minimize time spent holding locks
+6. **Configure appropriate timeouts** - Match timeout duration to operation complexity
+7. **Use async patterns for high throughput** - Prevent thread blocking during distributed operations
+
+These transaction patterns provide the foundation for reliable distributed operations in music streaming applications. They ensure data consistency during complex business workflows while maintaining performance under concurrent load.
+
+---
+
+**Next**: [Distributed Computing](03-compute-api-processing.md) - Execute code directly on cluster nodes where data resides to eliminate network bottlenecks and enable massive parallel processing for analytics and recommendation algorithms.
 

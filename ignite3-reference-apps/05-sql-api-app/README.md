@@ -104,6 +104,23 @@ mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.QueryO
 - Metadata introspection and dynamic processing
 - Performance optimization patterns
 
+### 5. ProductionAnalyticsPatterns.java
+**Production-scale analytics patterns for music streaming platforms**
+
+```bash
+mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.ProductionAnalyticsPatterns"
+```
+
+**Advanced patterns demonstrated:**
+- **Streaming Result Processing**: Handle large result sets with memory efficiency
+- **Hierarchical Data Processing**: Navigate complex artist → album → track relationships
+- **Metadata-Driven Processing**: Dynamic query generation based on table schemas
+- **Performance Optimization**: Statement caching, batch processing, and async patterns
+- **Production-Scale Analytics**: Customer segmentation, revenue analysis, and trend detection
+- **Error Handling**: Comprehensive retry logic and circuit breaker patterns
+- **Resource Management**: Memory-efficient processing of large datasets
+- **Real-world Scenarios**: Music platform analytics with millions of records
+
 ## Key SQL API Classes Demonstrated
 
 ### Core Interfaces
@@ -236,6 +253,9 @@ mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.SQLAPI
 mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.DDLOperations"
 mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.DMLOperations"
 mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.QueryOperations"
+
+# Run production analytics patterns
+mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.ProductionAnalyticsPatterns"
 ```
 
 ### Prerequisites Check

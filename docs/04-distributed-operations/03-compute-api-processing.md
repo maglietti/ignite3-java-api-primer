@@ -1,1044 +1,633 @@
-# Chapter 4.3: Distributed Computing
+# Chapter 4.3: Distributed Computing for Music Intelligence
 
-Your recommendation algorithm takes 45 minutes to process because it transfers terabytes of user data across the network instead of running computations where data resides. Your monthly analytics job consumes more bandwidth than your production workload, dragging down system performance for hours.
+Your music streaming platform processes recommendations for 2.5 million users nightly. The current approach pulls user profiles, listening histories, and artist data from distributed storage nodes to central processing servers for analysis. This creates a data pipeline nightmare: 12TB of nightly transfers saturate your network, recommendation processing takes 45 minutes instead of the target 5 minutes, and the centralized bottleneck delays marketing campaigns and playlist updates.
 
-The Compute API solves these bottlenecks by executing code directly on cluster nodes where data lives, eliminating data movement and enabling massive parallel processing. This transforms single-node processing limitations into distributed intelligence that scales with your data.
+During Grammy night's traffic spike, your system crashes when recommendation processing collides with live streaming traffic. Users receive stale playlists, trending algorithms work with hour-old data, and your competitive advantage evaporates as users switch to faster platforms.
+
+The root problem: traditional architectures move massive datasets to where computation happens, rather than bringing lightweight computation to where data already lives.
+
+## From Data Movement to Computation Movement
+
+Traditional batch processing creates cascading bottlenecks across your infrastructure:
+
+**The Data Pipeline Crisis:** Every recommendation cycle requires transferring complete user profiles, listening histories, and artist catalogs to centralized processing servers. A 2.5M user analysis moves 12TB of data across your network before computation even begins.
+
+**Network Saturation:** Data movement competes with live streaming traffic for bandwidth. During peak periods, recommendation transfers delay music delivery to active users, creating the exact problem your platform exists to solve.
+
+**Processing Delays:** Centralized servers become the limiting factor. No matter how much data storage capacity you add, computation remains stuck on dedicated processing hardware that can't scale with your distributed storage infrastructure.
+
+**Resource Waste:** Your storage nodes sit idle with massive compute capacity while dedicated processing servers struggle with overwhelming data volumes.
+
+**Operational Complexity:** Managing separate storage and compute clusters doubles your operational overhead, deployment complexity, and failure modes.
+
+Ignite 3's Compute API eliminates these problems by executing your business logic directly on the nodes where data already resides. Instead of moving terabytes to computation, you move kilobytes of code to data.
+
+## How Ignite 3 Compute API Solves Distributed Processing
+
+The Compute API transforms your music platform's architecture by implementing three fundamental shifts that eliminate traditional batch processing bottlenecks:
+
+**Computation Locality:** Instead of pulling user data to central servers, recommendation algorithms execute directly on the storage nodes where user profiles, listening histories, and artist catalogs already reside. A 12TB data movement operation becomes a 50KB code deployment.
+
+**Distributed Parallelism:** Your recommendation analysis spreads across all cluster nodes simultaneously. What took 45 minutes on centralized servers completes in 5 minutes using the distributed computing power of your entire storage infrastructure.
+
+**Network Efficiency:** Live music streaming and recommendation processing no longer compete for bandwidth. Background analytics run locally on each node while serving real-time user requests without interference.
+
+This architectural shift eliminates the centralized bottleneck while transforming idle storage nodes into active participants in your platform's intelligence operations.
 
 ## Working with the Reference Application
 
-The **`07-compute-api-app`** demonstrates distributed job execution, data locality patterns, and result aggregation with music analytics examples. The application handles automatic job deployment using the `ComputeJobDeployment` utility class with REST API integration.
+The **`07-compute-api-app`** demonstrates how to transform centralized batch processing into distributed intelligence using realistic music analytics scenarios:
 
 ```bash
 cd ignite3-reference-apps/07-compute-api-app
-mvn package
 mvn compile exec:java
 ```
 
-Job deployment handles both automatic and manual scenarios:
+The reference application showcases the complete journey from basic job execution to production-scale recommendation processing:
 
-**Automatic Deployment**:
-```bash
-# Application handles deployment automatically
-mvn package && mvn compile exec:java
+- **BasicComputeOperations** - Foundation patterns for distributed job execution and parameterized processing
+- **AdvancedComputeOperations** - Data locality optimization and cluster-wide broadcast operations  
+- **ComputeJobWorkflows** - Multi-step recommendation pipelines and business process automation
+- **ProductionComputePatterns** - Large-scale user analysis, resilience patterns, and performance monitoring
+
+The reference app integrates with the transaction patterns from [Chapter 4.1](01-transaction-fundamentals.md) to ensure data consistency during distributed processing workflows.
+
+## Music Platform Intelligence Architecture
+
+The Compute API enables three distinct intelligence patterns that solve different aspects of your music platform's distributed processing requirements:
+
+### Recommendation Engine Transformation
+
+Traditional recommendation systems create bottlenecks by centralizing all user analysis. The Compute API distributes this intelligence across your cluster:
+
+```mermaid
+graph TB
+    subgraph "Traditional: Data Movement Bottleneck"
+        A1[User Data<br/>Node 1] -.->|12TB Transfer| C1[Central<br/>Analytics Server]
+        A2[User Data<br/>Node 2] -.->|12TB Transfer| C1
+        A3[User Data<br/>Node 3] -.->|12TB Transfer| C1
+        C1 --> R1[45min<br/>Processing]
+    end
+    
+    subgraph "Compute API: Distributed Intelligence"
+        B1[User Data + Code<br/>Node 1] --> L1[5min Local<br/>Analysis]
+        B2[User Data + Code<br/>Node 2] --> L2[5min Local<br/>Analysis] 
+        B3[User Data + Code<br/>Node 3] --> L3[5min Local<br/>Analysis]
+        L1 --> AGG[Result<br/>Aggregation]
+        L2 --> AGG
+        L3 --> AGG
+    end
 ```
 
-**Manual Deployment**:
-```bash
-# Using included deployment script
-./deploy-jar.sh compute-jobs 1.0.0 target/07-compute-api-app-1.0.0.jar
+**Key Benefits:**
+- Network transfers reduced from 12TB to 50KB (recommendation algorithm deployment)
+- Processing time drops from 45 minutes to 5 minutes through parallel execution
+- Live streaming traffic no longer competes with analytics for bandwidth
 
-# Or using Docker CLI
-docker run --rm -it --network=host -e LANG=C.UTF-8 -e LC_ALL=C.UTF-8 apacheignite/ignite:3.0.0 cli
-cluster unit deploy compute-jobs /path/to/target/07-compute-api-app-1.0.0.jar
-```
+### Job Targeting for Music Analytics
 
-The reference app builds on the data consistency patterns from [Chapter 4.1](01-transaction-fundamentals.md) to create reliable distributed processing workflows.
-
-## Architecture
-
-The Compute API provides a framework for executing code across cluster nodes with sophisticated targeting and result management.
-
-### Core Compute Components
-
-The fundamental components work together to enable distributed job execution:
+The Compute API provides three targeting strategies that optimize different aspects of music platform operations:
 
 ```mermaid
 graph LR
-    A[IgniteCompute] --> B[JobTarget]
-    A --> C[JobDescriptor]
-    A --> D[JobExecution]
-    
-    B --> B1[Target Selection]
-    C --> C1[Job Definition]
-    D --> D1[Result Management]
+    subgraph "Targeting Strategies"
+        A[Music Platform Jobs] --> B[Data Colocation]
+        A --> C[Load Distribution] 
+        A --> D[Cluster Analysis]
+        
+        B --> B1["Process user preferences<br/>where user data lives"]
+        C --> C1["Balance playlist generation<br/>across available nodes"]
+        D --> D1["Analyze trending patterns<br/>across entire cluster"]
+    end
 ```
 
-**IgniteCompute** serves as the entry point for all compute operations, coordinating job submission and execution across the cluster. **JobTarget** specifies where jobs should run, **JobDescriptor** defines what jobs should execute, and **JobExecution** manages running jobs and their results.
+**Data Colocation:** User recommendation jobs execute on nodes containing user profiles and listening histories, eliminating cross-network data access during analysis.
 
-### Job Targeting Options
+**Load Distribution:** Playlist generation and content processing distribute across available cluster resources, preventing hotspots during peak traffic periods.
 
-Different targeting strategies optimize job placement for various scenarios:
+**Cluster Analysis:** Trending music detection and global analytics broadcast across all nodes to gather comprehensive platform insights without centralized data collection.
+
+### Processing Workflow Integration
+
+Your music platform requires coordinated workflows that span multiple business operations. The Compute API integrates with Ignite's transaction system to ensure consistency:
 
 ```mermaid
 graph TB
-    A[Job Targeting] --> B[Node Selection]
-    A --> C[Data Locality]
-    A --> D[Broadcast Patterns]
-    
-    B --> B1[anyNode - load balancing]
-    B --> B2[node - specific targeting]
-    
-    C --> C1[colocated - data-aware execution]
-    
-    D --> D1[nodes - cluster-wide broadcast]
-    D --> D2[table - partition-aware broadcast]
+    A[User Purchase Event] --> B[Distributed Workflow]
+    B --> C[Update Purchase History<br/>User's Node]
+    B --> D[Process Recommendations<br/>User's Node]
+    B --> E[Update Global Trends<br/>All Nodes]
+    C --> F[Transaction Coordination]
+    D --> F
+    E --> F
+    F --> G[Consistent Results]
 ```
 
-**Node Selection** distributes work across available nodes for optimal resource utilization. **Data Locality** executes jobs where relevant data resides, eliminating network transfers. **Broadcast Patterns** enable cluster-wide operations and comprehensive data analysis.
+This integration ensures that recommendation updates, purchase processing, and analytics coordination maintain data consistency while leveraging distributed processing power.
 
-### Execution Patterns
+## From Centralized Analytics to Distributed Intelligence
 
-Multiple execution approaches handle different application requirements:
+Your music platform's transformation from centralized processing to distributed intelligence follows a progression of increasingly sophisticated patterns. Start with basic job execution to understand the fundamentals, then advance to data locality optimization and multi-node coordination.
 
-```mermaid
-graph TB
-    A[Execution Patterns] --> B[Synchronous]
-    A --> C[Asynchronous] 
-    A --> D[Managed Jobs]
-    A --> E[MapReduce]
-    
-    B --> B1[execute - blocking results]
-    C --> C1[executeAsync - non-blocking]
-    D --> D1[submitAsync - job control]
-    E --> E1[map reduce aggregate]
+## Basic Job Execution: Your First Distributed Algorithm
+
+Consider your platform's artist popularity analysis. Instead of pulling all artist data to central servers, you can execute the analysis algorithm directly on cluster nodes. This transforms a data-intensive operation into a code-deployment operation:
+
+### From Data Movement to Code Movement
+
+**Traditional Centralized Approach:**
+```java
+// Pull artist data from distributed storage (network intensive)
+List<Artist> allArtists = centralDatabase.executeQuery("SELECT * FROM Artist");
+// Process locally (single-threaded bottleneck)
+Map<String, Integer> popularity = analyzePopularity(allArtists);
 ```
 
-**Synchronous** execution blocks until jobs complete and return results directly. **Asynchronous** execution enables non-blocking operations with CompletableFuture results. **Managed Jobs** provide execution control for monitoring and cancellation. **MapReduce** patterns distribute computation and aggregate results across multiple nodes.
-
-These three core capabilities solve distributed computing problems:
-
-- **Data Locality**: Jobs execute where data resides, minimizing network overhead
-- **Multiple Targeting**: From specific nodes to intelligent data-aware placement  
-- **Result Management**: Synchronous, asynchronous, and job control patterns
-
-## Job Submission Workflow
-
-### Basic Job Submission
-
-**Problem**: Your analytics platform processes customer listening data by pulling millions of track records from distributed nodes to a central processing server. This creates a bottleneck where network bandwidth limits analysis speed, and the central server becomes overwhelmed handling data from multiple customers simultaneously. A simple track duration calculation for 10,000 tracks requires transferring megabytes of data across the network just to perform basic arithmetic.
-
-**Solution**: Execute computation directly on the nodes where data resides, eliminating network transfer overhead and distributing processing load across the cluster.
-
-All distributed compute operations follow a standard workflow: create a job, define a target, and execute. This foundational pattern applies to every compute scenario regardless of complexity:
-
+**Compute API Distributed Approach:**
 ```java
 import org.apache.ignite.client.IgniteClient;
-import org.apache.ignite.compute.ComputeJob;
-import org.apache.ignite.compute.JobExecutionContext;
-import org.apache.ignite.compute.JobDescriptor;
-import org.apache.ignite.compute.JobTarget;
+import org.apache.ignite.compute.*;
 
-// Step 1: Create a job class that implements ComputeJob
-public class SimpleMessageJob implements ComputeJob<String, String> {
+// Step 1: Create your analysis as a distributed job
+public class ArtistPopularityJob implements ComputeJob<Void, Map<String, Integer>> {
     @Override
-    public CompletableFuture<String> executeAsync(JobExecutionContext context, String message) {
-        return CompletableFuture.completedFuture("Processed: " + message);
+    public CompletableFuture<Map<String, Integer>> executeAsync(JobExecutionContext context, Void input) {
+        return CompletableFuture.supplyAsync(() -> {
+            // Execute analysis using local data on this node
+            IgniteSql sql = context.ignite().sql();
+            Statement stmt = sql.statementBuilder()
+                .query("SELECT a.Name, COUNT(*) as play_count " +
+                       "FROM Artist a JOIN Album al ON a.ArtistId = al.ArtistId " +
+                       "JOIN Track t ON al.AlbumId = t.AlbumId " + 
+                       "JOIN InvoiceLine il ON t.TrackId = il.TrackId " +
+                       "GROUP BY a.ArtistId, a.Name")
+                .build();
+            
+            Map<String, Integer> localPopularity = new HashMap<>();
+            try (ResultSet<SqlRow> rs = sql.execute(null, stmt)) {
+                while (rs.hasNext()) {
+                    SqlRow row = rs.next();
+                    localPopularity.put(row.stringValue("Name"), row.intValue("play_count"));
+                }
+            }
+            return localPopularity;
+        });
     }
 }
 
-// Step 2: Connect to cluster and submit job
-try (IgniteClient ignite = IgniteClient.builder()
-        .addresses("localhost:10800")
+// Step 2: Execute analysis across your cluster
+try (IgniteClient client = IgniteClient.builder()
+        .addresses("node1:10800", "node2:10800", "node3:10800")
         .build()) {
     
-    // Step 3: Create job descriptor
-    JobDescriptor<String, String> job = JobDescriptor.builder(SimpleMessageJob.class).build();
+    // Deploy your algorithm to any available node
+    JobDescriptor<Void, Map<String, Integer>> job = 
+        JobDescriptor.builder(ArtistPopularityJob.class).build();
+    JobTarget target = JobTarget.anyNode(client.clusterNodes());
     
-    // Step 4: Define execution target
-    JobTarget target = JobTarget.anyNode(ignite.clusterNodes());
+    // Execute analysis where data lives
+    Map<String, Integer> results = client.compute().execute(target, job, null);
     
-    // Step 5: Execute job and get result
-    String result = ignite.compute().execute(target, job, "Hello World");
-    System.out.println("Result: " + result);
+    // Process results
+    results.entrySet().stream()
+        .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+        .limit(10)
+        .forEach(entry -> 
+            System.out.println(entry.getKey() + ": " + entry.getValue() + " plays"));
 }
 ```
 
-**Standard Workflow Steps:**
+**The Fundamental Shift:**
+- **Data Movement Eliminated:** No network transfers of artist data
+- **Parallel Processing:** Multiple nodes can run the same analysis simultaneously
+- **Resource Efficiency:** Computation uses local storage node resources
+- **Network Optimization:** Only algorithm code and results traverse the network
 
-1. **Job Implementation**: Create a class implementing `ComputeJob<InputType, OutputType>`
-2. **Client Connection**: Establish connection to the Ignite cluster
-3. **Job Descriptor**: Create descriptor that defines the job class and configuration
-4. **Target Selection**: Choose where the job executes (any node, specific node, or data-colocated)
-5. **Job Execution**: Submit job and receive results
+## Data Locality: Processing Where Data Lives
 
-This five-step pattern forms the foundation for all compute operations.
+The real power of distributed computing emerges when you eliminate network hops by processing data exactly where it resides. Your music platform's user recommendation system provides the perfect example of this optimization.
 
-### Data Processing Job Example
+### User-Specific Recommendation Processing
 
-When your analytics queries consume excessive bandwidth transferring data for computation, jobs execute directly on data nodes using the same foundational workflow:
+Traditional systems pull user profiles across the network for centralized analysis. The Compute API processes recommendations locally on nodes containing user data:
 
 ```java
-import org.apache.ignite.sql.IgniteSql;
-import org.apache.ignite.sql.ResultSet;
-import org.apache.ignite.sql.SqlRow;
-
-// Job that calculates total duration for a set of track IDs
-public class TrackDurationJob implements ComputeJob<List<Integer>, Double> {
+public class UserRecommendationJob implements ComputeJob<Integer, List<String>> {
     @Override
-    public CompletableFuture<Double> executeAsync(JobExecutionContext context, List<Integer> trackIds) {
+    public CompletableFuture<List<String>> executeAsync(JobExecutionContext context, Integer customerId) {
         return CompletableFuture.supplyAsync(() -> {
-            // Access Ignite APIs within the job execution context
             IgniteSql sql = context.ignite().sql();
             
-            double totalDuration = 0.0;
-            for (Integer trackId : trackIds) {
-                Statement trackStmt = context.ignite().sql().statementBuilder()
-                    .query("SELECT Milliseconds FROM Track WHERE TrackId = ?")
+            // Analyze local user listening patterns (no network access required)
+            Statement stmt = sql.statementBuilder()
+                .query("SELECT DISTINCT g.Name as genre " +
+                       "FROM Customer c " +
+                       "JOIN Invoice i ON c.CustomerId = i.CustomerId " +
+                       "JOIN InvoiceLine il ON i.InvoiceId = il.InvoiceId " +
+                       "JOIN Track t ON il.TrackId = t.TrackId " +
+                       "JOIN Genre g ON t.GenreId = g.GenreId " +
+                       "WHERE c.CustomerId = ? " +
+                       "GROUP BY g.GenreId, g.Name " +
+                       "ORDER BY COUNT(*) DESC LIMIT 3")
+                .build();
+            
+            List<String> preferredGenres = new ArrayList<>();
+            try (ResultSet<SqlRow> rs = sql.execute(null, stmt, customerId)) {
+                while (rs.hasNext()) {
+                    preferredGenres.add(rs.next().stringValue("genre"));
+                }
+            }
+            
+            return preferredGenres.isEmpty() ? 
+                List.of("Rock", "Pop", "Jazz") : // Default recommendations
+                preferredGenres;
+        });
+    }
+}
+
+// Execute recommendation processing on the node containing user data
+Tuple userKey = Tuple.create(Map.of("CustomerId", customerId));
+JobTarget target = JobTarget.colocated("Customer", userKey);
+
+List<String> recommendations = client.compute().execute(target, 
+    JobDescriptor.builder(UserRecommendationJob.class).build(), customerId);
+```
+
+**Data Locality Benefits:**
+- **Zero Network Latency:** User data processing happens locally without cross-node queries
+- **Concurrent Processing:** Multiple users' recommendations generate simultaneously on different nodes
+- **Resource Distribution:** CPU and memory load spreads across all storage nodes
+- **Scalability:** Adding storage nodes automatically increases recommendation processing capacity
+
+## Job Targeting Strategies for Music Analytics
+
+Your music platform requires three distinct job targeting strategies, each optimized for different analytics scenarios:
+
+### Load-Balanced Processing: Any Node Execution
+
+When your algorithm doesn't depend on specific data location, distribute work across available cluster resources for optimal load balancing:
+
+```java
+public class PlaylistGenerationJob implements ComputeJob<String, List<String>> {
+    @Override
+    public CompletableFuture<List<String>> executeAsync(JobExecutionContext context, String genre) {
+        return CompletableFuture.supplyAsync(() -> {
+            // CPU-intensive algorithm that works with any data subset
+            return generateRandomPlaylist(genre, 20);
+        });
+    }
+}
+
+// Let Ignite choose the best available node
+JobTarget target = JobTarget.anyNode(client.clusterNodes());
+List<String> playlist = client.compute().execute(target, 
+    JobDescriptor.builder(PlaylistGenerationJob.class).build(), "Rock");
+```
+
+**Use Case:** Playlist generation, content ranking algorithms, format conversions
+
+### Data-Aware Processing: Colocated Execution
+
+When algorithms must access specific data, target jobs to nodes containing that data:
+
+```java
+// Process artist analytics where artist data lives
+Tuple artistKey = Tuple.create(Map.of("ArtistId", artistId));
+JobTarget target = JobTarget.colocated("Artist", artistKey);
+
+// Analysis executes locally without network data access
+String insights = client.compute().execute(target, artistAnalysisJob, artistId);
+```
+
+**Use Case:** User recommendations, artist analysis, purchase history processing
+
+### Cluster-Wide Intelligence: Broadcast Processing
+
+When you need comprehensive platform insights, execute the same analysis across all nodes:
+
+```java
+public class GlobalTrendAnalysisJob implements ComputeJob<Void, Map<String, Integer>> {
+    @Override
+    public CompletableFuture<Map<String, Integer>> executeAsync(JobExecutionContext context, Void input) {
+        return CompletableFuture.supplyAsync(() -> {
+            // Analyze trends using local data on this node
+            IgniteSql sql = context.ignite().sql();
+            Statement stmt = sql.statementBuilder()
+                .query("SELECT g.Name, COUNT(*) as local_plays " +
+                       "FROM Genre g JOIN Track t ON g.GenreId = t.GenreId " +
+                       "JOIN InvoiceLine il ON t.TrackId = il.TrackId " +
+                       "WHERE il.InvoiceDate >= CURRENT_DATE - 7 " +
+                       "GROUP BY g.GenreId, g.Name")
+                .build();
+            
+            Map<String, Integer> localTrends = new HashMap<>();
+            try (ResultSet<SqlRow> rs = sql.execute(null, stmt)) {
+                while (rs.hasNext()) {
+                    SqlRow row = rs.next();
+                    localTrends.put(row.stringValue("Name"), row.intValue("local_plays"));
+                }
+            }
+            return localTrends;
+        });
+    }
+}
+
+// Execute on all nodes to gather comprehensive trends
+Collection<ClusterNode> allNodes = client.clusterNodes();
+JobTarget broadcastTarget = JobTarget.nodes(allNodes);
+
+// Aggregate results from all nodes
+Map<String, Integer> globalTrends = new HashMap<>();
+Collection<Map<String, Integer>> nodeResults = client.compute()
+    .execute(broadcastTarget, 
+        JobDescriptor.builder(GlobalTrendAnalysisJob.class).build(), null);
+
+// Combine trends from all nodes
+for (Map<String, Integer> nodeResult : nodeResults) {
+    nodeResult.forEach((genre, count) -> 
+        globalTrends.merge(genre, count, Integer::sum));
+}
+```
+
+**Use Case:** Trending analysis, platform-wide statistics, health monitoring
+
+## Scaling User Recommendation Processing with Async Patterns
+
+Your music platform serves millions of users who expect instant recommendations when browsing. Traditional synchronous processing creates response time bottlenecks when multiple users request personalized content simultaneously.
+
+### Concurrent User Processing: Non-blocking Execution
+
+Process multiple users' recommendations simultaneously without blocking application threads:
+
+```java
+public class DistributedRecommendationProcessor {
+    private final IgniteClient client;
+    
+    public DistributedRecommendationProcessor(IgniteClient client) {
+        this.client = client;
+    }
+    
+    // Process recommendations for multiple users concurrently
+    public CompletableFuture<Map<Integer, List<String>>> processUserRecommendations(
+            List<Integer> userIds) {
+        
+        // Start all user recommendation jobs in parallel
+        List<CompletableFuture<Pair<Integer, List<String>>>> futures = userIds.stream()
+            .map(this::processUserRecommendationAsync)
+            .collect(Collectors.toList());
+        
+        // Combine all results when complete
+        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+            .thenApply(ignored -> futures.stream()
+                .map(CompletableFuture::join)
+                .collect(Collectors.toMap(
+                    Pair::getKey,    // userId
+                    Pair::getValue   // recommendations
+                )));
+    }
+    
+    private CompletableFuture<Pair<Integer, List<String>>> processUserRecommendationAsync(
+            Integer userId) {
+        
+        // Target job to node containing user data
+        Tuple userKey = Tuple.create(Map.of("CustomerId", userId));
+        JobTarget target = JobTarget.colocated("Customer", userKey);
+        
+        // Execute recommendation job asynchronously
+        return client.compute()
+            .executeAsync(target, 
+                JobDescriptor.builder(UserRecommendationJob.class).build(), userId)
+            .thenApply(recommendations -> new Pair<>(userId, recommendations));
+    }
+}
+
+// Usage: Process 1000 users' recommendations concurrently
+List<Integer> userIds = IntStream.range(1, 1001).boxed().collect(Collectors.toList());
+
+DistributedRecommendationProcessor processor = 
+    new DistributedRecommendationProcessor(client);
+
+CompletableFuture<Map<Integer, List<String>>> allRecommendations = 
+    processor.processUserRecommendations(userIds);
+
+allRecommendations.thenAccept(results -> {
+    System.out.println("Processed recommendations for " + results.size() + " users");
+    // Update user interfaces, cache results, trigger notifications
+});
+```
+
+**Performance Benefits:**
+- **Concurrent Processing:** 1000 users processed simultaneously across cluster nodes
+- **Resource Efficiency:** No thread blocking while waiting for recommendations
+- **Response Time:** Sub-second recommendations instead of sequential processing delays
+- **Scalability:** Performance scales with cluster size automatically
+
+### Long-Running Analytics: Job Execution Management
+
+For complex analytics requiring progress monitoring and potential cancellation:
+
+```java
+public class AdvancedMusicAnalytics {
+    
+    // Submit long-running trend analysis with monitoring
+    public CompletableFuture<String> analyzePlatformTrends() {
+        JobDescriptor<Void, String> trendJob = 
+            JobDescriptor.builder(ComprehensiveTrendAnalysisJob.class).build();
+        JobTarget target = JobTarget.anyNode(client.clusterNodes());
+        
+        return client.compute().submitAsync(target, trendJob, null)
+            .thenCompose(execution -> {
+                // Monitor job progress
+                monitorJobProgress(execution);
+                
+                // Return final result
+                return execution.resultAsync();
+            });
+    }
+    
+    private void monitorJobProgress(JobExecution<String> execution) {
+        // Check job status periodically
+        CompletableFuture<Void> monitoring = CompletableFuture.runAsync(() -> {
+            while (!execution.stateAsync().join().status().isFinal()) {
+                System.out.println("Analytics job running... " + 
+                    execution.stateAsync().join().status());
+                
+                try {
+                    Thread.sleep(5000); // Check every 5 seconds
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+        });
+        
+        // Handle completion
+        execution.resultAsync().thenAccept(result -> {
+            monitoring.cancel(true);
+            System.out.println("Analytics completed: " + result);
+        });
+    }
+}
+```
+
+## Advanced Pattern: Platform-Wide MapReduce Analytics
+
+Your music platform's most sophisticated intelligence challenge involves analyzing listening patterns across all users to detect emerging trends, viral content, and market shifts. This requires coordinating analysis across every cluster node and aggregating results into actionable insights.
+
+### Music Trend Detection with Distributed MapReduce
+
+```java
+public class MusicTrendMapReduceExample {
+    
+    // Map Phase: Each node analyzes its local data
+    public static class TrendMapJob implements ComputeJob<Void, Map<String, Integer>> {
+        @Override
+        public CompletableFuture<Map<String, Integer>> executeAsync(
+                JobExecutionContext context, Void input) {
+            return CompletableFuture.supplyAsync(() -> {
+                IgniteSql sql = context.ignite().sql();
+                
+                // Analyze local listening trends from past week
+                Statement stmt = sql.statementBuilder()
+                    .query("SELECT t.Name, COUNT(*) as plays " +
+                           "FROM Track t " +
+                           "JOIN InvoiceLine il ON t.TrackId = il.TrackId " +
+                           "JOIN Invoice i ON il.InvoiceId = i.InvoiceId " +
+                           "WHERE i.InvoiceDate >= CURRENT_DATE - 7 " +
+                           "GROUP BY t.TrackId, t.Name " +
+                           "HAVING COUNT(*) > 5")  // Filter noise
                     .build();
-                try (ResultSet<SqlRow> rs = sql.execute(null, trackStmt, trackId)) {
-                    
-                    if (rs.hasNext()) {
+                
+                Map<String, Integer> localTrends = new HashMap<>();
+                try (ResultSet<SqlRow> rs = sql.execute(null, stmt)) {
+                    while (rs.hasNext()) {
                         SqlRow row = rs.next();
-                        totalDuration += row.doubleValue("Milliseconds") / 60000.0; // Convert to minutes
+                        localTrends.put(row.stringValue("Name"), row.intValue("plays"));
                     }
                 }
-            }
-            
-            return totalDuration;
-        });
+                return localTrends;
+            });
+        }
     }
-}
-
-// Follow the same five-step workflow
-try (IgniteClient ignite = IgniteClient.builder()
-        .addresses("localhost:10800")
-        .build()) {
     
-    JobDescriptor<List<Integer>, Double> job = JobDescriptor.builder(TrackDurationJob.class).build();
-    JobTarget target = JobTarget.anyNode(ignite.clusterNodes());
-    List<Integer> trackIds = Arrays.asList(1, 2, 3, 4, 5);
-
-    Double totalDuration = ignite.compute().execute(target, job, trackIds);
-    System.out.println("Total track duration: " + totalDuration + " minutes");
-}
-```
-
-**Key Concepts:**
-
-- **ComputeJob Interface**: Jobs implement `ComputeJob<InputType, OutputType>` for type safety
-- **JobExecutionContext**: Provides access to the full Ignite API within the job
-- **Resource Access**: Jobs execute SQL queries and access tables locally
-- **Data Processing**: Eliminates network transfers by processing data where it resides
-
-## Job Submission Patterns
-
-Now that you understand the basic workflow, these patterns show how to adapt the five-step process for different execution scenarios.
-
-### Deployment Units and Job Class Management
-
-Standalone Ignite clusters require job classes deployed before execution using deployment units. The reference application includes a `ComputeJobDeployment` utility class that handles this automatically:
-
-```java
-import org.apache.ignite.deployment.DeploymentUnit;
-
-public class ComputeExample {
-    
-    public void executeJobWithDeployment(IgniteClient ignite) {
-        // Use the deployment utility for automatic JAR deployment
-        if (!ComputeJobDeployment.deployJobClasses()) {
-            System.out.println(">>> Continuing with development deployment units");
+    // Orchestrate MapReduce workflow
+    public Map<String, Integer> detectGlobalTrends(IgniteClient client) {
+        // Map Phase: Execute trend analysis on all nodes
+        Collection<ClusterNode> allNodes = client.clusterNodes();
+        JobTarget broadcastTarget = JobTarget.nodes(allNodes);
+        JobDescriptor<Void, Map<String, Integer>> mapJob = 
+            JobDescriptor.builder(TrendMapJob.class).build();
+        
+        Collection<Map<String, Integer>> mapResults = 
+            client.compute().execute(broadcastTarget, mapJob, null);
+        
+        // Reduce Phase: Aggregate all node results
+        Map<String, Integer> globalTrends = new HashMap<>();
+        for (Map<String, Integer> nodeResult : mapResults) {
+            nodeResult.forEach((trackName, localPlays) -> 
+                globalTrends.merge(trackName, localPlays, Integer::sum));
         }
         
-        // Create job descriptor with deployment units
-        JobDescriptor<String, String> job = JobDescriptor.builder(MessageProcessingJob.class)
-                .units(ComputeJobDeployment.getDeploymentUnits())
-                .build();
-        
-        JobTarget target = JobTarget.anyNode(ignite.clusterNodes());
-        String result = ignite.compute().execute(target, job, "Hello World");
-        System.out.println("Result: " + result);
+        // Return top trending tracks globally
+        return globalTrends.entrySet().stream()
+            .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+            .limit(50)  // Top 50 trending tracks
+            .collect(Collectors.toMap(
+                Map.Entry::getKey,
+                Map.Entry::getValue,
+                (e1, e2) -> e1,
+                LinkedHashMap::new
+            ));
     }
 }
 ```
 
-**Deployment Workflow:**
+**MapReduce Benefits for Music Analytics:**
+- **Comprehensive Coverage:** Every cluster node contributes local listening data
+- **Network Efficiency:** Raw listening data never leaves its node, only aggregated trends transfer
+- **Parallel Processing:** All nodes analyze simultaneously instead of sequential processing
+- **Scalable Intelligence:** Trend detection accuracy improves with cluster size
 
-1. **Build JAR**: Package job classes into a JAR file
-   ```bash
-   mvn package
-   ```
+## Production-Ready Resilience Patterns
 
-2. **Deploy JAR**: Use REST API, CLI, or Docker CLI to deploy the JAR to the cluster
-
-   **REST API**:
-   ```bash
-   # Deploy via HTTP REST API
-   curl -X POST \
-     "http://localhost:10300/management/v1/deployment/units/compute-jobs/1.0.0?deployMode=MAJORITY" \
-     -H "Content-Type: multipart/form-data" \
-     -F "unitContent=@target/app-1.0.0.jar"
-   ```
-
-   **CLI Options**:
-   ```bash
-   # Using local CLI
-   ignite cluster unit deploy compute-jobs target/app-1.0.0.jar
-   
-   # Using Docker CLI
-   docker run --rm -it --network=host -e LANG=C.UTF-8 -e LC_ALL=C.UTF-8 apacheignite/ignite:3.0.0 cli
-   cluster unit  deploy compute-jobs /path/to/target/app-1.0.0.jar
-   ```
-
-3. **Execute Jobs**: Run application using deployment units that reference the deployed JAR
-
-**Programmatic Deployment in Java:**
+Your music platform operates under demanding SLAs where failed recommendation jobs directly impact user experience. Production deployments require sophisticated error handling and retry logic:
 
 ```java
-// Deploy JAR programmatically via REST API
-public void deployJobClasses(Path jarPath) throws Exception {
-    String restApiUrl = "http://localhost:10300/management/v1/deployment/units/" 
-                      + "compute-jobs/1.0.0?deployMode=MAJORITY";
+public class ResilientMusicJobProcessor {
+    private final IgniteClient client;
+    private final int maxRetryAttempts = 3;
+    private final Duration initialDelay = Duration.ofSeconds(1);
     
-    byte[] jarContent = Files.readAllBytes(jarPath);
-    
-    // Create multipart form data
-    String boundary = "----WebKitFormBoundary" + System.currentTimeMillis();
-    String multipartData = createMultipartData(boundary, jarPath.getFileName().toString(), jarContent);
-    
-    HttpClient httpClient = HttpClient.newHttpClient();
-    HttpRequest request = HttpRequest.newBuilder()
-            .uri(URI.create(restApiUrl))
-            .header("Content-Type", "multipart/form-data; boundary=" + boundary)
-            .POST(HttpRequest.BodyPublishers.ofString(multipartData, StandardCharsets.ISO_8859_1))
-            .build();
-    
-    HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-    
-    if (response.statusCode() == 200 || response.statusCode() == 201) {
-        System.out.println("Deployment successful");
-    } else if (response.statusCode() == 409) {
-        System.out.println("Deployment unit already exists");
-    } else {
-        throw new RuntimeException("Deployment failed: HTTP " + response.statusCode());
-    }
-}
-```
-
-**Deployment Strategies:**
-
-- **Automated Environments**: Use REST API for CI/CD pipeline integration
-- **Development**: Applications automatically deploy JARs before job execution
-- **Production**: Use deployment units with deployed JARs for isolation and versioning
-- **Error Handling**: Provide fallback instructions when REST API deployment fails
-
-### Job Targeting Strategies
-
-#### Any Node Execution
-
-**Problem**: Your music platform needs to analyze album titles for keyword trends, but this CPU-intensive text processing doesn't require database access. Running these computations on your application servers creates resource contention with user-facing requests, while your Ignite cluster nodes have available CPU capacity.
-
-**Solution**: Distribute CPU-intensive work that doesn't require data access across available cluster nodes, balancing load and freeing application servers for user requests.
-
-Target any available node for optimal load distribution:
-
-```java
-// CPU-intensive job that doesn't require data access
-public class AlbumNameAnalysisJob implements ComputeJob<List<String>, Map<String, Integer>> {
-    @Override
-    public CompletableFuture<Map<String, Integer>> executeAsync(
-            JobExecutionContext context, List<String> albumTitles) {
-        
-        return CompletableFuture.supplyAsync(() -> {
-            Map<String, Integer> analysis = new HashMap<>();
-            
-            for (String title : albumTitles) {
-                // Word count analysis (CPU-intensive, no data access needed)
-                String[] words = title.toLowerCase().split("\\s+");
-                analysis.put(title, words.length);
-            }
-            
-            return analysis;
-        });
-    }
-}
-
-// Execute on any available node for optimal load distribution
-JobTarget target = JobTarget.anyNode(ignite.clusterNodes());
-List<String> albums = Arrays.asList("Back in Black", "The Dark Side of the Moon", "Hotel California");
-Map<String, Integer> analysis = ignite.compute().execute(target, job, albums);
-```
-
-#### Specific Node Targeting
-
-**Problem**: Your recommendation engine requires nodes with large memory allocations and specialized ML libraries, while your cluster contains both high-memory compute nodes and standard data nodes. Generic job targeting might place memory-intensive ML algorithms on nodes without sufficient resources, causing out-of-memory errors or poor performance.
-
-**Solution**: Direct jobs to nodes with specific hardware characteristics, software configurations, or resource availability to match workload requirements with appropriate infrastructure.
-
-Target nodes with specific characteristics or resource requirements:
-
-```java
-// Target nodes based on resource availability or node characteristics
-Set<ClusterNode> computeNodes = ignite.clusterNodes().stream()
-    .filter(node -> node.name().startsWith("compute-"))
-    .collect(Collectors.toSet());
-
-if (!computeNodes.isEmpty()) {
-    JobTarget target = JobTarget.anyNode(computeNodes);
-    String result = ignite.compute().execute(target, job, inputData);
-}
-
-// Target a specific node by name or ID
-Optional<ClusterNode> specificNode = ignite.clusterNodes().stream()
-    .filter(node -> node.name().equals("worker-node-01"))
-    .findFirst();
-
-if (specificNode.isPresent()) {
-    JobTarget target = JobTarget.node(specificNode.get());
-    String result = ignite.compute().execute(target, job, inputData);
-}
-```
-
-## Data Locality and Colocation
-
-### Colocated Job Execution
-
-**Problem**: Your artist sales analytics require joining data from Artist, Album, Track, and InvoiceLine tables. When these related tables are distributed across different nodes, complex queries trigger massive network traffic as data moves between nodes for joins and aggregations. A sales report for a single artist might require transferring thousands of records across the network, multiplying response times and consuming bandwidth.
-
-**Solution**: Execute jobs on the node where the primary data (Artist) is stored, ensuring all related data is available locally through colocation. This eliminates cross-node data transfer and leverages local storage performance.
-
-Data-aware job placement transforms bandwidth-constrained analytics into local processing:
-
-```java
-// Job that analyzes sales data for a specific artist
-public class ArtistSalesAnalysisJob implements ComputeJob<Integer, ArtistSalesReport> {
-    @Override
-    public CompletableFuture<ArtistSalesReport> executeAsync(
-            JobExecutionContext context, Integer artistId) {
-        
-        return CompletableFuture.supplyAsync(() -> {
-            IgniteSql sql = context.ignite().sql();
-            
-            // This query executes locally since the job runs where Artist data is colocated
-            Statement salesStmt = context.ignite().sql().statementBuilder()
-                .query("""
-                    SELECT al.Title, COUNT(il.TrackId) as TracksSold, SUM(il.UnitPrice * il.Quantity) as Revenue
-                    FROM Artist ar
-                    JOIN Album al ON ar.ArtistId = al.ArtistId  
-                    JOIN Track t ON al.AlbumId = t.AlbumId
-                    JOIN InvoiceLine il ON t.TrackId = il.TrackId
-                    WHERE ar.ArtistId = ?
-                    GROUP BY al.AlbumId, al.Title
-                    ORDER BY Revenue DESC
-                    """)
-                .build();
-            
-            List<AlbumSales> albumSales = new ArrayList<>();
-            try (ResultSet<SqlRow> rs = sql.execute(null, salesStmt, artistId)) {
-                while (rs.hasNext()) {
-                    SqlRow row = rs.next();
-                    albumSales.add(new AlbumSales(
-                        row.stringValue("Title"),
-                        row.intValue("TracksSold"), 
-                        row.doubleValue("Revenue")
-                    ));
-                }
-            }
-            
-            // Get artist name
-            String artistName = "Unknown Artist";
-            Statement artistStmt = context.ignite().sql().statementBuilder()
-                .query("SELECT Name FROM Artist WHERE ArtistId = ?")
-                .build();
-            try (ResultSet<SqlRow> rs = sql.execute(null, artistStmt, artistId)) {
-                if (rs.hasNext()) {
-                    artistName = rs.next().stringValue("Name");
-                }
-            }
-            
-            return new ArtistSalesReport(artistId, artistName, albumSales);
-        });
-    }
-}
-
-// Required import for colocation
-import org.apache.ignite.table.Tuple;
-
-// Execute job on the node where Artist data with ArtistId=1 resides
-JobTarget colocatedTarget = JobTarget.colocated("Artist", 
-    Tuple.create().set("ArtistId", 1));
-
-ArtistSalesReport report = ignite.compute().execute(colocatedTarget, job, 1);
-System.out.println("Sales report for " + report.getArtistName() + 
-    ": " + report.getTotalRevenue() + " total revenue");
-```
-
-This eliminates the primary bottleneck in distributed analytics:
-
-- **Network Efficiency**: Data doesn't cross network boundaries for processing
-- **Performance**: Local data access is orders of magnitude faster than remote
-- **Scalability**: Work scales with data distribution across the cluster
-
-### Broadcast Execution Patterns
-
-**Problem**: Your music platform needs to calculate global statistics like total track count, average song duration, and play count distributions across the entire catalog. Traditional approaches either pull all data to a single node (overwhelming that node and the network) or execute separate queries from the client (requiring multiple round trips and partial result aggregation).
-
-**Solution**: Execute the same job on every node in the cluster, allowing each node to process its local data portion, then aggregate results. This parallelizes the work across all available resources while maintaining data locality.
-
-Execute jobs across all nodes or all data partitions for cluster-wide operations:
-
-```java
-// Job that calculates local statistics on each node
-public class LocalTrackStatsJob implements ComputeJob<Void, TrackStatistics> {
-    @Override
-    public CompletableFuture<TrackStatistics> executeAsync(
-            JobExecutionContext context, Void input) {
-        
-        return CompletableFuture.supplyAsync(() -> {
-            IgniteSql sql = context.ignite().sql();
-            
-            // Each node calculates statistics for its local track data
-            Statement statsStmt = context.ignite().sql().statementBuilder()
-                .query("""
-                    SELECT COUNT(*) as TrackCount, 
-                           AVG(Milliseconds) as AvgDuration,
-                           MIN(Milliseconds) as MinDuration,
-                           MAX(Milliseconds) as MaxDuration
-                    FROM Track
-                    """)
-                .build();
-            try (ResultSet<SqlRow> rs = sql.execute(null, statsStmt)) {
-                
-                if (rs.hasNext()) {
-                    SqlRow row = rs.next();
-                    return new TrackStatistics(
-                        row.intValue("TrackCount"),
-                        row.doubleValue("AvgDuration"),
-                        row.intValue("MinDuration"),
-                        row.intValue("MaxDuration")
-                    );
-                }
-            }
-            
-            return new TrackStatistics(0, 0.0, 0, 0);
-        });
-    }
-}
-
-// Execute on all nodes to gather comprehensive statistics
-BroadcastJobTarget broadcastTarget = BroadcastJobTarget.nodes(ignite.clusterNodes());
-Collection<TrackStatistics> nodeStats = ignite.compute().execute(broadcastTarget, job, null);
-
-// Aggregate statistics from all nodes
-TrackStatistics globalStats = nodeStats.stream()
-    .reduce(new TrackStatistics(0, 0.0, Integer.MAX_VALUE, Integer.MIN_VALUE),
-            TrackStatistics::merge);
-
-System.out.println("Global track statistics: " + globalStats);
-```
-
-Broadcast patterns enable cluster-wide analytics:
-
-- **Cluster-wide Operations**: Execute on all cluster nodes
-- **Partition-aware Broadcast**: Execute on nodes that hold specific table data
-- **Result Aggregation**: Collect and combine results from multiple executions
-
-## Asynchronous Execution and Job Control
-
-### Non-blocking Job Execution
-
-**Problem**: Your music streaming application generates artist sales reports for multiple artists simultaneously when users request analytics dashboards. Blocking on each report generation creates a cascading delay where later reports wait for earlier ones to complete, leading to poor user experience as dashboard loading times become unpredictable and potentially very long.
-
-**Solution**: Submit multiple jobs asynchronously and process results as they become available, allowing the application to remain responsive and handle multiple operations concurrently.
-
-Applications that require responsiveness use asynchronous patterns to avoid blocking:
-
-```java
-// Submit multiple analysis jobs asynchronously
-List<Integer> artistIds = Arrays.asList(1, 2, 3, 4, 5);
-List<CompletableFuture<ArtistSalesReport>> futures = new ArrayList<>();
-
-for (Integer artistId : artistIds) {
-    JobTarget target = JobTarget.colocated("Artist", 
-        Tuple.create().set("ArtistId", artistId));
-    
-    CompletableFuture<ArtistSalesReport> future = ignite.compute()
-        .executeAsync(target, salesAnalysisJob, artistId);
-    
-    futures.add(future);
-}
-
-// Process results as they complete
-CompletableFuture<Void> allComplete = CompletableFuture.allOf(
-    futures.toArray(new CompletableFuture[0]));
-
-allComplete.thenRun(() -> {
-    List<ArtistSalesReport> reports = futures.stream()
-        .map(CompletableFuture::join)
-        .collect(Collectors.toList());
-    
-    // Process all completed reports
-    reports.forEach(report -> 
-        System.out.println(report.getArtistName() + ": " + report.getTotalRevenue()));
-});
-```
-
-### Job Execution Management
-
-**Problem**: Your nightly batch processing generates comprehensive music catalog analytics that can take hours to complete. Without visibility into job progress, you can't determine if jobs are progressing normally, stuck, or failed. When issues occur, you have no way to cancel runaway jobs or retry failed operations, potentially wasting cluster resources or requiring full system restarts.
-
-**Solution**: Use job execution controls to monitor progress, track status, and manage long-running operations with proper lifecycle management.
-
-Long-running jobs require monitoring and control capabilities:
-
-```java
-// Required imports for job control
-import org.apache.ignite.compute.JobExecution;
-import org.apache.ignite.compute.JobState;
-
-// Submit job with execution control
-CompletableFuture<JobExecution<String>> executionFuture = ignite.compute()
-    .submitAsync(target, longRunningJob, inputData);
-
-JobExecution<String> execution = executionFuture.get();
-
-// Monitor job state
-CompletableFuture<JobState> stateFuture = execution.stateAsync();
-stateFuture.thenAccept(state -> {
-    System.out.println("Job state: " + state.status());
-    System.out.println("Job ID: " + state.id());
-    System.out.println("Create time: " + state.createTime());
-});
-
-// Get result when job completes
-CompletableFuture<String> resultFuture = execution.resultAsync();
-resultFuture.thenAccept(result -> {
-    System.out.println("Job completed with result: " + result);
-});
-
-// Cancel job if needed
-// execution.cancel(); // Implementation depends on job design
-```
-
-Job control features handle complex execution scenarios:
-
-- **State Monitoring**: Track job progress and status
-- **Result Management**: Handle results when jobs complete
-- **Execution Context**: Access job metadata and execution details
-
-## MapReduce Patterns
-
-### Distributed Analytics with Map-Reduce
-
-**Problem**: Your music platform needs to analyze genre popularity across millions of tracks and customer purchases. This requires grouping tracks by genre, calculating statistics like play counts and sales figures, then aggregating results across the entire dataset. Processing this sequentially would take hours, while pulling all data to one location would overwhelm both network and processing resources.
-
-**Solution**: Implement a map-reduce pattern where each node analyzes its local data portion (map phase), then results are combined across nodes (reduce phase). This maximizes parallelism while minimizing data transfer.
-
-Complex analytics distribute computation across nodes, then aggregate results:
-
-```java
-// Map phase: Analyze tracks by genre on each node
-public class GenreAnalysisMapJob implements ComputeJob<Void, Map<String, GenreStats>> {
-    @Override
-    public CompletableFuture<Map<String, GenreStats>> executeAsync(
-            JobExecutionContext context, Void input) {
-        
-        return CompletableFuture.supplyAsync(() -> {
-            IgniteSql sql = context.ignite().sql();
-            Map<String, GenreStats> genreStats = new HashMap<>();
-            
-            Statement genreStmt = context.ignite().sql().statementBuilder()
-                .query("""
-                    SELECT g.Name as GenreName, 
-                           COUNT(t.TrackId) as TrackCount,
-                           AVG(t.Milliseconds) as AvgDuration,
-                           SUM(COALESCE(il.Quantity, 0)) as TotalSales
-                    FROM Genre g
-                    LEFT JOIN Track t ON g.GenreId = t.GenreId
-                    LEFT JOIN InvoiceLine il ON t.TrackId = il.TrackId
-                    GROUP BY g.GenreId, g.Name
-                    """)
-                .build();
-            try (ResultSet<SqlRow> rs = sql.execute(null, genreStmt)) {
-                
-                while (rs.hasNext()) {
-                    SqlRow row = rs.next();
-                    String genreName = row.stringValue("GenreName");
-                    genreStats.put(genreName, new GenreStats(
-                        row.intValue("TrackCount"),
-                        row.doubleValue("AvgDuration"),
-                        row.intValue("TotalSales")
-                    ));
-                }
-            }
-            
-            return genreStats;
-        });
-    }
-}
-
-// Execute map jobs across all nodes
-BroadcastJobTarget target = BroadcastJobTarget.nodes(ignite.clusterNodes());
-Collection<Map<String, GenreStats>> mapResults = ignite.compute()
-    .execute(target, mapJob, null);
-
-// Reduce phase: Aggregate results from all nodes
-Map<String, GenreStats> globalGenreStats = new HashMap<>();
-for (Map<String, GenreStats> nodeResult : mapResults) {
-    nodeResult.forEach((genre, stats) -> 
-        globalGenreStats.merge(genre, stats, GenreStats::merge));
-}
-
-// Display aggregated results
-globalGenreStats.entrySet().stream()
-    .sorted(Map.Entry.<String, GenreStats>comparingByValue(
-        Comparator.comparing(GenreStats::getTotalSales)).reversed())
-    .forEach(entry -> System.out.println(
-        entry.getKey() + ": " + entry.getValue().getTotalSales() + " total sales"));
-```
-
-### Advanced Processing Patterns
-
-**Problem**: Your recommendation engine must analyze individual customer purchase history, identify similar customers based on genre preferences, and generate personalized track recommendations. This involves multiple complex queries, correlation analysis, and algorithmic processing that becomes computationally expensive when scaled across millions of customers. Processing each recommendation request from a central server creates bottlenecks and doesn't scale with user growth.
-
-**Solution**: Create sophisticated distributed processing workflows that combine multiple analytical steps, leverage data colocation for performance, and distribute the computational load across cluster nodes.
-
-Recommendation engines require sophisticated distributed processing workflows:
-
-```java
-// Complex recommendation engine using distributed processing
-public class RecommendationEngineJob implements ComputeJob<Integer, List<Recommendation>> {
-    @Override
-    public CompletableFuture<List<Recommendation>> executeAsync(
-            JobExecutionContext context, Integer customerId) {
-        
-        return CompletableFuture.supplyAsync(() -> {
-            IgniteSql sql = context.ignite().sql();
-            List<Recommendation> recommendations = new ArrayList<>();
-            
-            // Step 1: Analyze customer's purchase history
-            Map<String, Integer> genrePreferences = analyzeGenrePreferences(sql, customerId);
-            
-            // Step 2: Find similar customers based on genre preferences
-            List<Integer> similarCustomers = findSimilarCustomers(sql, genrePreferences);
-            
-            // Step 3: Recommend tracks purchased by similar customers
-            recommendations = generateRecommendations(sql, customerId, similarCustomers);
-            
-            return recommendations;
-        });
+    public ResilientMusicJobProcessor(IgniteClient client) {
+        this.client = client;
     }
     
-    private Map<String, Integer> analyzeGenrePreferences(IgniteSql sql, Integer customerId) {
-        Map<String, Integer> preferences = new HashMap<>();
+    // Execute jobs with exponential backoff retry
+    public <T> CompletableFuture<T> executeWithResilience(
+            JobTarget target, JobDescriptor<?, T> job, Object input) {
         
-        Statement preferencesStmt = sql.statementBuilder()
-            .query("""
-                SELECT g.Name, COUNT(*) as PurchaseCount
-                FROM Invoice i
-                JOIN InvoiceLine il ON i.InvoiceId = il.InvoiceId
-                JOIN Track t ON il.TrackId = t.TrackId
-                JOIN Genre g ON t.GenreId = g.GenreId
-                WHERE i.CustomerId = ?
-                GROUP BY g.GenreId, g.Name
-                ORDER BY PurchaseCount DESC
-                """)
-            .build();
-        try (ResultSet<SqlRow> rs = sql.execute(null, preferencesStmt, customerId)) {
-            
-            while (rs.hasNext()) {
-                SqlRow row = rs.next();
-                preferences.put(row.stringValue("Name"), row.intValue("PurchaseCount"));
-            }
-        }
-        
-        return preferences;
-    }
-    
-    private List<Integer> findSimilarCustomers(IgniteSql sql, Map<String, Integer> genrePreferences) {
-        // Simplified similarity algorithm - in practice would use more sophisticated ML
-        List<Integer> similarCustomers = new ArrayList<>();
-        
-        for (String genre : genrePreferences.keySet()) {
-            Statement similarStmt = sql.statementBuilder()
-                .query("""
-                    SELECT DISTINCT i.CustomerId
-                    FROM Invoice i
-                    JOIN InvoiceLine il ON i.InvoiceId = il.InvoiceId
-                    JOIN Track t ON il.TrackId = t.TrackId
-                    JOIN Genre g ON t.GenreId = g.GenreId
-                    WHERE g.Name = ?
-                    LIMIT 10
-                    """)
-                .build();
-            try (ResultSet<SqlRow> rs = sql.execute(null, similarStmt, genre)) {
-                
-                while (rs.hasNext()) {
-                    similarCustomers.add(rs.next().intValue("CustomerId"));
-                }
-            }
-        }
-        
-        return similarCustomers.stream().distinct().collect(Collectors.toList());
-    }
-    
-    private List<Recommendation> generateRecommendations(
-            IgniteSql sql, Integer customerId, List<Integer> similarCustomers) {
-        
-        List<Recommendation> recommendations = new ArrayList<>();
-        
-        if (!similarCustomers.isEmpty()) {
-            String customerList = similarCustomers.stream()
-                .map(String::valueOf)
-                .collect(Collectors.joining(","));
-            
-            Statement recommendationStmt = sql.statementBuilder()
-                .query("""
-                    SELECT t.TrackId, t.Name, ar.Name as ArtistName, 
-                           COUNT(*) as PopularityScore
-                    FROM Track t
-                    JOIN Album al ON t.AlbumId = al.AlbumId
-                    JOIN Artist ar ON al.ArtistId = ar.ArtistId
-                    JOIN InvoiceLine il ON t.TrackId = il.TrackId
-                    JOIN Invoice i ON il.InvoiceId = i.InvoiceId
-                    WHERE i.CustomerId IN (""" + customerList + """)
-                    AND t.TrackId NOT IN (
-                        SELECT t2.TrackId FROM Track t2
-                        JOIN InvoiceLine il2 ON t2.TrackId = il2.TrackId
-                        JOIN Invoice i2 ON il2.InvoiceId = i2.InvoiceId
-                        WHERE i2.CustomerId = ?
-                    )
-                    GROUP BY t.TrackId, t.Name, ar.Name
-                    ORDER BY PopularityScore DESC
-                    LIMIT 20
-                    """)
-                .build();
-            try (ResultSet<SqlRow> rs = sql.execute(null, recommendationStmt, customerId)) {
-                
-                while (rs.hasNext()) {
-                    SqlRow row = rs.next();
-                    recommendations.add(new Recommendation(
-                        row.intValue("TrackId"),
-                        row.stringValue("Name"),
-                        row.stringValue("ArtistName"),
-                        row.intValue("PopularityScore")
-                    ));
-                }
-            }
-        }
-        
-        return recommendations;
-    }
-}
-
-// Execute recommendation job colocated with customer data
-JobTarget target = JobTarget.colocated("Customer", 
-    Tuple.create().set("CustomerId", customerId));
-
-List<Recommendation> recommendations = ignite.compute()
-    .execute(target, recommendationJob, customerId);
-
-System.out.println("Recommendations for customer " + customerId + ":");
-recommendations.forEach(rec -> 
-    System.out.println("  " + rec.getTrackName() + " by " + rec.getArtistName()));
-```
-
-## Error Handling and Fault Tolerance
-
-### Job Failure Handling
-
-Distributed jobs face network failures, node outages, and resource constraints. Robust error handling with retry logic ensures job completion despite failures:
-
-```java
-public class RobustComputeService {
-    
-    public <T> CompletableFuture<T> executeWithRetry(
-            IgniteClient ignite, 
-            JobTarget target, 
-            ComputeJob<?, T> job, 
-            Object input,
-            int maxRetries) {
-        
-        return executeWithRetryInternal(ignite, target, job, input, maxRetries, 0);
+        return executeWithRetryInternal(target, job, input, 0);
     }
     
     private <T> CompletableFuture<T> executeWithRetryInternal(
-            IgniteClient ignite,
-            JobTarget target,
-            ComputeJob<?, T> job,
-            Object input,
-            int maxRetries,
-            int currentAttempt) {
+            JobTarget target, JobDescriptor<?, T> job, Object input, int attempt) {
         
-        JobDescriptor<Object, T> descriptor = JobDescriptor.builder(job.getClass()).build();
-        
-        return ignite.compute().executeAsync(target, descriptor, input)
+        return client.compute().executeAsync(target, job, input)
             .exceptionallyCompose(throwable -> {
-                if (currentAttempt >= maxRetries) {
-                    return CompletableFuture.failedFuture(throwable);
+                if (attempt >= maxRetryAttempts) {
+                    return CompletableFuture.failedFuture(
+                        new RuntimeException("Job failed after " + maxRetryAttempts + " attempts", throwable));
                 }
                 
-                if (isRetryableException(throwable)) {
-                    long delay = calculateBackoffDelay(currentAttempt);
+                if (isRetryableFailure(throwable)) {
+                    long delayMs = initialDelay.toMillis() * (long) Math.pow(2, attempt);
                     
                     return CompletableFuture
-                        .delayedExecutor(delay, TimeUnit.MILLISECONDS)
+                        .delayedExecutor(delayMs, TimeUnit.MILLISECONDS)
                         .thenCompose(ignored -> 
-                            executeWithRetryInternal(ignite, target, job, input, maxRetries, currentAttempt + 1));
+                            executeWithRetryInternal(target, job, input, attempt + 1));
                 } else {
                     return CompletableFuture.failedFuture(throwable);
                 }
             });
     }
     
-    private boolean isRetryableException(Throwable throwable) {
-        return throwable.getMessage().contains("node unavailable") ||
-               throwable.getMessage().contains("timeout") ||
-               throwable.getMessage().contains("connection");
-    }
-    
-    private long calculateBackoffDelay(int attempt) {
-        long baseDelay = 1000; // 1 second
-        return Math.min(baseDelay * (long) Math.pow(2, attempt), 30000); // Max 30 seconds
+    private boolean isRetryableFailure(Throwable throwable) {
+        String message = throwable.getMessage().toLowerCase();
+        return message.contains("timeout") ||
+               message.contains("connection") ||
+               message.contains("node unavailable") ||
+               message.contains("cluster topology changed");
     }
 }
 ```
 
-## Helper Classes for Examples
+## Production Architecture Summary
 
-```java
-// Supporting classes for the examples above
-class ArtistSalesReport {
-    private Integer artistId;
-    private String artistName;
-    private List<AlbumSales> albumSales;
-    private double totalRevenue;
-    
-    public ArtistSalesReport(Integer artistId, String artistName, List<AlbumSales> albumSales) {
-        this.artistId = artistId;
-        this.artistName = artistName;
-        this.albumSales = albumSales;
-        this.totalRevenue = albumSales.stream().mapToDouble(AlbumSales::getRevenue).sum();
-    }
-    
-    // Getters...
-}
+The reference application in **`07-compute-api-app`** demonstrates the complete production-ready implementation including:
 
-class AlbumSales {
-    private String title;
-    private int tracksSold;
-    private double revenue;
-    
-    public AlbumSales(String title, int tracksSold, double revenue) {
-        this.title = title;
-        this.tracksSold = tracksSold;
-        this.revenue = revenue;
-    }
-    
-    // Getters...
-}
+- **Large-scale User Processing** - Handle millions of recommendation requests with optimal resource utilization
+- **Circuit Breaker Integration** - Protect cluster resources from cascading failures during traffic spikes
+- **Performance Monitoring** - Track job execution metrics, resource consumption, and SLA compliance
+- **Advanced Error Recovery** - Sophisticated retry logic with backoff strategies and failure classification
+- **Resource Optimization** - Dynamic job placement based on cluster load and data locality
 
-class TrackStatistics {
-    private int trackCount;
-    private double avgDuration;
-    private int minDuration;
-    private int maxDuration;
-    
-    public TrackStatistics(int trackCount, double avgDuration, int minDuration, int maxDuration) {
-        this.trackCount = trackCount;
-        this.avgDuration = avgDuration;
-        this.minDuration = minDuration;
-        this.maxDuration = maxDuration;
-    }
-    
-    public static TrackStatistics merge(TrackStatistics a, TrackStatistics b) {
-        return new TrackStatistics(
-            a.trackCount + b.trackCount,
-            (a.avgDuration * a.trackCount + b.avgDuration * b.trackCount) / (a.trackCount + b.trackCount),
-            Math.min(a.minDuration, b.minDuration),
-            Math.max(a.maxDuration, b.maxDuration)
-        );
-    }
-    
-    // Getters...
-}
+These patterns transform your music platform from a centralized analytics bottleneck into a distributed intelligence system that scales elastically with user growth.
 
-class GenreStats {
-    private int trackCount;
-    private double avgDuration;
-    private int totalSales;
-    
-    public GenreStats(int trackCount, double avgDuration, int totalSales) {
-        this.trackCount = trackCount;
-        this.avgDuration = avgDuration;
-        this.totalSales = totalSales;
-    }
-    
-    public static GenreStats merge(GenreStats a, GenreStats b) {
-        return new GenreStats(
-            a.trackCount + b.trackCount,
-            (a.avgDuration * a.trackCount + b.avgDuration * b.trackCount) / (a.trackCount + b.trackCount),
-            a.totalSales + b.totalSales
-        );
-    }
-    
-    // Getters...
-}
+## The Distributed Intelligence Transformation
 
-class Recommendation {
-    private Integer trackId;
-    private String trackName;
-    private String artistName;
-    private int popularityScore;
-    
-    public Recommendation(Integer trackId, String trackName, String artistName, int popularityScore) {
-        this.trackId = trackId;
-        this.trackName = trackName;
-        this.artistName = artistName;
-        this.popularityScore = popularityScore;
-    }
-    
-    // Getters...
-}
-```
+The Compute API completes your music platform's evolution from centralized batch processing to distributed real-time intelligence. Your recommendation system now processes 2.5 million users in 5 minutes instead of 45 minutes, network congestion disappears as computation moves to data, and your platform delivers the responsive experience users demand.
 
-The Compute API transforms single-node processing limitations into distributed intelligence, enabling analytics and processing that scales with your data across the cluster while maintaining the performance benefits of data locality.
+**Critical Performance Improvements:**
+- **Network Traffic Reduction:** 12TB nightly transfers eliminated through local processing
+- **Processing Speed:** 9x improvement through distributed parallel execution
+- **Resource Utilization:** Storage nodes become active participants in analytics instead of idle data stores
+- **Operational Simplicity:** Single platform handles storage and computation without separate infrastructure
 
-## Implementation Considerations
+Your platform now scales intelligence with data growth automatically. Every new storage node adds computational capacity, every user's data processes locally without network delays, and trending algorithms operate on real-time information instead of stale batch results.
 
-### SQL Reserved Words in Compute Jobs
+The Compute API transforms distributed computing from an infrastructure challenge into a competitive advantage that enables sophisticated music intelligence at platform scale.
 
-Ignite 3 rejects SQL queries with reserved word aliases. When writing SQL queries within compute jobs, use descriptive aliases instead of reserved words:
+---
 
-```java
-import org.apache.ignite.sql.Statement;
-
-// Incorrect - will cause parsing errors
-Statement countStmt = client.sql().statementBuilder()
-    .query("SELECT COUNT(*) as count FROM Track")
-    .build();
-try (ResultSet<SqlRow> result = sql.execute(null, countStmt)) {
-    // This will fail with "Encountered 'count' at line 1, column 20"
-}
-
-// Correct - use descriptive aliases
-Statement trackCountStmt = client.sql().statementBuilder()
-    .query("SELECT COUNT(*) as track_count FROM Track")
-    .build();
-try (ResultSet<SqlRow> result = sql.execute(null, trackCountStmt)) {
-    if (result.hasNext()) {
-        return (int) result.next().longValue("track_count");
-    }
-}
-```
-
-**Reserved words to avoid in AS clauses:**
-
-- `count`, `sum`, `avg`, `min`, `max`
-- `value`, `data`, `key`, `index`
-- `table`, `column`, `row`, `name`
-
-### Serialization Patterns
-
-String-based serialization provides reliable distributed job results across different JVM versions and configurations:
-
-```java
-// String-based results
-public static class GenreStatsJob implements ComputeJob<Void, String> {
-    @Override
-    public CompletableFuture<String> executeAsync(JobExecutionContext context, Void arg) {
-        // Return CSV format for easy parsing
-        return CompletableFuture.completedFuture("Rock,150\nPop,120\nJazz,80");
-    }
-}
-
-// Complex collections require additional serialization handling
-public static class ComplexJob implements ComputeJob<Void, Map<String, List<Integer>>> {
-    // Complex nested collections need custom serialization
-}
-```
-
-The Compute API transforms single-node processing limitations into distributed intelligence, enabling analytics and processing that scales with your data across the cluster while maintaining the performance benefits of data locality.
-
-Moving beyond distributed operations, the next module addresses the performance bottlenecks that emerge as data volume and processing demands grow.
-
-**Continue to**: **[Module 5: Performance and Scalability](../05-performance-scalability/01-data-streaming.md)** - Master high-throughput data ingestion, caching strategies, and performance optimization techniques that handle massive data volumes and concurrent workloads.
+**Continue to**: **[Module 5: Performance and Scalability](../05-performance-scalability/01-data-streaming.md)** - Master high-throughput data ingestion, caching strategies, and performance optimization techniques that handle massive data volumes and concurrent workloads in your distributed music platform.

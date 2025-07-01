@@ -34,7 +34,16 @@ Advanced real-world scenarios:
 - Transaction state management and monitoring
 - Performance optimization patterns
 
-### 4. TransactionAPIDemo
+### 4. BusinessWorkflowPatterns
+Production-ready transaction patterns for complex business scenarios:
+- Multi-table purchase workflow coordination
+- Transaction timeout configuration for different operation types
+- Explicit transaction lifecycle management
+- Resilient transaction processing with retry logic
+- Circuit breaker patterns for system protection
+- Customer purchase workflows with validation
+
+### 5. TransactionAPIDemo
 Main demonstration application that runs all examples in sequence.
 
 ## Key Concepts Demonstrated
@@ -79,6 +88,9 @@ mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.transactions.
 
 # Advanced transaction patterns
 mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.transactions.TransactionPatterns"
+
+# Production business workflow patterns
+mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.transactions.BusinessWorkflowPatterns"
 ```
 
 ## API Patterns Covered

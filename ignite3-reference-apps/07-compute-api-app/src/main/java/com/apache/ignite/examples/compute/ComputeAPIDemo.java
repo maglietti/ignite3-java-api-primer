@@ -66,14 +66,20 @@ public class ComputeAPIDemo {
     }
 
     private static void runComputeDemonstrations(IgniteClient client, String clusterAddress) {
-        System.out.println("\n=== [1/3] Basic Compute Operations");
+        System.out.println("\n=== [1/5] Basic Compute Operations");
         runBasicComputeDemo(clusterAddress);
         
-        System.out.println("\n=== [2/3] Advanced Compute Operations");
+        System.out.println("\n=== [2/5] Advanced Compute Operations");
         runAdvancedComputeDemo(clusterAddress);
         
-        System.out.println("\n=== [3/3] Compute Job Workflows");
+        System.out.println("\n=== [3/5] Compute Job Workflows");
         runWorkflowDemo(clusterAddress);
+        
+        System.out.println("\n=== [4/5] Production Compute Patterns");
+        runProductionPatternsDemo(clusterAddress);
+        
+        System.out.println("\n=== [5/5] Music Platform Intelligence");
+        runMusicPlatformIntelligenceDemo(clusterAddress);
     }
 
     private static void runBasicComputeDemo(String clusterAddress) {
@@ -103,6 +109,26 @@ public class ComputeAPIDemo {
             System.out.println(">>> Job workflow demonstrations completed");
         } catch (Exception e) {
             System.err.println("!!! Workflow demo failed: " + e.getMessage());
+        }
+    }
+
+    private static void runProductionPatternsDemo(String clusterAddress) {
+        System.out.println("--- Production-scale distributed computing");
+        try {
+            ProductionComputePatterns.main(new String[]{clusterAddress});
+            System.out.println(">>> Production patterns demonstrations completed");
+        } catch (Exception e) {
+            System.err.println("!!! Production patterns demo failed: " + e.getMessage());
+        }
+    }
+
+    private static void runMusicPlatformIntelligenceDemo(String clusterAddress) {
+        System.out.println("--- Documentation-aligned compute patterns");
+        try {
+            MusicPlatformIntelligence.main(new String[]{clusterAddress});
+            System.out.println(">>> Music platform intelligence demonstrations completed");
+        } catch (Exception e) {
+            System.err.println("!!! Music platform intelligence demo failed: " + e.getMessage());
         }
     }
 }

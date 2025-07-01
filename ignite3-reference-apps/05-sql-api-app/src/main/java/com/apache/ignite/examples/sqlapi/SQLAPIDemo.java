@@ -62,6 +62,9 @@ public class SQLAPIDemo {
                 
             runDemo("Transaction SQL Operations", 
                 () -> TransactionSQLOperations.main(new String[]{clusterAddress}));
+                
+            runDemo("Production Analytics Patterns", 
+                () -> ProductionAnalyticsPatterns.main(new String[]{clusterAddress}));
             
             System.out.println();
             System.out.println("=== SQL API Demo completed successfully ===");
@@ -78,13 +81,14 @@ public class SQLAPIDemo {
             case "Basic SQL Operations": return "1";
             case "Advanced SQL Operations": return "2";
             case "Transaction SQL Operations": return "3";
+            case "Production Analytics Patterns": return "4";
             default: return "?";
         }
     }
 
     private static void runDemo(String name, Runnable demo) {
         System.out.println();
-        System.out.println("=== [" + getCurrentStep(name) + "/3] " + name + " ===");
+        System.out.println("=== [" + getCurrentStep(name) + "/4] " + name + " ===");
         
         try {
             demo.run();
