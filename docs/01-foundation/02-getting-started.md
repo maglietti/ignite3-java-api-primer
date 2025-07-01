@@ -1,6 +1,6 @@
 # Chapter 1.2: Your First Ignite 3 Application
 
-Your development environment fails to connect to the Ignite cluster because of Docker networking issues, or your first table creation fails with schema validation errors. Connection attempts timeout, your annotated classes don't generate tables, or CRUD operations throw partition mapping exceptions. 
+Your development environment fails to connect to the Ignite cluster because of Docker networking issues, or your first table creation fails with schema validation errors. Connection attempts timeout, your annotated classes don't generate tables, or CRUD operations throw partition mapping exceptions.
 
 The cluster runs but your application can't find any nodes. Multi-node addressing configuration is incorrect, resource cleanup issues cause memory leaks, or the client connects to only one node instead of establishing partition awareness across the cluster.
 
@@ -46,7 +46,7 @@ Ignite 3 requires an initialized cluster before applications can connect. Unlike
 
 Docker provides the fastest path to a working cluster for development:
 
-**Prerequisites**: 
+**Prerequisites**:
 
 - Docker 20.10.0+ and Docker Compose 2.23.1+
 - Network ports 10300-10302 and 10800-10802 available
@@ -178,50 +178,7 @@ IgniteClient client = IgniteClient.builder()
 
 ### Your First Distributed Application
 
-```java
-@Table  // No zone specification = uses default zone
-public class Book {
-    @Id
-    @Column(value = "id", nullable = false)
-    private Integer id;
-    
-    @Column(value = "title", nullable = false, length = 100)
-    private String title;
-    
-    @Column(value = "author", nullable = false, length = 50)
-    private String author;
-    
-    // Constructor, getters, setters...
-    public Book() {}
-    public Book(Integer id, String title, String author) {
-        this.id = id;
-        this.title = title;
-        this.author = author;
-    }
-    
-    public Integer getId() { return id; }
-    public void setId(Integer id) { this.id = id; }
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
-    public String getAuthor() { return author; }
-    public void setAuthor(String author) { this.author = author; }
-    
-    public String toString() {
-        return "Book{id=" + id + ", title='" + title + "', author='" + author + "'}";
-    }
-}
-```
-
-**Default Zone Benefits:**
-
-- **Zero Configuration**: Uses automatically created default zone
-- **Compile-time Validation**: Schema validated during compilation
-- **Automatic DDL**: Table structure generated from annotations
-- **Partition Strategy**: Annotations control partitioning and indexing
-
-### Complete Implementation
-
-This implementation demonstrates the core concepts from Chapter 1.1 in a working application that handles common setup problems:
+This demonstrates the core Ignite 3 Java API concepts in a working application:
 
 ```java
 package com.example;
@@ -264,14 +221,14 @@ public class HelloIgnite {
     }
     
     public static void main(String[] args) {
-        // Implement multi-node connection strategy from Chapter 1.1
+        // Implement multi-node connection strategy
         try (IgniteClient client = IgniteClient.builder()
                 .addresses("localhost:10800", "localhost:10801", "localhost:10802")
                 .build()) {
             
             System.out.println("=== Connected with partition awareness ===");
             
-            // 1. Create table (uses default zone automatically)
+            // 1. Create table from POJO
             client.catalog().createTable(Book.class);
             System.out.println("Table created in default zone");
             
@@ -289,7 +246,7 @@ public class HelloIgnite {
             Book book = books.get(null, new Book(1, null, null));
             System.out.println("Retrieved: " + book);
             
-            // 5. Query with SQL API - same data, different access method
+            // 5. Query with SQL API - same data, different API access method
             var result = client.sql().execute(null, "SELECT id, title, author FROM Book ORDER BY id");
             System.out.println("All books via SQL:");
             while (result.hasNext()) {
@@ -299,7 +256,7 @@ public class HelloIgnite {
                                  row.stringValue("author"));
             }
             
-            System.out.println("Success! Default zone configuration working perfectly.");
+            System.out.println("Success!");
             
         } catch (Exception e) {
             System.err.println("Error: " + e.getMessage());
@@ -325,10 +282,11 @@ This application solves common first-application problems:
 # 1. Start cluster (reference Docker setup)
 cd ignite3-reference-apps/00-docker && ./init-cluster.sh
 
-# 2. Compile and run the application
-javac -cp ignite-client-3.0.0.jar HelloIgnite.java
-java -cp .:ignite-client-3.0.0.jar HelloIgnite
+# 2. Create and run HelloIgnite.java (use IDE of choice)
 ```
+
+> [!TIP]
+> Look at the `HelloWorldApp.java` in the reference 02-getting-started-app if you are having problems.
 
 **Expected Output:**
 
@@ -340,7 +298,7 @@ Retrieved: Book{id=1, title='1984', author='George Orwell'}
 All books via SQL:
   1: 1984 by George Orwell
   2: Brave New World by Aldous Huxley
-Success! Default zone configuration working perfectly.
+Success!
 ```
 
 ## Technical Implementation Details
