@@ -2,7 +2,7 @@
 
 Your music streaming platform just crashed. Again. This time it was 50,000 concurrent users trying to browse the latest album release. Your PostgreSQL instance maxed out at 100% CPU, connection pools exhausted, and users got timeout errors instead of music.
 
-Your monitoring dashboard shows the grim reality: average query time spiked to 8 seconds, memory usage hit 95%, and your read replicas are 45 seconds behind master writes. The DBA is talking about "horizontal sharding with application-level routing logic" - which sounds expensive and complicated.
+Your monitoring dashboard shows the grim reality: average query time spiked to 8 seconds, memory usage hit 95%, and your read replicas are 45 seconds behind master writes. The DBA is talking about "horizontal sharding with application-level routing logic", but that sounds like another temporary fix.
 
 ## The Distributed Data Problem
 
@@ -132,18 +132,23 @@ JobExecution<String> recommendation = ignite.compute().submit(nodes, job, args);
 ### How Ignite's Core Capabilities Address Scale Challenges
 
 **Problem:** Traditional databases slow down as data grows because disk I/O becomes the bottleneck.
+
 **Solution:** Ignite stores your catalog in distributed cluster memory across multiple nodes with microsecond access latencies and optional disk persistence for durability.
 
 **Problem:** Complex queries slow down because traditional databases can't parallelize processing across multiple servers.
+
 **Solution:** Ignite's distributed SQL engine executes queries across the entire cluster automatically, processing data where it resides without network transfer overhead.
 
 **Problem:** Object-relational mapping creates overhead and complexity for simple data operations.
+
 **Solution:** Ignite provides direct key-value access through type-safe Java APIs, eliminating ORM complexity for known-key operations.
 
 **Problem:** Moving data to compute resources wastes network bandwidth and adds latency.
+
 **Solution:** Ignite executes business logic directly on nodes containing relevant data, eliminating network serialization penalties.
 
 **Problem:** High-volume data ingestion overwhelms traditional database write capabilities.
+
 **Solution:** Ignite's streaming engine handles millions of events per second with automatic backpressure and flow control.
 
 ## Deployment Architecture Patterns
@@ -175,21 +180,6 @@ graph TB
     end
 ```
 
-```mermaid
-graph TB
-    subgraph "Embedded Node Pattern"
-        subgraph "Hybrid App-Storage Nodes"
-            HYBRID1["App + Storage 1"]
-            HYBRID2["App + Storage 2"]
-            HYBRID3["App + Storage 3"]
-        end
-        
-        HYBRID1 <--> HYBRID2
-        HYBRID2 <--> HYBRID3
-        HYBRID1 <--> HYBRID3
-    end
-```
-
 ### Remote Client Implementation
 
 Your applications connect to the cluster but stay separate from it:
@@ -213,6 +203,23 @@ IgniteClient client = IgniteClient.builder()
 - Deploy new app versions without touching storage
 - Scale applications based on traffic, storage based on data
 - Simple operational model
+
+### Embedded Node Pattern
+
+```mermaid
+graph TB
+    subgraph "Embedded Node Pattern"
+        subgraph "Hybrid App-Storage Nodes"
+            HYBRID1["App + Storage 1"]
+            HYBRID2["App + Storage 2"]
+            HYBRID3["App + Storage 3"]
+        end
+        
+        HYBRID1 <--> HYBRID2
+        HYBRID2 <--> HYBRID3
+        HYBRID1 <--> HYBRID3
+    end
+```
 
 ### Embedded Node Implementation
 
@@ -268,7 +275,7 @@ graph LR
     KV --> DATA
 ```
 
-### API Selection Patterns
+### Ignite Data APIs
 
 **Table API** provides type-safe object operations with automatic serialization, optimal for CRUD operations where you know the data structure. Use when you need strong typing, object mapping, and direct record manipulation with minimal overhead. Choose this for business logic that works with complete entities and when compile-time type safety is more important than raw performance.
 

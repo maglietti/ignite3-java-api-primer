@@ -2,11 +2,11 @@
 
 * [Introduction](README.md)
 
-## Implementation Guide
+## Ignite 3 Java API Primer
 
 * [Platform Foundation](01-foundation/README.md)
   * [Platform Architecture and Connection Patterns](01-foundation/01-introduction-and-architecture.md)
-  * [Building Your First Ignite 3 Application](01-foundation/02-getting-started.md)
+  * [Your First Ignite 3 Application](01-foundation/02-getting-started.md)
   * [Understanding Distributed Data Concepts](01-foundation/03-distributed-data-fundamentals.md)
 
 * [Data Schema Design](02-schema-design/README.md)
