@@ -159,17 +159,3 @@ find src -name "*.class" -delete
 mvn clean compile
 ```
 
-## Next Steps
-
-After completing these examples:
-
-1. **[Schema Annotations](../03-schema-annotations-app/)**: Learn advanced POJO mapping
-2. **[Table API](../04-table-api-app/)**: Master record and key-value operations  
-3. **[SQL API](../05-sql-api-app/)**: Advanced SQL patterns and optimization
-4. **[Transactions](../06-transactions-app/)**: Complex transaction scenarios
-
-## Related Resources
-
-- **Music Store Examples**: [sample-data-setup](../01-sample-data-setup/) for complete dataset
-- **Docker Setup**: [docker](../00-docker/) for cluster management
-- **Documentation**: [Getting Started Guide](../../docs/01-foundation/02-getting-started.md)

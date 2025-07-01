@@ -155,10 +155,3 @@ All reference applications are located in [`ignite3-reference-apps/`](./ignite3-
 - **Caching Patterns**: [`09-caching-patterns-app/`](./ignite3-reference-apps/09-caching-patterns-app/) - Cache strategies
 - **File Streaming**: [`10-file-streaming-app/`](./ignite3-reference-apps/10-file-streaming-app/) - File processing with backpressure
 
-## Next Steps
-
-**New to Ignite 3?** Start with the structured learning path:
-
-- **[Begin with Module 01: Foundation](./docs/01-foundation/)** - Essential concepts and first connection
-- **[Continue with Module 02: Schema Design](./docs/02-schema-design/)** - Build your data models
-- **[Follow the structured path](./docs/README.md)** - Progress through all modules systematically

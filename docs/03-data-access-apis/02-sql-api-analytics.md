@@ -1055,8 +1055,3 @@ public class AnalyticsErrorHandling {
 
 The SQL API enables production-scale analytical workloads through partition-aware query planning, distributed aggregation, and optimized result processing. These patterns address the performance and reliability challenges that emerge when running complex analytics across distributed datasets.
 
-## Next Steps
-
-With both Table API and SQL API patterns established, the next chapter addresses API selection strategy:
-
-- **[Chapter 3.3: Choosing the Right API](03-sql-api-selection-guide.md)** - Decision frameworks for selecting optimal data access patterns based on workload characteristics, performance requirements, and operational constraints

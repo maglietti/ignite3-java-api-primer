@@ -353,12 +353,3 @@ This unified programming model provides:
 - SQL API enables complex queries and analytics
 - Both APIs access identical underlying distributed partitions
 
-## Next Steps
-
-The connection and schema configurations established here provide the foundation for advanced distributed data operations:
-
-**Advanced Data Distribution**: These implementation approaches support complex production scenarios
-
-- **[Chapter 1.3: Distributed Data Fundamentals](03-distributed-data-fundamentals.md)** - Custom zones, replication strategies, and advanced data distribution strategies for production workloads
-
-**Production Implementation**: The [reference applications](../ignite3-reference-apps/) demonstrate these approaches with custom zones and the complete music store dataset, showing how development approaches scale to production requirements

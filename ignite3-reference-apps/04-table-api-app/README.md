@@ -237,20 +237,6 @@ Enable debug logging:
 mvn compile exec:java -Dlog4j.configurationFile=debug-log4j2.xml
 ```
 
-## Next Steps
-
-1. **Explore SQL API**: Learn when SQL excels over Table API
-   - File: `../05-sql-api-app/`
-   - Documentation: `../../docs/03-data-access-apis/02-sql-api-analytics.md`
-
-2. **Master Transactions**: Understand distributed ACID guarantees
-   - File: `../06-transactions-app/`
-   - Documentation: `../../docs/04-distributed-operations/01-transaction-fundamentals.md`
-
-3. **Build Your Application**: 
-   - Use this module as a template
-   - Apply patterns to your domain model
-   - Combine with SQL API for complex queries
 
 ## Resources
 

@@ -192,22 +192,6 @@ try (IgniteClient client = ConnectionUtils.connectToCluster()) {
 }
 ```
 
-## Next Steps
-
-After running this setup:
-
-1. **Explore the Data**: Use SQL queries to see what was created
-2. **Study the Schema**: Examine the annotated POJOs in `src/main/java/model/`
-3. **Learn the APIs**: Move to other reference application modules:
-   - [Getting Started](../02-getting-started-app/) - Basic operations
-   - [Table API](../04-table-api-app/) - Object-oriented data access
-   - [SQL API](../05-sql-api-app/) - Relational operations
-
-## Related Documentation
-
-- 📖 [Introduction & Overview](../../docs/01-foundation/01-introduction-and-architecture.md) - Ignite 3 fundamentals
-- 📖 [Getting Started](../../docs/01-foundation/02-getting-started.md) - Basic operations
-- 📖 [Schema as Code](../../docs/02-schema-design/01-basic-annotations.md) - Annotation-based schemas
 
 ## Prerequisites
 

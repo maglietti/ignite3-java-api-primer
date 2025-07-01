@@ -179,8 +179,3 @@ After running these examples, you will understand:
 5. **Performance**: When to use read-only transactions and batch operations
 6. **Real-world Patterns**: Complex business workflows with multiple entities
 
-## Next Steps
-
-- **Module 07**: Compute API for distributed processing
-- **Module 08**: Data Streaming for high-throughput ingestion
-- **Module 09**: Caching Patterns for performance optimization

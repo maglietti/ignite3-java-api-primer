@@ -339,8 +339,3 @@ Collection<Album> albums = albums.getAll(null,
 
 Query time drops from 40-200ms (network latency × hops) to 1-5ms (local storage access). Colocation eliminates network serialization, transfer, and deserialization overhead for related data operations.
 
-## Next Steps
-
-With entity relationships and colocation strategies established, advance to comprehensive annotation patterns that handle complex distributed scenarios:
-
-**[Chapter 2.3: Advanced Annotations and Zone Configuration](03-advanced-annotations.md)** - Multi-level colocation hierarchies, composite foreign keys, and zone-specific performance tuning for production-scale distributed data management

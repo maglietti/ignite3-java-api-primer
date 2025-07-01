@@ -261,8 +261,3 @@ The systematic approach - measuring execution characteristics, designing indexes
 
 Your music streaming platform now delivers the responsive, insight-driven experience that both users and business stakeholders expect. Query optimization doesn't just improve performance - it enables the real-time analytics and personalization features that differentiate successful platforms in competitive markets.
 
-## Next Steps
-
-With high-performance query optimization mastered, you've completed the technical foundation for building production-scale distributed systems with Apache Ignite 3. The journey from traditional database limitations to distributed system capabilities transforms how applications handle data at any scale.
-
-**[Chapter 6: From Learning to Production](../06-primer-conclusion.md)** - Reflect on your complete learning journey through the five core areas of Ignite 3 development and learn how to apply these concepts to your own production systems.

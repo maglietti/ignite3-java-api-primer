@@ -279,8 +279,3 @@ client.transactions().runInTransaction(options, tx -> {
 4. **Handle specific exceptions** - Retry on conflicts, fail fast on business rule violations
 5. **Prepare data outside transactions** - Minimize time spent holding locks
 
-## Next Steps
-
-Now that you understand transaction fundamentals and basic usage patterns, you're ready to explore more sophisticated scenarios:
-
-**[Chapter 4.2: Advanced Transaction Patterns](02-advanced-transaction-patterns.md)** - Learn async transactions, batch operations, conflict resolution, and error handling patterns for complex distributed workflows.

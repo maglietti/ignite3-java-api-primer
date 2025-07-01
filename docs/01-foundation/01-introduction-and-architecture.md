@@ -421,8 +421,3 @@ Alternative installation methods are available for environments where Docker is 
 - Basic SQL concepts (SELECT, JOIN, GROUP BY)
 - General understanding of web application architecture
 
-## Next Steps
-
-With these architectural foundations established, you're ready to implement your first distributed application that demonstrates these concepts in practice.
-
-**[Chapter 1.2: Your First Implementation](02-getting-started.md)** - Build a working music catalog application that demonstrates multi-node connections, default zone usage, and multi-API data access

@@ -517,8 +517,3 @@ for (Integer id : artistIds) {
 
 These patterns eliminate the three primary performance bottlenecks: network round-trips, thread blocking, and memory allocation overhead.
 
-## Next Steps
-
-With object-oriented data access patterns established, explore complementary SQL capabilities for analytical operations that require complex queries and joins:
-
-**[Chapter 3.2: SQL API for Analytics and Reporting](02-sql-api-analytics.md)** - Complex queries, joins, and analytical operations that leverage distributed SQL processing for comprehensive data analysis

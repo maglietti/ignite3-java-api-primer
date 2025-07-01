@@ -669,8 +669,3 @@ The patterns in this chapter center around one core principle: **treat your anno
 
 When you follow this code-first approach with systematic deployment procedures, schema evolution becomes a controlled process that maintains system availability while enabling continuous development. The key is treating schema changes as potentially breaking operations that require the same careful coordination as any other distributed system change.
 
-## Next Steps
-
-With schema evolution mastered, you can confidently manage distributed table structures throughout their lifecycle. The next phase explores how to leverage these schemas through Ignite 3's data access APIs.
-
-**Continue Learning**: **[Module 3: Data Access APIs](../03-data-access-apis/01-table-api-operations.md)** - Transform your schema knowledge into efficient data access patterns using Ignite 3's Table API, SQL capabilities, and transaction management.

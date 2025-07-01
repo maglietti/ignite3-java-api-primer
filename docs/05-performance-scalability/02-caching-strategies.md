@@ -809,10 +809,3 @@ The combination of cache-aside patterns for popular content, write-through patte
 
 These caching strategies reduce database load by 60-80% while providing sub-50ms response times for cached data access. The patterns work together to handle the full spectrum of data access requirements in distributed music streaming applications, from catalog browsing to real-time event processing.
 
-## Next Steps
-
-Caching optimization sets the foundation for comprehensive performance tuning that includes query optimization and indexing strategies:
-
-**[Chapter 5.3: Query Performance and Index Optimization](03-query-performance.md)** details SQL performance tuning techniques that work with your caching patterns to eliminate remaining database bottlenecks.
-
-**[Chapter 4.3: Compute API for Distributed Processing](../04-distributed-operations/03-compute-api-processing.md)** demonstrates how to combine these caching patterns with distributed computing for advanced performance optimization scenarios.
