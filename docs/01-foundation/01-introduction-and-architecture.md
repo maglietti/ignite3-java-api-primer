@@ -61,7 +61,7 @@ Your application now needs to:
 
 - **Store catalogs**: 50M+ tracks across multiple regions, accessible in milliseconds
 - **Process purchases**: Handle 10K concurrent transactions with full ACID guarantees  
-- **Generate recommendations**: Analyze patterns across petabytes of listening data in real-time
+- **Generate recommendations**: Analyze listening behavior across petabytes of data in real-time
 - **Ingest events**: Process millions of play events per hour without dropping data
 - **Scale operations**: Handle traffic spikes during album releases and viral content
 
@@ -244,7 +244,7 @@ IgniteServer server = IgniteServer.start("myApp", configPath, workDir);
 
 ### Unified Programming Model
 
-Both connection strategies implement the same Ignite interface, enabling consistent programming patterns regardless of deployment choice. This means you can develop with one pattern and deploy with another based on operational requirements.
+Both connection strategies implement the same Ignite interface, enabling consistent programming approaches regardless of deployment choice. This means you can develop with one approach and deploy with another based on operational requirements.
 
 ## Multi-API Data Access Strategy
 
@@ -281,7 +281,7 @@ graph LR
 
 **SQL API** enables complex queries and analytics across distributed data using standard SQL syntax. Choose this for aggregations, joins, filtering operations, and any query that benefits from SQL's declarative approach. Select this when you need to process large datasets with complex business rules or when working with analysts who prefer SQL syntax over programmatic APIs.
 
-**Key-Value API** delivers maximum performance for simple get/put operations using generic Tuple objects. Select this for high-throughput scenarios, caching patterns, or when you need the fastest possible key-based access. Use this when microsecond response times matter more than type safety, or when implementing cache-like access patterns where you only need specific field values rather than complete objects.
+**Key-Value API** delivers maximum performance for simple get/put operations using generic Tuple objects. Select this for high-throughput scenarios, caching operations, or when you need the fastest possible key-based access. Use this when microsecond response times matter more than type safety, or when implementing cache-like access where you only need specific field values rather than complete objects.
 
 ```java
 // Table API - type-safe record operations with automatic mapping
@@ -314,11 +314,11 @@ future.thenApply(this::updateArtist)
       .thenCompose(updated -> artists.upsertAsync(null, updated))
       .thenRun(() -> System.out.println("Update complete"));
 
-// SQL API - Same async pattern applies
+// SQL API - Same async approach applies
 CompletableFuture<SqlResultSet> sqlFuture = client.sql().executeAsync(null, "SELECT * FROM Artist");
 sqlFuture.thenAccept(results -> processResults(results));
 
-// Key-Value API - Same async pattern applies  
+// Key-Value API - Same async approach applies  
 CompletableFuture<Tuple> kvFuture = tracks.getAsync(null, trackKey);
 kvFuture.thenCompose(data -> tracks.putAsync(null, trackKey, updatedData));
 ```
@@ -344,13 +344,23 @@ KeyValueView<Tuple, Tuple> kvView = ignite.tables().table("Artist").keyValueView
 Tuple artistData = kvView.get(null, Tuple.create().set("artistId", 1)); // Same underlying data
 ```
 
-## Distribution Zone Configuration
+## Data Distribution Strategy
 
-Distribution zones control how your data spreads across cluster nodes. Ignite 3 provides a default zone that works out of the box:
+Ignite 3 manages data placement and replication through distribution zones - configuration objects that determine how data spreads across cluster nodes. Understanding zones is essential because they control performance, availability, and scalability characteristics of your distributed application.
+
+### What Distribution Zones Control
+
+Distribution zones specify three critical aspects of data management:
+
+**Partition Count**: How many logical pieces your data splits into. More partitions enable better parallelism for large datasets, while fewer partitions reduce coordination overhead for smaller datasets.
+
+**Replica Count**: How many copies of each data partition exist across different nodes. More replicas improve fault tolerance and read performance, but require more storage and network bandwidth.
+
+**Node Assignment**: Which cluster nodes store your data. You can include all nodes for maximum distribution, or restrict data to specific node sets for workload isolation.
 
 ### Default Zone Implementation
 
-When you create a table without specifying a zone, Ignite uses the default zone:
+Ignite 3 provides a default zone that works immediately without configuration. When you create a table without specifying a zone, Ignite uses this default:
 
 ```java
 @Table  // Uses default zone automatically
@@ -377,99 +387,23 @@ public class Artist {
 
 > **Need production-grade storage?** See [Storage System Architecture](../00-reference/storage-system-arch.md) for complete details on custom zones, partitioning strategies, and fault-tolerant configurations.
 
-## Cluster Connection Strategies
+## Cluster Connectivity
 
-How you connect to the cluster affects performance. Connecting to all nodes gives you the best experience:
+Your application connects to the Ignite cluster through the client library, which handles communication with distributed nodes automatically. Connection setup determines both performance characteristics and reliability - proper configuration enables partition-aware routing and automatic failover when nodes fail.
 
-```mermaid
-graph TB
-    subgraph "Single-Node Connection (Poor Performance)"
-        APP1["Your Application"] 
-        SINGLE["Single Connection<br/>to Node 1 only"]
-        N1["Node 1"]
-        N2["Node 2"] 
-        N3["Node 3"]
-        
-        APP1 --> SINGLE
-        SINGLE --> N1
-        N1 -.->|"Extra hops"| N2
-        N1 -.->|"Extra hops"| N3
-        
-        LIMIT["Limitations:<br/>• No partition awareness<br/>• All traffic through one node<br/>• Poor performance"]
-    end
-```
+> **Implementation Details**: Chapter 1.2 covers complete connection setup including multi-node addressing, resource management, and practical troubleshooting for connection issues.
 
-```mermaid
-graph TB
-    subgraph "Multi-Node Connection (Best Performance)"
-        APP2["Your Application"]
-        MULTI["Multi-Node Connection<br/>to All Cluster Nodes"]
-        NN1["Node 1"]
-        NN2["Node 2"] 
-        NN3["Node 3"]
-        
-        APP2 --> MULTI
-        MULTI --> NN1
-        MULTI --> NN2
-        MULTI --> NN3
-        
-        BENEFIT["Benefits:<br/>• Direct partition access<br/>• Automatic failover<br/>• Maximum performance"]
-    end
-```
+## Architecture Implementation Summary
 
-### Multi-Node Connection Implementation
+Ignite 3's distributed architecture addresses traditional database scaling problems through three key design decisions that shape how you build applications:
 
-Always specify all cluster node addresses:
+**Unified Platform Approach**: Instead of managing separate cache, database, and compute systems, your application connects to one platform that provides all capabilities. This eliminates the operational complexity of coordinating multiple systems while providing better performance through data locality.
 
-```java
-// Good: Connect to all nodes for best performance
-IgniteClient client = IgniteClient.builder()
-    .addresses("node1:10800", "node2:10800", "node3:10800")
-    .build();
+**Multi-API Flexibility**: The same distributed data is accessible through Table API for object operations, SQL API for complex queries, and Key-Value API for high-performance access. This means you can optimize each operation type without architectural compromises.
 
-// Poor: Single node creates bottlenecks  
-IgniteClient client = IgniteClient.builder()
-    .addresses("node1:10800")  // Only one node - bad performance
-    .build();
-```
+**Transparent Distribution**: Data spreads across cluster nodes automatically through distribution zones, while your application code remains unaware of the underlying data placement. Adding nodes increases capacity without application changes.
 
-**Implementation benefits:**
-
-- **Direct access**: Your app connects directly to the node that holds the data
-- **Automatic failover**: If one node goes down, your app keeps working
-- **Load distribution**: Requests spread across all available nodes
-
-## Implementation Pattern Summary
-
-### Multi-Node Connection Pattern
-
-```java
-// Production pattern: specify all cluster nodes
-IgniteClient client = IgniteClient.builder()
-    .addresses("node1:10800", "node2:10800", "node3:10800")
-    .build();
-```
-
-### Default Zone Pattern
-
-```java
-// Development pattern: use default zone for simplicity
-@Table
-public class Artist {
-    @Id Integer artistId;
-    @Column String name;
-}
-```
-
-### API Selection Strategy
-
-```java
-// Table API for direct record access
-Artist artist = artists.get(null, artistKey);
-
-// SQL API for complex queries
-var results = client.sql().execute(null, "SELECT * FROM Artist WHERE...");
-```
+These design decisions create a development experience where distributed systems complexity is handled by the platform, allowing your application logic to focus on business requirements rather than infrastructure concerns.
 
 ## Technology Requirements
 
@@ -497,12 +431,8 @@ Alternative installation methods are available for environments where Docker is 
 - Basic SQL concepts (SELECT, JOIN, GROUP BY)
 - General understanding of web application architecture
 
-## Implementation Path
+## Next Steps
 
-These architectural concepts and decision frameworks provide the foundation for hands-on development.
+With these architectural foundations established, you're ready to implement your first distributed application that demonstrates these concepts in practice.
 
-Continue with:
-
-- **[Chapter 1.2: Your First Implementation](02-getting-started.md)** - Put these concepts into practice with a working Ignite 3 application using the default zone pattern
-
-- **[Chapter 1.3: Distributed Data Fundamentals](03-distributed-data-fundamentals.md)** - Core concepts of distributed data management and advanced zone configuration patterns
+**[Chapter 1.2: Your First Implementation](02-getting-started.md)** - Build a working music catalog application that demonstrates multi-node connections, default zone usage, and multi-API data access

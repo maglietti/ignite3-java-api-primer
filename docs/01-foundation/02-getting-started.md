@@ -10,7 +10,9 @@ This chapter solves these first-application problems through proper cluster setu
 
 ### Client Library Configuration
 
-Maven builds fail with missing dependencies because your POM lacks the client library. Add the single required dependency:
+Your build requires the Ignite 3 client library. Both Maven and Gradle are supported:
+
+**Maven Configuration (pom.xml):**
 
 ```xml
 <dependency>
@@ -20,11 +22,29 @@ Maven builds fail with missing dependencies because your POM lacks the client li
 </dependency>
 ```
 
-This provides the complete client API for connections, schema operations, and data access.
+**Gradle Configuration (build.gradle):**
+
+```gradle
+dependencies {
+    implementation 'org.apache.ignite:ignite-client:3.0.0'
+}
+```
+
+**Gradle with Kotlin DSL (build.gradle.kts):**
+
+```kotlin
+dependencies {
+    implementation("org.apache.ignite:ignite-client:3.0.0")
+}
+```
+
+This single dependency provides the complete client API for connections, schema operations, and data access.
 
 ### Cluster Bootstrap Process
 
-Applications fail to connect because no cluster exists. Docker provides the fastest cluster setup:
+Ignite 3 requires an initialized cluster before applications can connect. Unlike traditional databases that run as single instances, Ignite operates as a distributed system where multiple nodes work together to store and process data. The bootstrap process creates this initial cluster topology and prepares it to accept client connections.
+
+Docker provides the fastest path to a working cluster for development:
 
 **Prerequisites**: 
 
@@ -76,11 +96,51 @@ Invoke-RestMethod -Uri "http://localhost:10300/management/v1/cluster/init" -Meth
 
 For production environments or non-Docker setups, use platform-specific installation from [https://ignite.apache.org/docs/ignite3/latest/installation/](https://ignite.apache.org/docs/ignite3/latest/installation/).
 
-## Connection Patterns
+## Client Connection Implementation
 
-### Multi-Node Client Configuration
+### Multi-Node Connection Strategy
 
-Connection failures occur when applications use single-node addressing, causing partition awareness problems and failover issues. Proper client setup requires multi-node configuration:
+Ignite 3's distributed architecture requires proper client configuration to achieve optimal performance and reliability. Unlike single-database connections, distributed systems benefit from connecting to multiple nodes simultaneously to enable partition-aware operations and automatic failover.
+
+**Why Multi-Node Connections Matter:**
+
+When you connect to all cluster nodes, the client library builds a complete topology map that shows which data partitions live on which nodes. This enables direct routing - your operations go straight to the node that holds the data, eliminating network hops through intermediate nodes.
+
+```mermaid
+graph TB
+    subgraph "Single-Node Connection (Poor Performance)"
+        APP1["Your Application"] 
+        SINGLE["Single Connection<br/>to Node 1 only"]
+        N1["Node 1"]
+        N2["Node 2"] 
+        N3["Node 3"]
+        
+        APP1 --> SINGLE
+        SINGLE --> N1
+        N1 -.->|"Extra hops"| N2
+        N1 -.->|"Extra hops"| N3
+        
+        LIMIT["Limitations:<br/>• No partition awareness<br/>• All traffic through one node<br/>• Poor performance"]
+    end
+```
+
+```mermaid
+graph TB
+    subgraph "Multi-Node Connection (Best Performance)"
+        APP2["Your Application"]
+        MULTI["Multi-Node Connection<br/>to All Cluster Nodes"]
+        NN1["Node 1"]
+        NN2["Node 2"] 
+        NN3["Node 3"]
+        
+        APP2 --> MULTI
+        MULTI --> NN1
+        MULTI --> NN2
+        MULTI --> NN3
+        
+        BENEFIT["Benefits:<br/>• Direct partition access<br/>• Automatic failover<br/>• Maximum performance"]
+    end
+```
 
 ```java
 try (IgniteClient client = IgniteClient.builder()
@@ -94,16 +154,29 @@ try (IgniteClient client = IgniteClient.builder()
 // Client automatically closes and cleans up resources
 ```
 
-**Multi-Node Addressing Requirements:**
+**Multi-Node Connection Benefits:**
 
 - **Partition Awareness**: Client discovers partition locations across all nodes
-- **Resource Management**: Try-with-resources prevents connection leaks
+- **Resource Management**: Try-with-resources prevents connection leaks  
 - **Failover Capability**: Multiple addresses provide redundancy when nodes fail
 - **Performance Optimization**: Direct partition routing eliminates network hops
+- **Load Distribution**: Requests spread across all available nodes
 
-### Schema Definition with Default Zone
+```java
+// Good: Connect to all nodes for best performance
+IgniteClient client = IgniteClient.builder()
+    .addresses("node1:10800", "node2:10800", "node3:10800")
+    .build();
 
-Table creation fails when zone configuration is missing or incorrect. The default zone solves initial setup problems by providing automatic zone management:
+// Poor: Single node creates bottlenecks  
+IgniteClient client = IgniteClient.builder()
+    .addresses("node1:10800")  // Only one node - bad performance
+    .build();
+```
+
+## Ignite 3 Hello World
+
+### Your First Distributed Application
 
 ```java
 @Table  // No zone specification = uses default zone
@@ -146,11 +219,9 @@ public class Book {
 - **Automatic DDL**: Table structure generated from annotations
 - **Partition Strategy**: Annotations control partitioning and indexing
 
-## Complete Working Application
+### Complete Implementation
 
-### Functional Implementation
-
-Applications fail when connection patterns, schema definitions, or API usage contain errors. This complete implementation demonstrates working patterns:
+This implementation demonstrates the core concepts from Chapter 1.1 in a working application that handles common setup problems:
 
 ```java
 package com.example;
@@ -248,7 +319,7 @@ This application solves common first-application problems:
 4. **Multi-modal API**: Demonstrates Table API and SQL API accessing the same data
 5. **Type Safety**: Provides compile-time validation throughout the data pipeline
 
-### Execution Process
+### Running the Application
 
 ```bash
 # 1. Start cluster (reference Docker setup)
@@ -283,7 +354,7 @@ The implementation demonstrates how default zone usage eliminates configuration 
 - **Development Efficiency**: Removes operational complexity while maintaining functionality
 - **Performance Retention**: Multi-node connection patterns still provide optimization benefits
 
-### Distributed Connection Architecture  
+### Distributed Connection Implementation  
 
 The multi-node connection establishes partition awareness across the cluster:
 
@@ -306,7 +377,7 @@ flowchart TD
 - **Direct Routing**: Operations route directly to partition-owning nodes
 - **Transparent Failover**: Node failures trigger automatic connection redistribution
 
-### Unified API Access Pattern
+### Unified API Access Model
 
 The implementation demonstrates how both APIs access the same distributed data:
 
@@ -324,15 +395,15 @@ This unified programming model provides:
 - SQL API enables complex queries and analytics
 - Both APIs access identical underlying distributed partitions
 
-## Production Scaling Patterns
+## Production Scaling Approach
 
 The development patterns demonstrated here scale directly to production environments without code changes:
 
-### Pattern Continuity
+### Implementation Continuity
 
 The implementation foundation supports production requirements:
 
-1. **Connection Patterns**: Multi-node addressing transfers directly to production clusters
+1. **Connection Configuration**: Multi-node addressing transfers directly to production clusters
 2. **Programming Model**: Table and SQL APIs remain consistent across zone configurations
 3. **Data Models**: POJO classes function with any zone setup
 4. **Transition Path**: Moving to custom zones requires only zone creation, not application changes
@@ -350,7 +421,7 @@ Production environments require custom zones when applications need:
 
 The connection and schema patterns established here provide the foundation for advanced distributed data operations:
 
-**Advanced Data Distribution**: These patterns support complex production scenarios
+**Advanced Data Distribution**: These implementation approaches support complex production scenarios
 
 - **[Chapter 1.3: Distributed Data Fundamentals](03-distributed-data-fundamentals.md)** - Custom zones, replication strategies, and advanced data distribution patterns for production workloads
 
