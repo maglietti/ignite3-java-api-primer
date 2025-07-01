@@ -1,12 +1,16 @@
 # Chapter 5.3: Query Performance and Index Optimization
 
-Your marketing analytics queries take 30 seconds to complete because they scan entire tables instead of using optimized indexes and partition pruning. Customer searches for "rock albums" return results after 5-10 seconds while competitors deliver instant responses. These query performance problems occur when distributed applications grow beyond initial datasets, requiring systematic optimization of SQL execution paths, index design, and data distribution strategies.
+Your music streaming platform handles 10 million users, but your marketing team can't get basic analytics because genre popularity reports timeout after 30 seconds. Customer searches for "rock albums" return results after 5-10 seconds while Spotify delivers instant responses. Your recommendation engine fails to generate suggestions during peak traffic because cross-table joins overwhelm the cluster with excessive data movement.
 
-Query optimization in distributed systems involves understanding how data flows across partitions, how indexes accelerate filtering operations, and how zone configuration affects execution planning. The techniques in this chapter address specific performance bottlenecks that emerge as applications scale from thousands to millions of records.
+The problem isn't your data volume - it's how queries execute across distributed nodes. Without proper indexes, your "most popular jazz tracks" query scans 50 million records instead of using optimized access paths. Without partition pruning, artist lookup queries hit every cluster node instead of routing directly to data locations. Without proper zone configuration, analytics joins force massive datasets across network boundaries.
+
+Your business depends on real-time insights: which genres drive revenue, which artists generate engagement, which tracks predict subscription renewals. But your current query execution creates a choice between fast responses and accurate analytics. This chapter eliminates that trade-off through systematic query optimization that delivers sub-second analytics across petabytes of distributed music data.
 
 ## Query Execution Analysis
 
-Distributed query execution performance depends on understanding how operations flow across cluster nodes, which tables participate in joins, and where filtering occurs in the execution pipeline. Query analysis reveals whether operations execute efficiently or create bottlenecks through excessive data movement and inefficient filtering.
+Your recommendation algorithm queries timeout because they don't understand how Ignite 3 executes SQL across distributed data. When you run `SELECT COUNT(*) FROM Track WHERE GenreId = 1`, the query might scan every node in your cluster or execute efficiently on a single partition - the difference depends on indexing strategies and data distribution decisions you made during schema design.
+
+Distributed query performance depends on three critical factors: data locality (can the query execute without network data movement), index utilization (does filtering happen early or late in execution), and partition pruning (does the query coordinator know which nodes contain relevant data). Understanding these factors transforms 30-second analytical queries into sub-second insights that power real-time business decisions.
 
 ### Basic Performance Measurement
 
@@ -25,14 +29,14 @@ public class QueryTimingAnalysis {
     }
     
     /**
-     * Measure query execution time and result characteristics.
+     * Measure query execution time and result characteristics using Statement API.
      */
-    public QueryMetrics analyzeQuery(String query, Object... params) {
+    public QueryMetrics analyzeStatement(Statement statement, Object... params) {
         long startTime = System.nanoTime();
         int resultCount = 0;
         long firstResultTime = 0;
         
-        try (ResultSet<SqlRow> results = sql.execute(null, query, params)) {
+        try (ResultSet<SqlRow> results = sql.execute(null, statement, params)) {
             while (results.hasNext()) {
                 SqlRow row = results.next();
                 
@@ -48,6 +52,14 @@ public class QueryTimingAnalysis {
         
         return new QueryMetrics(resultCount, totalTime, timeToFirstResult);
     }
+    
+    /**
+     * Legacy method for simple query strings - use analyzeStatement() for new code.
+     */
+    public QueryMetrics analyzeQuery(String query, Object... params) {
+        Statement statement = client.sql().statementBuilder().query(query).build();
+        return analyzeStatement(statement, params);
+    }
 }
 
 class QueryMetrics {
@@ -59,9 +71,15 @@ class QueryMetrics {
 }
 ```
 
-### Filter Strategy Comparison
+### Understanding Query Execution Bottlenecks
 
-Different filtering approaches have vastly different performance characteristics:
+Your platform's search performance varies wildly because different query approaches create dramatically different execution costs. When users search for tracks by a specific artist, the database might execute efficiently in 10 milliseconds or struggle for 10 seconds - the difference depends on whether the query optimizer can leverage indexes or must scan entire tables.
+
+Distributed systems amplify these performance differences because inefficient queries force data movement across network boundaries, while optimized queries execute locally on single nodes. Understanding how filtering strategies affect execution plans enables you to design queries that scale predictably as your music catalog grows from thousands to millions of tracks.
+
+### Filter Strategy Performance Analysis
+
+The same business logic implemented through different SQL approaches creates vastly different performance characteristics:
 
 ```java
 /**
@@ -71,24 +89,28 @@ public void compareFilteringStrategies(int artistId) {
     QueryTimingAnalysis analyzer = new QueryTimingAnalysis(client);
     
     // Strategy 1: Direct indexed filter (optimal)
-    String indexedQuery = """
-        SELECT COUNT(*) FROM Track t
-        JOIN Album al ON t.AlbumId = al.AlbumId
-        WHERE al.ArtistId = ?
-        """;
+    Statement indexedQuery = client.sql().statementBuilder()
+        .query("SELECT COUNT(*) FROM Track t JOIN Album al ON t.AlbumId = al.AlbumId WHERE al.ArtistId = ?")
+        .build();
     
     // Strategy 2: Function-based filter (suboptimal)
-    String functionQuery = """
-        SELECT COUNT(*) FROM Track t
-        JOIN Album al ON t.AlbumId = al.AlbumId
-        WHERE CAST(al.ArtistId AS VARCHAR) = CAST(? AS VARCHAR)
-        """;
+    Statement functionQuery = client.sql().statementBuilder()
+        .query("SELECT COUNT(*) FROM Track t JOIN Album al ON t.AlbumId = al.AlbumId WHERE CAST(al.ArtistId AS VARCHAR) = CAST(? AS VARCHAR)")
+        .build();
     
-    QueryMetrics indexed = analyzer.analyzeQuery(indexedQuery, artistId);
-    QueryMetrics function = analyzer.analyzeQuery(functionQuery, artistId);
+    QueryMetrics indexed = analyzer.analyzeStatement(indexedQuery, artistId);
+    QueryMetrics function = analyzer.analyzeStatement(functionQuery, artistId);
     
-    System.out.printf("Direct filter: %.2f ms%n", indexed.totalTimeNanos / 1_000_000.0);
-    System.out.printf("Function filter: %.2f ms%n", function.totalTimeNanos / 1_000_000.0);
+    System.out.printf("Direct indexed filter: %.2f ms (optimal for production)%n", 
+        indexed.totalTimeNanos / 1_000_000.0);
+    System.out.printf("Function-based filter: %.2f ms (avoid in distributed systems)%n", 
+        function.totalTimeNanos / 1_000_000.0);
+    
+    // Direct filters typically execute 10-100x faster than function-based filters
+    if (function.totalTimeNanos > indexed.totalTimeNanos * 5) {
+        System.out.printf("⚠️  Function-based filter is %.1fx slower than direct filter%n", 
+            (double) function.totalTimeNanos / indexed.totalTimeNanos);
+    }
 }
 ```
 
@@ -101,18 +123,11 @@ Complex aggregation queries require special attention for distributed execution:
  * Analyze performance of analytics queries across distributed data.
  */
 public void analyzeGenreAnalytics() {
-    String analyticsQuery = """
-        SELECT 
-            g.Name as Genre,
-            COUNT(t.TrackId) as TrackCount,
-            AVG(t.UnitPrice) as AvgPrice
-        FROM Genre g
-        LEFT JOIN Track t ON g.GenreId = t.GenreId
-        GROUP BY g.GenreId, g.Name
-        ORDER BY TrackCount DESC
-        """;
+    Statement analyticsQuery = client.sql().statementBuilder()
+        .query("SELECT g.Name as Genre, COUNT(t.TrackId) as TrackCount, AVG(t.UnitPrice) as AvgPrice FROM Genre g LEFT JOIN Track t ON g.GenreId = t.GenreId GROUP BY g.GenreId, g.Name ORDER BY TrackCount DESC")
+        .build();
     
-    QueryMetrics metrics = analyzeQuery(analyticsQuery);
+    QueryMetrics metrics = analyzeStatement(analyticsQuery);
     
     // Analytics queries should complete in under 1 second for good UX
     if (metrics.totalTimeNanos > 1_000_000_000) {
@@ -120,13 +135,15 @@ public void analyzeGenreAnalytics() {
     }
 }
 
-## Strategic Index Design
+## Strategic Index Design for Music Analytics
 
-Music platform queries fail performance requirements because they lack indexes that match access characteristics. Artist searches scan entire tables instead of using name-based indexes. Album lookups perform inefficient joins without composite indexes on artist-album relationships. Genre browsing queries aggregate data without indexes that support grouping operations.
+Your music platform's search functionality embarrasses you during investor demos. Typing "Rock" into the artist search takes 8 seconds to return results, while typing the same query into Spotify returns instantly. Your genre analytics dashboard shows "Loading..." for 45 seconds before displaying basic statistics. Customer browsing sessions abandon after 3 seconds of waiting for album listings.
 
-Strategic index design addresses these bottlenecks by creating indexes that align with query filtering, joining, and sorting requirements.
+The root cause isn't your server capacity - it's missing indexes that transform table scans into direct data access. When a user searches for artists containing "Beatles," your query scans 2 million artist records sequentially instead of using a name-based index that finds matches in microseconds. When analytics queries aggregate tracks by genre, they process 50 million records instead of using composite indexes that pre-organize data for grouping operations.
 
-### Search Pattern Indexes
+Strategic index design transforms your platform from unresponsive to instantaneous by creating data access paths that match your application's query characteristics. Every search becomes a direct lookup, every analytics query becomes an optimized aggregation, and every user interaction delivers the real-time experience that modern applications require.
+
+### Catalog Search Optimization
 
 Create indexes that support common search operations:
 
@@ -247,18 +264,24 @@ Choose index strategies based on query characteristics:
 - **Order matters**: Place most selective columns first in composite indexes
 - **Covering indexes**: Include additional columns to avoid table lookups
 
-## Join Optimization Patterns
+## Distributed Join Optimization
 
-Multi-table queries produce slow response times because joins execute in suboptimal order, moving large datasets across network boundaries instead of filtering early and joining smaller result sets. Join optimization requires understanding how distributed systems execute table operations and how query order affects data movement characteristics.
+Your artist catalog displays load for 45 seconds because your multi-table joins process data in the worst possible order. Instead of filtering artists first and then joining with their albums, your query joins all artists with all albums before applying filters - forcing millions of unnecessary records across network boundaries before eliminating 99% of the data.
 
-Efficient join strategies reduce network traffic and processing overhead by implementing proper filtering sequences and leveraging data colocation:
+This happens because distributed join optimization requires understanding both SQL query planning and cluster data placement. When you query for "artists with albums released after 2020," the execution order determines whether you process 50 records or 50 million records. Poor join order creates exponential performance degradation as your catalog grows.
+
+The solution involves designing queries that exploit data colocation and filter selectivity. By placing the most restrictive filters first and leveraging your schema's colocation strategies, multi-table analytics queries execute on single nodes instead of coordinating massive datasets across cluster boundaries.
+
+### Real-World Join Performance Analysis
+
+The difference between optimized and unoptimized joins becomes dramatic at music streaming scale:
 
 ```java
 /**
  * Optimized join strategies for music platform queries.
  * Demonstrates efficient strategies for multi-table operations.
  */
-public class OptimizedJoinPatterns {
+public class OptimizedJoinStrategies {
     
     private final IgniteSql sql;
     
@@ -902,12 +925,20 @@ public class DistributionZoneOptimization {
 }
 ```
 
-Query performance optimization requires systematic application of execution plan analysis, indexing strategies, join optimization, and distribution zone configuration. These techniques transform slow analytical queries into responsive operations that deliver sub-second results even across millions of records.
+## Production Query Performance Success
 
-The `EXPLAIN PLAN FOR` functionality provides the foundation for understanding query execution characteristics, enabling data-driven optimization decisions rather than guesswork. Combined with strategic indexing and zone configuration, execution plan analysis creates a complete methodology for query performance optimization.
+Your music platform's transformation from 30-second analytics queries to sub-second insights represents the difference between a platform that struggles with growth and one that scales effortlessly with business success. The techniques in this chapter - execution plan analysis, strategic indexing, distributed join optimization, and zone-aware configuration - work together to deliver the real-time analytics that modern music platforms require.
 
-The performance optimization patterns in this module—from high-throughput streaming through intelligent caching to query optimization—establish the foundation for production deployment and operational management covered in the final module.
+**Before Optimization**: Genre popularity reports timeout, artist searches frustrate users, recommendation algorithms can't process enough data to generate meaningful suggestions.
+
+**After Optimization**: Marketing dashboards update in real-time, customer searches return instantly, recommendation engines analyze massive datasets to deliver personalized experiences that drive engagement and revenue.
+
+The systematic approach - measuring execution characteristics, designing indexes that match query access characteristics, optimizing join strategies for distributed data locality, and configuring zones for workload requirements - transforms your platform from a system that fights against its own success to one that leverages scale as a competitive advantage.
+
+Your music streaming platform now delivers the responsive, insight-driven experience that both users and business stakeholders expect. Query optimization doesn't just improve performance - it enables the real-time analytics and personalization features that differentiate successful platforms in competitive markets.
 
 ## Next Steps
 
-**[Chapter 6.1: Production Deployment Patterns](../06-production-concerns/01-deployment-patterns.md)** - Apply query optimization knowledge to production deployment scenarios, including monitoring query performance and managing distributed cluster operations.
+With high-performance query optimization mastered, you've completed the technical foundation for building production-scale distributed systems with Apache Ignite 3. The journey from traditional database limitations to distributed system capabilities transforms how applications handle data at any scale.
+
+**[Chapter 6: From Learning to Production](../06-primer-conclusion.md)** - Reflect on your complete learning journey through the five core areas of Ignite 3 development and learn how to apply these concepts to your own production systems.

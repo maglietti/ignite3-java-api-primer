@@ -13,6 +13,8 @@ This chapter focuses on practical transaction techniques for common business sce
 Business workflows with complex decision trees require precise control over transaction boundaries to prevent resource leaks and ensure proper rollback sequences across distributed operations. When purchase validation involves multiple steps with different rollback strategies, explicit transaction management provides the necessary control.
 
 ```java
+import org.apache.ignite.sql.Statement;
+
 /**
  * Explicit transaction techniques for business workflow control.
  * Manages transaction lifecycle manually when purchase validation
@@ -80,7 +82,10 @@ public class BusinessWorkflowTransactions {
         Customer customer = new Customer(100, "Jane", "Smith", "jane@example.com");
         customers.upsert(tx, customer);
         
-        sql.execute(tx, "UPDATE Customer SET Country = ? WHERE CustomerId = ?", "USA", 100);
+        Statement updateStmt = client.sql().statementBuilder()
+            .query("UPDATE Customer SET Country = ? WHERE CustomerId = ?")
+            .build();
+        sql.execute(tx, updateStmt, "USA", 100);
     }
 }
 ```
@@ -129,8 +134,10 @@ public class CustomerPurchaseWorkflow {
                     Integer trackId = trackIds.get(i);
                     
                     // Get track price using SQL in the same transaction
-                    ResultSet<SqlRow> trackResult = sql.execute(tx,
-                        "SELECT UnitPrice FROM Track WHERE TrackId = ?", trackId);
+                    Statement trackStmt = client.sql().statementBuilder()
+                        .query("SELECT UnitPrice FROM Track WHERE TrackId = ?")
+                        .build();
+                    ResultSet<SqlRow> trackResult = sql.execute(tx, trackStmt, trackId);
                     
                     if (!trackResult.hasNext()) {
                         throw new IllegalArgumentException("Track not found: " + trackId);
@@ -221,16 +228,19 @@ public class BusinessOperationTimeouts {
             IgniteSql sql = client.sql();
             
             // Complex multi-table analysis
-            ResultSet<SqlRow> stats = sql.execute(tx, """
-                SELECT 
-                    COUNT(DISTINCT a.ArtistId) as artist_count,
-                    COUNT(DISTINCT al.AlbumId) as album_count,
-                    COUNT(DISTINCT t.TrackId) as track_count,
-                    AVG(t.UnitPrice) as avg_price
-                FROM Artist a
-                JOIN Album al ON a.ArtistId = al.ArtistId
-                JOIN Track t ON al.AlbumId = t.AlbumId
-                """);
+            Statement statsStmt = client.sql().statementBuilder()
+                .query("""
+                    SELECT 
+                        COUNT(DISTINCT a.ArtistId) as artist_count,
+                        COUNT(DISTINCT al.AlbumId) as album_count,
+                        COUNT(DISTINCT t.TrackId) as track_count,
+                        AVG(t.UnitPrice) as avg_price
+                    FROM Artist a
+                    JOIN Album al ON a.ArtistId = al.ArtistId
+                    JOIN Track t ON al.AlbumId = t.AlbumId
+                    """)
+                .build();
+            ResultSet<SqlRow> stats = sql.execute(tx, statsStmt);
             
             if (stats.hasNext()) {
                 SqlRow row = stats.next();
@@ -270,16 +280,19 @@ public class BusinessReportingTransactions {
             System.out.println("Generating Monthly Sales Report...");
             
             // Top selling tracks
-            ResultSet<SqlRow> topTracks = sql.execute(tx, """
-                SELECT t.Name, COUNT(*) as sales_count
-                FROM Track t
-                JOIN InvoiceLine il ON t.TrackId = il.TrackId
-                JOIN Invoice i ON il.InvoiceId = i.InvoiceId
-                WHERE i.InvoiceDate >= ?
-                GROUP BY t.TrackId, t.Name
-                ORDER BY sales_count DESC
-                LIMIT 10
-                """, LocalDate.now().minusMonths(1));
+            Statement topTracksStmt = client.sql().statementBuilder()
+                .query("""
+                    SELECT t.Name, COUNT(*) as sales_count
+                    FROM Track t
+                    JOIN InvoiceLine il ON t.TrackId = il.TrackId
+                    JOIN Invoice i ON il.InvoiceId = i.InvoiceId
+                    WHERE i.InvoiceDate >= ?
+                    GROUP BY t.TrackId, t.Name
+                    ORDER BY sales_count DESC
+                    LIMIT 10
+                    """)
+                .build();
+            ResultSet<SqlRow> topTracks = sql.execute(tx, topTracksStmt, LocalDate.now().minusMonths(1));
             
             System.out.println("Top Selling Tracks:");
             while (topTracks.hasNext()) {
@@ -290,16 +303,19 @@ public class BusinessReportingTransactions {
             }
             
             // Revenue by genre
-            ResultSet<SqlRow> genreRevenue = sql.execute(tx, """
-                SELECT g.Name, SUM(il.UnitPrice * il.Quantity) as revenue
-                FROM Genre g
-                JOIN Track t ON g.GenreId = t.GenreId
-                JOIN InvoiceLine il ON t.TrackId = il.TrackId
-                JOIN Invoice i ON il.InvoiceId = i.InvoiceId
-                WHERE i.InvoiceDate >= ?
-                GROUP BY g.GenreId, g.Name
-                ORDER BY revenue DESC
-                """, LocalDate.now().minusMonths(1));
+            Statement genreRevenueStmt = client.sql().statementBuilder()
+                .query("""
+                    SELECT g.Name, SUM(il.UnitPrice * il.Quantity) as revenue
+                    FROM Genre g
+                    JOIN Track t ON g.GenreId = t.GenreId
+                    JOIN InvoiceLine il ON t.TrackId = il.TrackId
+                    JOIN Invoice i ON il.InvoiceId = i.InvoiceId
+                    WHERE i.InvoiceDate >= ?
+                    GROUP BY g.GenreId, g.Name
+                    ORDER BY revenue DESC
+                    """)
+                .build();
+            ResultSet<SqlRow> genreRevenue = sql.execute(tx, genreRevenueStmt, LocalDate.now().minusMonths(1));
             
             System.out.println("Revenue by Genre:");
             while (genreRevenue.hasNext()) {
@@ -456,10 +472,13 @@ public class AsyncPurchaseWorkflow {
         
         // Use async SQL APIs directly instead of wrapping sync operations
         List<CompletableFuture<Void>> updates = items.stream()
-            .map(item -> sql.executeAsync(tx, 
-                "UPDATE Inventory SET QuantityAvailable = QuantityAvailable - ? WHERE ProductId = ?",
-                item.getQuantity(), item.getProductId())
-                .thenApply(result -> (Void) null))
+            .map(item -> {
+                Statement inventoryStmt = client.sql().statementBuilder()
+                    .query("UPDATE Inventory SET QuantityAvailable = QuantityAvailable - ? WHERE ProductId = ?")
+                    .build();
+                return sql.executeAsync(tx, inventoryStmt, item.getQuantity(), item.getProductId())
+                    .thenApply(result -> (Void) null);
+            })
             .collect(Collectors.toList());
         
         return CompletableFuture.allOf(updates.toArray(new CompletableFuture[0]));

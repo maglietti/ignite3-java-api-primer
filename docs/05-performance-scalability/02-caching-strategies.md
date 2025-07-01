@@ -469,8 +469,10 @@ public class WriteBehindPatternDemo {
         try {
             // Query events that need syncing (simplified - would use timestamp in practice)
             IgniteSql sql = eventCache.table().ignite().sql();
-            ResultSet<SqlRow> pendingEvents = sql.execute(null,
-                "SELECT * FROM PlayEventCache WHERE syncStatus = 'PENDING' LIMIT 1000");
+            ResultSet<SqlRow> pendingEvents = sql.statementBuilder()
+                .query("SELECT * FROM PlayEventCache WHERE syncStatus = ? LIMIT ?")
+                .build()
+                .execute(null, "PENDING", 1000);
             
             List<PlayEvent> eventsToSync = new ArrayList<>();
             while (pendingEvents.hasNext()) {
@@ -753,13 +755,22 @@ public class CacheInvalidationDemo {
             IgniteSql sql = artistCache.table().ignite().sql();
             
             // Remove user's playlist cache
-            sql.execute(null, "DELETE FROM PlaylistCache WHERE UserId = ?", userId);
+            sql.statementBuilder()
+                .query("DELETE FROM PlaylistCache WHERE UserId = ?")
+                .build()
+                .execute(null, userId);
             
             // Remove user's recommendation cache  
-            sql.execute(null, "DELETE FROM RecommendationCache WHERE UserId = ?", userId);
+            sql.statementBuilder()
+                .query("DELETE FROM RecommendationCache WHERE UserId = ?")
+                .build()
+                .execute(null, userId);
             
             // Remove user's listening history cache
-            sql.execute(null, "DELETE FROM ListeningHistoryCache WHERE UserId = ?", userId);
+            sql.statementBuilder()
+                .query("DELETE FROM ListeningHistoryCache WHERE UserId = ?")
+                .build()
+                .execute(null, userId);
             
             System.out.println("Invalidated all cache entries for user " + userId);
             
@@ -772,8 +783,10 @@ public class CacheInvalidationDemo {
         // Query to find albums by artist
         try {
             IgniteSql sql = albumCache.table().ignite().sql();
-            ResultSet<SqlRow> results = sql.execute(null, 
-                "SELECT AlbumId FROM Album WHERE ArtistId = ?", artistId);
+            ResultSet<SqlRow> results = sql.statementBuilder()
+                .query("SELECT AlbumId FROM Album WHERE ArtistId = ?")
+                .build()
+                .execute(null, artistId);
             
             List<Integer> albumIds = new ArrayList<>();
             while (results.hasNext()) {

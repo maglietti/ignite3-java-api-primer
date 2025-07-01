@@ -212,13 +212,17 @@ public void updateTrackPrice(IgniteClient client, int trackId, BigDecimal newPri
 Optimized for queries that don't modify data. Provides snapshot consistency without locking:
 
 ```java
+import org.apache.ignite.sql.Statement;
+
 public List<Track> getExpensiveTracks(IgniteClient client) {
     TransactionOptions options = new TransactionOptions().readOnly(true);
     
     return client.transactions().runInTransaction(options, tx -> {
         IgniteSql sql = client.sql();
-        ResultSet<SqlRow> result = sql.execute(tx, 
-            "SELECT * FROM Track WHERE UnitPrice > ?", new BigDecimal("1.50"));
+        Statement stmt = client.sql().statementBuilder()
+            .query("SELECT * FROM Track WHERE UnitPrice > ?")
+            .build();
+        ResultSet<SqlRow> result = sql.execute(tx, stmt, new BigDecimal("1.50"));
         
         List<Track> tracks = new ArrayList<>();
         while (result.hasNext()) {

@@ -172,8 +172,10 @@ public class TrackDurationJob implements ComputeJob<List<Integer>, Double> {
             
             double totalDuration = 0.0;
             for (Integer trackId : trackIds) {
-                try (ResultSet<SqlRow> rs = sql.execute(null, 
-                    "SELECT Milliseconds FROM Track WHERE TrackId = ?", trackId)) {
+                Statement trackStmt = context.ignite().sql().statementBuilder()
+                    .query("SELECT Milliseconds FROM Track WHERE TrackId = ?")
+                    .build();
+                try (ResultSet<SqlRow> rs = sql.execute(null, trackStmt, trackId)) {
                     
                     if (rs.hasNext()) {
                         SqlRow row = rs.next();
@@ -397,19 +399,21 @@ public class ArtistSalesAnalysisJob implements ComputeJob<Integer, ArtistSalesRe
             IgniteSql sql = context.ignite().sql();
             
             // This query executes locally since the job runs where Artist data is colocated
-            String salesQuery = """
-                SELECT al.Title, COUNT(il.TrackId) as TracksSold, SUM(il.UnitPrice * il.Quantity) as Revenue
-                FROM Artist ar
-                JOIN Album al ON ar.ArtistId = al.ArtistId  
-                JOIN Track t ON al.AlbumId = t.AlbumId
-                JOIN InvoiceLine il ON t.TrackId = il.TrackId
-                WHERE ar.ArtistId = ?
-                GROUP BY al.AlbumId, al.Title
-                ORDER BY Revenue DESC
-                """;
+            Statement salesStmt = context.ignite().sql().statementBuilder()
+                .query("""
+                    SELECT al.Title, COUNT(il.TrackId) as TracksSold, SUM(il.UnitPrice * il.Quantity) as Revenue
+                    FROM Artist ar
+                    JOIN Album al ON ar.ArtistId = al.ArtistId  
+                    JOIN Track t ON al.AlbumId = t.AlbumId
+                    JOIN InvoiceLine il ON t.TrackId = il.TrackId
+                    WHERE ar.ArtistId = ?
+                    GROUP BY al.AlbumId, al.Title
+                    ORDER BY Revenue DESC
+                    """)
+                .build();
             
             List<AlbumSales> albumSales = new ArrayList<>();
-            try (ResultSet<SqlRow> rs = sql.execute(null, salesQuery, artistId)) {
+            try (ResultSet<SqlRow> rs = sql.execute(null, salesStmt, artistId)) {
                 while (rs.hasNext()) {
                     SqlRow row = rs.next();
                     albumSales.add(new AlbumSales(
@@ -422,8 +426,10 @@ public class ArtistSalesAnalysisJob implements ComputeJob<Integer, ArtistSalesRe
             
             // Get artist name
             String artistName = "Unknown Artist";
-            try (ResultSet<SqlRow> rs = sql.execute(null, 
-                "SELECT Name FROM Artist WHERE ArtistId = ?", artistId)) {
+            Statement artistStmt = context.ignite().sql().statementBuilder()
+                .query("SELECT Name FROM Artist WHERE ArtistId = ?")
+                .build();
+            try (ResultSet<SqlRow> rs = sql.execute(null, artistStmt, artistId)) {
                 if (rs.hasNext()) {
                     artistName = rs.next().stringValue("Name");
                 }
@@ -471,13 +477,16 @@ public class LocalTrackStatsJob implements ComputeJob<Void, TrackStatistics> {
             IgniteSql sql = context.ignite().sql();
             
             // Each node calculates statistics for its local track data
-            try (ResultSet<SqlRow> rs = sql.execute(null, """
-                SELECT COUNT(*) as TrackCount, 
-                       AVG(Milliseconds) as AvgDuration,
-                       MIN(Milliseconds) as MinDuration,
-                       MAX(Milliseconds) as MaxDuration
-                FROM Track
-                """)) {
+            Statement statsStmt = context.ignite().sql().statementBuilder()
+                .query("""
+                    SELECT COUNT(*) as TrackCount, 
+                           AVG(Milliseconds) as AvgDuration,
+                           MIN(Milliseconds) as MinDuration,
+                           MAX(Milliseconds) as MaxDuration
+                    FROM Track
+                    """)
+                .build();
+            try (ResultSet<SqlRow> rs = sql.execute(null, statsStmt)) {
                 
                 if (rs.hasNext()) {
                     SqlRow row = rs.next();
@@ -617,16 +626,19 @@ public class GenreAnalysisMapJob implements ComputeJob<Void, Map<String, GenreSt
             IgniteSql sql = context.ignite().sql();
             Map<String, GenreStats> genreStats = new HashMap<>();
             
-            try (ResultSet<SqlRow> rs = sql.execute(null, """
-                SELECT g.Name as GenreName, 
-                       COUNT(t.TrackId) as TrackCount,
-                       AVG(t.Milliseconds) as AvgDuration,
-                       SUM(COALESCE(il.Quantity, 0)) as TotalSales
-                FROM Genre g
-                LEFT JOIN Track t ON g.GenreId = t.GenreId
-                LEFT JOIN InvoiceLine il ON t.TrackId = il.TrackId
-                GROUP BY g.GenreId, g.Name
-                """)) {
+            Statement genreStmt = context.ignite().sql().statementBuilder()
+                .query("""
+                    SELECT g.Name as GenreName, 
+                           COUNT(t.TrackId) as TrackCount,
+                           AVG(t.Milliseconds) as AvgDuration,
+                           SUM(COALESCE(il.Quantity, 0)) as TotalSales
+                    FROM Genre g
+                    LEFT JOIN Track t ON g.GenreId = t.GenreId
+                    LEFT JOIN InvoiceLine il ON t.TrackId = il.TrackId
+                    GROUP BY g.GenreId, g.Name
+                    """)
+                .build();
+            try (ResultSet<SqlRow> rs = sql.execute(null, genreStmt)) {
                 
                 while (rs.hasNext()) {
                     SqlRow row = rs.next();
@@ -699,16 +711,19 @@ public class RecommendationEngineJob implements ComputeJob<Integer, List<Recomme
     private Map<String, Integer> analyzeGenrePreferences(IgniteSql sql, Integer customerId) {
         Map<String, Integer> preferences = new HashMap<>();
         
-        try (ResultSet<SqlRow> rs = sql.execute(null, """
-            SELECT g.Name, COUNT(*) as PurchaseCount
-            FROM Invoice i
-            JOIN InvoiceLine il ON i.InvoiceId = il.InvoiceId
-            JOIN Track t ON il.TrackId = t.TrackId
-            JOIN Genre g ON t.GenreId = g.GenreId
-            WHERE i.CustomerId = ?
-            GROUP BY g.GenreId, g.Name
-            ORDER BY PurchaseCount DESC
-            """, customerId)) {
+        Statement preferencesStmt = sql.statementBuilder()
+            .query("""
+                SELECT g.Name, COUNT(*) as PurchaseCount
+                FROM Invoice i
+                JOIN InvoiceLine il ON i.InvoiceId = il.InvoiceId
+                JOIN Track t ON il.TrackId = t.TrackId
+                JOIN Genre g ON t.GenreId = g.GenreId
+                WHERE i.CustomerId = ?
+                GROUP BY g.GenreId, g.Name
+                ORDER BY PurchaseCount DESC
+                """)
+            .build();
+        try (ResultSet<SqlRow> rs = sql.execute(null, preferencesStmt, customerId)) {
             
             while (rs.hasNext()) {
                 SqlRow row = rs.next();
@@ -724,15 +739,18 @@ public class RecommendationEngineJob implements ComputeJob<Integer, List<Recomme
         List<Integer> similarCustomers = new ArrayList<>();
         
         for (String genre : genrePreferences.keySet()) {
-            try (ResultSet<SqlRow> rs = sql.execute(null, """
-                SELECT DISTINCT i.CustomerId
-                FROM Invoice i
-                JOIN InvoiceLine il ON i.InvoiceId = il.InvoiceId
-                JOIN Track t ON il.TrackId = t.TrackId
-                JOIN Genre g ON t.GenreId = g.GenreId
-                WHERE g.Name = ?
-                LIMIT 10
-                """, genre)) {
+            Statement similarStmt = sql.statementBuilder()
+                .query("""
+                    SELECT DISTINCT i.CustomerId
+                    FROM Invoice i
+                    JOIN InvoiceLine il ON i.InvoiceId = il.InvoiceId
+                    JOIN Track t ON il.TrackId = t.TrackId
+                    JOIN Genre g ON t.GenreId = g.GenreId
+                    WHERE g.Name = ?
+                    LIMIT 10
+                    """)
+                .build();
+            try (ResultSet<SqlRow> rs = sql.execute(null, similarStmt, genre)) {
                 
                 while (rs.hasNext()) {
                     similarCustomers.add(rs.next().intValue("CustomerId"));
@@ -753,25 +771,28 @@ public class RecommendationEngineJob implements ComputeJob<Integer, List<Recomme
                 .map(String::valueOf)
                 .collect(Collectors.joining(","));
             
-            try (ResultSet<SqlRow> rs = sql.execute(null, """
-                SELECT t.TrackId, t.Name, ar.Name as ArtistName, 
-                       COUNT(*) as PopularityScore
-                FROM Track t
-                JOIN Album al ON t.AlbumId = al.AlbumId
-                JOIN Artist ar ON al.ArtistId = ar.ArtistId
-                JOIN InvoiceLine il ON t.TrackId = il.TrackId
-                JOIN Invoice i ON il.InvoiceId = i.InvoiceId
-                WHERE i.CustomerId IN (""" + customerList + """)
-                AND t.TrackId NOT IN (
-                    SELECT t2.TrackId FROM Track t2
-                    JOIN InvoiceLine il2 ON t2.TrackId = il2.TrackId
-                    JOIN Invoice i2 ON il2.InvoiceId = i2.InvoiceId
-                    WHERE i2.CustomerId = ?
-                )
-                GROUP BY t.TrackId, t.Name, ar.Name
-                ORDER BY PopularityScore DESC
-                LIMIT 20
-                """, customerId)) {
+            Statement recommendationStmt = sql.statementBuilder()
+                .query("""
+                    SELECT t.TrackId, t.Name, ar.Name as ArtistName, 
+                           COUNT(*) as PopularityScore
+                    FROM Track t
+                    JOIN Album al ON t.AlbumId = al.AlbumId
+                    JOIN Artist ar ON al.ArtistId = ar.ArtistId
+                    JOIN InvoiceLine il ON t.TrackId = il.TrackId
+                    JOIN Invoice i ON il.InvoiceId = i.InvoiceId
+                    WHERE i.CustomerId IN (""" + customerList + """)
+                    AND t.TrackId NOT IN (
+                        SELECT t2.TrackId FROM Track t2
+                        JOIN InvoiceLine il2 ON t2.TrackId = il2.TrackId
+                        JOIN Invoice i2 ON il2.InvoiceId = i2.InvoiceId
+                        WHERE i2.CustomerId = ?
+                    )
+                    GROUP BY t.TrackId, t.Name, ar.Name
+                    ORDER BY PopularityScore DESC
+                    LIMIT 20
+                    """)
+                .build();
+            try (ResultSet<SqlRow> rs = sql.execute(null, recommendationStmt, customerId)) {
                 
                 while (rs.hasNext()) {
                     SqlRow row = rs.next();
@@ -969,13 +990,21 @@ The Compute API transforms single-node processing limitations into distributed i
 Ignite 3 rejects SQL queries with reserved word aliases. When writing SQL queries within compute jobs, use descriptive aliases instead of reserved words:
 
 ```java
+import org.apache.ignite.sql.Statement;
+
 // Incorrect - will cause parsing errors
-try (ResultSet<SqlRow> result = sql.execute(null, "SELECT COUNT(*) as count FROM Track")) {
+Statement countStmt = client.sql().statementBuilder()
+    .query("SELECT COUNT(*) as count FROM Track")
+    .build();
+try (ResultSet<SqlRow> result = sql.execute(null, countStmt)) {
     // This will fail with "Encountered 'count' at line 1, column 20"
 }
 
 // Correct - use descriptive aliases
-try (ResultSet<SqlRow> result = sql.execute(null, "SELECT COUNT(*) as track_count FROM Track")) {
+Statement trackCountStmt = client.sql().statementBuilder()
+    .query("SELECT COUNT(*) as track_count FROM Track")
+    .build();
+try (ResultSet<SqlRow> result = sql.execute(null, trackCountStmt)) {
     if (result.hasNext()) {
         return (int) result.next().longValue("track_count");
     }
