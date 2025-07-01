@@ -92,8 +92,11 @@ graph TB
 Backpressure mechanisms work through several feedback loops:
 
 - **Buffer Monitoring**: Publishers track buffer utilization and signal capacity constraints to producers
+
 - **Rate Adaptation**: Producer threads respond to capacity signals by increasing or decreasing event generation rates
+
 - **Demand Signaling**: Consumers request specific numbers of items, preventing unlimited data buffering
+
 - **Load Balancing**: The system distributes backpressure across multiple producer threads to maintain overall throughput
 
 ### Exponential Backoff Algorithm
