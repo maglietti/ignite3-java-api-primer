@@ -2,7 +2,7 @@
 
 Your production schema change just broke the mobile app because column additions weren't backward compatible and the rolling deployment failed. While your database accepted the ALTER TABLE statement, older application versions couldn't handle the new schema structure, causing cascading failures across your distributed system.
 
-This scenario happens when teams don't understand schema evolution patterns in distributed systems. Unlike traditional databases where schema changes affect a single server, distributed changes must coordinate across multiple nodes while maintaining compatibility with applications that might be at different deployment versions.
+This scenario happens when teams don't understand schema evolution approaches in distributed systems. Unlike traditional databases where schema changes affect a single server, distributed changes must coordinate across multiple nodes while maintaining compatibility with applications that might be at different deployment versions.
 
 ## Recommended Approach: Code-First Schema Evolution
 
@@ -24,7 +24,7 @@ Code-first evolution solves these problems by:
 
 ### Core Implementation Pattern
 
-The recommended pattern uses annotated entity classes with systematic deployment:
+The recommended approach uses annotated entity classes with systematic deployment:
 
 ```java
 // Your annotated class is the schema source of truth
@@ -65,14 +65,14 @@ public class SchemaDeployment {
 
 ## Access Pattern Selection for Evolution Safety
 
-Different access patterns handle schema evolution differently. Key/Value patterns provide more flexibility during schema changes, while Record patterns offer stronger type safety but require more careful coordination during evolution.
+Different access methods handle schema evolution differently. Key/Value operations provide more flexibility during schema changes, while Record operations offer stronger type safety but require more careful coordination during evolution.
 
 ### Key/Value Pattern: Evolution Flexibility
 
 Key/Value operations handle schema changes gracefully because they work with primitive types that rarely change structure. When your schema evolves, the underlying key and value types remain stable.
 
 ```java
-// Key/Value pattern survives schema changes
+// Key/Value operations survive schema changes
 Table artistTable = client.tables().table("Artist");
 KeyValueView<Integer, String> artistNames = artistTable.keyValueView(Integer.class, String.class);
 
@@ -134,10 +134,10 @@ artists.upsertAll(null, batch); // Fails if schema mismatch
 
 ### Choosing Pattern Based on Evolution Requirements
 
-Your choice between Key/Value and Record patterns affects how you handle schema evolution:
+Your choice between Key/Value and Record operations affects how you handle schema evolution:
 
 ```java
-// Key/Value pattern: Stable during schema evolution
+// Key/Value operations: Stable during schema evolution
 public class SessionCache {
     private KeyValueView<String, String> sessions;
     
@@ -150,7 +150,7 @@ public class SessionCache {
     }
 }
 
-// Record pattern: Requires schema coordination
+// Record operations: Requires schema coordination
 public class CustomerService {
     private RecordView<Customer> customers;
     
@@ -184,11 +184,11 @@ public class CustomerService {
 
 ### Choosing the Right Pattern for Evolution
 
-**For systems requiring frequent schema changes and high availability during updates**: Use Key/Value patterns combined with code-first schema evolution. This combination provides maximum flexibility during rolling deployments while maintaining schema consistency through version-controlled annotations.
+**For systems requiring frequent schema changes and high availability during updates**: Use Key/Value operations combined with code-first schema evolution. This combination provides maximum flexibility during rolling deployments while maintaining schema consistency through version-controlled annotations.
 
-**For systems with stable schemas and strong type safety requirements**: Use Record patterns with carefully coordinated deployment procedures. Ensure thorough testing of schema changes in staging environments that mirror production deployment processes.
+**For systems with stable schemas and strong type safety requirements**: Use Record operations with carefully coordinated deployment procedures. Ensure thorough testing of schema changes in staging environments that mirror production deployment processes.
 
-**Recommended hybrid approach**: Use Key/Value patterns for high-frequency operational data and Record patterns for configuration or reference data that changes infrequently. This balances evolution flexibility with development experience.
+**Recommended hybrid approach**: Use Key/Value operations for high-frequency operational data and Record operations for configuration or reference data that changes infrequently. This balances evolution flexibility with development experience.
 
 ## Implementing Code-First Schema Evolution
 

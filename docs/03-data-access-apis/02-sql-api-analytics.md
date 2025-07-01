@@ -1,12 +1,12 @@
 # Chapter 3.2: SQL API for Analytics and Reporting
 
-Your marketing dashboard queries timeout when analyzing listening patterns because joins across Artist-Album-Track tables hit multiple partitions. Cross-partition joins force Ignite to pull data from multiple nodes, creating network bottlenecks that turn sub-second queries into multi-second failures. The SQL API provides optimization techniques that exploit data colocation and query planning to solve these analytical performance challenges.
+Your marketing dashboard queries timeout when analyzing listening behavior because joins across Artist-Album-Track tables hit multiple partitions. Cross-partition joins force Ignite to pull data from multiple nodes, creating network bottlenecks that turn sub-second queries into multi-second failures. The SQL API provides optimization techniques that exploit data colocation and query planning to solve these analytical performance challenges.
 
 Building on the colocation strategies from [Chapter 3.1](01-table-api-operations.md), this chapter shows how SQL operations leverage partition-aware execution to deliver consistent analytical performance at scale.
 
 ## Working with the Reference Application
 
-The **`05-sql-api-app`** demonstrates SQL API optimization patterns with analytics examples that show query planning, colocation exploitation, and distributed aggregation techniques:
+The **`05-sql-api-app`** demonstrates SQL API optimization techniques with analytics examples that show query planning, colocation exploitation, and distributed aggregation techniques:
 
 ```bash
 cd ignite3-reference-apps/05-sql-api-app
@@ -147,12 +147,12 @@ public class OptimizedStatementExecution {
 
 ### Parameter Binding for Query Plan Optimization
 
-Parameter binding enables query plan caching and prevents SQL injection, but also impacts partition pruning effectiveness. Understanding parameter binding patterns helps structure queries for optimal distributed execution:
+Parameter binding enables query plan caching and prevents SQL injection, but also impacts partition pruning effectiveness. Understanding parameter binding approaches helps structure queries for optimal distributed execution:
 
 ```java
 /**
- * Parameter binding patterns that enable partition pruning and query plan reuse.
- * Proper binding patterns allow Ignite to optimize distributed query execution.
+ * Parameter binding techniques that enable partition pruning and query plan reuse.
+ * Proper binding techniques allow Ignite to optimize distributed query execution.
  */
 public class PartitionOptimizedBinding {
     
@@ -323,7 +323,7 @@ public class StreamingResultProcessor {
 
 ## Type-Safe Data Extraction
 
-Analytical queries return diverse data types that require careful extraction and null handling. Understanding SqlRow accessor patterns and metadata usage enables robust data processing that handles distributed query variations.
+Analytical queries return diverse data types that require careful extraction and null handling. Understanding SqlRow accessor methods and metadata usage enables robust data processing that handles distributed query variations.
 
 ### Robust Data Type Handling
 
@@ -446,13 +446,13 @@ public class TypeSafeDataExtraction {
 
 ## Distributed Analytics Query Patterns
 
-Analytical workloads require complex aggregations and joins that span multiple tables. These patterns show how to structure analytical queries for optimal distributed execution while avoiding common performance pitfalls.
+Analytical workloads require complex aggregations and joins that span multiple tables. These techniques show how to structure analytical queries for optimal distributed execution while avoiding common performance pitfalls.
 
 ### Cross-Partition Analytics Optimization
 
 ```java
 /**
- * Distributed analytics patterns optimize cross-table queries by leveraging
+ * Distributed analytics techniques optimize cross-table queries by leveraging
  * data colocation and partition-aware join strategies.
  */
 public class DistributedAnalyticsPatterns {

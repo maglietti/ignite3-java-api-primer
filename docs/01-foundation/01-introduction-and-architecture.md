@@ -131,25 +131,13 @@ JobExecution<String> recommendation = ignite.compute().submit(nodes, job, args);
 
 ### How Ignite's Core Capabilities Address Scale Challenges
 
-**Problem:** Traditional databases slow down as data grows because disk I/O becomes the bottleneck.
-
-**Solution:** Ignite stores your catalog in distributed cluster memory across multiple nodes with microsecond access latencies and optional disk persistence for durability.
-
-**Problem:** Complex queries slow down because traditional databases can't parallelize processing across multiple servers.
-
-**Solution:** Ignite's distributed SQL engine executes queries across the entire cluster automatically, processing data where it resides without network transfer overhead.
-
-**Problem:** Object-relational mapping creates overhead and complexity for simple data operations.
-
-**Solution:** Ignite provides direct key-value access through type-safe Java APIs, eliminating ORM complexity for known-key operations.
-
-**Problem:** Moving data to compute resources wastes network bandwidth and adds latency.
-
-**Solution:** Ignite executes business logic directly on nodes containing relevant data, eliminating network serialization penalties.
-
-**Problem:** High-volume data ingestion overwhelms traditional database write capabilities.
-
-**Solution:** Ignite's streaming engine handles millions of events per second with automatic backpressure and flow control.
+| Traditional Database Problem | Ignite 3 Solution |
+|------------------------------|-------------------|
+| **Disk I/O Bottlenecks**<br/>Traditional databases slow down as data grows because disk I/O becomes the bottleneck | **Distributed Memory Storage**<br/>Stores catalog data in distributed cluster memory across multiple nodes with microsecond access latencies and optional disk persistence for durability |
+| **Single-Server Query Processing**<br/>Complex queries slow down because traditional databases can't parallelize processing across multiple servers | **Distributed SQL Engine**<br/>Executes queries across the entire cluster automatically, processing data where it resides without network transfer overhead |
+| **ORM Complexity**<br/>Object-relational mapping creates overhead and complexity for simple data operations | **Direct API Access**<br/>Provides direct key-value access through type-safe Java APIs, eliminating ORM complexity for known-key operations |
+| **Data Movement Overhead**<br/>Moving data to compute resources wastes network bandwidth and adds latency | **Compute Colocation**<br/>Executes business logic directly on nodes containing relevant data, eliminating network serialization penalties |
+| **Write Capacity Limits**<br/>High-volume data ingestion overwhelms traditional database write capabilities | **Reactive Streaming**<br/>Streaming engine handles millions of events per second with automatic backpressure and flow control |
 
 ## Deployment Architecture Patterns
 

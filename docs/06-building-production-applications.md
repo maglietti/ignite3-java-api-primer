@@ -1,16 +1,16 @@
 # Chapter 6: Building Production Applications
 
-Your music streaming platform started as a proof of concept with 1,000 tracks. Now it serves 10 million users accessing 50 million tracks through complex recommendation algorithms, real-time analytics, and high-throughput streaming pipelines. Individual API features work well in isolation, but production applications require orchestrating multiple distributed systems patterns into cohesive, scalable solutions.
+Your music streaming platform started as a proof of concept with 1,000 tracks. Now it serves 10 million users accessing 50 million tracks through complex recommendation algorithms, real-time analytics, and high-throughput streaming pipelines. Individual API features work well in isolation, but production applications require orchestrating multiple distributed systems capabilities into cohesive, scalable solutions.
 
-This chapter demonstrates how the five core modules—Foundation, Schema Design, Data Access, Distributed Operations, and Performance Optimization—work together in production applications. You'll see how architectural decisions from Chapter 1 enable the advanced features in Chapter 5, and learn patterns for building maintainable distributed systems.
+This chapter demonstrates how the five core modules—Foundation, Schema Design, Data Access, Distributed Operations, and Performance Optimization—work together in production applications. You'll see how architectural decisions from Chapter 1 enable the advanced features in Chapter 5, and learn techniques for building maintainable distributed systems.
 
 ## Integrated Architecture Patterns
 
-Production applications don't use individual Ignite 3 features in isolation. Real systems integrate schema design with performance optimization, combine transactional workflows with streaming ingestion, and balance consistency requirements with scalability needs. Understanding these integration patterns prevents architectural mismatches that cause performance bottlenecks and operational complexity.
+Production applications don't use individual Ignite 3 features in isolation. Real systems integrate schema design with performance optimization, combine transactional workflows with streaming ingestion, and balance consistency requirements with scalability needs. Understanding these integration approaches prevents architectural mismatches that cause performance bottlenecks and operational complexity.
 
 ### Foundation Integration Example
 
-The foundation patterns from Chapter 1 enable advanced features throughout the application stack:
+The foundation concepts from Chapter 1 enable advanced features throughout the application stack:
 
 ```java
 import org.apache.ignite.client.IgniteClient;
@@ -19,7 +19,7 @@ import org.apache.ignite.client.ClientConnectionException;
 
 /**
  * Production-ready application orchestrator integrating all core modules.
- * Demonstrates how foundation patterns enable advanced distributed features.
+ * Demonstrates how foundation concepts enable advanced distributed features.
  */
 public class MusicPlatformOrchestrator {
     
@@ -41,7 +41,7 @@ public class MusicPlatformOrchestrator {
     
     /**
      * Production client configuration with fault tolerance and monitoring.
-     * Foundation patterns that support all advanced features.
+     * Foundation concepts that support all advanced features.
      */
     private IgniteClient createProductionClient(String[] nodes) {
         return IgniteClient.builder()
@@ -98,7 +98,7 @@ public class MusicPlatformOrchestrator {
     
     /**
      * Execute complex business workflow integrating all modules.
-     * Demonstrates real-world usage patterns combining multiple features.
+     * Demonstrates real-world usage scenarios combining multiple features.
      */
     public void processCustomerPurchaseWorkflow(int customerId, List<Integer> trackIds) {
         // Chapter 4: Distributed transaction across multiple tables
@@ -222,7 +222,7 @@ public class MusicPlatformOrchestrator {
             throw new RuntimeException("Schema validation failed");
         }
         
-        // Validate data access patterns  
+        // Validate data access functionality  
         if (!dataLayer.validateDataAccess()) {
             throw new RuntimeException("Data access validation failed");
         }
@@ -259,7 +259,7 @@ public class MusicPlatformOrchestrator {
 
 ## Production Deployment Patterns
 
-Moving from development to production requires systematic application of distributed systems patterns. Production deployments handle variable load, network failures, and data growth while maintaining consistency and performance requirements.
+Moving from development to production requires systematic application of distributed systems techniques. Production deployments handle variable load, network failures, and data growth while maintaining consistency and performance requirements.
 
 ### Operational Patterns
 
@@ -282,7 +282,7 @@ public class ProductionOperationsManager {
     
     /**
      * Comprehensive health monitoring integrating all system components.
-     * Monitors patterns from all five modules for production readiness.
+     * Monitors capabilities from all five modules for production readiness.
      */
     public SystemHealthReport performHealthCheck() {
         SystemHealthReport report = new SystemHealthReport();

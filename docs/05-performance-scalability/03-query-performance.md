@@ -65,7 +65,7 @@ Different filtering approaches have vastly different performance characteristics
 
 ```java
 /**
- * Compare filtering strategies to identify optimal query patterns.
+ * Compare filtering strategies to identify optimal query approaches.
  */
 public void compareFilteringStrategies(int artistId) {
     QueryTimingAnalysis analyzer = new QueryTimingAnalysis(client);
@@ -122,7 +122,7 @@ public void analyzeGenreAnalytics() {
 
 ## Strategic Index Design
 
-Music platform queries fail performance requirements because they lack indexes that match access patterns. Artist searches scan entire tables instead of using name-based indexes. Album lookups perform inefficient joins without composite indexes on artist-album relationships. Genre browsing queries aggregate data without indexes that support grouping operations.
+Music platform queries fail performance requirements because they lack indexes that match access characteristics. Artist searches scan entire tables instead of using name-based indexes. Album lookups perform inefficient joins without composite indexes on artist-album relationships. Genre browsing queries aggregate data without indexes that support grouping operations.
 
 Strategic index design addresses these bottlenecks by creating indexes that align with query filtering, joining, and sorting requirements.
 
@@ -240,7 +240,7 @@ public void validateIndexes() {
 
 ### Index Design Guidelines
 
-Choose index strategies based on query patterns:
+Choose index strategies based on query characteristics:
 
 - **Single-column indexes**: Use for simple equality and range queries
 - **Composite indexes**: Use for multi-column WHERE clauses and sorting
@@ -249,13 +249,13 @@ Choose index strategies based on query patterns:
 
 ## Join Optimization Patterns
 
-Multi-table queries produce slow response times because joins execute in suboptimal order, moving large datasets across network boundaries instead of filtering early and joining smaller result sets. Join optimization requires understanding how distributed systems execute table operations and how query order affects data movement patterns.
+Multi-table queries produce slow response times because joins execute in suboptimal order, moving large datasets across network boundaries instead of filtering early and joining smaller result sets. Join optimization requires understanding how distributed systems execute table operations and how query order affects data movement characteristics.
 
 Efficient join strategies reduce network traffic and processing overhead by implementing proper filtering sequences and leveraging data colocation:
 
 ```java
 /**
- * Optimized join patterns for music platform queries.
+ * Optimized join strategies for music platform queries.
  * Demonstrates efficient strategies for multi-table operations.
  */
 public class OptimizedJoinPatterns {
@@ -354,7 +354,7 @@ public class OptimizedJoinPatterns {
     
     /**
      * Genre popularity analysis with optimized aggregation.
-     * Demonstrates efficient aggregation patterns for analytics.
+     * Demonstrates efficient aggregation techniques for analytics.
      */
     public List<GenrePopularityInfo> getGenrePopularityAnalysis() {
         // Query optimized for aggregation performance
@@ -543,7 +543,7 @@ class TrackRecommendation {
 
 ## Query Execution Plan Analysis
 
-Before optimizing queries through indexes or zone configuration, understanding how Ignite 3 executes SQL operations provides insight into performance bottlenecks. The `EXPLAIN PLAN FOR` functionality reveals query execution paths, join strategies, and resource usage patterns that identify optimization opportunities.
+Before optimizing queries through indexes or zone configuration, understanding how Ignite 3 executes SQL operations provides insight into performance bottlenecks. The `EXPLAIN PLAN FOR` functionality reveals query execution paths, join strategies, and resource usage characteristics that identify optimization opportunities.
 
 Query execution plans show whether operations scan entire tables or use indexes, how joins execute across distributed data, and where filtering occurs in the execution pipeline. This analysis guides decisions about index creation, query restructuring, and zone configuration adjustments.
 
@@ -584,7 +584,7 @@ public class QueryExecutionPlanAnalysis {
         System.out.println("- Join algorithm selection (nested loop, hash, merge)");
         System.out.println("- Filter pushdown effectiveness");
         System.out.println("- Sort operation placement and cost");
-        System.out.println("- Network data movement patterns");
+        System.out.println("- Network data movement characteristics");
     }
     
     /**

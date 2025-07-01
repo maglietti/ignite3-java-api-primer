@@ -1,12 +1,12 @@
 # Chapter 4.2: Transaction Use Cases and Applied Patterns
 
-Your complex purchase workflow deadlocks when multiple users simultaneously buy tracks from the same album because of improper transaction ordering across distributed nodes. Customer sessions timeout while waiting for nested transaction chains to complete. Your application crashes during peak sales when distributed transaction failures cascade through the system without proper recovery patterns.
+Your complex purchase workflow deadlocks when multiple users simultaneously buy tracks from the same album because of improper transaction ordering across distributed nodes. Customer sessions timeout while waiting for nested transaction chains to complete. Your application crashes during peak sales when distributed transaction failures cascade through the system without proper recovery mechanisms.
 
-These problems require applied transaction patterns that handle real-world business scenarios, non-blocking operations, and resilient error recovery. Building on the [transaction fundamentals](01-transaction-fundamentals.md), this chapter demonstrates how to implement distributed transaction workflows for common business use cases that scale under concurrent load.
+These problems require applied transaction techniques that handle real-world business scenarios, non-blocking operations, and resilient error recovery. Building on the [transaction fundamentals](01-transaction-fundamentals.md), this chapter demonstrates how to implement distributed transaction workflows for common business use cases that scale under concurrent load.
 
 ## Applied Transaction Patterns
 
-This chapter focuses on practical transaction patterns for common business scenarios in distributed music store operations. These patterns demonstrate how to apply the distributed transaction fundamentals to real-world use cases that require coordinated operations across multiple tables and cluster nodes.
+This chapter focuses on practical transaction techniques for common business scenarios in distributed music store operations. These techniques demonstrate how to apply the distributed transaction fundamentals to real-world use cases that require coordinated operations across multiple tables and cluster nodes.
 
 ## Explicit Transaction Lifecycle Control
 
@@ -14,7 +14,7 @@ Business workflows with complex decision trees require precise control over tran
 
 ```java
 /**
- * Explicit transaction patterns for business workflow control.
+ * Explicit transaction techniques for business workflow control.
  * Manages transaction lifecycle manually when purchase validation
  * requires different rollback strategies across distributed operations.
  */
@@ -48,7 +48,7 @@ public class BusinessWorkflowTransactions {
     }
     
     public void saferExplicitPattern(IgniteClient client) {
-        // Safer explicit pattern: ensure rollback in finally block
+        // Safer explicit approach: ensure rollback in finally block
         Transaction tx = null;
         boolean committed = false;
         try {
@@ -85,7 +85,7 @@ public class BusinessWorkflowTransactions {
 }
 ```
 
-Explicit transaction management becomes necessary when business workflow logic requires different rollback strategies based on validation results, payment processing outcomes, or inventory availability checks. The pattern provides fine-grained control but requires careful resource management to prevent transaction leaks and data inconsistency in distributed environments.
+Explicit transaction management becomes necessary when business workflow logic requires different rollback strategies based on validation results, payment processing outcomes, or inventory availability checks. This approach provides fine-grained control but requires careful resource management to prevent transaction leaks and data inconsistency in distributed environments.
 
 ## Business Use Case: Customer Purchase Workflow
 
@@ -177,7 +177,7 @@ public class CustomerPurchaseWorkflow {
 }
 ```
 
-This business use case demonstrates coordinated distributed updates where invoice creation, line item insertion, and total calculation execute atomically. If track price lookup fails or line item creation encounters errors, the entire transaction rolls back, preventing orphaned invoices and billing inconsistencies. This pattern is essential for any multi-step business process that spans multiple tables.
+This business use case demonstrates coordinated distributed updates where invoice creation, line item insertion, and total calculation execute atomically. If track price lookup fails or line item creation encounters errors, the entire transaction rolls back, preventing orphaned invoices and billing inconsistencies. This approach is essential for any multi-step business process that spans multiple tables.
 
 ## Business Use Case: Operational vs. Analytical Transactions
 
@@ -185,7 +185,7 @@ Different business operations have different performance and timeout requirement
 
 ```java
 /**
- * Transaction timeout patterns for different business operations.
+ * Transaction timeout configurations for different business operations.
  * Prevents resource blocking while ensuring sufficient time
  * for operational updates vs. analytical reports to complete.
  */

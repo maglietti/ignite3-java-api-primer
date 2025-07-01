@@ -2,7 +2,7 @@
 
 Your popular tracks are being loaded from disk storage repeatedly because cache misses are creating database bottlenecks during peak traffic. Users experience response delays of 500ms+ when browsing the music catalog, while your database servers struggle under read pressure from the same data requests hitting storage systems dozens of times per second.
 
-This happens because traditional application architectures treat caching as an afterthought rather than designing for distributed data access patterns from the start. Your music streaming platform processes millions of catalog requests daily, but without intelligent caching strategies, each popular artist lookup becomes a costly database operation multiplied across your entire user base.
+This happens because traditional application architectures treat caching as an afterthought rather than designing for distributed data access from the start. Your music streaming platform processes millions of catalog requests daily, but without intelligent caching strategies, each popular artist lookup becomes a costly database operation multiplied across your entire user base.
 
 ## Ignite 3's Table-Based Caching Architecture
 
@@ -10,7 +10,7 @@ Ignite 3 approaches caching differently from traditional cache-aside layers by t
 
 Instead of maintaining separate cache infrastructure, Ignite 3 tables function as both cache and storage, with configurable persistence layers that determine whether data resides in memory, on disk, or both. This unified approach simplifies cache management while providing ACID transaction guarantees across cached data.
 
-The table-based architecture supports multiple access patterns through different APIs:
+The table-based architecture supports multiple access methods through different APIs:
 
 - **KeyValueView**: Direct key-value access for simple cache operations
 - **RecordView**: Object-oriented access with full POJO support
@@ -24,7 +24,7 @@ Effective caching strategies must address three core challenges that become ampl
 
 ### Cache Consistency Patterns
 
-Distributed caching requires coordinated consistency strategies that balance performance with data accuracy. Different data types require different consistency guarantees based on their usage patterns and business requirements.
+Distributed caching requires coordinated consistency strategies that balance performance with data accuracy. Different data types require different consistency guarantees based on their usage characteristics and business requirements.
 
 **Strong Consistency**: Critical for customer profiles, subscription status, and billing information where stale data creates business problems. Updates must be visible immediately across all nodes.
 
@@ -36,7 +36,7 @@ Distributed caching requires coordinated consistency strategies that balance per
 
 Cache invalidation complexity grows exponentially with data relationships and distributed system scale. Music streaming platforms must handle cascading invalidations when artist data changes affect albums, tracks, playlists, and recommendation algorithms.
 
-**Time-based Expiration**: Simple but wasteful for data with unpredictable change patterns. Popular artist data may remain valid for months while promotional content becomes stale within hours.
+**Time-based Expiration**: Simple but wasteful for data with unpredictable change frequency. Popular artist data may remain valid for months while promotional content becomes stale within hours.
 
 **Event-based Invalidation**: Reactive approach that invalidates cache entries when source data changes. Requires reliable event propagation across distributed systems.
 
@@ -58,9 +58,9 @@ The solution involves implementing coordinated caching patterns that eliminate r
 
 Your music catalog contains 50,000+ artists, but analysis shows that just 500 popular artists account for 80% of browse requests. These repetitive lookups create unnecessary database load because each user session independently queries the same artist information that was already loaded by previous sessions.
 
-Cache-aside patterns solve this by placing your application in control of data access decisions. When a user browses artists, your application first checks Ignite's distributed cache for the requested data. Cache hits return instantly from memory across your cluster, while cache misses trigger one database load that populates the cache for all subsequent requests.
+Cache-aside operations solve this by placing your application in control of data access decisions. When a user browses artists, your application first checks Ignite's distributed cache for the requested data. Cache hits return instantly from memory across your cluster, while cache misses trigger one database load that populates the cache for all subsequent requests.
 
-This pattern works because music catalog data has predictable access characteristics: popular content gets accessed frequently while deep catalog items see sporadic requests. Your application can implement intelligent cache population strategies that load popular artists proactively while allowing less popular content to load on-demand.
+This approach works because music catalog data has predictable access characteristics: popular content gets accessed frequently while deep catalog items see sporadic requests. Your application can implement intelligent cache population techniques that load popular artists proactively while allowing less popular content to load on-demand.
 
 The cache-aside implementation gives you complete control over cache behavior. You decide what data to cache, when to load it, and how to handle invalidation when catalog information changes. This control becomes critical when balancing cache memory usage against database load reduction.
 
@@ -74,7 +74,7 @@ import org.apache.ignite.table.KeyValueView;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Demonstrates cache-aside pattern implementation using Ignite 3 KeyValueView API.
+ * Demonstrates cache-aside implementation using Ignite 3 KeyValueView API.
  * 
  * Music streaming services use cache-aside for catalog data where:
  * - Reads significantly outnumber writes
@@ -92,7 +92,7 @@ public class CacheAsidePatternDemo {
     }
     
     /**
-     * Retrieves artist information using cache-aside pattern.
+     * Retrieves artist information using cache-aside approach.
      * 
      * Pattern implementation:
      * 1. Check cache first (Ignite)
@@ -204,17 +204,17 @@ public class CacheAsidePatternDemo {
 }
 ```
 
-The cache-aside pattern transforms catalog browsing performance by eliminating redundant database queries. Popular artists load once and serve thousands of requests from distributed memory, while your database handles only the unique lookups that haven't been cached yet.
+The cache-aside approach transforms catalog browsing performance by eliminating redundant database queries. Popular artists load once and serve thousands of requests from distributed memory, while your database handles only the unique lookups that haven't been cached yet.
 
-This approach reduces database load by 60-80% for typical music catalog access patterns while maintaining complete application control over caching behavior. The pattern works best for read-heavy workloads where cache hit rates justify the implementation complexity.
+This approach reduces database load by 60-80% for typical music catalog access characteristics while maintaining complete application control over caching behavior. This approach works best for read-heavy workloads where cache hit rates justify the implementation complexity.
 
 ## How Write-Through Patterns Maintain Data Consistency
 
 Customer profile updates create a different challenge: data must remain consistent across all systems immediately after changes occur. When a user updates their subscription status, that change needs to be visible instantly in both your cache and persistent storage to prevent billing errors or access control issues.
 
-Write-through patterns solve this by coordinating updates across multiple data stores within the same transaction. Unlike cache-aside patterns that handle reads independently, write-through operations must succeed in both the cache and external database or fail completely.
+Write-through operations solve this by coordinating updates across multiple data stores within the same transaction. Unlike cache-aside operations that handle reads independently, write-through operations must succeed in both the cache and external database or fail completely.
 
-This pattern eliminates the consistency gaps that occur when cache and database updates happen independently. User profile changes, payment information updates, and subscription modifications all require this level of consistency to maintain system integrity.
+This approach eliminates the consistency gaps that occur when cache and database updates happen independently. User profile changes, payment information updates, and subscription modifications all require this level of consistency to maintain system integrity.
 
 ### Write-Through Implementation
 
@@ -225,7 +225,7 @@ import org.apache.ignite.transactions.IgniteTransactions;
 import org.apache.ignite.table.RecordView;
 
 /**
- * Write-through pattern implementation using Ignite 3 transactions.
+ * Write-through implementation using Ignite 3 transactions.
  * 
  * Coordinates customer data updates across cache and external systems
  * within the same transaction boundary for immediate consistency.
@@ -243,7 +243,7 @@ public class WriteThroughPatternDemo {
     }
     
     /**
-     * Updates customer information using write-through pattern.
+     * Updates customer information using write-through approach.
      * 
      * Pattern implementation:
      * 1. Begin transaction
@@ -351,17 +351,17 @@ public class WriteThroughPatternDemo {
 }
 ```
 
-Write-through patterns provide the strongest consistency guarantees for critical customer data updates. All systems see changes immediately after transactions commit, eliminating the data synchronization issues that cause billing errors and user access problems.
+Write-through operations provide the strongest consistency guarantees for critical customer data updates. All systems see changes immediately after transactions commit, eliminating the data synchronization issues that cause billing errors and user access problems.
 
-The pattern trades some write performance for consistency guarantees, making it ideal for customer profiles, subscription changes, and payment information where data accuracy takes priority over raw throughput.
+This approach trades some write performance for consistency guarantees, making it ideal for customer profiles, subscription changes, and payment information where data accuracy takes priority over raw throughput.
 
 ## How Write-Behind Patterns Handle High-Volume Events
 
 Music streaming generates massive event volumes that would overwhelm traditional write-through approaches. Play events, skip tracking, and user interaction data arrive at rates of 10,000+ events per second during peak usage, creating database bottlenecks if every event requires immediate persistence.
 
-Write-behind patterns solve this by accepting events into cache immediately while batching database writes asynchronously. Your application responds to event submissions instantly, while background processes handle the database synchronization efficiently.
+Write-behind operations solve this by accepting events into cache immediately while batching database writes asynchronously. Your application responds to event submissions instantly, while background processes handle the database synchronization efficiently.
 
-This approach prevents event processing delays from impacting user experience. Users don't wait for play event logging to complete before their music starts, and high event volumes don't create database contention that affects other application features.
+This technique prevents event processing delays from impacting user experience. Users don't wait for play event logging to complete before their music starts, and high event volumes don't create database contention that affects other application features.
 
 ### Write-Behind Implementation
 

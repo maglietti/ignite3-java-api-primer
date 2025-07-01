@@ -2,9 +2,9 @@
 
 Your development environment fails to connect to the Ignite cluster because of Docker networking issues, or your first table creation fails with schema validation errors. Connection attempts timeout, your annotated classes don't generate tables, or CRUD operations throw partition mapping exceptions. 
 
-The cluster runs but your application can't find any nodes. Multi-node addressing configuration is incorrect, resource cleanup patterns cause memory leaks, or the client connects to only one node instead of establishing partition awareness across the cluster.
+The cluster runs but your application can't find any nodes. Multi-node addressing configuration is incorrect, resource cleanup issues cause memory leaks, or the client connects to only one node instead of establishing partition awareness across the cluster.
 
-This chapter solves these first-application problems through proper cluster setup, correct connection patterns, and working schema definitions.
+This chapter solves these first-application problems through proper cluster setup, correct connection configuration, and working schema definitions.
 
 ## Environment Setup
 
@@ -289,7 +289,7 @@ public class HelloIgnite {
             Book book = books.get(null, new Book(1, null, null));
             System.out.println("Retrieved: " + book);
             
-            // 5. Query with SQL API - same data, different access pattern
+            // 5. Query with SQL API - same data, different access method
             var result = client.sql().execute(null, "SELECT id, title, author FROM Book ORDER BY id");
             System.out.println("All books via SQL:");
             while (result.hasNext()) {
@@ -299,7 +299,7 @@ public class HelloIgnite {
                                  row.stringValue("author"));
             }
             
-            System.out.println("Success! Default zone pattern working perfectly.");
+            System.out.println("Success! Default zone configuration working perfectly.");
             
         } catch (Exception e) {
             System.err.println("Error: " + e.getMessage());
@@ -340,7 +340,7 @@ Retrieved: Book{id=1, title='1984', author='George Orwell'}
 All books via SQL:
   1: 1984 by George Orwell
   2: Brave New World by Aldous Huxley
-Success! Default zone pattern working perfectly.
+Success! Default zone configuration working perfectly.
 ```
 
 ## Technical Implementation Details
@@ -352,7 +352,7 @@ The implementation demonstrates how default zone usage eliminates configuration 
 - **Zero Configuration**: No zone creation code required - Ignite 3 provides this automatically
 - **Immediate Availability**: Table creation succeeds using the pre-existing default zone
 - **Development Efficiency**: Removes operational complexity while maintaining functionality
-- **Performance Retention**: Multi-node connection patterns still provide optimization benefits
+- **Performance Retention**: Multi-node connection configuration still provides optimization benefits
 
 ### Distributed Connection Implementation  
 
@@ -397,7 +397,7 @@ This unified programming model provides:
 
 ## Production Scaling Approach
 
-The development patterns demonstrated here scale directly to production environments without code changes:
+The development approaches demonstrated here scale directly to production environments without code changes:
 
 ### Implementation Continuity
 
@@ -413,16 +413,16 @@ The implementation foundation supports production requirements:
 Production environments require custom zones when applications need:
 
 - **Fault Tolerance**: Multiple replicas for data protection and availability
-- **Performance Optimization**: Tuned partition counts for specific workload patterns
+- **Performance Optimization**: Tuned partition counts for specific workload characteristics
 - **Data Isolation**: Separate zones for different data tiers or tenant isolation
 - **Compliance Controls**: Specific data residency or security requirements
 
 ## Next Steps
 
-The connection and schema patterns established here provide the foundation for advanced distributed data operations:
+The connection and schema configurations established here provide the foundation for advanced distributed data operations:
 
 **Advanced Data Distribution**: These implementation approaches support complex production scenarios
 
-- **[Chapter 1.3: Distributed Data Fundamentals](03-distributed-data-fundamentals.md)** - Custom zones, replication strategies, and advanced data distribution patterns for production workloads
+- **[Chapter 1.3: Distributed Data Fundamentals](03-distributed-data-fundamentals.md)** - Custom zones, replication strategies, and advanced data distribution strategies for production workloads
 
-**Production Implementation**: The [reference applications](../ignite3-reference-apps/) demonstrate these patterns with custom zones and the complete music store dataset, showing how development patterns scale to production requirements
+**Production Implementation**: The [reference applications](../ignite3-reference-apps/) demonstrate these approaches with custom zones and the complete music store dataset, showing how development approaches scale to production requirements
