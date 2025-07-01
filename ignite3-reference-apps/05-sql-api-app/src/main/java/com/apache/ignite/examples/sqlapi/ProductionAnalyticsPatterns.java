@@ -138,7 +138,7 @@ public class ProductionAnalyticsPatterns {
             SqlRow track = tracks.next();
             
             // Extract data with proper null handling
-            long duration = track.longValue("MILLISECONDS");
+            int duration = track.intValue("MILLISECONDS");
             BigDecimal price = track.decimalValue("UNITPRICE");
             String artist = track.stringValue("ARTISTNAME");
             
@@ -332,11 +332,13 @@ public class ProductionAnalyticsPatterns {
         // Analyze execution plan for complex analytical query
         try {
             Statement explainQuery = sql.statementBuilder()
-                .query("EXPLAIN SELECT t.Name, t.UnitPrice, a.Name as ArtistName " +
-                       "FROM Track t " +
-                       "JOIN Album al ON t.AlbumId = al.AlbumId " +
-                       "JOIN Artist a ON al.ArtistId = a.ArtistId " +
-                       "WHERE t.GenreId = ? AND t.UnitPrice > ?")
+                .query("""
+                    EXPLAIN PLAN FOR SELECT t.Name, t.UnitPrice, a.Name as ArtistName
+                    FROM Track t
+                    JOIN Album al ON t.AlbumId = al.AlbumId
+                    JOIN Artist a ON al.ArtistId = a.ArtistId
+                    WHERE t.GenreId = ? AND t.UnitPrice > ?
+                    """)
                 .build();
             
             ResultSet<SqlRow> explainResult = sql.execute(null, explainQuery, 1, new BigDecimal("0.99"));
