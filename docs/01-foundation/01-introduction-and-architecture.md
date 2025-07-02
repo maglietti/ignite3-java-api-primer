@@ -8,13 +8,13 @@ Your monitoring dashboard shows the grim reality: average query time spiked to 8
 
 Traditional databases hit fundamental limits when your application grows beyond single-server capacity. These aren't configuration problems you can tune away - they're architectural constraints that require distributed solutions.
 
-**Single Point of Failure:** Your entire application depends on one database server. When it goes down, everything stops.
+* **Single Point of Failure:** Your entire application depends on one database server. When it goes down, everything stops.
 
-**Vertical Scaling Limits:** Adding more CPU and RAM to one server only delays the inevitable. Even the largest servers max out at some point.
+* **Vertical Scaling Limits:** Adding more CPU and RAM to one server only delays the inevitable. Even the largest servers max out at some point.
 
-**Read Replica Lag:** Write operations hit the master, reads come from replicas that are seconds or minutes behind. Your users see stale data and inconsistent application behavior.
+* **Read Replica Lag:** Write operations hit the master, reads come from replicas that are seconds or minutes behind. Your users see stale data and inconsistent application behavior.
 
-**Complex Sharding:** Manual database partitioning requires application-level routing logic, cross-shard joins become impossible, and operational complexity explodes.
+* **Complex Sharding:** Manual database partitioning requires application-level routing logic, cross-shard joins become impossible, and operational complexity explodes.
 
 Meanwhile, Spotify serves 400 million active users. Netflix streams globally without crashes. They're not running single PostgreSQL instances with read replicas. They use distributed architecture that scales horizontally.
 
@@ -22,15 +22,15 @@ Meanwhile, Spotify serves 400 million active users. Netflix streams globally wit
 
 Ignite 3 eliminates these traditional database limitations through distributed-first architecture. Instead of bolting distributed features onto single-server database designs, Ignite builds distribution into the core platform.
 
-**Unified Platform:** One system handles storage, compute, and caching instead of managing separate database, cache, and compute clusters. Your application connects to one platform that scales all capabilities together.
+* **Unified Platform:** One system handles storage, compute, and caching instead of managing separate database, cache, and compute clusters. Your application connects to one platform that scales all capabilities together.
 
-**Automatic Distribution:** Data spreads across multiple nodes automatically. No manual sharding logic - Ignite handles data placement, routing, and consistency transparently.
+* **Automatic Distribution:** Data spreads across multiple nodes automatically. No manual sharding logic - Ignite handles data placement, routing, and consistency transparently.
 
-**Consistent Performance:** Operations execute in microseconds whether your data lives on one node or spreads across hundreds. Built-in colocation strategies keep related data together for optimal join performance.
+* **Consistent Performance:** Operations execute in microseconds whether your data lives on one node or spreads across hundreds. Built-in colocation strategies keep related data together for optimal join performance.
 
-**Horizontal Scaling:** Add nodes to increase capacity. The cluster rebalances data automatically and serves more traffic without application changes.
+* **Horizontal Scaling:** Add nodes to increase capacity. The cluster rebalances data automatically and serves more traffic without application changes.
 
-**No Single Points of Failure:** Data replicates across multiple nodes. Node failures don't stop your application - the cluster continues operating with remaining nodes.
+* **No Single Points of Failure:** Data replicates across multiple nodes. Node failures don't stop your application - the cluster continues operating with remaining nodes.
 
 ## Production Platform Scaling Requirements
 
