@@ -98,7 +98,7 @@ public class BasicTableOperations {
 
     private static void createArtist(RecordView<Tuple> artists) {
         System.out.println("\n    --- CREATE Operation");
-        System.out.println("    >>> Creating new artist record using Tuple API");
+        System.out.println(">>> Creating new artist record using Tuple API");
         
         // Create a new artist record using Tuple
         Tuple newArtist = Tuple.create()
@@ -108,12 +108,12 @@ public class BasicTableOperations {
         // Insert the record
         artists.upsert(null, newArtist);
         
-        System.out.println("    <<< Created artist: " + newArtist.stringValue("Name"));
+        System.out.println("<<< Created artist: " + newArtist.stringValue("Name"));
     }
 
     private static void readArtist(RecordView<Tuple> artists) {
         System.out.println("\n    --- READ Operation");
-        System.out.println("    >>> Retrieving artist by primary key");
+        System.out.println(">>> Retrieving artist by primary key");
         
         // Create a key tuple to find the artist
         Tuple key = Tuple.create().set("ArtistId", 5001);
@@ -122,16 +122,16 @@ public class BasicTableOperations {
         Tuple artist = artists.get(null, key);
         
         if (artist != null) {
-            System.out.println("    <<< Found artist: " + artist.stringValue("Name") + 
+            System.out.println("<<< Found artist: " + artist.stringValue("Name") + 
                              " (ID: " + artist.intValue("ArtistId") + ")");
         } else {
-            System.out.println("    !!! Artist not found");
+            System.out.println("!!! Artist not found");
         }
     }
 
     private static void updateArtist(RecordView<Tuple> artists) {
         System.out.println("\n    --- UPDATE Operation");
-        System.out.println("    >>> Modifying existing artist record");
+        System.out.println(">>> Modifying existing artist record");
         
         // First get the current record
         Tuple key = Tuple.create().set("ArtistId", 5001);
@@ -144,15 +144,15 @@ public class BasicTableOperations {
             // Save the changes
             artists.upsert(null, updatedArtist);
             
-            System.out.println("    <<< Updated artist name to: " + updatedArtist.stringValue("Name"));
+            System.out.println("<<< Updated artist name to: " + updatedArtist.stringValue("Name"));
         } else {
-            System.out.println("    !!! Artist not found for update");
+            System.out.println("!!! Artist not found for update");
         }
     }
 
     private static void deleteArtist(RecordView<Tuple> artists) {
         System.out.println("\n    --- DELETE Operation");
-        System.out.println("    >>> Removing artist record");
+        System.out.println(">>> Removing artist record");
         
         // Create key for the artist to delete
         Tuple key = Tuple.create().set("ArtistId", 5001);
@@ -161,24 +161,24 @@ public class BasicTableOperations {
         boolean deleted = artists.delete(null, key);
         
         if (deleted) {
-            System.out.println("    <<< Artist deleted successfully");
+            System.out.println("<<< Artist deleted successfully");
         } else {
-            System.out.println("    !!! Artist not found for deletion");
+            System.out.println("!!! Artist not found for deletion");
         }
     }
 
     private static void verifyDeletion(RecordView<Tuple> artists) {
         System.out.println("\n    --- VERIFY Deletion");
-        System.out.println("    >>> Confirming deletion was successful");
+        System.out.println(">>> Confirming deletion was successful");
         
         // Try to find the deleted artist
         Tuple key = Tuple.create().set("ArtistId", 5001);
         Tuple artist = artists.get(null, key);
         
         if (artist == null) {
-            System.out.println("    <<< Confirmed: Artist successfully deleted");
+            System.out.println("<<< Confirmed: Artist successfully deleted");
         } else {
-            System.out.println("    !!! Unexpected: Artist still exists");
+            System.out.println("!!! Unexpected: Artist still exists");
         }
     }
 }

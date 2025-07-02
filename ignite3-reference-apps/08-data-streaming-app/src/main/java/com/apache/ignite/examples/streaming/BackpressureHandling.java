@@ -260,7 +260,7 @@ public class BackpressureHandling {
             long duration = System.currentTimeMillis() - startTime;
             double avgThroughput = (double) events.size() / duration * 1000;
             
-            System.out.printf("    <<< Completed streaming with backpressure in %d ms (%.2f events/sec avg)%n", 
+            System.out.printf("<<< Completed streaming with backpressure in %d ms (%.2f events/sec avg)%n", 
                 duration, avgThroughput);
             System.out.printf("  Final stats - Published: %d, Max rate: %.2f events/sec%n",
                 publisher.getPublishedCount(), publisher.getMaxRate());
@@ -335,7 +335,7 @@ public class BackpressureHandling {
                 
                 streamingFuture.get();
                 
-                System.out.println("    <<< Adaptive rate limiting demonstration completed");
+                System.out.println("<<< Adaptive rate limiting demonstration completed");
                 System.out.printf("  Peak rate: %.2f events/sec, Min rate: %.2f events/sec%n",
                     rateController.getPeakRate(), rateController.getMinRate());
                 
@@ -428,7 +428,7 @@ public class BackpressureHandling {
                 
                 streamingFuture.get();
                 
-                System.out.println("    <<< Buffer overflow patterns demonstrated");
+                System.out.println("<<< Buffer overflow patterns demonstrated");
             }
             
         } catch (Exception e) {
@@ -620,7 +620,7 @@ public class BackpressureHandling {
         
         private void setPhase(String newPhase) {
             if (!newPhase.equals(currentPhase)) {
-                System.out.printf("  >>> Phase transition: %s → %s%n", currentPhase, newPhase);
+                System.out.printf("  --- Phase transition: %s → %s%n", currentPhase, newPhase);
                 currentPhase = newPhase;
                 phaseStartTime = System.currentTimeMillis();
                 eventCount = 0;

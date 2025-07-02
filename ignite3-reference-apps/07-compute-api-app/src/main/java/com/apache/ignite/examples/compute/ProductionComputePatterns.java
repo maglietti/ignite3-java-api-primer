@@ -82,7 +82,7 @@ public class ProductionComputePatterns {
         
         // Deploy job classes for execution
         if (!ComputeJobDeployment.deployJobClasses()) {
-            System.out.println("    >>> Continuing with development deployment units");
+            System.out.println(">>> Continuing with development deployment units");
         }
         
         // Large-scale recommendation engine
@@ -108,7 +108,7 @@ public class ProductionComputePatterns {
      */
     private void demonstrateRecommendationEngine(IgniteClient client) {
         System.out.println("\n    --- Recommendation Engine Processing");
-        System.out.println("    >>> Processing 2.5M user profiles for personalized recommendations");
+        System.out.println(">>> Processing 2.5M user profiles for personalized recommendations");
         
         try {
             // Simulate large-scale recommendation processing
@@ -116,14 +116,14 @@ public class ProductionComputePatterns {
             CompletableFuture<RecommendationReport> result = processor.processRecommendations(client);
             
             RecommendationReport report = result.get(30, TimeUnit.SECONDS);
-            System.out.println("    <<< Recommendation processing completed:");
+            System.out.println("<<< Recommendation processing completed:");
             System.out.println("         Users processed: " + report.usersProcessed);
             System.out.println("         Recommendations generated: " + report.recommendationsGenerated);
             System.out.println("         Processing time: " + report.processingTimeMs + "ms");
             System.out.println("         Nodes utilized: " + report.nodesUtilized);
             
         } catch (Exception e) {
-            System.err.println("    !!! Recommendation processing failed: " + e.getMessage());
+            System.err.println("!!! Recommendation processing failed: " + e.getMessage());
         }
     }
 
@@ -132,7 +132,7 @@ public class ProductionComputePatterns {
      */
     private void demonstrateDataColocationPatterns(IgniteClient client) {
         System.out.println("\n    --- Data Colocation Performance Patterns");
-        System.out.println("    >>> Optimizing job placement for data locality");
+        System.out.println(">>> Optimizing job placement for data locality");
         
         try {
             // Artist-specific analytics with colocation
@@ -149,7 +149,7 @@ public class ProductionComputePatterns {
                     .collect(Collectors.toList()))
                 .get();
             
-            System.out.println("    <<< Artist analytics completed for " + results.size() + " artists");
+            System.out.println("<<< Artist analytics completed for " + results.size() + " artists");
             for (ArtistAnalytics analytics : results) {
                 System.out.println("         Artist " + analytics.artistId + ": " + 
                                  analytics.albumCount + " albums, " + 
@@ -158,7 +158,7 @@ public class ProductionComputePatterns {
             }
             
         } catch (Exception e) {
-            System.err.println("    !!! Data colocation processing failed: " + e.getMessage());
+            System.err.println("!!! Data colocation processing failed: " + e.getMessage());
         }
     }
 
@@ -167,7 +167,7 @@ public class ProductionComputePatterns {
      */
     private void demonstrateAdvancedMapReduce(IgniteClient client) {
         System.out.println("\n    --- Advanced MapReduce Workflows");
-        System.out.println("    >>> Executing distributed map-reduce for genre popularity analysis");
+        System.out.println(">>> Executing distributed map-reduce for genre popularity analysis");
         
         try {
             // Map phase: Distribute genre analysis across nodes
@@ -202,7 +202,7 @@ public class ProductionComputePatterns {
                 }
             }
             
-            System.out.println("    <<< MapReduce analysis completed for " + aggregatedMetrics.size() + " genres");
+            System.out.println("<<< MapReduce analysis completed for " + aggregatedMetrics.size() + " genres");
             
             // Display top 3 genres by track count
             aggregatedMetrics.entrySet().stream()
@@ -216,7 +216,7 @@ public class ProductionComputePatterns {
                 });
             
         } catch (Exception e) {
-            System.err.println("    !!! MapReduce processing failed: " + e.getMessage());
+            System.err.println("!!! MapReduce processing failed: " + e.getMessage());
         }
     }
 
@@ -225,7 +225,7 @@ public class ProductionComputePatterns {
      */
     private void demonstrateComputeResilience(IgniteClient client) {
         System.out.println("\n    --- Compute Resilience Patterns");
-        System.out.println("    >>> Implementing circuit breaker for job protection");
+        System.out.println(">>> Implementing circuit breaker for job protection");
         
         try {
             ComputeCircuitBreaker circuitBreaker = new ComputeCircuitBreaker();
@@ -242,15 +242,15 @@ public class ProductionComputePatterns {
                     );
                     
                     String output = result.get();
-                    System.out.println("    <<< Resilient job " + i + ": " + output);
+                    System.out.println("<<< Resilient job " + i + ": " + output);
                     
                 } catch (Exception e) {
-                    System.err.println("    !!! Resilient job " + i + " failed: " + e.getMessage());
+                    System.err.println("!!! Resilient job " + i + " failed: " + e.getMessage());
                 }
             }
             
         } catch (Exception e) {
-            System.err.println("    !!! Circuit breaker demonstration failed: " + e.getMessage());
+            System.err.println("!!! Circuit breaker demonstration failed: " + e.getMessage());
         }
     }
 
@@ -259,7 +259,7 @@ public class ProductionComputePatterns {
      */
     private void demonstratePerformanceMonitoring(IgniteClient client) {
         System.out.println("\n    --- Performance Monitoring");
-        System.out.println("    >>> Tracking job execution metrics and resource utilization");
+        System.out.println(">>> Tracking job execution metrics and resource utilization");
         
         try {
             JobPerformanceMonitor monitor = new JobPerformanceMonitor();
@@ -275,14 +275,14 @@ public class ProductionComputePatterns {
             String output = result.get();
             JobMetrics metrics = monitor.getLastExecutionMetrics();
             
-            System.out.println("    <<< Job execution completed: " + output);
-            System.out.println("    <<< Performance metrics:");
+            System.out.println("<<< Job execution completed: " + output);
+            System.out.println("<<< Performance metrics:");
             System.out.println("         Execution time: " + metrics.executionTimeMs + "ms");
             System.out.println("         Target node: " + metrics.targetNode);
             System.out.println("         Memory usage: " + metrics.memoryUsageMB + "MB");
             
         } catch (Exception e) {
-            System.err.println("    !!! Performance monitoring failed: " + e.getMessage());
+            System.err.println("!!! Performance monitoring failed: " + e.getMessage());
         }
     }
 

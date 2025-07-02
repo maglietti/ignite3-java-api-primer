@@ -74,22 +74,22 @@ public class ComputeJobDeployment {
      * @return true if deployment successful or already exists, false if failed
      */
     public static boolean deployJobClasses() {
-        System.out.println("    >>> Deploying job classes to cluster...");
+        System.out.println(">>> Deploying job classes to cluster...");
         
         try {
             // Find JAR file
             Path jarPath = findJobJar();
             if (jarPath == null) {
-                System.err.println("    !!! JAR file not found. Run 'mvn package' first.");
+                System.err.println("!!! JAR file not found. Run 'mvn package' first.");
                 return false;
             }
             
-            System.out.println("    >>> JAR file found: " + jarPath);
+            System.out.println(">>> JAR file found: " + jarPath);
             
             // Deploy via REST API
             boolean deployed = deployViaRestApi(jarPath);
             if (deployed) {
-                System.out.println("    >>> Job classes deployed successfully");
+                System.out.println(">>> Job classes deployed successfully");
                 return true;
             } else {
                 printFallbackInstructions(jarPath);
@@ -98,7 +98,7 @@ public class ComputeJobDeployment {
             
         } catch (Exception e) {
             logger.warn("Deployment failed", e);
-            System.err.println("    !!! Deployment failed: " + e.getMessage());
+            System.err.println("!!! Deployment failed: " + e.getMessage());
             return false;
         }
     }
@@ -152,13 +152,13 @@ public class ComputeJobDeployment {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             
             if (response.statusCode() == 200 || response.statusCode() == 201) {
-                System.out.println("    >>> JAR deployed successfully via REST API");
+                System.out.println(">>> JAR deployed successfully via REST API");
                 return true;
             } else if (response.statusCode() == 409) {
-                System.out.println("    >>> Deployment unit already exists (HTTP 409) - continuing");
+                System.out.println(">>> Deployment unit already exists (HTTP 409) - continuing");
                 return true;
             } else {
-                System.err.println("    !!! REST API deployment failed: HTTP " + response.statusCode());
+                System.err.println("!!! REST API deployment failed: HTTP " + response.statusCode());
                 return false;
             }
             
@@ -189,7 +189,7 @@ public class ComputeJobDeployment {
      * Print fallback deployment instructions when REST API fails.
      */
     private static void printFallbackInstructions(Path jarPath) {
-        System.err.println("    !!! Automatic deployment failed. Use one of these alternatives:");
+        System.err.println("!!! Automatic deployment failed. Use one of these alternatives:");
         System.err.println("");
         System.err.println("    Option 1: Deployment Script");
         System.err.println("    ./deploy-jar.sh " + DEPLOYMENT_UNIT_NAME + " " + DEPLOYMENT_UNIT_VERSION + " " + jarPath);

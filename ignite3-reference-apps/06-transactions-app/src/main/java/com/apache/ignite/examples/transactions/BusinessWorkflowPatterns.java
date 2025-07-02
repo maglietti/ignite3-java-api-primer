@@ -107,20 +107,20 @@ public class BusinessWorkflowPatterns {
      */
     private void demonstratePurchaseWorkflow(IgniteClient client) {
         System.out.println("\n    --- Customer Purchase Workflow");
-        System.out.println("    >>> Processing multi-table purchase coordination");
+        System.out.println(">>> Processing multi-table purchase coordination");
         
         List<Integer> sampleTrackIds = List.of(1, 2, 3);
         Integer customerId = 1;
         
         try {
             Integer invoiceId = processPurchase(client, customerId, sampleTrackIds);
-            System.out.println("    <<< Purchase completed successfully: Invoice " + invoiceId);
+            System.out.println("<<< Purchase completed successfully: Invoice " + invoiceId);
             
             // Verify the purchase
             verifyPurchase(client, invoiceId);
             
         } catch (Exception e) {
-            System.err.println("    !!! Purchase failed: " + e.getMessage());
+            System.err.println("!!! Purchase failed: " + e.getMessage());
         }
     }
 
@@ -206,7 +206,7 @@ public class BusinessWorkflowPatterns {
         
         if (result.hasNext()) {
             SqlRow row = result.next();
-            System.out.println("    <<< Verification: Invoice " + row.intValue("InvoiceId") + 
+            System.out.println("<<< Verification: Invoice " + row.intValue("InvoiceId") + 
                              " with " + row.longValue("LineCount") + 
                              " items, total $" + row.decimalValue("Total"));
         }
@@ -217,7 +217,7 @@ public class BusinessWorkflowPatterns {
      */
     private void demonstrateTimeoutPatterns(IgniteClient client) {
         System.out.println("\n    --- Transaction Timeout Patterns");
-        System.out.println("    >>> Configuring timeouts for different operation types");
+        System.out.println(">>> Configuring timeouts for different operation types");
         
         // Quick customer update with short timeout
         quickCustomerUpdate(client);
@@ -239,11 +239,11 @@ public class BusinessWorkflowPatterns {
                     .build();
                 long updated = sql.execute(tx, updateStmt, "Updated Company " + java.time.LocalDateTime.now(), 1).affectedRows();
                 
-                System.out.println("    <<< Quick update completed: " + updated + " customer updated");
+                System.out.println("<<< Quick update completed: " + updated + " customer updated");
                 return true;
             });
         } catch (Exception e) {
-            System.err.println("    !!! Quick update failed: " + e.getMessage());
+            System.err.println("!!! Quick update failed: " + e.getMessage());
         }
     }
 
@@ -270,7 +270,7 @@ public class BusinessWorkflowPatterns {
                 
                 if (stats.hasNext()) {
                     SqlRow row = stats.next();
-                    System.out.println("    <<< Analytics completed:");
+                    System.out.println("<<< Analytics completed:");
                     System.out.println("         Artists: " + row.longValue("artist_count"));
                     System.out.println("         Albums: " + row.longValue("album_count"));
                     System.out.println("         Tracks: " + row.longValue("track_count"));
@@ -280,7 +280,7 @@ public class BusinessWorkflowPatterns {
                 return true;
             });
         } catch (Exception e) {
-            System.err.println("    !!! Analytics failed: " + e.getMessage());
+            System.err.println("!!! Analytics failed: " + e.getMessage());
         }
     }
 
@@ -289,7 +289,7 @@ public class BusinessWorkflowPatterns {
      */
     private void demonstrateExplicitTransactionControl(IgniteClient client) {
         System.out.println("\n    --- Explicit Transaction Control");
-        System.out.println("    >>> Manual transaction lifecycle management");
+        System.out.println(">>> Manual transaction lifecycle management");
         
         // Basic explicit pattern
         basicExplicitPattern(client);
@@ -309,17 +309,17 @@ public class BusinessWorkflowPatterns {
             
             // 3. Commit if all operations succeed
             tx.commit();
-            System.out.println("    <<< Basic explicit transaction completed successfully");
+            System.out.println("<<< Basic explicit transaction completed successfully");
             
         } catch (Throwable e) {
-            System.err.println("    !!! Basic explicit transaction failed: " + e.getMessage());
+            System.err.println("!!! Basic explicit transaction failed: " + e.getMessage());
             
             // 4. Rollback on any error
             if (tx != null) {
                 try {
                     tx.rollback();
                 } catch (Throwable rollbackError) {
-                    System.err.println("    !!! Rollback failed: " + rollbackError.getMessage());
+                    System.err.println("!!! Rollback failed: " + rollbackError.getMessage());
                 }
             }
         }
@@ -333,17 +333,17 @@ public class BusinessWorkflowPatterns {
             performSimpleOperation(client, tx);
             tx.commit();
             committed = true;
-            System.out.println("    <<< Safer explicit transaction completed successfully");
+            System.out.println("<<< Safer explicit transaction completed successfully");
             
         } catch (Throwable e) {
-            System.err.println("    !!! Safer explicit transaction failed: " + e.getMessage());
+            System.err.println("!!! Safer explicit transaction failed: " + e.getMessage());
         } finally {
             // Ensure rollback if transaction wasn't committed
             if (tx != null && !committed) {
                 try {
                     tx.rollback();
                 } catch (Throwable rollbackError) {
-                    System.err.println("    !!! Rollback failed: " + rollbackError.getMessage());
+                    System.err.println("!!! Rollback failed: " + rollbackError.getMessage());
                 }
             }
         }
@@ -369,7 +369,7 @@ public class BusinessWorkflowPatterns {
      */
     private void demonstrateResilientProcessing(IgniteClient client) {
         System.out.println("\n    --- Resilient Transaction Processing");
-        System.out.println("    >>> Implementing retry logic with exponential backoff");
+        System.out.println(">>> Implementing retry logic with exponential backoff");
         
         ResilientTransactionService resilientService = new ResilientTransactionService();
         
@@ -394,9 +394,9 @@ public class BusinessWorkflowPatterns {
         
         try {
             String output = result.get();
-            System.out.println("    <<< Resilient operation completed: " + output);
+            System.out.println("<<< Resilient operation completed: " + output);
         } catch (Exception e) {
-            System.err.println("    !!! Resilient operation failed: " + e.getMessage());
+            System.err.println("!!! Resilient operation failed: " + e.getMessage());
         }
     }
 
@@ -405,7 +405,7 @@ public class BusinessWorkflowPatterns {
      */
     private void demonstrateCircuitBreakerPattern(IgniteClient client) {
         System.out.println("\n    --- Circuit Breaker Pattern");
-        System.out.println("    >>> Protecting system from cascading failures");
+        System.out.println(">>> Protecting system from cascading failures");
         
         TransactionCircuitBreaker circuitBreaker = new TransactionCircuitBreaker();
         
@@ -430,10 +430,10 @@ public class BusinessWorkflowPatterns {
                 );
                 
                 String output = result.get();
-                System.out.println("    <<< Circuit breaker operation " + i + ": " + output);
+                System.out.println("<<< Circuit breaker operation " + i + ": " + output);
                 
             } catch (Exception e) {
-                System.err.println("    !!! Circuit breaker operation " + i + " failed: " + e.getMessage());
+                System.err.println("!!! Circuit breaker operation " + i + " failed: " + e.getMessage());
             }
         }
     }

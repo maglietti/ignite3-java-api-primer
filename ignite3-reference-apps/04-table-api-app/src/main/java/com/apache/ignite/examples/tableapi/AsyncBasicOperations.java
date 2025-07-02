@@ -92,7 +92,7 @@ public class AsyncBasicOperations {
     private static void demonstrateSimpleAsync(RecordView<Tuple> artists) 
             throws ExecutionException, InterruptedException {
         System.out.println("\n    --- Simple Async Operations");
-        System.out.println("    >>> Starting non-blocking database operations");
+        System.out.println(">>> Starting non-blocking database operations");
         
         // Create test data
         Tuple newArtist = Tuple.create()
@@ -101,30 +101,30 @@ public class AsyncBasicOperations {
         
         // ASYNC INSERT: Start the operation without waiting
         CompletableFuture<Void> insertFuture = artists.upsertAsync(null, newArtist);
-        System.out.println("    >>> Insert started asynchronously...");
+        System.out.println(">>> Insert started asynchronously...");
         
         // Wait for completion
         insertFuture.get();
-        System.out.println("    <<< Insert completed");
+        System.out.println("<<< Insert completed");
         
         // ASYNC READ: Non-blocking read
         Tuple key = Tuple.create().set("ArtistId", 5008);
         CompletableFuture<Tuple> readFuture = artists.getAsync(null, key);
-        System.out.println("    >>> Read started asynchronously...");
+        System.out.println(">>> Read started asynchronously...");
         
         // Wait for result
         Tuple result = readFuture.get();
-        System.out.println("    <<< Read completed: " + result.stringValue("Name"));
+        System.out.println("<<< Read completed: " + result.stringValue("Name"));
         
         // CLEANUP
         artists.deleteAsync(null, key).get();
-        System.out.println("    <<< Cleanup completed");
+        System.out.println("<<< Cleanup completed");
     }
 
     private static void demonstrateAsyncChaining(RecordView<Tuple> artists) 
             throws ExecutionException, InterruptedException {
         System.out.println("\n    --- Async Chaining");
-        System.out.println("    >>> Chaining operations without blocking threads");
+        System.out.println(">>> Chaining operations without blocking threads");
         
         final int artistId = 5009;
         
@@ -132,26 +132,26 @@ public class AsyncBasicOperations {
         CompletableFuture<String> chainedOperation = CompletableFuture
             // Start with creating an artist
             .supplyAsync(() -> {
-                System.out.println("    >>> Step 1: Creating artist...");
+                System.out.println(">>> Step 1: Creating artist...");
                 return Tuple.create()
                     .set("ArtistId", artistId)
                     .set("Name", "Chained Artist");
             })
             // Insert the artist
             .thenCompose(artist -> {
-                System.out.println("    >>> Step 2: Inserting artist...");
+                System.out.println(">>> Step 2: Inserting artist...");
                 return artists.upsertAsync(null, artist)
                     .thenApply(ignored -> artist); // Pass the artist to next stage
             })
             // Read it back
             .thenCompose(artist -> {
-                System.out.println("    >>> Step 3: Reading artist back...");
+                System.out.println(">>> Step 3: Reading artist back...");
                 Tuple key = Tuple.create().set("ArtistId", artistId);
                 return artists.getAsync(null, key);
             })
             // Extract the name
             .thenApply(retrievedArtist -> {
-                System.out.println("    >>> Step 4: Processing result...");
+                System.out.println(">>> Step 4: Processing result...");
                 if (retrievedArtist != null) {
                     return "Found: " + retrievedArtist.stringValue("Name");
                 } else {
@@ -161,18 +161,18 @@ public class AsyncBasicOperations {
         
         // Get the final result
         String finalResult = chainedOperation.get();
-        System.out.println("    <<< Chain completed: " + finalResult);
+        System.out.println("<<< Chain completed: " + finalResult);
         
         // Cleanup
         Tuple key = Tuple.create().set("ArtistId", artistId);
         artists.deleteAsync(null, key).get();
-        System.out.println("    <<< Cleanup completed");
+        System.out.println("<<< Cleanup completed");
     }
 
     private static void demonstrateAsyncErrorHandling(RecordView<Tuple> artists) 
             throws ExecutionException, InterruptedException {
         System.out.println("\n    --- Async Error Handling");
-        System.out.println("    >>> Demonstrating error handling in async operations");
+        System.out.println(">>> Demonstrating error handling in async operations");
         
         // Try to read a non-existent artist
         Tuple key = Tuple.create().set("ArtistId", 99999);
@@ -191,14 +191,14 @@ public class AsyncBasicOperations {
             });
         
         String result = errorHandlingDemo.get();
-        System.out.println("    <<< Error handling result: " + result);
+        System.out.println("<<< Error handling result: " + result);
         
         // Demonstrate successful error recovery
         CompletableFuture<String> recoveryDemo = artists.getAsync(null, key)
             .thenCompose(artist -> {
                 if (artist == null) {
                     // Artist not found, create it
-                    System.out.println("    >>> Artist not found, creating...");
+                    System.out.println(">>> Artist not found, creating...");
                     Tuple newArtist = Tuple.create()
                         .set("ArtistId", 99999)
                         .set("Name", "Recovery Artist");
@@ -211,10 +211,10 @@ public class AsyncBasicOperations {
             });
         
         String recoveryResult = recoveryDemo.get();
-        System.out.println("    <<< Recovery result: " + recoveryResult);
+        System.out.println("<<< Recovery result: " + recoveryResult);
         
         // Cleanup
         artists.deleteAsync(null, key).get();
-        System.out.println("    <<< Cleanup completed");
+        System.out.println("<<< Cleanup completed");
     }
 }

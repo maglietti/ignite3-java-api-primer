@@ -109,7 +109,7 @@ public class ProductionAnalyticsPatterns {
      */
     private void demonstrateStreamingResultProcessing(IgniteSql sql) {
         System.out.println("\n    --- Streaming Result Processing");
-        System.out.println("    >>> Processing large result sets with controlled memory usage");
+        System.out.println(">>> Processing large result sets with controlled memory usage");
         
         // Configure streaming with controlled memory usage
         Statement streamingQuery = sql.statementBuilder()
@@ -132,7 +132,7 @@ public class ProductionAnalyticsPatterns {
         BigDecimal totalRevenue = BigDecimal.ZERO;
         int processed = 0;
         
-        System.out.println("    >>> Processing tracks in streaming fashion...");
+        System.out.println(">>> Processing tracks in streaming fashion...");
         
         while (tracks.hasNext() && processed < 100) { // Limit for demo
             SqlRow track = tracks.next();
@@ -152,7 +152,7 @@ public class ProductionAnalyticsPatterns {
             }
         }
         
-        System.out.printf("    <<< Analysis complete: %d tracks, %.1f total minutes, $%.2f revenue%n",
+        System.out.printf("<<< Analysis complete: %d tracks, %.1f total minutes, $%.2f revenue%n",
             processed, totalDuration / 60000.0, totalRevenue);
     }
 
@@ -161,7 +161,7 @@ public class ProductionAnalyticsPatterns {
      */
     private void demonstrateHierarchicalDataProcessing(IgniteSql sql) {
         System.out.println("\n    --- Hierarchical Data Processing");
-        System.out.println("    >>> Processing artist-album-track hierarchy");
+        System.out.println(">>> Processing artist-album-track hierarchy");
         
         // Query that joins across colocated tables for optimal performance
         Statement hierarchicalQuery = sql.statementBuilder()
@@ -186,7 +186,7 @@ public class ProductionAnalyticsPatterns {
         BigDecimal albumTotal = BigDecimal.ZERO;
         BigDecimal artistTotal = BigDecimal.ZERO;
         
-        System.out.println("    >>> Processing hierarchical results:");
+        System.out.println(">>> Processing hierarchical results:");
         
         while (result.hasNext()) {
             SqlRow row = result.next();
@@ -202,7 +202,7 @@ public class ProductionAnalyticsPatterns {
                 }
                 currentArtistId = artistId;
                 artistTotal = BigDecimal.ZERO;
-                System.out.printf("    <<< Processing Artist: %s%n", row.stringValue("ARTISTNAME"));
+                System.out.printf("<<< Processing Artist: %s%n", row.stringValue("ARTISTNAME"));
             }
             
             // Detect album boundary
@@ -234,7 +234,7 @@ public class ProductionAnalyticsPatterns {
      */
     private void demonstrateMetadataDrivenProcessing(IgniteSql sql) {
         System.out.println("\n    --- Metadata-Driven Processing");
-        System.out.println("    >>> Analyzing result structure dynamically");
+        System.out.println(">>> Analyzing result structure dynamically");
         
         // Query with unknown result structure
         ResultSet<SqlRow> result = sql.execute(null, 
@@ -243,7 +243,7 @@ public class ProductionAnalyticsPatterns {
         // Analyze result structure dynamically
         ResultSetMetadata metadata = result.metadata();
         
-        System.out.println("    <<< Result set structure:");
+        System.out.println("<<< Result set structure:");
         List<ColumnMetadata> columns = metadata.columns();
         for (ColumnMetadata column : columns) {
             System.out.printf("         %s: %s (%s)%s%n",
@@ -253,7 +253,7 @@ public class ProductionAnalyticsPatterns {
                 column.nullable() ? " NULLABLE" : " NOT NULL");
         }
         
-        System.out.println("    <<< Data rows:");
+        System.out.println("<<< Data rows:");
         
         // Process rows dynamically based on metadata
         while (result.hasNext()) {
@@ -275,7 +275,7 @@ public class ProductionAnalyticsPatterns {
      */
     private void demonstrateRevenueAnalytics(IgniteSql sql) {
         System.out.println("\n    --- Production Revenue Analytics");
-        System.out.println("    >>> Generating business intelligence reports");
+        System.out.println(">>> Generating business intelligence reports");
         
         // Revenue analytics by genre (simulated data since sample DB may not have invoices)
         Statement revenueQuery = sql.statementBuilder()
@@ -297,7 +297,7 @@ public class ProductionAnalyticsPatterns {
         
         ResultSet<SqlRow> result = sql.execute(null, revenueQuery);
         
-        System.out.println("    <<< Top Genres by Catalog Value:");
+        System.out.println("<<< Top Genres by Catalog Value:");
         System.out.println("         Genre                | Tracks | Avg Price | Total Value");
         System.out.println("         ---------------------|--------|-----------|------------");
         
@@ -327,7 +327,7 @@ public class ProductionAnalyticsPatterns {
      */
     private void demonstrateQueryOptimization(IgniteSql sql) {
         System.out.println("\n    --- Query Optimization");
-        System.out.println("    >>> Analyzing execution plans for performance");
+        System.out.println(">>> Analyzing execution plans for performance");
         
         // Analyze execution plan for complex analytical query
         try {
@@ -343,7 +343,7 @@ public class ProductionAnalyticsPatterns {
             
             ResultSet<SqlRow> explainResult = sql.execute(null, explainQuery, 1, new BigDecimal("0.99"));
             
-            System.out.println("    <<< Query Execution Plan:");
+            System.out.println("<<< Query Execution Plan:");
             while (explainResult.hasNext()) {
                 SqlRow row = explainResult.next();
                 String planStep = row.stringValue(0);
@@ -358,7 +358,7 @@ public class ProductionAnalyticsPatterns {
                 }
             }
         } catch (Exception e) {
-            System.out.println("    !!! EXPLAIN not supported in this version: " + e.getMessage());
+            System.out.println("!!! EXPLAIN not supported in this version: " + e.getMessage());
         }
         
         // Execute optimized version using colocation-aware patterns
@@ -385,7 +385,7 @@ public class ProductionAnalyticsPatterns {
         }
         
         long executionTime = System.currentTimeMillis() - startTime;
-        System.out.printf("    <<< Optimized query: %d results in %d ms%n", resultCount, executionTime);
+        System.out.printf("<<< Optimized query: %d results in %d ms%n", resultCount, executionTime);
     }
 
     /**
@@ -393,14 +393,14 @@ public class ProductionAnalyticsPatterns {
      */
     private void demonstrateRobustErrorHandling(IgniteSql sql) {
         System.out.println("\n    --- Robust Error Handling");
-        System.out.println("    >>> Handling failures and timeouts gracefully");
+        System.out.println(">>> Handling failures and timeouts gracefully");
         
         Optional<String> result = executeRobustAnalytics(sql, "Rock");
         
         if (result.isPresent()) {
-            System.out.println("    <<< Analytics completed: " + result.get());
+            System.out.println("<<< Analytics completed: " + result.get());
         } else {
-            System.out.println("    !!! Analytics failed gracefully");
+            System.out.println("!!! Analytics failed gracefully");
         }
         
         // Demonstrate async error handling
@@ -409,12 +409,12 @@ public class ProductionAnalyticsPatterns {
         try {
             Optional<String> asyncAnswer = asyncResult.get();
             if (asyncAnswer.isPresent()) {
-                System.out.println("    <<< Async analytics completed: " + asyncAnswer.get());
+                System.out.println("<<< Async analytics completed: " + asyncAnswer.get());
             } else {
-                System.out.println("    !!! Async analytics failed gracefully");
+                System.out.println("!!! Async analytics failed gracefully");
             }
         } catch (Exception e) {
-            System.out.println("    !!! Async operation interrupted: " + e.getMessage());
+            System.out.println("!!! Async operation interrupted: " + e.getMessage());
         }
     }
 

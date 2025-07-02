@@ -270,7 +270,7 @@ public class BulkDataIngestion {
                 long totalTime = System.currentTimeMillis() - startTime;
                 double throughput = (double) recordCount / totalTime * 1000;
                 
-                System.out.printf("    <<< Bulk loaded %d records in %d ms (%.2f records/sec)%n", 
+                System.out.printf("<<< Bulk loaded %d records in %d ms (%.2f records/sec)%n", 
                     recordCount, totalTime, throughput);
                 
             }
@@ -358,7 +358,7 @@ public class BulkDataIngestion {
                 long totalTime = System.currentTimeMillis() - startTime;
                 double throughput = (double) lineCount / totalTime * 1000;
                 
-                System.out.printf("    <<< Loaded %d records from file in %d ms (%.2f records/sec)%n", 
+                System.out.printf("<<< Loaded %d records from file in %d ms (%.2f records/sec)%n", 
                     lineCount, totalTime, throughput);
                 
             }
@@ -443,7 +443,7 @@ public class BulkDataIngestion {
             }
         }
         
-        System.out.println("    <<< Adaptive batching test completed");
+        System.out.println("<<< Adaptive batching test completed");
         System.out.println("  Use the batch size with the highest throughput for your use case");
     }
     

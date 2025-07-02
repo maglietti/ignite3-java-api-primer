@@ -99,23 +99,23 @@ public class BasicTransactions {
                 
                 // Insert within transaction
                 artists.upsert(tx, newArtist);
-                System.out.println("    >>> Inserted artist in transaction");
+                System.out.println(">>> Inserted artist in transaction");
                 
                 // Update within same transaction
                 Tuple updatedArtist = newArtist.set("Name", "Updated Transaction Artist 1");
                 artists.upsert(tx, updatedArtist);
-                System.out.println("    >>> Updated artist in transaction");
+                System.out.println(">>> Updated artist in transaction");
                 
                 // Transaction commits automatically on successful completion
             });
             
-            System.out.println("    <<< Transaction committed successfully");
+            System.out.println("<<< Transaction committed successfully");
             
             // Verify the data persisted
             Tuple key = Tuple.create().set("ArtistId", 6001);
             Tuple result = artists.get(null, key);
             if (result != null) {
-                System.out.println("    <<< Verified: " + result.stringValue("Name"));
+                System.out.println("<<< Verified: " + result.stringValue("Name"));
             }
             
         } catch (Throwable e) {
@@ -135,23 +135,23 @@ public class BasicTransactions {
                     .set("Name", "Transaction Artist 2");
                 
                 artists.upsert(tx, newArtist);
-                System.out.println("    >>> Inserted artist in transaction");
+                System.out.println(">>> Inserted artist in transaction");
                 
                 // Simulate an error condition
-                System.out.println("    >>> Simulating error condition...");
+                System.out.println(">>> Simulating error condition...");
                 throw new RuntimeException("Simulated business logic error");
             });
             
         } catch (Throwable e) {
-            System.out.println("    <<< Transaction automatically rolled back due to error");
+            System.out.println("<<< Transaction automatically rolled back due to error");
             
             // Verify the data was not persisted
             Tuple key = Tuple.create().set("ArtistId", 6002);
             Tuple result = artists.get(null, key);
             if (result == null) {
-                System.out.println("    <<< Verified: Artist not found (rollback worked)");
+                System.out.println("<<< Verified: Artist not found (rollback worked)");
             } else {
-                System.out.println("    !!! Unexpected: Artist found after rollback");
+                System.out.println("!!! Unexpected: Artist found after rollback");
             }
         }
     }
@@ -168,25 +168,25 @@ public class BasicTransactions {
                     .set("Name", "Transaction Artist 3");
                 
                 artists.upsert(tx, newArtist);
-                System.out.println("    >>> Inserted artist in transaction");
+                System.out.println(">>> Inserted artist in transaction");
                 
                 // Simulate successful business logic
-                System.out.println("    >>> Business logic executed successfully");
+                System.out.println(">>> Business logic executed successfully");
                 
                 // Return from lambda commits transaction
             });
-            System.out.println("    <<< Transaction committed with runInTransaction");
+            System.out.println("<<< Transaction committed with runInTransaction");
             
         } catch (Throwable e) {
             logger.error("Transaction failed and was automatically rolled back", e);
-            System.out.println("    <<< Transaction automatically rolled back");
+            System.out.println("<<< Transaction automatically rolled back");
         }
         
         // Verify final state
         Tuple key = Tuple.create().set("ArtistId", 6003);
         Tuple result = artists.get(null, key);
         if (result != null) {
-            System.out.println("    <<< Verified: " + result.stringValue("Name"));
+            System.out.println("<<< Verified: " + result.stringValue("Name"));
         }
         
         // Cleanup test data
@@ -200,7 +200,7 @@ public class BasicTransactions {
             Tuple key = Tuple.create().set("ArtistId", id);
             boolean deleted = artists.delete(null, key);
             if (deleted) {
-                System.out.println("    >>> Cleaned up artist " + id);
+                System.out.println(">>> Cleaned up artist " + id);
             }
         }
     }

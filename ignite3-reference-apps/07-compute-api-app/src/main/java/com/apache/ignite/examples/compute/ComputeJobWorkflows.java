@@ -92,12 +92,12 @@ public class ComputeJobWorkflows {
         
         // Note: Complex collection workflows simplified for serialization compatibility
         System.out.println("\n    --- Music Recommendation Workflow (Simplified)");
-        System.out.println("    >>> Building personalized recommendations through job pipeline");
-        System.out.println("    <<< Workflow completed successfully with string-based serialization");
+        System.out.println(">>> Building personalized recommendations through job pipeline");
+        System.out.println("<<< Workflow completed successfully with string-based serialization");
         
         System.out.println("\n    --- Revenue Optimization Workflow (Simplified)");
-        System.out.println("    >>> Running business intelligence analysis pipeline");
-        System.out.println("    <<< Workflow completed successfully with string-based serialization");
+        System.out.println(">>> Running business intelligence analysis pipeline");
+        System.out.println("<<< Workflow completed successfully with string-based serialization");
         
         System.out.println("\n>>> Job workflow demonstrations completed successfully");
     }
@@ -107,11 +107,11 @@ public class ComputeJobWorkflows {
      */
     private void demonstrateCustomerAnalyticsWorkflow(IgniteClient client) {
         System.out.println("\n    --- Customer Analytics Workflow");
-        System.out.println("    >>> Running multi-step customer analysis process");
+        System.out.println(">>> Running multi-step customer analysis process");
         
         // Simplified workflow for compatibility
-        System.out.println("    >>> Step 1: Identified customer segments");
-        System.out.println("    <<< Customer analytics workflow completed successfully");
+        System.out.println(">>> Step 1: Identified customer segments");
+        System.out.println("<<< Customer analytics workflow completed successfully");
     }
 
 

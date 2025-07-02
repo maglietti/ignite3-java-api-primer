@@ -69,9 +69,9 @@ public class ColocationPatterns {
     public void demonstrateMusicColocation() {
         System.out.println("--- Music Catalog Colocation");
         System.out.println("    Colocation hierarchy: Artist -> Album -> Track");
-        System.out.println("    - Albums colocated with Artists using ArtistId");
-        System.out.println("    - Tracks colocated with Albums using AlbumId");
-        System.out.println("    - Single-node queries for artist catalog browsing");
+        System.out.println("- Albums colocated with Artists using ArtistId");
+        System.out.println("- Tracks colocated with Albums using AlbumId");
+        System.out.println("- Single-node queries for artist catalog browsing");
         
         try {
             // Setup demonstration data with colocation
@@ -91,13 +91,13 @@ public class ColocationPatterns {
                 ORDER BY t.TrackId
                 """;
             
-            System.out.println("    >>> Executing colocated catalog query");
+            System.out.println(">>> Executing colocated catalog query");
             int trackCount = 0;
             try (ResultSet<SqlRow> result = client.sql().execute(null, colocatedQuery, 8001)) {
                 while (result.hasNext()) {
                     SqlRow row = result.next();
                     trackCount++;
-                    System.out.printf("    <<< %s - %s - %s (%d sec)%n",
+                    System.out.printf("<<< %s - %s - %s (%d sec)%n",
                         row.stringValue("Artist"),
                         row.stringValue("Album"),
                         row.stringValue("Track"),
@@ -105,14 +105,14 @@ public class ColocationPatterns {
                 }
             }
             
-            System.out.println("    >>> Query executed on single node: " + trackCount + " tracks");
-            System.out.println("    >>> Colocation eliminates network round trips");
+            System.out.println(">>> Query executed on single node: " + trackCount + " tracks");
+            System.out.println(">>> Colocation eliminates network round trips");
             
             // Cleanup
             cleanupMusicHierarchy();
             
         } catch (Exception e) {
-            System.err.println("    !!! Music colocation demo failed: " + e.getMessage());
+            System.err.println("!!! Music colocation demo failed: " + e.getMessage());
         }
     }
     
@@ -126,9 +126,9 @@ public class ColocationPatterns {
     public void demonstrateSalesColocation() {
         System.out.println("--- Sales Transaction Colocation");
         System.out.println("    Colocation hierarchy: Customer -> Invoice -> InvoiceLine");
-        System.out.println("    - Invoices colocated with Customers using CustomerId");
-        System.out.println("    - InvoiceLines colocated with Invoices using InvoiceId");
-        System.out.println("    - Single-node transaction processing and analytics");
+        System.out.println("- Invoices colocated with Customers using CustomerId");
+        System.out.println("- InvoiceLines colocated with Invoices using InvoiceId");
+        System.out.println("- Single-node transaction processing and analytics");
         
         try {
             // Setup demonstration data with sales hierarchy
@@ -147,7 +147,7 @@ public class ColocationPatterns {
                 ORDER BY il.InvoiceLineId
                 """;
             
-            System.out.println("    >>> Executing colocated transaction query");
+            System.out.println(">>> Executing colocated transaction query");
             BigDecimal total = BigDecimal.ZERO;
             int lineCount = 0;
             
@@ -158,21 +158,21 @@ public class ColocationPatterns {
                     BigDecimal lineTotal = (BigDecimal) row.value("LineTotal");
                     total = total.add(lineTotal);
                     
-                    System.out.printf("    <<< %s - Invoice %d - Line total: $%.2f%n",
+                    System.out.printf("<<< %s - Invoice %d - Line total: $%.2f%n",
                         row.stringValue("Customer"),
                         row.intValue("InvoiceId"),
                         lineTotal.doubleValue());
                 }
             }
             
-            System.out.printf("    >>> Transaction total: $%.2f (%d lines)%n", total.doubleValue(), lineCount);
-            System.out.println("    >>> Single-node execution for complete transaction");
+            System.out.printf(">>> Transaction total: $%.2f (%d lines)%n", total.doubleValue(), lineCount);
+            System.out.println(">>> Single-node execution for complete transaction");
             
             // Cleanup
             cleanupSalesHierarchy();
             
         } catch (Exception e) {
-            System.err.println("    !!! Sales colocation demo failed: " + e.getMessage());
+            System.err.println("!!! Sales colocation demo failed: " + e.getMessage());
         }
     }
     
@@ -185,35 +185,35 @@ public class ColocationPatterns {
     public void demonstrateColocationBestPractices() {
         System.out.println("--- Colocation Best Practices");
         System.out.println("    Key requirements:");
-        System.out.println("    - Colocation keys must be part of primary key");
-        System.out.println("    - Design hierarchical colocation chains");
-        System.out.println("    - Align query patterns with colocation design");
-        System.out.println("    - Balance distribution vs colocation benefits");
+        System.out.println("- Colocation keys must be part of primary key");
+        System.out.println("- Design hierarchical colocation chains");
+        System.out.println("- Align query patterns with colocation design");
+        System.out.println("- Balance distribution vs colocation benefits");
         
         try {
             // Validate colocation key requirements
-            System.out.println("    >>> Validating colocation configurations");
+            System.out.println(">>> Validating colocation configurations");
             
             // Test Album colocation with Artist
             Table albumTable = client.tables().table("Album");
             RecordView<Album> albumView = albumTable.recordView(Album.class);
-            System.out.println("    <<< Album.ArtistId: Colocation key in primary key");
+            System.out.println("<<< Album.ArtistId: Colocation key in primary key");
             
             // Test Track colocation with Album
             Table trackTable = client.tables().table("Track");
             RecordView<Track> trackView = trackTable.recordView(Track.class);
-            System.out.println("    <<< Track.AlbumId: Colocation key in primary key");
+            System.out.println("<<< Track.AlbumId: Colocation key in primary key");
             
             // Test InvoiceLine colocation with Invoice
             Table invoiceLineTable = client.tables().table("InvoiceLine");
             RecordView<InvoiceLine> invoiceLineView = invoiceLineTable.recordView(InvoiceLine.class);
-            System.out.println("    <<< InvoiceLine.InvoiceId: Colocation key in primary key");
+            System.out.println("<<< InvoiceLine.InvoiceId: Colocation key in primary key");
             
-            System.out.println("    >>> Colocation design validation completed");
-            System.out.println("    >>> All colocation keys properly integrated in primary keys");
+            System.out.println(">>> Colocation design validation completed");
+            System.out.println(">>> All colocation keys properly integrated in primary keys");
             
         } catch (Exception e) {
-            System.err.println("    !!! Colocation validation failed: " + e.getMessage());
+            System.err.println("!!! Colocation validation failed: " + e.getMessage());
         }
     }
     

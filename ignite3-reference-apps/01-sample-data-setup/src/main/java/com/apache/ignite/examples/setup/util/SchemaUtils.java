@@ -54,25 +54,25 @@ public class SchemaUtils {
      */
     public static void createSchema(IgniteClient client) {
         try {
-            logger.info("    --- Distribution Zones");
+            logger.info("--- Distribution Zones");
             createDistributionZones(client);
             
-            logger.info("    --- Reference Tables");
+            logger.info("--- Reference Tables");
             createTableIfNotExists(client, Genre.class, "Genre", "Music genre classifications", 1, 11);
             createTableIfNotExists(client, MediaType.class, "MediaType", "Audio/video format types", 2, 11);
             
-            logger.info("    --- Core Music Entities");
+            logger.info("--- Core Music Entities");
             createTableIfNotExists(client, Artist.class, "Artist", "Music artists and bands (root entity)", 3, 11);
             createTableIfNotExists(client, Album.class, "Album", "Albums (colocated by ArtistId)", 4, 11);
             createTableIfNotExists(client, Track.class, "Track", "Individual songs (colocated by AlbumId)", 5, 11);
             
-            logger.info("    --- Business Entities");
+            logger.info("--- Business Entities");
             createTableIfNotExists(client, Customer.class, "Customer", "Store customers (root entity)", 6, 11);
             createTableIfNotExists(client, Employee.class, "Employee", "Staff with hierarchy", 7, 11);
             createTableIfNotExists(client, Invoice.class, "Invoice", "Purchase transactions (colocated by CustomerId)", 8, 11);
             createTableIfNotExists(client, InvoiceLine.class, "InvoiceLine", "Purchase line items (colocated by InvoiceId)", 9, 11);
             
-            logger.info("    --- Playlist Entities");
+            logger.info("--- Playlist Entities");
             createTableIfNotExists(client, Playlist.class, "Playlist", "User-created playlists", 10, 11);
             createTableIfNotExists(client, PlaylistTrack.class, "PlaylistTrack", "Playlist-track associations (colocated by PlaylistId)", 11, 11);
             
@@ -88,8 +88,8 @@ public class SchemaUtils {
      * @param client Connected Ignite client
      */
     public static void dropSchema(IgniteClient client) {
-        logger.info("    >>> Removing existing music store schema");
-        logger.info("        Dropping tables in dependency order (child tables first)");
+        logger.info(">>> Removing existing music store schema");
+        logger.info("--- Dropping tables in dependency order (child tables first)");
         
         String[] tables = {"PlaylistTrack", "InvoiceLine", "Track", "Invoice", 
                           "Playlist", "Album", "Employee", "Customer", "Artist", 
@@ -100,16 +100,16 @@ public class SchemaUtils {
             try {
                 client.sql().execute(null, "DROP TABLE IF EXISTS " + tableName);
                 count++;
-                logger.info("        * Dropped table: {} ({}/{})", tableName, count, tables.length);
+                logger.info("<<< Dropped table: {} ({}/{})", tableName, count, tables.length);
             } catch (Exception e) {
-                logger.warn("        * Failed to drop table {}: {}", tableName, e.getMessage());
+                logger.warn("* Failed to drop table {}: {}", tableName, e.getMessage());
             }
         }
         
-        logger.info("    >>> Dropping distribution zones");
+        logger.info("--- Dropping distribution zones");
         dropDistributionZones(client);
         
-        logger.info("    <<< Schema cleanup completed ({} tables processed)", tables.length);
+        logger.info("<<< Schema cleanup completed ({} tables processed)", tables.length);
     }
     
     /**
@@ -196,13 +196,13 @@ public class SchemaUtils {
      */
     private static void createDistributionZones(IgniteClient client) {
         try {
-            logger.info("    >>> Creating distribution zone: MusicStore");
+            logger.info(">>> Creating distribution zone: MusicStore");
             MusicStoreZoneConfiguration.createMusicStoreZone(client);
-            logger.info("    <<< Created distribution zone: MusicStore");
+            logger.info("<<< Created distribution zone: MusicStore");
             
-            logger.info("    >>> Creating distribution zone: MusicStoreReplicated");
+            logger.info(">>> Creating distribution zone: MusicStoreReplicated");
             MusicStoreZoneConfiguration.createMusicStoreReplicatedZone(client);
-            logger.info("    <<< Created distribution zone: MusicStoreReplicated");
+            logger.info("<<< Created distribution zone: MusicStoreReplicated");
         } catch (Exception e) {
             if (e.getMessage() != null && e.getMessage().contains("already exists")) {
                 logger.debug("Distribution zones already exist, continuing");
@@ -230,9 +230,9 @@ public class SchemaUtils {
     private static void createTableIfNotExists(IgniteClient client, Class<?> entityClass, String tableName, String description, int current, int total) {
         try {
             if (!ConnectionUtils.tableExists(client, tableName)) {
-                logger.info("    >>> Creating table: {} - {} ({}/{})", tableName, description, current, total);
+                logger.info(">>> Creating table: {} - {} ({}/{})", tableName, description, current, total);
                 client.catalog().createTable(entityClass);
-                logger.info("    <<< Created table: {}", tableName);
+                logger.info("<<< Created table: {}", tableName);
             } else {
                 logger.info("    Table already exists: {} ({}/{})", tableName, current, total);
             }

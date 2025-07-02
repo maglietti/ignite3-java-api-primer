@@ -38,12 +38,12 @@ import com.apache.ignite.examples.setup.util.DataLoader;
  * - Realistic sample data for development and testing
  * 
  * Usage:
- *   mvn exec:java                                    # Default setup
- *   mvn exec:java -Dexec.args="--extended"          # Include extended data
+ *   mvn exec:java                                    # Default complete dataset
+ *   mvn exec:java -Dexec.args="--core"              # Load minimal sample data only
  *   mvn exec:java -Dexec.args="--reset"             # Drop existing schema and recreate
- *   mvn exec:java -Dexec.args="--reset --extended"  # Reset with extended data
+ *   mvn exec:java -Dexec.args="--reset --core"      # Reset with minimal data
  *   mvn exec:java -Dexec.args="192.168.1.100:10800" # Custom cluster address
- *   mvn exec:java -Dexec.args="192.168.1.100:10800 --extended" # Both options
+ *   mvn exec:java -Dexec.args="192.168.1.100:10800 --core" # Both options
  */
 public class MusicStoreSetup {
     
@@ -51,12 +51,12 @@ public class MusicStoreSetup {
     
     public static void main(String[] args) {
         String clusterAddress = "127.0.0.1:10800";
-        boolean loadExtended = false;
+        boolean loadExtended = true;
         boolean resetSchema = false;
         
         for (String arg : args) {
-            if (arg.equals("--extended")) {
-                loadExtended = true;
+            if (arg.equals("--core")) {
+                loadExtended = false;
             } else if (arg.equals("--reset")) {
                 resetSchema = true;
             } else if (!arg.startsWith("--")) {
@@ -70,8 +70,8 @@ public class MusicStoreSetup {
         logger.info("Schema action: {}", resetSchema ? "RESET (drop and recreate)" : "CREATE (preserve existing)");
         logger.info("");
         
-        logger.info("    --- Connecting to Ignite cluster at {}", clusterAddress);
-        logger.info("        Note: You may see partition assignment notifications - this is normal");
+        logger.info("--- Connecting to Ignite cluster at {}", clusterAddress);
+        logger.info("Note: You may see partition assignment notifications - this is normal");
         
         try (IgniteClient client = ConnectionUtils.connectToCluster(clusterAddress)) {
             
@@ -100,24 +100,24 @@ public class MusicStoreSetup {
             logger.info("");
             
             if (loadExtended) {
-                logger.info("=== [3/5] Extended Data Loading");
-                logger.info("--- Loading complete music store dataset");
-                logger.info("Processing 15,866-line SQL script with full music catalog");
-                logger.info("Expected completion time: 2-3 minutes depending on system performance");
-                DataLoader.loadExtendedData(client);
-                logger.info("=== Extended data loaded successfully");
+                logger.info("=== [3/5] Complete Data Loading");
+                logger.info("--- Loading complete music store dataset with optimized batch processing");
+                logger.info("Processing 275+ artists, 347+ albums, 3,500+ tracks with native Ignite APIs");
+                logger.info("Expected completion time: 30-60 seconds with parallel loading");
+                DataLoader.loadCompleteDataset(client);
+                logger.info("=== Complete dataset loaded successfully");
                 logger.info("");
                 
                 logger.info("=== [4/5] Core Data Loading");
                 logger.info("!!! Skipped (using complete dataset instead)");
                 logger.info("");
             } else {
-                logger.info("=== [3/5] Extended Data Loading");
-                logger.info("!!! Skipped (use --extended flag for complete dataset)");
+                logger.info("=== [3/5] Complete Data Loading");
+                logger.info("!!! Skipped (use default behavior for complete dataset)");
                 logger.info("");
                 
                 logger.info("=== [4/5] Core Data Loading");
-                logger.info("--- Loading sample data");
+                logger.info("--- Loading minimal sample data");
                 DataLoader.loadCoreData(client);
                 logger.info("=== Core data loaded");
                 logger.info("");
@@ -126,8 +126,6 @@ public class MusicStoreSetup {
             logger.info("=== [5/5] Verification");
             logger.info("--- Verifying data load");
             verifySetup(client, loadExtended);
-            
-            printSuccessBanner(loadExtended);
             
         } catch (Exception e) {
             logger.error("Setup failed: {}", e.getMessage());
@@ -174,33 +172,5 @@ public class MusicStoreSetup {
             case "PlaylistTrack": return extended ? "(playlist associations)" : "(sample playlist items)";
             default: return "";
         }
-    }
-    
-    private static void printSuccessBanner(boolean loadExtended) {
-        logger.info("");
-        logger.info("=== Setup Completed Successfully ===");
-        logger.info("");
-        
-        if (loadExtended) {
-            logger.info("Complete Dataset Summary:");
-            logger.info("  275+ Artists, 347+ Albums, 3,500+ Tracks");
-            logger.info("  59 Customers, 412+ Invoices, 18 Playlists");
-            logger.info("  Full business relationships and realistic data");
-        } else {
-            logger.info("Core Dataset Summary:");
-            logger.info("  5 Artists, 5 Albums, 5 Tracks, 3 Customers");
-            logger.info("  Perfect for development and API learning");
-            logger.info("  Run with --extended for the complete dataset");
-        }
-        
-        logger.info("");
-        logger.info("Next Steps:");
-        logger.info("  * Explore data with SQL queries");
-        logger.info("  * Study the annotated POJOs in model/ directory");
-        logger.info("  * Try other reference application modules");
-        logger.info("");
-        logger.info("Available Tables:");
-        logger.info("  Artist, Album, Track, Genre, MediaType, Customer,");
-        logger.info("  Employee, Invoice, InvoiceLine, Playlist, PlaylistTrack");
     }
 }

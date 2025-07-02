@@ -81,7 +81,7 @@ public class BasicComputeOperations {
         
         // Deploy job classes for execution
         if (!ComputeJobDeployment.deployJobClasses()) {
-            System.out.println("    >>> Continuing with development deployment units");
+            System.out.println(">>> Continuing with development deployment units");
         }
         
         // Simple job execution
@@ -107,7 +107,7 @@ public class BasicComputeOperations {
      */
     private void demonstrateSimpleJobs(IgniteClient client) {
         System.out.println("\n    --- Simple Job Execution");
-        System.out.println("    >>> Executing basic jobs on cluster nodes");
+        System.out.println(">>> Executing basic jobs on cluster nodes");
         
         try {
             // Hello World job - simplest possible compute job
@@ -118,7 +118,7 @@ public class BasicComputeOperations {
             String helloResult = client.compute()
                     .execute(JobTarget.anyNode(client.clusterNodes()), helloJob, null);
             
-            System.out.println("    <<< Job result: " + helloResult);
+            System.out.println("<<< Job result: " + helloResult);
             
             // Node information job - access execution context
             JobDescriptor<Void, String> nodeJob = JobDescriptor.builder(NodeInfoJob.class)
@@ -128,10 +128,10 @@ public class BasicComputeOperations {
             String nodeInfo = client.compute()
                     .execute(JobTarget.anyNode(client.clusterNodes()), nodeJob, null);
             
-            System.out.println("    <<< Node info: " + nodeInfo);
+            System.out.println("<<< Node info: " + nodeInfo);
             
         } catch (Exception e) {
-            System.err.println("    !!! Simple job execution failed: " + e.getMessage());
+            System.err.println("!!! Simple job execution failed: " + e.getMessage());
         }
     }
 
@@ -143,7 +143,7 @@ public class BasicComputeOperations {
      */
     private void demonstrateParameterizedJobs(IgniteClient client) {
         System.out.println("\n    --- Parameterized Jobs");
-        System.out.println("    >>> Executing jobs with input parameters");
+        System.out.println(">>> Executing jobs with input parameters");
         
         try {
             // Artist search job with string parameter
@@ -154,7 +154,7 @@ public class BasicComputeOperations {
             String searchResult = client.compute()
                     .execute(JobTarget.anyNode(client.clusterNodes()), searchJob, "AC/DC");
             
-            System.out.println("    <<< Search result: " + searchResult);
+            System.out.println("<<< Search result: " + searchResult);
             
             // Track count job with no parameters but SQL execution
             JobDescriptor<Void, Integer> countJob = JobDescriptor.builder(TrackCountJob.class)
@@ -164,10 +164,10 @@ public class BasicComputeOperations {
             Integer trackCount = client.compute()
                     .execute(JobTarget.anyNode(client.clusterNodes()), countJob, null);
             
-            System.out.println("    <<< Total tracks in database: " + trackCount);
+            System.out.println("<<< Total tracks in database: " + trackCount);
             
         } catch (Exception e) {
-            System.err.println("    !!! Parameterized job execution failed: " + e.getMessage());
+            System.err.println("!!! Parameterized job execution failed: " + e.getMessage());
         }
     }
 
@@ -179,7 +179,7 @@ public class BasicComputeOperations {
      */
     private void demonstrateSqlJobs(IgniteClient client) {
         System.out.println("\n    --- SQL-based Jobs");
-        System.out.println("    >>> Running jobs that execute database queries");
+        System.out.println(">>> Running jobs that execute database queries");
         
         try {
             // Genre analysis job with complex SQL processing
@@ -190,10 +190,10 @@ public class BasicComputeOperations {
             String genreResult = client.compute()
                     .execute(JobTarget.anyNode(client.clusterNodes()), genreJob, null);
             
-            System.out.println("    <<< Genre analysis: " + genreResult);
+            System.out.println("<<< Genre analysis: " + genreResult);
             
         } catch (Exception e) {
-            System.err.println("    !!! SQL job execution failed: " + e.getMessage());
+            System.err.println("!!! SQL job execution failed: " + e.getMessage());
         }
     }
 
@@ -205,7 +205,7 @@ public class BasicComputeOperations {
      */
     private void demonstrateAsyncJobs(IgniteClient client) {
         System.out.println("\n    --- Asynchronous Job Execution");
-        System.out.println("    >>> Running jobs asynchronously without blocking");
+        System.out.println(">>> Running jobs asynchronously without blocking");
         
         try {
             // Submit multiple jobs asynchronously
@@ -223,17 +223,17 @@ public class BasicComputeOperations {
             CompletableFuture<Integer> countFuture = client.compute()
                     .executeAsync(JobTarget.anyNode(client.clusterNodes()), countJob, null);
             
-            System.out.println("    >>> Both jobs started asynchronously");
+            System.out.println(">>> Both jobs started asynchronously");
             
             // Wait for results
             String helloResult = helloFuture.join();
             Integer countResult = countFuture.join();
             
-            System.out.println("    <<< Async job 1: " + helloResult);
-            System.out.println("    <<< Async job 2: " + countResult + " tracks");
+            System.out.println("<<< Async job 1: " + helloResult);
+            System.out.println("<<< Async job 2: " + countResult + " tracks");
             
         } catch (Exception e) {
-            System.err.println("    !!! Async job execution failed: " + e.getMessage());
+            System.err.println("!!! Async job execution failed: " + e.getMessage());
         }
     }
 

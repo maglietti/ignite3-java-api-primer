@@ -100,7 +100,7 @@ public class AdvancedComputeOperations {
      */
     private void demonstrateColocationJobs(IgniteClient client) {
         System.out.println("\n    --- Data-Colocated Jobs");
-        System.out.println("    >>> Running jobs close to data for optimal performance");
+        System.out.println(">>> Running jobs close to data for optimal performance");
         
         // Artist analysis colocated with artist data
         demonstrateArtistColocation(client);
@@ -129,9 +129,9 @@ public class AdvancedComputeOperations {
             String result = client.compute()
                     .execute(colocatedTarget, artistJob, 1); // AC/DC
             
-            System.out.println("    <<< Artist analysis (colocated): " + result);
+            System.out.println("<<< Artist analysis (colocated): " + result);
         } catch (Exception e) {
-            System.err.println("    !!! Artist analysis failed: " + e.getMessage());
+            System.err.println("!!! Artist analysis failed: " + e.getMessage());
         }
     }
 
@@ -152,9 +152,9 @@ public class AdvancedComputeOperations {
             String customerResult = client.compute()
                     .execute(customerTarget, customerJob, 1);
             
-            System.out.println("    <<< Customer analysis (colocated): " + customerResult);
+            System.out.println("<<< Customer analysis (colocated): " + customerResult);
         } catch (Exception e) {
-            System.err.println("    !!! Customer analysis failed: " + e.getMessage());
+            System.err.println("!!! Customer analysis failed: " + e.getMessage());
         }
     }
 
@@ -184,11 +184,11 @@ public class AdvancedComputeOperations {
                     .execute(JobTarget.anyNode(client.clusterNodes()), salesJob, 1);
             long anyNodeTime = System.currentTimeMillis() - start;
             
-            System.out.println("        >>> Colocated execution: " + colocatedTime + "ms - " + colocatedResult);
-            System.out.println("        >>> Any node execution: " + anyNodeTime + "ms - " + anyNodeResult);
-            System.out.println("        >>> Performance benefit demonstrates data locality optimization");
+            System.out.println(">>> Colocated execution: " + colocatedTime + "ms - " + colocatedResult);
+            System.out.println(">>> Any node execution: " + anyNodeTime + "ms - " + anyNodeResult);
+            System.out.println(">>> Performance benefit demonstrates data locality optimization");
         } catch (Exception e) {
-            System.err.println("        !!! Performance comparison failed: " + e.getMessage());
+            System.err.println("!!! Performance comparison failed: " + e.getMessage());
         }
     }
 
@@ -198,7 +198,7 @@ public class AdvancedComputeOperations {
      */
     private void demonstrateBroadcastJobs(IgniteClient client) {
         System.out.println("\n    --- Broadcast Jobs");
-        System.out.println("    >>> Running jobs across all cluster nodes");
+        System.out.println(">>> Running jobs across all cluster nodes");
         
         // Cluster health check across all nodes
         demonstrateHealthCheck(client);
@@ -220,13 +220,13 @@ public class AdvancedComputeOperations {
             Collection<String> results = client.compute()
                     .execute(BroadcastJobTarget.nodes(client.clusterNodes()), healthJob, null);
             
-            System.out.println("    <<< Health check results from " + results.size() + " nodes:");
+            System.out.println("<<< Health check results from " + results.size() + " nodes:");
             int nodeIndex = 1;
             for (String health : results) {
                 System.out.println("         Node " + nodeIndex++ + ": " + health);
             }
         } catch (Exception e) {
-            System.err.println("    !!! Broadcast health check failed: " + e.getMessage());
+            System.err.println("!!! Broadcast health check failed: " + e.getMessage());
         }
     }
 
@@ -243,7 +243,7 @@ public class AdvancedComputeOperations {
             Collection<Integer> dataCounts = client.compute()
                     .execute(BroadcastJobTarget.nodes(client.clusterNodes()), dataJob, null);
             
-            System.out.println("    <<< Data distribution across nodes:");
+            System.out.println("<<< Data distribution across nodes:");
             int totalRecords = 0;
             int nodeIndex = 1;
             for (Integer count : dataCounts) {
@@ -252,7 +252,7 @@ public class AdvancedComputeOperations {
             }
             System.out.println("         Total: " + totalRecords + " records");
         } catch (Exception e) {
-            System.err.println("    !!! Data distribution analysis failed: " + e.getMessage());
+            System.err.println("!!! Data distribution analysis failed: " + e.getMessage());
         }
     }
 
@@ -262,10 +262,10 @@ public class AdvancedComputeOperations {
      */
     private void demonstrateMapReduceJobs(IgniteClient client) {
         System.out.println("\n    --- MapReduce Patterns");
-        System.out.println("    >>> Implementing distributed map-reduce operations");
+        System.out.println(">>> Implementing distributed map-reduce operations");
         
         // Simplified for educational clarity and serialization compatibility
-        System.out.println("    <<< MapReduce completed successfully with string-based serialization");
+        System.out.println("<<< MapReduce completed successfully with string-based serialization");
     }
 
     /**
@@ -274,9 +274,9 @@ public class AdvancedComputeOperations {
      */
     private void demonstrateJobCoordination(IgniteClient client) {
         System.out.println("\n    --- Job Coordination");
-        System.out.println("    >>> Orchestrating multiple jobs in workflows");
+        System.out.println(">>> Orchestrating multiple jobs in workflows");
         
         // Simplified workflow for compatibility and educational focus
-        System.out.println("    <<< Job coordination completed successfully with string-based serialization");
+        System.out.println("<<< Job coordination completed successfully with string-based serialization");
     }
 }

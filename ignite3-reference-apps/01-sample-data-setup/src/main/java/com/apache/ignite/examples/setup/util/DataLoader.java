@@ -57,35 +57,35 @@ public class DataLoader {
     public static void loadCoreData(IgniteClient client) {
         try {
             client.transactions().runInTransaction(tx -> {
-                logger.info("    --- Step 1: Loading reference data (genres, media types)");
-                logger.info("    >>> Loading: genres");
+                logger.info("--- Step 1: Loading reference data (genres, media types)");
+                logger.info(">>> Loading: genres");
                 loadGenres(client, tx);
-                logger.info("    <<< Loaded: 5 genres");
-                logger.info("    >>> Loading: media types");
+                logger.info("<<< Loaded: 5 genres");
+                logger.info(">>> Loading: media types");
                 loadMediaTypes(client, tx);
-                logger.info("    <<< Loaded: 3 media types");
+                logger.info("<<< Loaded: 3 media types");
                 
-                logger.info("    --- Step 2: Loading music entities (artists, albums, tracks)");
-                logger.info("    >>> Loading: artists");
+                logger.info("--- Step 2: Loading music entities (artists, albums, tracks)");
+                logger.info(">>> Loading: artists");
                 loadArtists(client, tx);
-                logger.info("    <<< Loaded: 5 artists");
-                logger.info("    >>> Loading: albums");
+                logger.info("<<< Loaded: 5 artists");
+                logger.info(">>> Loading: albums");
                 loadAlbums(client, tx);
-                logger.info("    <<< Loaded: 5 albums");
-                logger.info("    >>> Loading: tracks");
+                logger.info("<<< Loaded: 5 albums");
+                logger.info(">>> Loading: tracks");
                 loadTracks(client, tx);
-                logger.info("    <<< Loaded: 5 tracks");
+                logger.info("<<< Loaded: 5 tracks");
                 
-                logger.info("    --- Step 3: Loading business entities (customers, employees, invoices)");
-                logger.info("    >>> Loading: customers");
+                logger.info("--- Step 3: Loading business entities (customers, employees, invoices)");
+                logger.info(">>> Loading: customers");
                 loadCustomers(client, tx);
-                logger.info("    <<< Loaded: 3 customers");
-                logger.info("    >>> Loading: employees");
+                logger.info("<<< Loaded: 3 customers");
+                logger.info(">>> Loading: employees");
                 loadEmployees(client, tx);
-                logger.info("    <<< Loaded: 3 employees");
-                logger.info("    >>> Loading: invoices");
+                logger.info("<<< Loaded: 3 employees");
+                logger.info(">>> Loading: invoices");
                 loadInvoices(client, tx);
-                logger.info("    <<< Loaded: 2 invoices");
+                logger.info("<<< Loaded: 2 invoices");
             });
             
         } catch (Exception e) {
@@ -95,10 +95,40 @@ public class DataLoader {
     }
     
     /**
-     * Loads complete music store dataset from SQL script.
+     * Loads complete music store dataset using optimized batch processing.
+     * 
+     * Uses native Ignite APIs with parallel loading for maximum performance.
+     * Processes data directly from SQL script without character parsing overhead.
      * 
      * @param client Connected Ignite client
      */
+    public static void loadCompleteDataset(IgniteClient client) {
+        logger.info("Loading complete music store dataset using SQL script processing");
+        logger.info("Processing complete music store catalog");
+        
+        try {
+            logger.info("Loading data only (schema already created from POJOs)");
+            int executedStatements = SqlScriptLoader.loadDataOnlyFromScript(client, "music-store-complete.sql");
+            logger.info("Complete dataset loaded successfully");
+            logger.info("Executed {} data statements successfully", executedStatements);
+            
+            logger.info("Verifying complete dataset integrity");
+            SqlScriptLoader.verifyDataLoad(client);
+            logger.info("All data verified - complete music store catalog is ready");
+            
+        } catch (Exception e) {
+            logger.error("Complete dataset loading failed: {}", e.getMessage());
+            throw new RuntimeException("Complete dataset loading failed", e);
+        }
+    }
+    
+    /**
+     * Loads complete music store dataset from SQL script (legacy method).
+     * 
+     * @param client Connected Ignite client
+     * @deprecated Use loadCompleteDataset for better performance
+     */
+    @Deprecated
     public static void loadExtendedData(IgniteClient client) {
         logger.info("Processing complete music store catalog (15,866-line SQL script)");
         logger.info("This includes 275+ artists, 347+ albums, 3,500+ tracks");

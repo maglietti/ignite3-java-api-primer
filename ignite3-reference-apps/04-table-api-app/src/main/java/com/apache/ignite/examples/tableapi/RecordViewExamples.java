@@ -111,7 +111,7 @@ public class RecordViewExamples {
 
     private static void demonstrateTypedOperations(RecordView<Artist> artists) {
         System.out.println("\n    --- Reading Existing Artists");
-        System.out.println("    >>> Retrieving sample data using POJO key objects");
+        System.out.println(">>> Retrieving sample data using POJO key objects");
         
         // Read some existing artists from the sample data
         for (int id = 1; id <= 3; id++) {
@@ -119,42 +119,42 @@ public class RecordViewExamples {
             Artist artist = artists.get(null, key);
             
             if (artist != null) {
-                System.out.println("    <<< " + artist);
+                System.out.println("<<< " + artist);
             } else {
-                System.out.println("    !!! Artist " + id + " not found");
+                System.out.println("!!! Artist " + id + " not found");
             }
         }
     }
 
     private static void demonstrateObjectOperations(RecordView<Artist> artists) {
         System.out.println("\n    --- Object-Oriented Operations");
-        System.out.println("    >>> Creating and manipulating POJO objects");
+        System.out.println(">>> Creating and manipulating POJO objects");
         
         // Create a new artist object
         Artist newArtist = new Artist(5002, "POJO Demo Artist");
         
         // Insert using the object
         artists.upsert(null, newArtist);
-        System.out.println("    <<< Created: " + newArtist);
+        System.out.println("<<< Created: " + newArtist);
         
         // Read it back
         Artist key = new Artist(5002, null);
         Artist retrieved = artists.get(null, key);
-        System.out.println("    <<< Retrieved: " + retrieved);
+        System.out.println("<<< Retrieved: " + retrieved);
         
         // Update the object
         if (retrieved != null) {
             retrieved.setName("Updated POJO Artist");
             artists.upsert(null, retrieved);
-            System.out.println("    <<< Updated: " + retrieved);
+            System.out.println("<<< Updated: " + retrieved);
         }
         
         // Verify the update
         Artist updated = artists.get(null, key);
-        System.out.println("    <<< Verified: " + updated);
+        System.out.println("<<< Verified: " + updated);
         
         // Clean up
         boolean deleted = artists.delete(null, key);
-        System.out.println("    <<< Cleanup: " + (deleted ? "Deleted successfully" : "Delete failed"));
+        System.out.println("<<< Cleanup: " + (deleted ? "Deleted successfully" : "Delete failed"));
     }
 }

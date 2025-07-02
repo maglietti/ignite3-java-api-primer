@@ -91,19 +91,19 @@ public class TransactionIsolation {
 
     private static void setupTestData(RecordView<Tuple> artists) {
         System.out.println("\n    --- Setup Test Data");
-        System.out.println("    >>> Creating test artist for isolation demonstrations");
+        System.out.println(">>> Creating test artist for isolation demonstrations");
         
         Tuple testArtist = Tuple.create()
             .set("ArtistId", 7001)
             .set("Name", "Isolation Test Artist");
         
         artists.upsert(null, testArtist);
-        System.out.println("    <<< Created test artist: " + testArtist.stringValue("Name"));
+        System.out.println("<<< Created test artist: " + testArtist.stringValue("Name"));
     }
 
     private static void demonstrateReadConsistency(IgniteTransactions transactions, RecordView<Tuple> artists) {
         System.out.println("\n    --- Read Consistency");
-        System.out.println("    >>> Demonstrating transaction read consistency");
+        System.out.println(">>> Demonstrating transaction read consistency");
         
         // Use functional transaction for automatic lifecycle management
         try {
@@ -111,18 +111,18 @@ public class TransactionIsolation {
                 Tuple key = Tuple.create().set("ArtistId", 7001);
                 Tuple artist = artists.get(tx, key);
                 
-                System.out.println("    >>> Transaction reads initial: " + artist.stringValue("Name"));
+                System.out.println(">>> Transaction reads initial: " + artist.stringValue("Name"));
                 
                 // Read again within the same transaction - should be consistent
                 Tuple artistAgain = artists.get(tx, key);
-                System.out.println("    >>> Transaction reads again: " + artistAgain.stringValue("Name"));
+                System.out.println(">>> Transaction reads again: " + artistAgain.stringValue("Name"));
                 
                 // The transaction sees consistent data throughout its lifetime
                 return null;
             });
-            System.out.println("    <<< Transaction maintained read consistency");
+            System.out.println("<<< Transaction maintained read consistency");
         } catch (Throwable e) {
-            System.out.println("    !!! Read consistency check failed: " + e.getMessage());
+            System.out.println("!!! Read consistency check failed: " + e.getMessage());
             throw e;
         }
         
@@ -132,15 +132,15 @@ public class TransactionIsolation {
             Tuple artist = artists.get(null, key);
             Tuple updatedArtist = artist.set("Name", "Modified After Transaction");
             artists.upsert(null, updatedArtist);
-            System.out.println("    >>> External update applied after transaction");
+            System.out.println(">>> External update applied after transaction");
         } catch (Exception e) {
-            System.out.println("    !!! External update failed: " + e.getMessage());
+            System.out.println("!!! External update failed: " + e.getMessage());
         }
     }
 
     private static void demonstrateWriteConflicts(IgniteTransactions transactions, RecordView<Tuple> artists) {
         System.out.println("\n    --- Write Conflict Handling");
-        System.out.println("    >>> Demonstrating concurrent transaction conflict resolution");
+        System.out.println(">>> Demonstrating concurrent transaction conflict resolution");
         
         Tuple key = Tuple.create().set("ArtistId", 7001);
         
@@ -148,38 +148,38 @@ public class TransactionIsolation {
         try {
             transactions.runInTransaction(tx -> {
                 Tuple artist1 = artists.get(tx, key);
-                System.out.println("    >>> Transaction 1 reads: " + artist1.stringValue("Name"));
+                System.out.println(">>> Transaction 1 reads: " + artist1.stringValue("Name"));
                 
                 Tuple updated1 = artist1.set("Name", "Updated by Transaction 1");
                 artists.upsert(tx, updated1);
                 return null;
             });
-            System.out.println("    <<< Transaction 1 committed successfully");
+            System.out.println("<<< Transaction 1 committed successfully");
         } catch (Throwable e) {
             logger.warn("Transaction 1 conflict detected", e);
-            System.out.println("    !!! Transaction 1 detected conflict: " + e.getMessage());
+            System.out.println("!!! Transaction 1 detected conflict: " + e.getMessage());
         }
         
         // Second transaction with functional pattern
         try {
             transactions.runInTransaction(tx -> {
                 Tuple artist2 = artists.get(tx, key);
-                System.out.println("    >>> Transaction 2 reads: " + artist2.stringValue("Name"));
+                System.out.println(">>> Transaction 2 reads: " + artist2.stringValue("Name"));
                 
                 Tuple updated2 = artist2.set("Name", "Updated by Transaction 2");
                 artists.upsert(tx, updated2);
                 return null;
             });
-            System.out.println("    <<< Transaction 2 committed successfully");
+            System.out.println("<<< Transaction 2 committed successfully");
         } catch (Throwable e) {
             logger.warn("Transaction 2 conflict detected", e);
-            System.out.println("    !!! Transaction 2 detected conflict: " + e.getMessage());
+            System.out.println("!!! Transaction 2 detected conflict: " + e.getMessage());
         }
     }
 
     private static void demonstrateTransactionCoordination(IgniteTransactions transactions, RecordView<Tuple> artists) {
         System.out.println("\n    --- Transaction Coordination");
-        System.out.println("    >>> Demonstrating coordinated multi-step operations");
+        System.out.println(">>> Demonstrating coordinated multi-step operations");
         
         // Demonstrate coordinated multi-step operations
         transactions.runInTransaction(tx -> {
@@ -187,22 +187,22 @@ public class TransactionIsolation {
             
             // Step 1: Read current data
             Tuple currentArtist = artists.get(tx, key);
-            System.out.println("    >>> Step 1 - Current: " + currentArtist.stringValue("Name"));
+            System.out.println(">>> Step 1 - Current: " + currentArtist.stringValue("Name"));
             
             // Step 2: Business logic processing
             String newName = "Coordinated Update - " + System.currentTimeMillis();
-            System.out.println("    >>> Step 2 - Processing: " + newName);
+            System.out.println(">>> Step 2 - Processing: " + newName);
             
             // Step 3: Apply coordinated update
             Tuple updatedArtist = currentArtist.set("Name", newName);
             artists.upsert(tx, updatedArtist);
-            System.out.println("    >>> Step 3 - Updated in transaction");
+            System.out.println(">>> Step 3 - Updated in transaction");
             
             // Step 4: Validation
             Tuple verification = artists.get(tx, key);
             if (verification.stringValue("Name").equals(newName)) {
-                System.out.println("    >>> Step 4 - Validation passed");
-                System.out.println("    <<< Coordinated transaction completed");
+                System.out.println(">>> Step 4 - Validation passed");
+                System.out.println("<<< Coordinated transaction completed");
             } else {
                 throw new RuntimeException("Validation failed");
             }
@@ -211,12 +211,12 @@ public class TransactionIsolation {
 
     private static void cleanupTestData(RecordView<Tuple> artists) {
         System.out.println("\n    --- Cleanup Test Data");
-        System.out.println("    >>> Removing test artist");
+        System.out.println(">>> Removing test artist");
         
         Tuple key = Tuple.create().set("ArtistId", 7001);
         boolean deleted = artists.delete(null, key);
         if (deleted) {
-            System.out.println("    <<< Cleaned up test data");
+            System.out.println("<<< Cleaned up test data");
         }
     }
 }

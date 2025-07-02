@@ -169,7 +169,7 @@ public class BasicDataStreamerDemo {
                     .streamData(publisher, DataStreamerOptions.DEFAULT);
                 
                 // Generate and stream sample track events
-                System.out.println("    >>> Streaming 1,000 track events");
+                System.out.println(">>> Streaming 1,000 track events");
                 
                 for (int i = 1; i <= 1000; i++) {
                     Tuple trackEvent = Tuple.create()
@@ -190,7 +190,7 @@ public class BasicDataStreamerDemo {
                 // Wait for streaming to complete
                 streamingFuture.get();
                 
-                System.out.println("    <<< Streamed 1,000 events with default settings");
+                System.out.println("<<< Streamed 1,000 events with default settings");
             }
             
         } catch (Exception e) {
@@ -249,7 +249,7 @@ public class BasicDataStreamerDemo {
                 long duration = System.currentTimeMillis() - startTime;
                 double throughput = 5000.0 / duration * 1000; // events per second
                 
-                System.out.printf("    <<< Streamed 5,000 events in %d ms (%.2f events/sec)%n", 
+                System.out.printf("<<< Streamed 5,000 events in %d ms (%.2f events/sec)%n", 
                     duration, throughput);
             }
             
@@ -327,7 +327,7 @@ public class BasicDataStreamerDemo {
                 publisher.close();
                 streamingFuture.get();
                 
-                System.out.println("    <<< Processed 500 listening sessions with mixed operations");
+                System.out.println("<<< Processed 500 listening sessions with mixed operations");
                 System.out.println("  Operations included: TRACK_STARTED, TRACK_COMPLETED, and cleanup deletions");
             }
             

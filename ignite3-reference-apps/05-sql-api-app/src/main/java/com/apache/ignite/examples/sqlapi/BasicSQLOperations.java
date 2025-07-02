@@ -96,12 +96,12 @@ public class BasicSQLOperations {
      */
     private void demonstrateSimpleQueries(IgniteSql sql) {
         System.out.println("\n    --- Simple Query Execution");
-        System.out.println("    >>> Executing basic SELECT queries");
+        System.out.println(">>> Executing basic SELECT queries");
         
         // Simple query without parameters
         ResultSet<SqlRow> artists = sql.execute(null, "SELECT ArtistId, Name FROM Artist LIMIT 3");
         
-        System.out.println("    <<< Sample artists from database:");
+        System.out.println("<<< Sample artists from database:");
         while (artists.hasNext()) {
             SqlRow row = artists.next();
             int artistId = row.intValue("ArtistId");
@@ -113,7 +113,7 @@ public class BasicSQLOperations {
         ResultSet<SqlRow> countResult = sql.execute(null, "SELECT COUNT(*) as total FROM Artist");
         if (countResult.hasNext()) {
             long totalArtists = countResult.next().longValue("total");
-            System.out.println("    <<< Total artists in database: " + totalArtists);
+            System.out.println("<<< Total artists in database: " + totalArtists);
         }
     }
 
@@ -122,7 +122,7 @@ public class BasicSQLOperations {
      */
     private void demonstrateParameterBinding(IgniteSql sql) {
         System.out.println("\n    --- Parameter Binding");
-        System.out.println("    >>> Using parameters for security and type safety");
+        System.out.println(">>> Using parameters for security and type safety");
         
         // String parameter binding
         String searchPattern = "%Rock%";
@@ -130,7 +130,7 @@ public class BasicSQLOperations {
                 "SELECT ArtistId, Name FROM Artist WHERE Name LIKE ? ORDER BY Name LIMIT 3",
                 searchPattern);
 
-        System.out.println("    <<< Artists with 'Rock' in name:");
+        System.out.println("<<< Artists with 'Rock' in name:");
         while (rockArtists.hasNext()) {
             SqlRow row = rockArtists.next();
             System.out.println("         " + row.intValue("ArtistId") + ": " + row.stringValue("Name"));
@@ -141,7 +141,7 @@ public class BasicSQLOperations {
                 "SELECT Name, Milliseconds FROM Track WHERE TrackId BETWEEN ? AND ? ORDER BY TrackId",
                 1, 3);
         
-        System.out.println("    <<< Track details with multiple parameters:");
+        System.out.println("<<< Track details with multiple parameters:");
         while (trackDetails.hasNext()) {
             SqlRow row = trackDetails.next();
             String name = row.stringValue("Name");
@@ -155,7 +155,7 @@ public class BasicSQLOperations {
      */
     private void demonstrateStatementReuse(IgniteSql sql) {
         System.out.println("\n    --- Statement Configuration and Reuse");
-        System.out.println("    >>> Creating reusable statements for better performance");
+        System.out.println(">>> Creating reusable statements for better performance");
         
         // Create configured statement
         Statement artistLookup = sql.statementBuilder()
@@ -171,10 +171,10 @@ public class BasicSQLOperations {
             
             if (result.hasNext()) {
                 SqlRow row = result.next();
-                System.out.println("    <<< Found: " + row.stringValue("Name") + 
+                System.out.println("<<< Found: " + row.stringValue("Name") + 
                                  " (ID: " + row.intValue("ArtistId") + ")");
             } else {
-                System.out.println("    !!! Artist '" + artistName + "' not found");
+                System.out.println("!!! Artist '" + artistName + "' not found");
             }
         }
         
@@ -186,7 +186,7 @@ public class BasicSQLOperations {
 
         ResultSet<SqlRow> tracks = sql.execute(null, pagedQuery);
         
-        System.out.println("    <<< First few tracks (demonstrating pagination):");
+        System.out.println("<<< First few tracks (demonstrating pagination):");
         int count = 0;
         while (tracks.hasNext() && count < 5) {
             SqlRow track = tracks.next();
@@ -200,13 +200,13 @@ public class BasicSQLOperations {
      */
     private void demonstrateResultSetProcessing(IgniteSql sql) {
         System.out.println("\n    --- ResultSet Processing");
-        System.out.println("    >>> Extracting different data types from results");
+        System.out.println(">>> Extracting different data types from results");
         
         // Query with multiple data types
         ResultSet<SqlRow> trackData = sql.execute(null,
                 "SELECT TrackId, Name, Milliseconds, UnitPrice FROM Track WHERE TrackId <= 2");
 
-        System.out.println("    <<< Track details with various data types:");
+        System.out.println("<<< Track details with various data types:");
         while (trackData.hasNext()) {
             SqlRow row = trackData.next();
             
@@ -224,10 +224,10 @@ public class BasicSQLOperations {
                 "UPDATE Artist SET Name = Name WHERE ArtistId = 999999"); // Non-existent ID
         
         if (updateResult.hasRowSet()) {
-            System.out.println("    <<< Update returned data rows");
+            System.out.println("<<< Update returned data rows");
         } else {
             long affectedRows = updateResult.affectedRows();
-            System.out.println("    <<< Update affected " + affectedRows + " rows");
+            System.out.println("<<< Update affected " + affectedRows + " rows");
         }
     }
 }

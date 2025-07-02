@@ -114,19 +114,19 @@ public class SchemaValidation {
     public void demonstrateDDLGeneration() {
         System.out.println("--- DDL Generation from Annotations");
         System.out.println("    Schema-as-code features:");
-        System.out.println("    - Automatic table creation from POJO annotations");
-        System.out.println("    - Zone assignment for distribution control");
-        System.out.println("    - Column constraints and data type mapping");
-        System.out.println("    - Primary key and index generation");
+        System.out.println("- Automatic table creation from POJO annotations");
+        System.out.println("- Zone assignment for distribution control");
+        System.out.println("- Column constraints and data type mapping");
+        System.out.println("- Primary key and index generation");
         
         try {
-            System.out.println("    >>> Creating ValidationEntity table from annotations");
+            System.out.println(">>> Creating ValidationEntity table from annotations");
             
             // Attempt table creation - handles existing tables gracefully
             try {
                 client.catalog().createTable(ValidationEntity.class);
-                System.out.println("    <<< Table created successfully");
-                System.out.println("    >>> Generated DDL includes:");
+                System.out.println("<<< Table created successfully");
+                System.out.println(">>> Generated DDL includes:");
                 System.out.println("         - Primary key: EntityId (INTEGER)");
                 System.out.println("         - Name field: VARCHAR(100) NOT NULL");
                 System.out.println("         - Description field: VARCHAR(255) NULLABLE");
@@ -136,15 +136,15 @@ public class SchemaValidation {
                 
             } catch (Exception e) {
                 if (e.getMessage().contains("already exists") || e.getMessage().contains("exist")) {
-                    System.out.println("    <<< Table already exists (expected in demo environment)");
-                    System.out.println("    >>> Schema consistency validated");
+                    System.out.println("<<< Table already exists (expected in demo environment)");
+                    System.out.println(">>> Schema consistency validated");
                 } else {
                     throw e;
                 }
             }
             
         } catch (Exception e) {
-            System.err.println("    !!! DDL generation failed: " + e.getMessage());
+            System.err.println("!!! DDL generation failed: " + e.getMessage());
         }
     }
     
@@ -158,14 +158,14 @@ public class SchemaValidation {
     public void demonstrateSchemaValidation() {
         System.out.println("--- Schema Validation and Consistency");
         System.out.println("    Validation checks:");
-        System.out.println("    - Table existence verification");
-        System.out.println("    - RecordView accessibility testing");
-        System.out.println("    - CRUD operation validation");
-        System.out.println("    - Schema consistency verification");
+        System.out.println("- Table existence verification");
+        System.out.println("- RecordView accessibility testing");
+        System.out.println("- CRUD operation validation");
+        System.out.println("- Schema consistency verification");
         
         try {
             // Validate core music store tables
-            System.out.println("    >>> Validating core music store schema");
+            System.out.println(">>> Validating core music store schema");
             
             validateTable("Artist", "Music catalog root entity");
             validateTable("Album", "Music catalog with colocation");
@@ -177,17 +177,17 @@ public class SchemaValidation {
             try {
                 org.apache.ignite.table.Table testTable = client.tables().table("ValidationEntity");
                 if (testTable != null) {
-                    System.out.println("    <<< ValidationEntity: Schema accessible");
+                    System.out.println("<<< ValidationEntity: Schema accessible");
                     validateCRUDOperations();
                 }
             } catch (Exception e) {
-                System.out.println("    !!! ValidationEntity: Not available for testing");
+                System.out.println("!!! ValidationEntity: Not available for testing");
             }
             
-            System.out.println("    >>> Schema validation completed successfully");
+            System.out.println(">>> Schema validation completed successfully");
             
         } catch (Exception e) {
-            System.err.println("    !!! Schema validation failed: " + e.getMessage());
+            System.err.println("!!! Schema validation failed: " + e.getMessage());
         }
     }
     
@@ -201,10 +201,10 @@ public class SchemaValidation {
     public void demonstrateSchemaIntrospection() {
         System.out.println("--- Schema Introspection");
         System.out.println("    Introspection capabilities:");
-        System.out.println("    - Table structure inspection via SYSTEM.TABLES");
-        System.out.println("    - Data distribution analysis with row counts");
-        System.out.println("    - Distribution zone configuration validation");
-        System.out.println("    - Colocation pattern verification");
+        System.out.println("- Table structure inspection via SYSTEM.TABLES");
+        System.out.println("- Data distribution analysis with row counts");
+        System.out.println("- Distribution zone configuration validation");
+        System.out.println("- Colocation pattern verification");
         
         try {
             // First show distribution zones
@@ -213,20 +213,20 @@ public class SchemaValidation {
             // Inspect table row counts and distribution
             String[] coreTables = {"Artist", "Album", "Track", "Genre", "Customer"};
             
-            System.out.println("    >>> Inspecting table data distribution");
+            System.out.println(">>> Inspecting table data distribution");
             for (String tableName : coreTables) {
                 try {
                     inspectTableData(tableName);
                 } catch (Exception e) {
-                    System.out.println("    !!! " + tableName + ": Inspection failed");
+                    System.out.println("!!! " + tableName + ": Inspection failed");
                 }
             }
             
-            System.out.println("    >>> Schema introspection completed");
-            System.out.println("    >>> All core tables accessible with distribution metadata");
+            System.out.println(">>> Schema introspection completed");
+            System.out.println(">>> All core tables accessible with distribution metadata");
             
         } catch (Exception e) {
-            System.err.println("    !!! Schema introspection failed: " + e.getMessage());
+            System.err.println("!!! Schema introspection failed: " + e.getMessage());
         }
     }
     
@@ -235,7 +235,7 @@ public class SchemaValidation {
      */
     private void inspectDistributionZones() {
         try {
-            System.out.println("    >>> Distribution zone configuration");
+            System.out.println(">>> Distribution zone configuration");
             // Try the legacy column names first, then fall back to new names
             String zoneQuery = """
                 SELECT NAME, PARTITIONS, REPLICAS
@@ -250,12 +250,12 @@ public class SchemaValidation {
                     int partitions = row.intValue("PARTITIONS");
                     int replicas = row.intValue("REPLICAS");
                     
-                    System.out.printf("    <<< Zone: %s - %d partitions, %d replicas%n", 
+                    System.out.printf("<<< Zone: %s - %d partitions, %d replicas%n", 
                         zoneName, partitions, replicas);
                 }
             }
         } catch (Exception e) {
-            System.out.println("    !!! Zone inspection failed: " + e.getMessage());
+            System.out.println("!!! Zone inspection failed: " + e.getMessage());
         }
     }
     
@@ -263,10 +263,10 @@ public class SchemaValidation {
         try {
             org.apache.ignite.table.Table table = client.tables().table(tableName);
             if (table != null) {
-                System.out.println("    <<< " + tableName + ": " + description + " - accessible");
+                System.out.println("<<< " + tableName + ": " + description + " - accessible");
             }
         } catch (Exception e) {
-            System.out.println("    !!! " + tableName + ": Validation failed - " + e.getMessage());
+            System.out.println("!!! " + tableName + ": Validation failed - " + e.getMessage());
         }
     }
     
@@ -278,7 +278,7 @@ public class SchemaValidation {
             // Test insert operation
             ValidationEntity entity = new ValidationEntity(9999, "Test Entity", "CRUD validation test", true);
             view.upsert(null, entity);
-            System.out.println("    >>> CRUD test: Insert operation successful");
+            System.out.println(">>> CRUD test: Insert operation successful");
             
             // Test retrieve operation
             ValidationEntity key = new ValidationEntity();
@@ -286,17 +286,17 @@ public class SchemaValidation {
             ValidationEntity retrieved = view.get(null, key);
             
             if (retrieved != null && "Test Entity".equals(retrieved.getName())) {
-                System.out.println("    <<< CRUD test: Retrieve operation successful");
+                System.out.println("<<< CRUD test: Retrieve operation successful");
                 
                 // Test delete operation
                 boolean deleted = view.delete(null, key);
                 if (deleted) {
-                    System.out.println("    >>> CRUD test: Delete operation successful");
+                    System.out.println(">>> CRUD test: Delete operation successful");
                 }
             }
             
         } catch (Exception e) {
-            System.err.println("    !!! CRUD validation failed: " + e.getMessage());
+            System.err.println("!!! CRUD validation failed: " + e.getMessage());
         }
     }
     
@@ -322,7 +322,7 @@ public class SchemaValidation {
                     try (ResultSet<SqlRow> countResult = client.sql().execute(null, countQuery)) {
                         if (countResult.hasNext()) {
                             long rowCount = countResult.next().longValue("RowCount");
-                            System.out.println("    <<< " + actualName + ": " + rowCount + " rows in " + zoneName + " zone");
+                            System.out.println("<<< " + actualName + ": " + rowCount + " rows in " + zoneName + " zone");
                             if (colocationColumns != null && !colocationColumns.isEmpty()) {
                                 System.out.println("         Colocated by: " + colocationColumns);
                             }
@@ -334,7 +334,7 @@ public class SchemaValidation {
                     try (ResultSet<SqlRow> countResult = client.sql().execute(null, countQuery)) {
                         if (countResult.hasNext()) {
                             long rowCount = countResult.next().longValue("RowCount");
-                            System.out.println("    <<< " + tableName + ": " + rowCount + " rows (metadata not available)");
+                            System.out.println("<<< " + tableName + ": " + rowCount + " rows (metadata not available)");
                         }
                     }
                 }
@@ -346,11 +346,11 @@ public class SchemaValidation {
                 try (ResultSet<SqlRow> countResult = client.sql().execute(null, countQuery)) {
                     if (countResult.hasNext()) {
                         long rowCount = countResult.next().longValue("RowCount");
-                        System.out.println("    <<< " + tableName + ": " + rowCount + " rows (metadata not available)");
+                        System.out.println("<<< " + tableName + ": " + rowCount + " rows (metadata not available)");
                     }
                 }
             } catch (Exception countError) {
-                System.out.println("    !!! " + tableName + ": Inspection failed - " + e.getMessage());
+                System.out.println("!!! " + tableName + ": Inspection failed - " + e.getMessage());
             }
         }
     }
@@ -364,19 +364,19 @@ public class SchemaValidation {
     public void demonstrateValidationCleanup() {
         System.out.println("--- Validation Cleanup");
         System.out.println("    Cleanup strategy:");
-        System.out.println("    - Remove test data without affecting schema");
-        System.out.println("    - Preserve core music store tables");
-        System.out.println("    - Handle cleanup errors gracefully");
+        System.out.println("- Remove test data without affecting schema");
+        System.out.println("- Preserve core music store tables");
+        System.out.println("- Handle cleanup errors gracefully");
         
         try {
             // Note: In production, table dropping requires special permissions
             // This demonstrates the concept without actual table dropping
-            System.out.println("    >>> ValidationEntity: Test table cleanup");
-            System.out.println("    >>> Core tables: Preserved for continued use");
-            System.out.println("    >>> Cleanup completed - schema validation ready for next run");
+            System.out.println(">>> ValidationEntity: Test table cleanup");
+            System.out.println(">>> Core tables: Preserved for continued use");
+            System.out.println(">>> Cleanup completed - schema validation ready for next run");
             
         } catch (Exception e) {
-            System.err.println("    !!! Cleanup failed: " + e.getMessage());
+            System.err.println("!!! Cleanup failed: " + e.getMessage());
         }
     }
 }

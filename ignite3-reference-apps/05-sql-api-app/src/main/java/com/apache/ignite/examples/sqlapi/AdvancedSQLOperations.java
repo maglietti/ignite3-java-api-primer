@@ -96,7 +96,7 @@ public class AdvancedSQLOperations {
      */
     private void demonstrateJoinOperations(IgniteSql sql) {
         System.out.println("\n    --- JOIN Operations");
-        System.out.println("    >>> Executing queries across related tables");
+        System.out.println(">>> Executing queries across related tables");
         
         // Simple JOIN between Artist and Album
         String artistAlbumQuery = """
@@ -109,7 +109,7 @@ public class AdvancedSQLOperations {
         
         ResultSet<SqlRow> artistAlbums = sql.execute(null, artistAlbumQuery);
         
-        System.out.println("    <<< Artists and their albums:");
+        System.out.println("<<< Artists and their albums:");
         while (artistAlbums.hasNext()) {
             SqlRow row = artistAlbums.next();
             String artist = row.stringValue("ArtistName");
@@ -133,7 +133,7 @@ public class AdvancedSQLOperations {
         
         ResultSet<SqlRow> trackStats = sql.execute(null, trackStatsQuery);
         
-        System.out.println("    <<< Artist track statistics:");
+        System.out.println("<<< Artist track statistics:");
         while (trackStats.hasNext()) {
             SqlRow row = trackStats.next();
             String artist = row.stringValue("ArtistName");
@@ -149,7 +149,7 @@ public class AdvancedSQLOperations {
      */
     private void demonstrateAggregationQueries(IgniteSql sql) {
         System.out.println("\n    --- Aggregation Queries");
-        System.out.println("    >>> Computing statistics and analytics");
+        System.out.println(">>> Computing statistics and analytics");
         
         // Genre popularity analysis
         String genreStatsQuery = """
@@ -165,7 +165,7 @@ public class AdvancedSQLOperations {
         
         ResultSet<SqlRow> genreStats = sql.execute(null, genreStatsQuery);
         
-        System.out.println("    <<< Most popular genres by track count:");
+        System.out.println("<<< Most popular genres by track count:");
         while (genreStats.hasNext()) {
             SqlRow row = genreStats.next();
             String genre = row.stringValue("GenreName");
@@ -182,7 +182,7 @@ public class AdvancedSQLOperations {
         
         if (priceStats.hasNext()) {
             SqlRow row = priceStats.next();
-            System.out.println("    <<< Track pricing statistics:");
+            System.out.println("<<< Track pricing statistics:");
             System.out.println("         Min: $" + row.decimalValue("MinPrice"));
             System.out.println("         Max: $" + row.decimalValue("MaxPrice"));
             System.out.println("         Avg: $" + row.decimalValue("AvgPrice"));
@@ -194,7 +194,7 @@ public class AdvancedSQLOperations {
      */
     private void demonstrateBatchOperations(IgniteSql sql) {
         System.out.println("\n    --- Batch Operations");
-        System.out.println("    >>> Performing bulk data operations");
+        System.out.println(">>> Performing bulk data operations");
         
         // Create batch arguments for multiple test artists
         BatchedArguments artistBatch = BatchedArguments.create()
@@ -203,14 +203,14 @@ public class AdvancedSQLOperations {
                 .add(8003, "Batch Demo Artist 3");
 
         try {
-            System.out.println("    >>> Executing batch insert");
+            System.out.println(">>> Executing batch insert");
             
             // Execute batch insert
             long[] insertCounts = sql.executeBatch(null,
                     "INSERT INTO Artist (ArtistId, Name) VALUES (?, ?)",
                     artistBatch);
 
-            System.out.println("    <<< Batch insert completed: " + insertCounts.length + " artists");
+            System.out.println("<<< Batch insert completed: " + insertCounts.length + " artists");
             
             // Verify batch results
             ResultSet<SqlRow> batchResult = sql.execute(null,
@@ -218,15 +218,15 @@ public class AdvancedSQLOperations {
 
             if (batchResult.hasNext()) {
                 long count = batchResult.next().longValue("artist_count");
-                System.out.println("    <<< Verification: " + count + " batch demo artists created");
+                System.out.println("<<< Verification: " + count + " batch demo artists created");
             }
 
         } catch (Exception e) {
-            System.err.println("    !!! Batch operation failed: " + e.getMessage());
+            System.err.println("!!! Batch operation failed: " + e.getMessage());
         } finally {
             // Clean up batch test data
             sql.execute(null, "DELETE FROM Artist WHERE Name LIKE 'Batch Demo Artist%'");
-            System.out.println("    >>> Batch test data cleaned up");
+            System.out.println(">>> Batch test data cleaned up");
         }
     }
 
@@ -235,14 +235,14 @@ public class AdvancedSQLOperations {
      */
     private void demonstrateObjectMapping(IgniteSql sql) {
         System.out.println("\n    --- Object Mapping");
-        System.out.println("    >>> Using type-safe object mapping");
+        System.out.println(">>> Using type-safe object mapping");
         
         // Single-column mapping for artist names
         ResultSet<String> artistNames = sql.execute(null,
                 Mapper.of(String.class, "Name"),
                 "SELECT Name FROM Artist WHERE ArtistId <= 5 ORDER BY Name");
 
-        System.out.println("    <<< Artist names using single-column mapping:");
+        System.out.println("<<< Artist names using single-column mapping:");
         artistNames.forEachRemaining(name -> 
             System.out.println("         " + name));
         
@@ -253,7 +253,7 @@ public class AdvancedSQLOperations {
 
         if (trackCounts.hasNext()) {
             Long totalTracks = trackCounts.next();
-            System.out.println("    <<< Total tracks using numeric mapping: " + totalTracks);
+            System.out.println("<<< Total tracks using numeric mapping: " + totalTracks);
         }
         
         // Price range mapping
@@ -270,7 +270,7 @@ public class AdvancedSQLOperations {
                 ORDER BY price_range
                 """);
         
-        System.out.println("    <<< Available price ranges:");
+        System.out.println("<<< Available price ranges:");
         priceRanges.forEachRemaining(range -> 
             System.out.println("         " + range));
     }

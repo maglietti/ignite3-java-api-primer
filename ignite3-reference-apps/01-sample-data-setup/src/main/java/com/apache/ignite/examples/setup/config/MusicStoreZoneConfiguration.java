@@ -31,7 +31,7 @@ public class MusicStoreZoneConfiguration {
     
     public static final int MUSIC_STORE_REPLICAS = 2;
     public static final int MUSIC_STORE_REPLICATED_REPLICAS = 3;
-    public static final int DEFAULT_PARTITIONS = 25;
+    public static final int DEFAULT_PARTITIONS = 5;
     
     public static void createDistributionZones(IgniteClient client) {
         createMusicStoreZone(client);

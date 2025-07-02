@@ -82,7 +82,7 @@ public class MusicPlatformIntelligence {
         
         // Deploy job classes for execution
         if (!ComputeJobDeployment.deployJobClasses()) {
-            System.out.println("    >>> Continuing with development deployment units");
+            System.out.println(">>> Continuing with development deployment units");
         }
         
         // Basic artist popularity analysis
@@ -108,7 +108,7 @@ public class MusicPlatformIntelligence {
      */
     private void demonstrateArtistPopularityAnalysis(IgniteClient client) {
         System.out.println("\n    --- Artist Popularity Analysis");
-        System.out.println("    >>> Executing distributed artist analytics");
+        System.out.println(">>> Executing distributed artist analytics");
         
         try {
             JobDescriptor<Void, Map<String, Integer>> job = 
@@ -119,7 +119,7 @@ public class MusicPlatformIntelligence {
             Map<String, Integer> results = client.compute()
                 .execute(JobTarget.anyNode(client.clusterNodes()), job, null);
             
-            System.out.println("    <<< Artist popularity analysis completed:");
+            System.out.println("<<< Artist popularity analysis completed:");
             results.entrySet().stream()
                 .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
                 .limit(5)
@@ -127,7 +127,7 @@ public class MusicPlatformIntelligence {
                     System.out.println("         " + entry.getKey() + ": " + entry.getValue() + " plays"));
             
         } catch (Exception e) {
-            System.err.println("    !!! Artist popularity analysis failed: " + e.getMessage());
+            System.err.println("!!! Artist popularity analysis failed: " + e.getMessage());
         }
     }
 
@@ -136,7 +136,7 @@ public class MusicPlatformIntelligence {
      */
     private void demonstrateUserRecommendationProcessing(IgniteClient client) {
         System.out.println("\n    --- User Recommendation Processing");
-        System.out.println("    >>> Processing user recommendations with data locality");
+        System.out.println(">>> Processing user recommendations with data locality");
         
         try {
             int customerId = 1;
@@ -153,10 +153,10 @@ public class MusicPlatformIntelligence {
             List<String> recommendations = client.compute()
                 .execute(target, job, customerId);
             
-            System.out.println("    <<< User " + customerId + " recommendations: " + recommendations);
+            System.out.println("<<< User " + customerId + " recommendations: " + recommendations);
             
         } catch (Exception e) {
-            System.err.println("    !!! User recommendation processing failed: " + e.getMessage());
+            System.err.println("!!! User recommendation processing failed: " + e.getMessage());
         }
     }
 
@@ -165,7 +165,7 @@ public class MusicPlatformIntelligence {
      */
     private void demonstrateConcurrentUserProcessing(IgniteClient client) {
         System.out.println("\n    --- Concurrent User Processing");
-        System.out.println("    >>> Processing multiple users concurrently");
+        System.out.println(">>> Processing multiple users concurrently");
         
         try {
             DistributedRecommendationProcessor processor = 
@@ -179,14 +179,14 @@ public class MusicPlatformIntelligence {
             
             Map<Integer, List<String>> results = allRecommendations.get();
             
-            System.out.println("    <<< Processed recommendations for " + results.size() + " users");
+            System.out.println("<<< Processed recommendations for " + results.size() + " users");
             results.entrySet().stream()
                 .limit(3)
                 .forEach(entry -> 
                     System.out.println("         User " + entry.getKey() + ": " + entry.getValue()));
             
         } catch (Exception e) {
-            System.err.println("    !!! Concurrent user processing failed: " + e.getMessage());
+            System.err.println("!!! Concurrent user processing failed: " + e.getMessage());
         }
     }
 
@@ -195,20 +195,20 @@ public class MusicPlatformIntelligence {
      */
     private void demonstrateMapReduceTrendAnalysis(IgniteClient client) {
         System.out.println("\n    --- MapReduce Trend Analysis");
-        System.out.println("    >>> Executing distributed trend detection");
+        System.out.println(">>> Executing distributed trend detection");
         
         try {
             MusicTrendMapReduceExample mapReduce = new MusicTrendMapReduceExample();
             Map<String, Integer> globalTrends = mapReduce.detectGlobalTrends(client);
             
-            System.out.println("    <<< Global trending tracks:");
+            System.out.println("<<< Global trending tracks:");
             globalTrends.entrySet().stream()
                 .limit(5)
                 .forEach(entry -> 
                     System.out.println("         " + entry.getKey() + ": " + entry.getValue() + " plays"));
             
         } catch (Exception e) {
-            System.err.println("    !!! MapReduce trend analysis failed: " + e.getMessage());
+            System.err.println("!!! MapReduce trend analysis failed: " + e.getMessage());
         }
     }
 
@@ -217,7 +217,7 @@ public class MusicPlatformIntelligence {
      */
     private void demonstrateResilientJobProcessing(IgniteClient client) {
         System.out.println("\n    --- Resilient Job Processing");
-        System.out.println("    >>> Testing retry logic and error handling");
+        System.out.println(">>> Testing retry logic and error handling");
         
         try {
             ResilientMusicJobProcessor processor = new ResilientMusicJobProcessor(client);
@@ -230,10 +230,10 @@ public class MusicPlatformIntelligence {
                 JobTarget.anyNode(client.clusterNodes()), job, "genre-analysis");
             
             String output = result.get();
-            System.out.println("    <<< Resilient job completed: " + output);
+            System.out.println("<<< Resilient job completed: " + output);
             
         } catch (Exception e) {
-            System.err.println("    !!! Resilient job processing failed: " + e.getMessage());
+            System.err.println("!!! Resilient job processing failed: " + e.getMessage());
         }
     }
 

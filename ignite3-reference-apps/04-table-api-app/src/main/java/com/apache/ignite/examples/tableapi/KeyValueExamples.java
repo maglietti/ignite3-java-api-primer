@@ -88,43 +88,43 @@ public class KeyValueExamples {
 
     private static void demonstrateBasicKeyValue(KeyValueView<Integer, String> artistCache) {
         System.out.println("\n    --- Basic Key-Value Operations");
-        System.out.println("    >>> Storing key-value pairs using key-value API");
+        System.out.println(">>> Storing key-value pairs using key-value API");
         
         // PUT: Store key-value pairs
         artistCache.put(null, 5003, "Cache Demo Artist 1");
         artistCache.put(null, 5004, "Cache Demo Artist 2");
-        System.out.println("    <<< Stored two artists in cache");
+        System.out.println("<<< Stored two artists in cache");
         
-        System.out.println("    >>> Retrieving values by key");
+        System.out.println(">>> Retrieving values by key");
         // GET: Retrieve by key
         String artist1 = artistCache.get(null, 5003);
         String artist2 = artistCache.get(null, 5004);
-        System.out.println("    <<< Retrieved: " + artist1);
-        System.out.println("    <<< Retrieved: " + artist2);
+        System.out.println("<<< Retrieved: " + artist1);
+        System.out.println("<<< Retrieved: " + artist2);
         
         // GET non-existent key
         String missing = artistCache.get(null, 9999);
-        System.out.println("    <<< Missing key result: " + missing);
+        System.out.println("<<< Missing key result: " + missing);
         
-        System.out.println("    >>> Updating existing cache entry");
+        System.out.println(">>> Updating existing cache entry");
         // UPDATE: Put with same key overwrites
         artistCache.put(null, 5003, "Updated Cache Artist 1");
         String updated = artistCache.get(null, 5003);
-        System.out.println("    <<< Updated: " + updated);
+        System.out.println("<<< Updated: " + updated);
         
-        System.out.println("    >>> Removing cache entry");
+        System.out.println(">>> Removing cache entry");
         // REMOVE: Delete by key
         boolean removed = artistCache.remove(null, 5003);
-        System.out.println("    <<< Removed: " + removed);
+        System.out.println("<<< Removed: " + removed);
         
         // VERIFY removal
         String afterRemoval = artistCache.get(null, 5003);
-        System.out.println("    <<< After removal: " + afterRemoval);
+        System.out.println("<<< After removal: " + afterRemoval);
     }
 
     private static void demonstrateBulkOperations(KeyValueView<Integer, String> artistCache) {
         System.out.println("\n    --- Bulk Operations");
-        System.out.println("    >>> Performing batch operations for better performance");
+        System.out.println(">>> Performing batch operations for better performance");
         
         // PUT ALL: Store multiple key-value pairs at once
         Map<Integer, String> artists = Map.of(
@@ -134,27 +134,27 @@ public class KeyValueExamples {
         );
         
         artistCache.putAll(null, artists);
-        System.out.println("    <<< Bulk inserted " + artists.size() + " artists");
+        System.out.println("<<< Bulk inserted " + artists.size() + " artists");
         
-        System.out.println("    >>> Retrieving multiple values at once");
+        System.out.println(">>> Retrieving multiple values at once");
         // GET ALL: Retrieve multiple values at once
         Set<Integer> keys = Set.of(5005, 5006, 5007, 9999); // Include non-existent key
         Map<Integer, String> retrieved = artistCache.getAll(null, keys);
         
-        System.out.println("    <<< Bulk retrieved " + retrieved.size() + " artists:");
+        System.out.println("<<< Bulk retrieved " + retrieved.size() + " artists:");
         retrieved.forEach((key, value) -> 
             System.out.println("         " + key + " -> " + value));
         
-        System.out.println("    >>> Removing multiple keys at once");
+        System.out.println(">>> Removing multiple keys at once");
         // REMOVE ALL: Delete multiple keys at once
         Set<Integer> keysToRemove = Set.of(5004, 5005, 5006, 5007);
         Set<Integer> removedKeys = Set.copyOf(artistCache.removeAll(null, keysToRemove));
         
-        System.out.println("    <<< Bulk removed " + removedKeys.size() + " artists");
-        System.out.println("    <<< Removed keys: " + removedKeys);
+        System.out.println("<<< Bulk removed " + removedKeys.size() + " artists");
+        System.out.println("<<< Removed keys: " + removedKeys);
         
         // VERIFY bulk removal
         Map<Integer, String> afterBulkRemoval = artistCache.getAll(null, keysToRemove);
-        System.out.println("    <<< After bulk removal: " + afterBulkRemoval.size() + " artists remain");
+        System.out.println("<<< After bulk removal: " + afterBulkRemoval.size() + " artists remain");
     }
 }
