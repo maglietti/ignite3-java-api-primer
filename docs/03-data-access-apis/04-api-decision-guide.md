@@ -43,11 +43,11 @@ Modern distributed applications achieve optimal performance by matching operatio
 
 Your API selection determines both development efficiency and runtime performance. Each operation type requires different optimization strategies based on data access patterns, object complexity, and performance requirements.
 
-**KeyValueView Operations**: Direct partition access with minimal serialization overhead. Optimal for high-frequency lookups, caching patterns, and simple value operations where you have primary keys.
+- **KeyValueView Operations** provide direct partition access with minimal serialization overhead. Optimal for high-frequency lookups, caching patterns, and simple value operations where you have primary keys.
 
-**RecordView Operations**: Full object serialization with type safety and business logic integration. Optimal for entity management, CRUD operations, and scenarios requiring complete object context.
+- **RecordView Operations** deliver full object serialization with type safety and business logic integration. Optimal for entity management, CRUD operations, and scenarios requiring complete object context.
 
-**SQL Operations**: Query planning and optimization with support for complex joins and aggregations. Optimal for analytics, reporting, and operations spanning multiple entities or requiring aggregation logic.
+- **SQL Operations** enable query planning and optimization with support for complex joins and aggregations. Optimal for analytics, reporting, and operations spanning multiple entities or requiring aggregation logic.
 
 The wrong API choice creates cascading performance problems. SQL queries for simple key lookups add query planning overhead and network roundtrips. RecordView operations for analytics load excessive data into memory and perform client-side aggregations instead of server-side optimizations.
 
@@ -603,4 +603,4 @@ These anti-patterns create performance problems that scale poorly under producti
 
 Your API selection directly impacts application performance, development productivity, and operational complexity. Choose APIs that match operation characteristics while considering long-term maintenance and scaling requirements.
 
-**Next Steps**: **[Module 4: Distributed Operations](../04-distributed-operations/01-transaction-fundamentals.md)** demonstrates how data access patterns integrate with transaction management, distributed processing, and consistency guarantees across multiple nodes.
+**Next Steps** - **[Module 4: Distributed Operations](../04-distributed-operations/01-transaction-fundamentals.md)** demonstrates how data access patterns integrate with transaction management, distributed processing, and consistency guarantees across multiple nodes.

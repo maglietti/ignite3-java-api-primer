@@ -15,7 +15,7 @@ mvn compile exec:java
 
 The reference application implements all patterns from this chapter as working examples. Use it to experiment with query optimization, colocation strategies, and distributed aggregation techniques.
 
-**Critical Implementation Note**: Ignite 3 normalizes all SQL metadata (table names, column names, aliases) to uppercase. Always use uppercase names in `SqlRow.stringValue()` and other accessor methods regardless of schema definition.
+- **Critical Implementation Note** - Ignite 3 normalizes all SQL metadata (table names, column names, aliases) to uppercase. Always use uppercase names in `SqlRow.stringValue()` and other accessor methods regardless of schema definition.
 
 ## SQL Query Planning and Execution Architecture
 
@@ -515,5 +515,5 @@ For complete working examples of all these patterns, see the **`05-sql-api-app`*
 
 ---
 
-**Next**: [Key-Value Operations](03-key-value-operations.md) - Maximum performance data access for caching, session management, and high-frequency operations that require minimal overhead.
+**Next** - [Key-Value Operations](03-key-value-operations.md) - Maximum performance data access for caching, session management, and high-frequency operations that require minimal overhead.
 

@@ -10,13 +10,13 @@ This is the fundamental challenge every distributed application faces: how to pl
 
 Traditional distributed databases scatter your data randomly across nodes, creating invisible performance penalties that only surface under load. Your development environment with 1,000 tracks works fine, but production with 50 million tracks exposes the hidden costs of poor data placement.
 
-* **Network Amplification:** Simple queries like "show artist with albums" become 3-4 network operations instead of 1 local operation. Each network hop multiplies response time by the number of relationships in your query.
+- **Network Amplification**: Simple queries like "show artist with albums" become 3-4 network operations instead of 1 local operation. Each network hop multiplies response time by the number of relationships in your query.
 
-* **Resource Waste:** Your cluster spends 60% of its network bandwidth moving data between nodes for joins, instead of serving more user requests. CPU cycles burn on serializing, transferring, and deserializing data that could stay local.
+- **Resource Waste**: Your cluster spends 60% of its network bandwidth moving data between nodes for joins, instead of serving more user requests. CPU cycles burn on serializing, transferring, and deserializing data that could stay local.
 
-* **Unpredictable Performance:** The same query runs fast when data happens to be colocated, but slow when it's distributed. Users experience inconsistent response times that vary based on which nodes store their data.
+- **Unpredictable Performance**: The same query runs fast when data happens to be colocated, but slow when it's distributed. Users experience inconsistent response times that vary based on which nodes store their data.
 
-* **Developer Confusion:** Application developers can't predict query performance because the database's internal data placement decisions are invisible to application logic.
+- **Developer Confusion**: Application developers can't predict query performance because the database's internal data placement decisions are invisible to application logic.
 
 Ignite 3 solves these problems through **intelligent data distribution** that considers your application's access patterns rather than randomly scattering records across nodes.
 
@@ -24,9 +24,9 @@ Ignite 3 solves these problems through **intelligent data distribution** that co
 
 Distribution zones are Ignite 3's solution to the data placement problem. Instead of randomly scattering your data, zones let you define intelligent placement policies that match your application's access patterns.
 
-* **The Problem Without Zones:** Your Artist table uses default random distribution. Artist #123 (The Beatles) ends up on node 1, but their albums scatter across nodes 2 and 3. When users browse The Beatles' discography, your application makes network calls to three different nodes, tripling response time.
+- **The Problem Without Zones**: Your Artist table uses default random distribution. Artist #123 (The Beatles) ends up on node 1, but their albums scatter across nodes 2 and 3. When users browse The Beatles' discography, your application makes network calls to three different nodes, tripling response time.
 
-* **The Solution With Zones:** You create a "MusicStore" zone that keeps Artist, Album, and Track records with the same ArtistId on the same nodes. Now The Beatles' complete discography lives together, turning 3 network operations into 1 local operation.
+- **The Solution With Zones**: You create a "MusicStore" zone that keeps Artist, Album, and Track records with the same ArtistId on the same nodes. Now The Beatles' complete discography lives together, turning 3 network operations into 1 local operation.
 
 Behind the scenes, Ignite 3 uses the **Rendezvous (Highest Random Weight) algorithm** to consistently place data without requiring coordination between nodes. This algorithm guarantees that Artist #123 always maps to the same set of nodes, enabling predictable colocation.
 
@@ -189,13 +189,13 @@ flowchart TD
 
 **Algorithm Benefits for Music Platform:**
 
-* **Predictable Routing:** Every application server independently calculates that Artist #123 (The Beatles) lives on nodes 1, 3, and 7. No coordination or lookup tables required.
+- **Predictable Routing**: Every application server independently calculates that Artist #123 (The Beatles) lives on nodes 1, 3, and 7. No coordination or lookup tables required.
 
-* **Colocation Enablement:** When Album records use the same ArtistId as their partition key, they automatically land on the same nodes as their parent Artist. The Beatles' albums and tracks all live together.
+- **Colocation Enablement**: When Album records use the same ArtistId as their partition key, they automatically land on the same nodes as their parent Artist. The Beatles' albums and tracks all live together.
 
-* **Minimal Rebalancing:** When you add node 8 to the cluster, only partitions with the highest random weight for node 8 move. Most data stays in place, minimizing network traffic during scaling operations.
+- **Minimal Rebalancing**: When you add node 8 to the cluster, only partitions with the highest random weight for node 8 move. Most data stays in place, minimizing network traffic during scaling operations.
 
-* **Load Distribution:** Random weights ensure even distribution across available nodes, preventing hot spots where one node stores disproportionate amounts of popular artists.
+- **Load Distribution**: Random weights ensure even distribution across available nodes, preventing hot spots where one node stores disproportionate amounts of popular artists.
 
 This algorithm transforms unpredictable data placement into a deterministic system where related music data naturally clusters together while maintaining even load distribution.
 
@@ -218,10 +218,10 @@ Collection<Track> tracks = tracks.getAll(null,
 
 **Performance Impact Analysis:**
 
-- **Network Operations:** 6 separate cluster calls instead of 1
-- **Latency Multiplication:** 20ms × 6 operations = 120ms just for network overhead
-- **Resource Waste:** Each node serializes, transfers, and deserializes data that could stay local
-- **Unpredictable Performance:** Query time varies from 50ms to 300ms depending on data placement
+- **Network Operations**: 6 separate cluster calls instead of 1
+- **Latency Multiplication**: 20ms × 6 operations = 120ms just for network overhead
+- **Resource Waste**: Each node serializes, transfers, and deserializes data that could stay local
+- **Unpredictable Performance**: Query time varies from 50ms to 300ms depending on data placement
 
 **Business Impact:** Users experience inconsistent page load times that feel broken compared to single-table operations that execute in 5ms.
 
@@ -284,10 +284,10 @@ flowchart TB
 
 **Performance Transformation:**
 
-- **Network Operations:** 6 calls reduced to 1 local operation
-- **Response Time:** 120ms reduced to 5ms (24x improvement)
-- **Resource Efficiency:** Zero network serialization for artist browsing
-- **Predictable Performance:** Every artist profile loads in consistent time
+- **Network Operations**: 6 calls reduced to 1 local operation
+- **Response Time**: 120ms reduced to 5ms (24x improvement)
+- **Resource Efficiency**: Zero network serialization for artist browsing
+- **Predictable Performance**: Every artist profile loads in consistent time
 
 ### Local Joins: The Power of Colocated Data
 
@@ -377,10 +377,10 @@ public class EfficientMusicBrowser {
 
 **Performance Impact:**
 
-- **Network Round-trips:** Reduced from O(records) to O(1) per artist
-- **Resource Utilization:** CPU focused on business logic instead of network serialization
-- **Predictable Latency:** Batch size doesn't affect response time linearly
-- **Cache Efficiency:** Related data loaded together improves memory locality
+- **Network Round-trips**: Reduced from O(records) to O(1) per artist
+- **Resource Utilization**: CPU focused on business logic instead of network serialization
+- **Predictable Latency**: Batch size doesn't affect response time linearly
+- **Cache Efficiency**: Related data loaded together improves memory locality
 
 ## Storage Engines: Choosing the Right Physical Storage
 
@@ -476,9 +476,9 @@ ZoneDefinition sessionZone = ZoneDefinition.builder("UserSessions")
 
 **Replication Impact Analysis:**
 
-- **3 Replicas:** Survives 2 node failures, higher write latency, more storage cost
-- **2 Replicas:** Survives 1 node failure, balanced performance, moderate storage cost  
-- **1 Replica:** No fault tolerance, maximum performance, minimum storage cost
+- **3 Replicas**: Survives 2 node failures, higher write latency, more storage cost
+- **2 Replicas**: Survives 1 node failure, balanced performance, moderate storage cost  
+- **1 Replica**: No fault tolerance, maximum performance, minimum storage cost
 
 **Business Rationale:** Spend replication budget where data loss hurts most. Financial transactions get maximum protection, user sessions get minimum protection.
 
@@ -525,10 +525,10 @@ public class MVCCExample {
 
 **MVCC Benefits for Music Platform:**
 
-- **Concurrent Analytics:** Sales dashboards run without blocking user purchases
-- **Consistent Reads:** Long-running reports see stable data even during high transaction volume
-- **No Lock Contention:** Popular tracks don't become bottlenecks during viral events
-- **Read Scalability:** Multiple read replicas serve analytics without coordination
+- **Concurrent Analytics**: Sales dashboards run without blocking user purchases
+- **Consistent Reads**: Long-running reports see stable data even during high transaction volume
+- **No Lock Contention**: Popular tracks don't become bottlenecks during viral events
+- **Read Scalability**: Multiple read replicas serve analytics without coordination
 
 **Production Impact:** During album release events, purchase throughput and analytics performance remain independent, enabling real-time business intelligence during peak revenue periods.
 
@@ -772,10 +772,10 @@ while (result.hasNext()) {
 
 **What You've Achieved:**
 
-- **Intelligent Data Placement:** Related music data colocated for performance
-- **Fault Tolerance:** Critical data survives multiple node failures  
-- **Performance Optimization:** Different zones optimized for different workloads
-- **Scalable Architecture:** Foundation that grows from thousands to millions of users
+- **Intelligent Data Placement**: Related music data colocated for performance
+- **Fault Tolerance**: Critical data survives multiple node failures  
+- **Performance Optimization**: Different zones optimized for different workloads
+- **Scalable Architecture**: Foundation that grows from thousands to millions of users
 
 These distributed data fundamentals transform a traditional database bottleneck into a scalable, fault-tolerant platform that maintains microsecond response times as your music platform grows from startup to global scale.
 

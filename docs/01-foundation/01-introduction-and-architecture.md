@@ -340,11 +340,11 @@ Ignite 3 manages data placement and replication through distribution zones - con
 
 Distribution zones specify three critical aspects of data management:
 
-**Partition Count**: How many logical pieces your data splits into. More partitions enable better parallelism for large datasets, while fewer partitions reduce coordination overhead for smaller datasets.
+- **Partition Count** determines how many logical pieces your data splits into. More partitions enable better parallelism for large datasets, while fewer partitions reduce coordination overhead for smaller datasets.
 
-**Replica Count**: How many copies of each data partition exist across different nodes. More replicas improve fault tolerance and read performance, but require more storage and network bandwidth.
+- **Replica Count** controls how many copies of each data partition exist across different nodes. More replicas improve fault tolerance and read performance, but require more storage and network bandwidth.
 
-**Node Assignment**: Which cluster nodes store your data. You can include all nodes for maximum distribution, or restrict data to specific node sets for workload isolation.
+- **Node Assignment** specifies which cluster nodes store your data. You can include all nodes for maximum distribution, or restrict data to specific node sets for workload isolation.
 
 ### Default Zone Implementation
 
@@ -387,11 +387,11 @@ Your application connects to the Ignite cluster through the client library, whic
 
 Ignite 3's distributed architecture addresses traditional database scaling problems through three key design decisions that shape how you build applications:
 
-**Unified Platform Approach**: Instead of managing separate cache, database, and compute systems, your application connects to one platform that provides all capabilities. This eliminates the operational complexity of coordinating multiple systems while providing better performance through data locality.
+- **Unified Platform Approach** - Instead of managing separate cache, database, and compute systems, your application connects to one platform that provides all capabilities. This eliminates the operational complexity of coordinating multiple systems while providing better performance through data locality.
 
-**Multi-API Flexibility**: The same distributed data is accessible through Table API for object operations, SQL API for complex queries, and Key-Value API for high-performance access. This means you can optimize each operation type without architectural compromises.
+- **Multi-API Flexibility** - The same distributed data is accessible through Table API for object operations, SQL API for complex queries, and Key-Value API for high-performance access. This means you can optimize each operation type without architectural compromises.
 
-**Transparent Distribution**: Data spreads across cluster nodes automatically through distribution zones, while your application code remains unaware of the underlying data placement. Adding nodes increases capacity without application changes.
+- **Transparent Distribution** - Data spreads across cluster nodes automatically through distribution zones, while your application code remains unaware of the underlying data placement. Adding nodes increases capacity without application changes.
 
 These design decisions create a development experience where distributed systems complexity is handled by the platform, allowing your application logic to focus on business requirements rather than infrastructure concerns.
 
@@ -409,9 +409,9 @@ These design decisions create a development experience where distributed systems
 > [!NOTE]
 > Docker installation is preferred but not required.
 
-**For Unix-based systems (Linux, macOS)**: Use the Docker setup instructions at [Apache Ignite 3 Docker Installation Guide](https://ignite.apache.org/docs/ignite3/latest/installation/installing-using-docker).
+- **For Unix-based systems (Linux, macOS)** - Use the Docker setup instructions at [Apache Ignite 3 Docker Installation Guide](https://ignite.apache.org/docs/ignite3/latest/installation/installing-using-docker).
 
-**For Windows and other systems**: Follow the installation instructions at [https://ignite.apache.org/docs/ignite3/latest/installation/](https://ignite.apache.org/docs/ignite3/latest/installation/) which covers all supported platforms and installation methods.
+- **For Windows and other systems** - Follow the installation instructions at [https://ignite.apache.org/docs/ignite3/latest/installation/](https://ignite.apache.org/docs/ignite3/latest/installation/) which covers all supported platforms and installation methods.
 
 Alternative installation methods are available for environments where Docker is not suitable.
 

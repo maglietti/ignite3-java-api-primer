@@ -8,29 +8,29 @@ Meanwhile, your application logic lives in Java classes that know nothing about 
 
 Traditional database development creates a dangerous disconnect between your Java application code and the distributed schema that powers it.
 
-**Schema Fragmentation Crisis:** Your Artist entity exists as a Java class, a CREATE TABLE statement, a zone configuration XML file, colocation settings in properties files, and index definitions scattered across migration scripts. When you add Album.releaseDate, you must update six different files across three different repositories.
+- **Schema Fragmentation Crisis**: Your Artist entity exists as a Java class, a CREATE TABLE statement, a zone configuration XML file, colocation settings in properties files, and index definitions scattered across migration scripts. When you add Album.releaseDate, you must update six different files across three different repositories.
 
-**Deployment Coordination Nightmare:** Schema changes require precise coordination across multiple cluster nodes. Deploy the Java code before the schema migration, and queries fail with "column not found" errors. Deploy the schema before the Java code, and applications crash with "unknown field" exceptions. Miss one node during migration, and you get split-brain schema inconsistencies.
+- **Deployment Coordination Nightmare**: Schema changes require precise coordination across multiple cluster nodes. Deploy the Java code before the schema migration, and queries fail with "column not found" errors. Deploy the schema before the Java code, and applications crash with "unknown field" exceptions. Miss one node during migration, and you get split-brain schema inconsistencies.
 
-**Performance Blind Spots:** Your Java developer adds Album.findByArtist() method that seems simple but unknowingly triggers expensive cross-node joins because the colocation strategy lives in a separate configuration file. Performance problems emerge in production when related data scatters across different nodes.
+- **Performance Blind Spots**: Your Java developer adds Album.findByArtist() method that seems simple but unknowingly triggers expensive cross-node joins because the colocation strategy lives in a separate configuration file. Performance problems emerge in production when related data scatters across different nodes.
 
-**Environment Drift:** Development uses simplified single-zone configurations for fast iteration. Testing uses minimal replication for resource efficiency. Production uses complex multi-zone strategies for fault tolerance. Schema behavior differs dramatically across environments, causing bugs that only surface under production load.
+- **Environment Drift**: Development uses simplified single-zone configurations for fast iteration. Testing uses minimal replication for resource efficiency. Production uses complex multi-zone strategies for fault tolerance. Schema behavior differs dramatically across environments, causing bugs that only surface under production load.
 
-**Development Friction:** Adding a simple database field requires updating Java classes, SQL migration scripts, configuration files, and documentation. Development velocity slows as teams coordinate schema changes across multiple systems and deployment pipelines.
+- **Development Friction**: Adding a simple database field requires updating Java classes, SQL migration scripts, configuration files, and documentation. Development velocity slows as teams coordinate schema changes across multiple systems and deployment pipelines.
 
 ## How Ignite 3 Annotations Solve the Schema-Code Disconnect
 
 Ignite 3's annotation-based schema design eliminates the disconnect between your Java application code and distributed database schema by making your Java classes the single source of truth for everything.
 
-**Schema-as-Code Revolution:** Your Java class becomes your schema definition, distribution strategy, performance optimization plan, and documentation all in one place. Add Album.releaseDate as a Java field with @Column annotation, and Ignite handles DDL generation, cluster deployment, and schema synchronization automatically.
+- **Schema-as-Code Revolution**: Your Java class becomes your schema definition, distribution strategy, performance optimization plan, and documentation all in one place. Add Album.releaseDate as a Java field with @Column annotation, and Ignite handles DDL generation, cluster deployment, and schema synchronization automatically.
 
-**Atomic Deployment:** Schema and code deploy together as a single unit. No coordination between SQL migrations and Java deployments. No timing issues between application updates and database changes. Compile your Java code, and your distributed schema is ready.
+- **Atomic Deployment**: Schema and code deploy together as a single unit. No coordination between SQL migrations and Java deployments. No timing issues between application updates and database changes. Compile your Java code, and your distributed schema is ready.
 
-**Performance Visibility:** Colocation strategies, zone configurations, and indexing decisions live directly in your Java classes where developers can see them. When you write Album.findByArtist(), the @Table(colocateBy = @ColumnRef("ArtistId")) annotation shows exactly why the query performs well.
+- **Performance Visibility**: Colocation strategies, zone configurations, and indexing decisions live directly in your Java classes where developers can see them. When you write Album.findByArtist(), the @Table(colocateBy = @ColumnRef("ArtistId")) annotation shows exactly why the query performs well.
 
-**Environment Consistency:** The same annotated Java classes generate identical distributed schemas across development, testing, and production. Environment drift disappears because there's only one schema definition source.
+- **Environment Consistency**: The same annotated Java classes generate identical distributed schemas across development, testing, and production. Environment drift disappears because there's only one schema definition source.
 
-**Developer Velocity:** Add database features by adding Java code. Annotations provide compile-time validation, IDE support, and automatic refactoring. Database schema changes follow normal Java development workflows instead of complex multi-step deployment procedures.
+- **Developer Velocity**: Add database features by adding Java code. Annotations provide compile-time validation, IDE support, and automatic refactoring. Database schema changes follow normal Java development workflows instead of complex multi-step deployment procedures.
 
 ## Working with the Reference Application
 
