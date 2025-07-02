@@ -10,15 +10,15 @@ The root problem: traditional architectures move massive datasets to where compu
 
 Traditional batch processing creates cascading bottlenecks across your infrastructure:
 
-**The Data Pipeline Crisis:** Every recommendation cycle requires transferring complete user profiles, listening histories, and artist catalogs to centralized processing servers. A 2.5M user analysis moves 12TB of data across your network before computation even begins.
+- **The Data Pipeline Crisis:** Every recommendation cycle requires transferring complete user profiles, listening histories, and artist catalogs to centralized processing servers. A 2.5M user analysis moves 12TB of data across your network before computation even begins.
 
-**Network Saturation:** Data movement competes with live streaming traffic for bandwidth. During peak periods, recommendation transfers delay music delivery to active users, creating the exact problem your platform exists to solve.
+- **Network Saturation:** Data movement competes with live streaming traffic for bandwidth. During peak periods, recommendation transfers delay music delivery to active users, creating the exact problem your platform exists to solve.
 
-**Processing Delays:** Centralized servers become the limiting factor. No matter how much data storage capacity you add, computation remains stuck on dedicated processing hardware that can't scale with your distributed storage infrastructure.
+- **Processing Delays:** Centralized servers become the limiting factor. No matter how much data storage capacity you add, computation remains stuck on dedicated processing hardware that can't scale with your distributed storage infrastructure.
 
-**Resource Waste:** Your storage nodes sit idle with massive compute capacity while dedicated processing servers struggle with overwhelming data volumes.
+- **Resource Waste:** Your storage nodes sit idle with massive compute capacity while dedicated processing servers struggle with overwhelming data volumes.
 
-**Operational Complexity:** Managing separate storage and compute clusters doubles your operational overhead, deployment complexity, and failure modes.
+- **Operational Complexity:** Managing separate storage and compute clusters doubles your operational overhead, deployment complexity, and failure modes.
 
 Ignite 3's Compute API eliminates these problems by executing your business logic directly on the nodes where data already resides. Instead of moving terabytes to computation, you move kilobytes of code to data.
 
@@ -26,11 +26,11 @@ Ignite 3's Compute API eliminates these problems by executing your business logi
 
 The Compute API transforms your music platform's architecture by implementing three fundamental shifts that eliminate traditional batch processing bottlenecks:
 
-**Computation Locality:** Instead of pulling user data to central servers, recommendation algorithms execute directly on the storage nodes where user profiles, listening histories, and artist catalogs already reside. A 12TB data movement operation becomes a 50KB code deployment.
+- **Computation Locality:** Instead of pulling user data to central servers, recommendation algorithms execute directly on the storage nodes where user profiles, listening histories, and artist catalogs already reside. A 12TB data movement operation becomes a 50KB code deployment.
 
-**Distributed Parallelism:** Your recommendation analysis spreads across all cluster nodes simultaneously. What took 45 minutes on centralized servers completes in 5 minutes using the distributed computing power of your entire storage infrastructure.
+- **Distributed Parallelism:** Your recommendation analysis spreads across all cluster nodes simultaneously. What took 45 minutes on centralized servers completes in 5 minutes using the distributed computing power of your entire storage infrastructure.
 
-**Network Efficiency:** Live music streaming and recommendation processing no longer compete for bandwidth. Background analytics run locally on each node while serving real-time user requests without interference.
+- **Network Efficiency:** Live music streaming and recommendation processing no longer compete for bandwidth. Background analytics run locally on each node while serving real-time user requests without interference.
 
 This architectural shift eliminates the centralized bottleneck while transforming idle storage nodes into active participants in your platform's intelligence operations.
 

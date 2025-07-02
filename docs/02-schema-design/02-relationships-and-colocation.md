@@ -6,25 +6,25 @@ Your Album queries are slow because Artist data lives on different nodes, forcin
 
 Distributed databases face a fundamental challenge: related data often lives on different nodes, making relationship queries expensive.
 
-**Network Latency Multiplication:** Each related table access requires a network hop. A simple "artist and their albums" query becomes multiple network operations, multiplying latency by the number of relationships.
+- **Network Latency Multiplication:** Each related table access requires a network hop. A simple "artist and their albums" query becomes multiple network operations, multiplying latency by the number of relationships.
 
-**Cross-Node Join Overhead:** When related data lives on different nodes, the database must transfer data across the network to execute joins. This serialization, transfer, and deserialization overhead can make simple queries 10-100x slower than equivalent single-node operations.
+- **Cross-Node Join Overhead:** When related data lives on different nodes, the database must transfer data across the network to execute joins. This serialization, transfer, and deserialization overhead can make simple queries 10-100x slower than equivalent single-node operations.
 
-**Unpredictable Performance:** Query performance depends on which nodes store your data. The same query executes fast when related data happens to be colocated, but slow when it's distributed across multiple nodes.
+- **Unpredictable Performance:** Query performance depends on which nodes store your data. The same query executes fast when related data happens to be colocated, but slow when it's distributed across multiple nodes.
 
-**Resource Waste:** Moving data between nodes for joins consumes network bandwidth and CPU cycles that could be used for serving more requests.
+- **Resource Waste:** Moving data between nodes for joins consumes network bandwidth and CPU cycles that could be used for serving more requests.
 
 ## How Ignite 3 Colocation Solves Join Performance Problems
 
 Colocation annotations eliminate distributed join overhead by guaranteeing related data lives together on the same nodes.
 
-**Predictable Performance:** Related data always lives on the same nodes, so relationship queries execute as local operations with consistent microsecond response times.
+- **Predictable Performance:** Related data always lives on the same nodes, so relationship queries execute as local operations with consistent microsecond response times.
 
-**Network Elimination:** Joins between colocated tables require no network operations. All data access happens in local memory on the same nodes.
+- **Network Elimination:** Joins between colocated tables require no network operations. All data access happens in local memory on the same nodes.
 
-**Resource Efficiency:** CPU and network resources focus on serving requests instead of moving data between nodes for joins.
+- **Resource Efficiency:** CPU and network resources focus on serving requests instead of moving data between nodes for joins.
 
-**Transparent Operation:** Your application queries work the same way, but execute faster because the database optimizes data placement automatically.
+- **Transparent Operation:** Your application queries work the same way, but execute faster because the database optimizes data placement automatically.
 
 ## Implementation: Colocation Strategies
 
@@ -63,11 +63,11 @@ public class Artist {
 
 **Distribution Strategy:**
 
-**@Table(zone = @Zone("MusicStore"))** places this table in the MusicStore distribution zone with 2 replicas across cluster nodes. The zone configuration determines replication strategy and storage engine settings.
+- **@Table(zone = @Zone("MusicStore"))** places this table in the MusicStore distribution zone with 2 replicas across cluster nodes. The zone configuration determines replication strategy and storage engine settings.
 
-**@Id** marks ArtistId as the partition key. Ignite uses this key to determine which node stores each record. Operations that include the partition key (single-artist lookups, artist updates) execute locally on one node. Operations without it (artist name searches, full table scans) require coordination across multiple nodes.
+- **@Id** marks ArtistId as the partition key. Ignite uses this key to determine which node stores each record. Operations that include the partition key (single-artist lookups, artist updates) execute locally on one node. Operations without it (artist name searches, full table scans) require coordination across multiple nodes.
 
-**@Column** constraints enforce data integrity at the distributed storage level. String length limits prevent network transfer bloat when syncing data between nodes.
+- **@Column** constraints enforce data integrity at the distributed storage level. String length limits prevent network transfer bloat when syncing data between nodes.
 
 ### Reference Data Performance Problem and Solution
 
