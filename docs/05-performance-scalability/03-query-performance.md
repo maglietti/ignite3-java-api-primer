@@ -213,12 +213,14 @@ ResultSet<SqlRow> planResults = sql.execute(null, "EXPLAIN PLAN FOR " + query, s
 ```
 
 Key execution plan indicators for optimization:
+
 - **Index scans vs table scans**: Look for direct index access instead of full table scanning
 - **Join algorithms**: Hash joins for large datasets, merge joins for sorted inputs  
 - **Predicate pushdown**: Early filtering reduces intermediate result sizes
 - **Partition pruning**: Queries should target specific partitions when possible
 
 The reference app includes the complete `QueryExecutionPlanAnalysis` class demonstrating plan analysis for artist searches, customer analytics, and complex aggregation queries with CTE and window functions.
+
 ## Distribution Zone Configuration
 
 Query performance degrades when data distribution doesn't match access patterns. Catalog queries execute slowly because data spreads across too many partitions without sufficient replicas for read scaling. Analytics operations fail to leverage parallelism because partition counts are too low for large-scale aggregations. Customer transaction queries suffer from inconsistent performance due to inappropriate replication strategies.
@@ -244,6 +246,7 @@ ZoneDefinition analyticsZone = ZoneDefinition.builder("AnalyticsZone")
 ```
 
 Key zone optimization strategies:
+
 - **Catalog zones**: High replica count (3+) for read scalability, moderate partitioning (32) for search performance
 - **Customer zones**: Balanced replication (2) for consistency, conservative partitioning (16) for transactions
 - **Analytics zones**: High partition count (64+) for parallel processing, aggressive scaling for large datasets
@@ -260,4 +263,3 @@ Your music platform's transformation from 30-second analytics queries to sub-sec
 The systematic approach - measuring execution characteristics, designing indexes that match query access characteristics, optimizing join strategies for distributed data locality, and configuring zones for workload requirements - transforms your platform from a system that fights against its own success to one that leverages scale as a competitive advantage.
 
 Your music streaming platform now delivers the responsive, insight-driven experience that both users and business stakeholders expect. Query optimization doesn't just improve performance - it enables the real-time analytics and personalization features that differentiate successful platforms in competitive markets.
-

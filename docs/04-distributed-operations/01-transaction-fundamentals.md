@@ -37,27 +37,33 @@ If any step fails, the entire transaction rolls back and no changes are saved.
 Transactions provide four critical guarantees, known as ACID properties:
 
 ### Atomicity
+
 **Definition**: All operations in a transaction either complete successfully or none do.
 
 **Example**: When transferring $50 between customer accounts:
+
 - Debit $50 from Account A
 - Credit $50 to Account B
 
 Without atomicity, a failure after the debit but before the credit leaves $50 missing from the system.
 
 ### Consistency  
+
 **Definition**: Transactions maintain database integrity rules and business constraints.
 
 **Example**: Business rule states "Album total price must equal sum of track prices."
+
 - Insert Album with TotalPrice = $12.99
 - Insert 10 tracks with UnitPrice = $1.29 each (total $12.90)
 
 The transaction fails because it violates the consistency rule (prices don't match).
 
 ### Isolation
+
 **Definition**: Concurrent transactions don't interfere with each other.
 
 **Example**: Two customers simultaneously buying the last copy of an album:
+
 - Customer A reads inventory: 1 available
 - Customer B reads inventory: 1 available  
 - Customer A decrements inventory: 0 remaining
@@ -66,6 +72,7 @@ The transaction fails because it violates the consistency rule (prices don't mat
 Proper isolation prevents both customers from seeing the same inventory count.
 
 ### Durability
+
 **Definition**: Once committed, transaction changes survive system failures.
 
 **Example**: After confirming "Purchase Complete" to a customer, the data persists even if the server crashes immediately afterward.
@@ -75,12 +82,15 @@ Proper isolation prevents both customers from seeing the same inventory count.
 Single-node databases have simpler transaction requirements. Distributed systems face additional complexity:
 
 ### Network Partitions
+
 Nodes may lose communication during transaction processing. The system must decide whether to continue with partial node participation or halt until connectivity restores.
 
 ### Node Failures  
+
 Individual nodes may crash during multi-step operations. The system needs mechanisms to detect failures and coordinate recovery across remaining nodes.
 
 ### Data Distribution
+
 Related data may reside on different nodes, requiring coordination protocols to maintain consistency across the cluster.
 
 **Example**: Customer data on Node 1, invoice data on Node 2, inventory data on Node 3. A purchase transaction must coordinate changes across all three nodes atomically.
@@ -90,12 +100,14 @@ Related data may reside on different nodes, requiring coordination protocols to 
 Ignite 3 uses a **two-phase commit protocol** to coordinate transactions across multiple nodes:
 
 ### Phase 1: Prepare
+
 1. Transaction coordinator sends "prepare" message to all participating nodes
 2. Each node validates its portion of the transaction
 3. Each node responds with "ready" or "abort"
 4. If any node responds "abort," the entire transaction fails
 
 ### Phase 2: Commit  
+
 1. If all nodes respond "ready," coordinator sends "commit" message
 2. Each node applies its changes permanently
 3. Each node responds with "committed"
@@ -108,6 +120,7 @@ This protocol ensures atomicity across distributed nodes—either all nodes comm
 Ignite 3 provides two approaches for transaction management:
 
 ### Explicit Transaction Management
+
 ```java
 Transaction tx = client.transactions().begin();
 try {
@@ -122,6 +135,7 @@ try {
 ```
 
 ### Automatic Transaction Management (Recommended)
+
 ```java
 client.transactions().runInTransaction(tx -> {
     RecordView<Artist> artists = client.tables().table("Artist").recordView(Artist.class);
@@ -135,6 +149,7 @@ The automatic approach eliminates common errors like forgetting to rollback on e
 ## Practical Transaction Examples
 
 ### Creating Related Records
+
 When creating related data like an artist and their album, both records must be created together or not at all:
 
 ```java
@@ -161,6 +176,7 @@ public void createArtistAndAlbum(IgniteClient client) {
 ```
 
 ### Inventory Management
+
 Updating inventory requires consistency to prevent overselling:
 
 ```java
@@ -192,6 +208,7 @@ public boolean purchaseTrack(IgniteClient client, int trackId, int customerId) {
 Transactions can operate with different isolation levels that balance consistency with performance:
 
 ### Read-Write Transactions
+
 Default mode for transactions that modify data. Provides full ACID guarantees but requires distributed coordination:
 
 ```java
@@ -209,6 +226,7 @@ public void updateTrackPrice(IgniteClient client, int trackId, BigDecimal newPri
 ```
 
 ### Read-Only Transactions
+
 Optimized for queries that don't modify data. Provides snapshot consistency without locking:
 
 ```java
@@ -238,6 +256,7 @@ public List<Track> getExpensiveTracks(IgniteClient client) {
 ## Important Notes
 
 ### Transaction Interface Lifecycle
+
 The `Transaction` interface is **not AutoCloseable**. For safety, use the automatic transaction management pattern:
 
 ```java
@@ -259,6 +278,7 @@ try {
 ```
 
 ### Transaction Options
+
 Configure transaction behavior with `TransactionOptions`:
 
 ```java
@@ -452,4 +472,3 @@ These transaction patterns provide the foundation for reliable distributed opera
 ---
 
 **Next**: [Distributed Computing](03-compute-api-processing.md) - Execute code directly on cluster nodes where data resides to eliminate network bottlenecks and enable massive parallel processing for analytics and recommendation algorithms.
-

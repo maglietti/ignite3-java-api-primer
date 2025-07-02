@@ -1,6 +1,6 @@
 # Module 02: Schema Design
 
-Your music platform has basic storage, but now you need real relationships. Artists release Albums, Albums contain Tracks, and your users expect lightning-fast browsing through these connections. 
+Your music platform has basic storage, but now you need real relationships. Artists release Albums, Albums contain Tracks, and your users expect lightning-fast browsing through these connections.
 
 The challenge? These relationships need to work across distributed storage. When an Artist's albums span multiple servers, how do you keep related data together for performance? When users browse from Artist to Album to Track, how do you avoid network delays?
 
@@ -35,6 +35,7 @@ Your platform grows complex - multiple zones for different data types, indexes f
 *Growing your platform safely*
 
 Success means change. New features require new columns, performance improvements need new indexes. You'll learn how to evolve your schema safely while keeping your distributed music platform running.
+
 ## Your Evolving Platform
 
 What starts as simple Artist storage becomes a sophisticated music platform. Each schema decision - how Albums relate to Artists, how Tracks connect to Albums, how indexes speed up searches - shapes your platform's performance and capabilities.

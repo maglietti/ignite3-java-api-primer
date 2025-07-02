@@ -65,6 +65,7 @@ The Table API eliminates three performance penalties: SQL parsing overhead, resu
 The Table API excels in scenarios requiring type-safe object operations with complete entity context:
 
 **Ideal Table API Scenarios:**
+
 - **Business Entity Management**: User profiles, product catalogs, order processing
 - **Type Safety Critical**: Applications requiring compile-time validation
 - **Complex Object Relationships**: POJOs with nested business logic
@@ -72,6 +73,7 @@ The Table API excels in scenarios requiring type-safe object operations with com
 - **Development Productivity**: Rapid development with object-oriented patterns
 
 **Table API vs Other Approaches:**
+
 - **vs Key-Value Operations**: Use Table API when you need complete object context, not just field access
 - **vs SQL Operations**: Use Table API for known-key operations, SQL for complex queries and analytics
 
@@ -529,4 +531,3 @@ The Table API provides the foundation for object-oriented distributed applicatio
 ---
 
 **Next**: [SQL API Analytics](02-sql-api-analytics.md) - Complex query processing and distributed analytics that leverage your optimized schema design for reporting and business intelligence operations.
-

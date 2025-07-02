@@ -352,4 +352,3 @@ This unified programming model provides:
 - Table API delivers type safety for key-based operations
 - SQL API enables complex queries and analytics
 - Both APIs access identical underlying distributed partitions
-

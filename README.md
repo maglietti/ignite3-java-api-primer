@@ -154,4 +154,3 @@ All reference applications are located in [`ignite3-reference-apps/`](./ignite3-
 - **Data Streaming**: [`08-data-streaming-app/`](./ignite3-reference-apps/08-data-streaming-app/) - High-throughput ingestion
 - **Caching Patterns**: [`09-caching-patterns-app/`](./ignite3-reference-apps/09-caching-patterns-app/) - Cache strategies
 - **File Streaming**: [`10-file-streaming-app/`](./ignite3-reference-apps/10-file-streaming-app/) - File processing with backpressure
-

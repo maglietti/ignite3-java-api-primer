@@ -29,7 +29,7 @@ This project supports **both Maven and Gradle** to accommodate different prefere
 
 - Java 17+
 - **Build System** (choose one):
-  - Maven 3.8+ 
+  - Maven 3.8+
   - Gradle (uses included wrapper - no installation required)
 - Docker 20.10.0 or newer & Docker Compose 2.23.1 or newer
 
@@ -69,12 +69,14 @@ curl http://localhost:10300/management/v1/cluster/state
 1. **Start with complete initialization** (recommended for first-time users):
 
    **Maven:**
+
    ```bash
    cd 01-sample-data-setup
    mvn compile exec:java
    ```
 
    **Gradle:**
+
    ```bash
    ./gradlew :01-sample-data-setup:run
    ```
@@ -82,6 +84,7 @@ curl http://localhost:10300/management/v1/cluster/state
 2. **Or run with options**:
 
    **Maven:**
+
    ```bash
    # Include extended dataset
    mvn compile exec:java -Dexec.args="--extended"
@@ -94,6 +97,7 @@ curl http://localhost:10300/management/v1/cluster/state
    ```
 
    **Gradle:**
+
    ```bash
    # Include extended dataset
    ./gradlew :01-sample-data-setup:run --args="--extended"
@@ -390,11 +394,13 @@ Process large CSV files using reactive streams with end-to-end backpressure prop
 ### Build All Modules
 
 **Maven:**
+
 ```bash
 mvn clean compile
 ```
 
 **Gradle:**
+
 ```bash
 ./gradlew build
 ```
@@ -402,17 +408,20 @@ mvn clean compile
 ### Run Specific Application
 
 **Maven:**
+
 ```bash
 cd [module-name]
 mvn compile exec:java
 ```
 
 **Gradle:**
+
 ```bash
 ./gradlew :[module-name]:run
 ```
 
 **Examples:**
+
 - `./gradlew :02-getting-started-app:run`
 - `./gradlew :04-table-api-app:run`
 - `./gradlew :06-transactions-app:run`
@@ -420,11 +429,13 @@ mvn compile exec:java
 ### Run with Custom Cluster Address
 
 **Maven:**
+
 ```bash
 mvn compile exec:java -Dexec.args="192.168.1.100:10800"
 ```
 
 **Gradle:**
+
 ```bash
 ./gradlew :[module-name]:run --args="192.168.1.100:10800"
 ```

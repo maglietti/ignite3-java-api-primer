@@ -16,12 +16,14 @@ The Table API provides a native object-oriented interface to Ignite data, elimin
 ## Prerequisites
 
 1. **Ignite Cluster**: Ensure a 3-node cluster is running
+
    ```bash
    cd ../00-docker
    ./init-cluster.sh
    ```
 
 2. **Sample Data**: Load the music store schema and data
+
    ```bash
    cd ../01-sample-data-setup
    mvn compile exec:java
@@ -30,6 +32,7 @@ The Table API provides a native object-oriented interface to Ignite data, elimin
 ## Quick Start
 
 ### Run Complete Demo
+
 ```bash
 mvn compile exec:java
 ```
@@ -37,16 +40,19 @@ mvn compile exec:java
 ### Run Individual Demonstrations
 
 **RecordView Operations** (Object-oriented CRUD):
+
 ```bash
 mvn compile exec:java@recordview
 ```
 
 **KeyValueView Operations** (Cache-like patterns):
+
 ```bash
 mvn compile exec:java@keyvalue
 ```
 
 **Advanced Async Operations** (Production patterns):
+
 ```bash
 mvn compile exec:java@async
 ```
@@ -54,6 +60,7 @@ mvn compile exec:java@async
 ## Reference Applications
 
 ### 1. RecordViewOperations.java
+
 Demonstrates complete object-oriented data access patterns:
 
 - **Basic CRUD**: Create, read, update, delete with POJOs
@@ -63,12 +70,14 @@ Demonstrates complete object-oriented data access patterns:
 - **Async Operations**: Non-blocking execution patterns
 
 **Key Concepts**:
+
 - Automatic POJO-to-tuple mapping
 - Type safety and compile-time validation
 - Colocation benefits with related data
 - Transaction integration
 
 ### 2. KeyValueOperations.java
+
 Showcases cache-like key-value access patterns:
 
 - **Simple Operations**: Direct key-value access
@@ -78,12 +87,14 @@ Showcases cache-like key-value access patterns:
 - **Tuple Operations**: Flexible schema handling
 
 **Key Concepts**:
+
 - Separation of keys and values
 - NullableValue for explicit null handling
 - Conditional and atomic updates
 - Bulk operations for performance
 
 ### 3. AsyncTableOperations.java
+
 Advanced async programming patterns for production:
 
 - **Operation Chaining**: Complex async workflows
@@ -94,12 +105,14 @@ Advanced async programming patterns for production:
 - **Performance Optimization**: Monitoring and tuning
 
 **Key Concepts**:
+
 - CompletableFuture composition
 - Error classification and recovery
 - Resilience patterns
 - Performance monitoring
 
 ### 4. TableAPIDemo.java
+
 Main demonstration application that orchestrates all patterns:
 
 - **Guided Tour**: Step-by-step demonstration
@@ -110,16 +123,19 @@ Main demonstration application that orchestrates all patterns:
 ## Learning Path
 
 ### Beginner
+
 1. Start with **RecordViewOperations** to understand object-oriented data access
 2. Practice basic CRUD operations with the Artist entity
 3. Explore composite keys with Album and Track entities
 
 ### Intermediate
+
 1. Move to **KeyValueOperations** for cache-like patterns
 2. Learn null value handling strategies
 3. Practice conditional and atomic operations
 
 ### Advanced
+
 1. Master **AsyncTableOperations** for production patterns
 2. Implement error handling and resilience
 3. Optimize performance with monitoring
@@ -129,6 +145,7 @@ Main demonstration application that orchestrates all patterns:
 ### When to Use Table API vs SQL API vs Key-Value API
 
 ✅ **Table API Excels For**:
+
 - Known primary keys with complete records
 - Single record operations with POJOs
 - Type safety requirements
@@ -137,6 +154,7 @@ Main demonstration application that orchestrates all patterns:
 - High-performance point operations
 
 ✅ **Key-Value API Excels For**:
+
 - Simple cache-like operations
 - High-frequency get/put patterns
 - Minimal overhead operations
@@ -145,6 +163,7 @@ Main demonstration application that orchestrates all patterns:
 - Direct key-value access without object mapping
 
 ⚠️ **Consider SQL API For**:
+
 - Complex JOINs across tables
 - Aggregate functions (COUNT, SUM, AVG)
 - Range queries with WHERE clauses
@@ -155,12 +174,14 @@ Main demonstration application that orchestrates all patterns:
 ### RecordView vs KeyValueView
 
 **Use RecordView When**:
+
 - Working with complete entities
 - Need full object mapping
 - POJO-based development
 - Complex entity relationships
 
 **Use KeyValueView When**:
+
 - Cache-like access patterns
 - Simple key-value operations
 - Working with partial data
@@ -177,12 +198,14 @@ Main demonstration application that orchestrates all patterns:
 ## Common Patterns
 
 ### Bulk Loading
+
 ```java
 List<Artist> artists = loadArtists();
 artistView.upsertAll(null, artists);
 ```
 
 ### Async Chain
+
 ```java
 artists.getAsync(null, key)
     .thenCompose(artist -> updateArtist(artist))
@@ -190,6 +213,7 @@ artists.getAsync(null, key)
 ```
 
 ### Transaction
+
 ```java
 client.transactions().runInTransaction(tx -> {
     artistView.upsert(tx, artist);
@@ -199,6 +223,7 @@ client.transactions().runInTransaction(tx -> {
 ```
 
 ### Error Handling
+
 ```java
 try {
     artist = artistView.get(null, key);
@@ -212,11 +237,13 @@ try {
 ## Testing
 
 Run the test suite:
+
 ```bash
 mvn test
 ```
 
 The tests demonstrate:
+
 - Unit testing patterns for Table API operations
 - Integration testing with embedded Ignite
 - Performance testing and benchmarking
@@ -232,11 +259,12 @@ The tests demonstrate:
 4. **Null Value Errors**: Use `getNullable()` for nullable columns
 
 ### Debug Mode
+
 Enable debug logging:
+
 ```bash
 mvn compile exec:java -Dlog4j.configurationFile=debug-log4j2.xml
 ```
-
 
 ## Resources
 

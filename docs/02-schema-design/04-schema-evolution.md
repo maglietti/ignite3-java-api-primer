@@ -11,12 +11,14 @@ This scenario happens when teams don't understand schema evolution approaches in
 ### Why Code-First Evolution Works
 
 Manual DDL changes cause production problems when:
+
 - Multiple developers modify schemas independently, creating inconsistent environments
 - Application code and database schema get out of sync during deployments
 - Rolling deployments fail because schema versions don't match application expectations
 - Rollback procedures must coordinate both database and application changes
 
 Code-first evolution solves these problems by:
+
 - Making your Java code the definitive schema definition
 - Ensuring application and schema are always synchronized
 - Enabling atomic rollbacks of both code and schema changes
@@ -57,6 +59,7 @@ public class SchemaDeployment {
 ```
 
 **Evolution Benefits:**
+
 - Schema always matches application code exactly
 - No manual DDL synchronization between environments
 - Version control tracks all schema changes through code changes
@@ -652,20 +655,22 @@ public class Track {
 The patterns in this chapter center around one core principle: **treat your annotated Java classes as the single source of truth for schema definition**. This code-first approach eliminates the synchronization problems that cause most production schema failures.
 
 **Implementation Strategy:**
+
 - Use annotated entity classes to define schemas
 - Deploy with systematic validation and dependency management
 - Combine with appropriate access patterns for your evolution requirements
 - Implement environment-specific configurations for different deployment targets
 
 **Evolution Safety Rules:**
+
 - **Safe changes**: Add nullable columns, increase column lengths, add indexes
 - **Dangerous changes**: Remove columns, add non-null columns, change data types
 - **Breaking changes**: Modify primary keys, change colocation, alter constraints
 
 **Access Pattern Selection:**
+
 - **Key/Value patterns**: Maximum evolution flexibility for frequently changing schemas
 - **Record patterns**: Type safety for stable schemas with coordinated deployment processes
 - **Hybrid approach**: Key/Value for operational data, Record for reference data
 
 When you follow this code-first approach with systematic deployment procedures, schema evolution becomes a controlled process that maintains system availability while enabling continuous development. The key is treating schema changes as potentially breaking operations that require the same careful coordination as any other distributed system change.
-

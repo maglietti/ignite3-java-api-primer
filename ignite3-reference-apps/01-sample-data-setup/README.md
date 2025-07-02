@@ -192,7 +192,6 @@ try (IgniteClient client = ConnectionUtils.connectToCluster()) {
 }
 ```
 
-
 ## Prerequisites
 
 - Java 17+

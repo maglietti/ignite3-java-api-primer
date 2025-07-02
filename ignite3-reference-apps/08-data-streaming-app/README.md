@@ -22,16 +22,19 @@ Demonstrates reactive streams-based data streaming for music platform event inge
 ## Demonstrations
 
 ### Basic Data Streaming (`BasicDataStreamerDemo`)
+
 - Default streaming configuration
 - Performance-tuned options with large batches
 - Mixed PUT/REMOVE operations for listening sessions
 
-### Bulk Data Ingestion (`BulkDataIngestion`) 
+### Bulk Data Ingestion (`BulkDataIngestion`)
+
 - High-throughput streaming with large datasets
 - File-based loading with memory efficiency
 - Adaptive batch sizing for optimal performance
 
 ### Backpressure Handling (`BackpressureHandling`)
+
 - Custom Flow.Publisher with backpressure support
 - Adaptive rate limiting based on system load
 - Buffer overflow scenarios and management
@@ -39,6 +42,7 @@ Demonstrates reactive streams-based data streaming for music platform event inge
 ## Usage
 
 Run the orchestrator to see all patterns:
+
 ```bash
 mvn compile exec:java
 ```
@@ -59,6 +63,7 @@ mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.streaming.Backpressur
 ## Data Model
 
 Uses music streaming event data:
+
 - **TrackEvents**: Event logging with user interactions
 - **BulkLoadTest**: Historical listening records
 - **FileLoadTest**: File-based data migration
@@ -72,12 +77,14 @@ Tables are created and cleaned up automatically for each demonstration.
 ## Configuration Options
 
 ### DataStreamerOptions Parameters
+
 - `pageSize`: Batch size for operations (500-5000)
 - `perPartitionParallelOperations`: Concurrency level (1-4)
 - `autoFlushInterval`: Flush timing in milliseconds (200-2000)
 - `retryLimit`: Retry attempts for failed operations (8-32)
 
 ### Performance Tuning
+
 - Small batches (500): Lower latency, higher overhead
 - Large batches (5000): Higher throughput, more memory usage
 - High parallelism: Better throughput with cluster resources
@@ -86,6 +93,7 @@ Tables are created and cleaned up automatically for each demonstration.
 ## Error Handling
 
 Demonstrates production patterns:
+
 - Resource management with try-with-resources
 - Retry logic for transient failures
 - Graceful degradation under load

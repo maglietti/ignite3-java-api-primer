@@ -158,4 +158,3 @@ mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.gettingstarte
 find src -name "*.class" -delete
 mvn clean compile
 ```
-

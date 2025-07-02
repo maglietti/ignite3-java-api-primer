@@ -11,7 +11,9 @@ The Transaction API provides ACID guarantees for operations across multiple tabl
 ## Applications
 
 ### 1. BasicTransactionDemo
+
 Demonstrates fundamental transaction patterns:
+
 - Explicit transaction management (begin/commit/rollback)
 - Closure-based transactions with `runInTransaction()`
 - TransactionOptions configuration
@@ -19,7 +21,9 @@ Demonstrates fundamental transaction patterns:
 - Exception handling patterns
 
 ### 2. AsyncTransactionDemo  
+
 Shows asynchronous transaction patterns:
+
 - Async transaction beginning and completion
 - Chaining async operations within transactions
 - Parallel operations in transactions
@@ -27,7 +31,9 @@ Shows asynchronous transaction patterns:
 - Error handling and timeout patterns
 
 ### 3. TransactionPatterns
+
 Advanced real-world scenarios:
+
 - Mixing Table API and SQL API within transactions
 - Batch operations with transaction management
 - Complex business workflows with multiple entities
@@ -35,7 +41,9 @@ Advanced real-world scenarios:
 - Performance optimization patterns
 
 ### 4. BusinessWorkflowPatterns
+
 Production-ready transaction patterns for complex business scenarios:
+
 - Multi-table purchase workflow coordination
 - Transaction timeout configuration for different operation types
 - Explicit transaction lifecycle management
@@ -44,6 +52,7 @@ Production-ready transaction patterns for complex business scenarios:
 - Customer purchase workflows with validation
 
 ### 5. TransactionAPIDemo
+
 Main demonstration application that runs all examples in sequence.
 
 ## Key Concepts Demonstrated
@@ -60,12 +69,14 @@ Main demonstration application that runs all examples in sequence.
 ## Prerequisites
 
 1. **Ignite Cluster**: Start the cluster using the docker module:
+
    ```bash
    cd ../00-docker
    docker-compose up -d
    ```
 
 2. **Sample Data**: Set up the music store schema and data:
+
    ```bash
    cd ../01-sample-data-setup
    mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.setup.app.ProjectInitializationApp"
@@ -74,11 +85,13 @@ Main demonstration application that runs all examples in sequence.
 ## Running the Examples
 
 ### Run All Examples
+
 ```bash
 mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.transactions.TransactionAPIDemo"
 ```
 
 ### Run Individual Examples
+
 ```bash
 # Basic transaction patterns
 mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.transactions.BasicTransactionDemo"
@@ -96,6 +109,7 @@ mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.transactions.
 ## API Patterns Covered
 
 ### Transaction Lifecycle
+
 ```java
 // Explicit management
 Transaction tx = client.transactions().begin();
@@ -114,6 +128,7 @@ client.transactions().runInTransaction(tx -> {
 ```
 
 ### Async Transactions
+
 ```java
 CompletableFuture<Void> future = client.transactions().beginAsync()
     .thenCompose(tx -> {
@@ -123,6 +138,7 @@ CompletableFuture<Void> future = client.transactions().beginAsync()
 ```
 
 ### Transaction Options
+
 ```java
 TransactionOptions options = new TransactionOptions()
     .timeoutMillis(30000)
@@ -134,6 +150,7 @@ Transaction tx = client.transactions().begin(options);
 ## Music Store Examples
 
 ### Album Creation Workflow
+
 ```java
 // Create artist, album, and tracks atomically
 client.transactions().runInTransaction(tx -> {
@@ -151,6 +168,7 @@ client.transactions().runInTransaction(tx -> {
 ```
 
 ### Customer Order Processing
+
 ```java
 // Process customer order with invoice and line items
 client.transactions().runInTransaction(tx -> {
@@ -190,4 +208,3 @@ After running these examples, you will understand:
 4. **Error Handling**: Proper exception handling and rollback scenarios
 5. **Performance**: When to use read-only transactions and batch operations
 6. **Real-world Patterns**: Complex business workflows with multiple entities
-

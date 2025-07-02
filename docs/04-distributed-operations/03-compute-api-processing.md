@@ -80,6 +80,7 @@ graph TB
 ```
 
 **Key Benefits:**
+
 - Network transfers reduced from 12TB to 50KB (recommendation algorithm deployment)
 - Processing time drops from 45 minutes to 5 minutes through parallel execution
 - Live streaming traffic no longer competes with analytics for bandwidth
@@ -136,6 +137,7 @@ Consider your platform's artist popularity analysis. Instead of pulling all arti
 ### From Data Movement to Code Movement
 
 **Traditional Centralized Approach:**
+
 ```java
 // Pull artist data from distributed storage (network intensive)
 List<Artist> allArtists = centralDatabase.executeQuery("SELECT * FROM Artist");
@@ -144,6 +146,7 @@ Map<String, Integer> popularity = analyzePopularity(allArtists);
 ```
 
 **Compute API Distributed Approach:**
+
 ```java
 import org.apache.ignite.client.IgniteClient;
 import org.apache.ignite.compute.*;
@@ -198,6 +201,7 @@ try (IgniteClient client = IgniteClient.builder()
 ```
 
 **The Fundamental Shift:**
+
 - **Data Movement Eliminated:** No network transfers of artist data
 - **Parallel Processing:** Multiple nodes can run the same analysis simultaneously
 - **Resource Efficiency:** Computation uses local storage node resources
@@ -254,6 +258,7 @@ List<String> recommendations = client.compute().execute(target,
 ```
 
 **Data Locality Benefits:**
+
 - **Zero Network Latency:** User data processing happens locally without cross-node queries
 - **Concurrent Processing:** Multiple users' recommendations generate simultaneously on different nodes
 - **Resource Distribution:** CPU and memory load spreads across all storage nodes
@@ -417,6 +422,7 @@ allRecommendations.thenAccept(results -> {
 ```
 
 **Performance Benefits:**
+
 - **Concurrent Processing:** 1000 users processed simultaneously across cluster nodes
 - **Resource Efficiency:** No thread blocking while waiting for recommendations
 - **Response Time:** Sub-second recommendations instead of sequential processing delays
@@ -543,6 +549,7 @@ public class MusicTrendMapReduceExample {
 ```
 
 **MapReduce Benefits for Music Analytics:**
+
 - **Comprehensive Coverage:** Every cluster node contributes local listening data
 - **Network Efficiency:** Raw listening data never leaves its node, only aggregated trends transfer
 - **Parallel Processing:** All nodes analyze simultaneously instead of sequential processing
@@ -619,6 +626,7 @@ These patterns transform your music platform from a centralized analytics bottle
 The Compute API completes your music platform's evolution from centralized batch processing to distributed real-time intelligence. Your recommendation system now processes 2.5 million users in 5 minutes instead of 45 minutes, network congestion disappears as computation moves to data, and your platform delivers the responsive experience users demand.
 
 **Critical Performance Improvements:**
+
 - **Network Traffic Reduction:** 12TB nightly transfers eliminated through local processing
 - **Processing Speed:** 9x improvement through distributed parallel execution
 - **Resource Utilization:** Storage nodes become active participants in analytics instead of idle data stores

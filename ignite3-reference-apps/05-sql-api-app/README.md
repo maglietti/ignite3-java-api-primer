@@ -11,6 +11,7 @@ This reference application demonstrates the Ignite 3 SQL API, focusing on Java i
 ## What You'll Learn
 
 ### Core SQL API Concepts
+
 - **IgniteSql Interface**: Primary gateway to all SQL operations
 - **Statement Management**: Building reusable, configurable statements
 - **ResultSet Processing**: Type-safe data extraction and iteration
@@ -18,6 +19,7 @@ This reference application demonstrates the Ignite 3 SQL API, focusing on Java i
 - **Transaction Integration**: ACID compliance with distributed operations
 
 ### Advanced Patterns
+
 - **Asynchronous Operations**: Non-blocking query execution with CompletableFuture
 - **Batch Operations**: Efficient bulk data processing with BatchedArguments
 - **Object Mapping**: Automatic POJO conversion using Mapper interface
@@ -25,6 +27,7 @@ This reference application demonstrates the Ignite 3 SQL API, focusing on Java i
 - **Performance Optimization**: Statement reuse, pagination, and optimization techniques
 
 ### Practical Examples
+
 - **DDL Operations**: Schema management and evolution
 - **DML Operations**: Data manipulation with validation
 - **Complex Queries**: JOINs, aggregations, subqueries, and analytics
@@ -32,13 +35,15 @@ This reference application demonstrates the Ignite 3 SQL API, focusing on Java i
 
 ## Prerequisites
 
-**Required**: 
+**Required**:
+
 1. Ignite 3 cluster running on `localhost:10800`
 2. Complete [sample-data-setup](../01-sample-data-setup/) to load the music store schema and data
 
 ## Reference Applications
 
 ### 1. SQLAPIDemo.java
+
 **Demonstration of SQL API concepts**
 
 ```bash
@@ -46,6 +51,7 @@ mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.SQLAPI
 ```
 
 **Features demonstrated:**
+
 - Basic SQL interface access and query execution
 - Statement configuration and reuse patterns
 - ResultSet processing with various data types
@@ -56,6 +62,7 @@ mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.SQLAPI
 - Performance optimization techniques
 
 ### 2. DDLOperations.java
+
 **Schema management using the SQL API**
 
 ```bash
@@ -63,6 +70,7 @@ mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.DDLOpe
 ```
 
 **Operations covered:**
+
 - Distribution zone creation and configuration
 - Table creation with colocation strategies
 - Index management for query performance
@@ -71,6 +79,7 @@ mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.DDLOpe
 - Proper cleanup and dependency management
 
 ### 3. DMLOperations.java
+
 **Data manipulation patterns and best practices**
 
 ```bash
@@ -78,6 +87,7 @@ mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.DMLOpe
 ```
 
 **Patterns demonstrated:**
+
 - INSERT operations with parameter binding
 - UPDATE operations with conditional logic
 - DELETE operations with cascading considerations
@@ -87,6 +97,7 @@ mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.DMLOpe
 - Data validation and constraint handling
 
 ### 4. QueryOperations.java
+
 **Complex query patterns and analytical operations**
 
 ```bash
@@ -94,6 +105,7 @@ mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.QueryO
 ```
 
 **Query types covered:**
+
 - Simple queries with filtering and sorting
 - Multi-table JOINs (INNER, LEFT, self-joins)
 - Aggregate queries with GROUP BY and HAVING
@@ -105,6 +117,7 @@ mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.QueryO
 - Performance optimization patterns
 
 ### 5. ProductionAnalyticsPatterns.java
+
 **Production-scale analytics patterns for music streaming platforms**
 
 ```bash
@@ -112,6 +125,7 @@ mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.Produc
 ```
 
 **Advanced patterns demonstrated:**
+
 - **Streaming Result Processing**: Handle large result sets with memory efficiency
 - **Hierarchical Data Processing**: Navigate complex artist → album → track relationships
 - **Metadata-Driven Processing**: Dynamic query generation based on table schemas
@@ -124,18 +138,21 @@ mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.Produc
 ## Key SQL API Classes Demonstrated
 
 ### Core Interfaces
+
 - **`IgniteSql`**: Main SQL interface obtained via `client.sql()`
 - **`Statement`**: Configurable, reusable query statements
 - **`ResultSet<SqlRow>`**: Type-safe result iteration and data extraction
 - **`SqlRow`**: Individual row access with typed value extraction methods
 
 ### Supporting Classes
+
 - **`BatchedArguments`**: Bulk operation parameter management
 - **`Mapper<T>`**: Automatic object mapping configuration
 - **`AsyncResultSet<SqlRow>`**: Non-blocking result processing
 - **`Transaction`**: ACID transaction integration
 
 ### Utility Patterns
+
 - **Statement Builder**: Configurable statement creation with timeouts and pagination
 - **Parameter Binding**: Safe parameterization with `?` placeholders
 - **Resource Management**: Proper cleanup with try-with-resources
@@ -144,6 +161,7 @@ mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.Produc
 ## Code Examples
 
 ### Basic Query Execution
+
 ```java
 IgniteSql sql = client.sql();
 
@@ -161,6 +179,7 @@ while (artists.hasNext()) {
 ```
 
 ### Statement Configuration and Reuse
+
 ```java
 Statement artistLookup = sql.statementBuilder()
     .query("SELECT ArtistId, Name FROM Artist WHERE Country = ?")
@@ -174,6 +193,7 @@ ResultSet<SqlRow> usArtists = sql.execute(null, artistLookup, "USA");
 ```
 
 ### Batch Operations
+
 ```java
 BatchedArguments batch = BatchedArguments.create()
     .add("Artist 1", "Country A")
@@ -185,6 +205,7 @@ long[] results = sql.executeBatch(null,
 ```
 
 ### Transaction Integration
+
 ```java
 try (Transaction tx = client.transactions().begin()) {
     sql.execute(tx, "INSERT INTO Artist (Name) VALUES (?)", "New Artist");
@@ -195,6 +216,7 @@ try (Transaction tx = client.transactions().begin()) {
 ```
 
 ### Object Mapping
+
 ```java
 // Single-column mapping
 ResultSet<String> names = sql.execute(null,
@@ -208,6 +230,7 @@ ResultSet<Artist> artists = sql.execute(null,
 ```
 
 ### Asynchronous Operations
+
 ```java
 CompletableFuture<AsyncResultSet<SqlRow>> future = sql.executeAsync(null,
     "SELECT COUNT(*) as count FROM Artist");
@@ -245,6 +268,7 @@ The reference applications demonstrate error handling:
 ## Testing and Development
 
 ### Running Individual Examples
+
 ```bash
 # Run complete demo
 mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.SQLAPIDemo"
@@ -259,13 +283,16 @@ mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.Produc
 ```
 
 ### Prerequisites Check
+
 Ensure the music store sample data is loaded:
+
 ```bash
 cd ../01-sample-data-setup
 mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.setup.app.ProjectInitializationApp"
 ```
 
 ### Troubleshooting
+
 - **Connection Issues**: Verify Ignite cluster is running on `localhost:10800`
 - **Missing Data**: Run the sample data setup first
 - **Permission Errors**: Ensure cluster allows DDL operations

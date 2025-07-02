@@ -18,6 +18,7 @@ mvn compile exec:java
 ```
 
 Features:
+
 - **BasicDataStreamerDemo** - Fundamental streaming patterns and configuration
 - **BulkDataIngestion** - High-volume data loading optimization
 - **BackpressureHandling** - Flow control and adaptive rate limiting
@@ -32,6 +33,7 @@ mvn compile exec:java
 ```
 
 Features:
+
 - **FileStreamingPublisher** - File-based event streaming with reactive patterns
 - **FileBackpressureStreaming** - Advanced flow control for large file processing
 - **SampleDataGenerator** - Realistic data generation for testing streaming scenarios

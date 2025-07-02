@@ -80,9 +80,11 @@ ResultSet<SqlRow> result = sql.execute(null, colocatedQuery, 42);
 ```
 
 **Key Optimization Principles:**
+
 - Filter by colocation keys (ArtistId, CustomerId) for single-partition execution
 - Use proper JOIN order to minimize cross-partition data movement
 - Apply WHERE clauses early to reduce data transfer volume
+
 ```
 
 ### Statement Configuration and Optimization
@@ -107,10 +109,12 @@ long[] insertCounts = sql.executeBatch(null,
 ```
 
 **Performance Configuration Options:**
+
 - **queryTimeout**: Prevents runaway cross-partition queries
 - **pageSize**: Controls memory usage for large result sets  
 - **Batch Operations**: Reduces network round-trips for bulk operations
 - **Statement Reuse**: Eliminates query parsing overhead
+
 ```
 
 ### Parameter Binding and Partition Pruning
@@ -139,10 +143,12 @@ ResultSet<SqlRow> multiArtist = sql.execute(null,
 ```
 
 **Binding Best Practices:**
+
 - Use colocation keys as parameters for single-partition execution
 - Prefer IN clauses with colocation keys for parallel processing
 - Avoid string concatenation - use parameterized queries
 - Non-colocation key filters require full table scans
+
 ```
 
 ## Distributed ResultSet Processing
@@ -194,10 +200,12 @@ System.out.printf("Analysis complete: %d tracks, %d total minutes, $%.2f revenue
 ```
 
 **Key ResultSet Processing Patterns:**
+
 - Use `pageSize` to control memory usage for large result sets
 - Process results in streaming fashion with `while(rs.hasNext())`
 - Extract data using typed accessors: `longValue()`, `stringValue()`, `decimalValue()`
 - Handle hierarchical data through boundary detection and aggregation
+
 ```
 
 ## Type-Safe Data Extraction
@@ -232,10 +240,12 @@ if (result.hasRowSet()) {
 ```
 
 **Data Extraction Best Practices:**
+
 - Use typed accessors: `intValue()`, `stringValue()`, `decimalValue()`
 - Check `hasRowSet()` to distinguish SELECT from DML operations
 - Handle nullable fields with appropriate null checks
 - Use `result.metadata()` for dynamic column inspection
+
 ```
 
 ## Distributed Analytics Patterns
@@ -285,10 +295,12 @@ ResultSet<SqlRow> result = sql.execute(null, distributedAggregateQuery);
 ```
 
 **Analytics Optimization Strategies:**
+
 - Use colocation keys in WHERE clauses for single-partition execution
 - Structure JOINs to follow colocation relationships
 - Apply aggregation functions with proper GROUP BY clauses
 - Use HAVING for post-aggregation filtering
+
 ```
 
 ## Transactional Analytics
@@ -318,10 +330,12 @@ try {
 ```
 
 **Transactional Analytics Benefits:**
+
 - Snapshot isolation ensures consistent analytical results
 - Combine Table API precision with SQL API analytics
 - Coordinate updates across multiple partitions
 - Automatic rollback preserves data integrity
+
 ```
 
 ## Production Analytics Patterns
@@ -366,10 +380,12 @@ Statement customerLTVQuery = sql.statementBuilder()
 ```
 
 **Business Intelligence Query Patterns:**
+
 - Use time-range filters for performance and relevance
 - Apply GROUP BY with proper aggregation functions  
 - Set reasonable query timeouts for analytical workloads
 - Use LIMIT clauses to control result set sizes
+
 ```
 
 ## Query Performance Optimization
@@ -429,10 +445,12 @@ long[] results = sql.executeBatch(null, batchStatement, batchInsert);
 ```
 
 **Performance Optimization Strategies:**
+
 - Use EXPLAIN to identify execution plan bottlenecks
 - Apply partition pruning through colocation key filters
 - Batch operations to reduce network round-trips
 - Set appropriate query timeouts and page sizes
+
 ```
 
 ## Production Error Handling
@@ -483,10 +501,12 @@ public CompletableFuture<Optional<RevenueAnalytics>> calculateRevenueAsync(
 ```
 
 **Error Handling Best Practices:**
+
 - Set appropriate query timeouts to prevent runaway operations
 - Use specific exception types for targeted error handling
 - Implement graceful degradation for non-critical analytics
 - Log errors with sufficient context for troubleshooting
+
 ```
 
 The SQL API enables production-scale analytical workloads through partition-aware query planning, distributed aggregation, and optimized result processing. Focus on colocation strategies, proper query construction, and robust error handling for optimal performance.

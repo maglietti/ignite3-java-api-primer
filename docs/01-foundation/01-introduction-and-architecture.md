@@ -420,4 +420,3 @@ Alternative installation methods are available for environments where Docker is 
 - Java fundamentals (collections, generics, streams)
 - Basic SQL concepts (SELECT, JOIN, GROUP BY)
 - General understanding of web application architecture
-

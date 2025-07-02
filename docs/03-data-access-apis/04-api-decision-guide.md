@@ -11,24 +11,28 @@ This chapter demonstrates how to analyze operation characteristics, select optim
 Your operation characteristics determine optimal API choice. Analyze data access patterns, performance requirements, and object complexity to match operations with appropriate APIs.
 
 **KeyValueView Selection Criteria:**
+
 - Primary key available for direct access
 - Performance requirements exceed 1000 operations per second
 - Simple value operations without complex object relationships
 - Caching patterns and session management scenarios
 
 **RecordView Selection Criteria:**
+
 - Complete object context required for business logic
 - Type safety and compile-time validation important
 - CRUD operations with business rule enforcement
 - Development productivity matters more than raw performance
 
 **SQL API Selection Criteria:**
+
 - Complex queries spanning multiple entities
 - Analytics and aggregation requirements
 - Dynamic query construction needed
 - Cross-partition operations unavoidable
 
 **Multi-API Strategy:**
+
 - Combine approaches within single applications for optimal performance
 - Use each API where it provides maximum advantage
 - Design data access layers that leverage API strengths strategically

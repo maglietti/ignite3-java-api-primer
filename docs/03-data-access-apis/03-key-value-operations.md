@@ -18,6 +18,7 @@ mvn compile exec:java
 Key-Value operations optimize for scenarios where you need specific field access without object complexity. Compare the performance characteristics:
 
 **RecordView: Complete Object Operations**
+
 - Full object serialization/deserialization
 - Complete entity context available
 - Type safety with business logic integration
@@ -25,6 +26,7 @@ Key-Value operations optimize for scenarios where you need specific field access
 - Optimal for: Business workflows, complex object manipulation
 
 **KeyValueView: Direct Field Access**
+
 - Minimal serialization overhead
 - Single field or primitive type operations
 - Direct memory access patterns

@@ -156,20 +156,24 @@ public class Track {
 **Network Transfer Performance:**
 
 **Primary Key Types:**
+
 - **Integer**: 4 bytes, efficient hash distribution for partitioning
 - **Long**: 8 bytes, necessary for tables exceeding 2 billion records
 - **String**: Variable length, avoid unless natural keys exist (UUID, product codes)
 
 **Precision Data:**
+
 - **BigDecimal**: Exact decimal precision, use for currency to avoid floating-point rounding errors in financial calculations
 - **Double**: 8 bytes, acceptable for ratings and percentages where slight precision loss is tolerable
 
 **String Length Strategy:**
+
 - Oversized string columns waste network bandwidth and storage
 - Undersized columns cause runtime truncation exceptions
 - Profile your actual data: 50 (names), 100 (titles), 255 (descriptions)
 
 **Temporal Data:**
+
 - **LocalDate**: Date only, no timezone complexity
 - **Instant**: UTC timestamps, consistent across distributed nodes regardless of server timezones
 - **LocalDateTime**: Use only when timezone context is meaningful and consistent
@@ -266,6 +270,7 @@ Ignite calculates partition assignment from the primary key value. Artist ID 1 m
 Now that you understand how colocation solves distributed join problems, implement parent-child colocation patterns for your entity relationships.
 
 **Common Colocation Scenarios:**
+
 - Artist profiles with their complete discography
 - Album details with all track listings  
 - Customer orders with line items
@@ -338,4 +343,3 @@ Collection<Album> albums = albums.getAll(null,
 ```
 
 Query time drops from 40-200ms (network latency × hops) to 1-5ms (local storage access). Colocation eliminates network serialization, transfer, and deserialization overhead for related data operations.
-
