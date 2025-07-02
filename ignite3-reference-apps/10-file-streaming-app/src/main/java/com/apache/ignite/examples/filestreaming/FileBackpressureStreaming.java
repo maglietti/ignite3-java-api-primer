@@ -22,10 +22,6 @@ import org.apache.ignite.table.Table;
 import org.apache.ignite.table.RecordView;
 import org.apache.ignite.table.DataStreamerOptions;
 import org.apache.ignite.table.Tuple;
-import org.apache.ignite.catalog.IgniteCatalog;
-import org.apache.ignite.catalog.definitions.ColumnDefinition;
-import org.apache.ignite.catalog.ColumnType;
-import org.apache.ignite.catalog.definitions.TableDefinition;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -107,38 +103,35 @@ public class FileBackpressureStreaming {
     }
     
     /**
-     * Creates the test table for file streaming demonstrations.
+     * Creates the test table for file streaming demonstrations using SQL DDL.
      */
     private static void createTestTable(IgniteClient client) {
         System.out.println("\n>>> Creating test table for file streaming");
         
-        IgniteCatalog catalog = client.catalog();
-        
         // Drop existing table if present
         try {
-            catalog.dropTable(TABLE_NAME);
+            String dropSql = "DROP TABLE IF EXISTS " + TABLE_NAME;
+            client.sql().execute(null, dropSql);
             Thread.sleep(2000); // Allow cleanup to complete
         } catch (Exception e) {
             // Table doesn't exist, continue
         }
         
-        // Create table with columns matching CSV structure
-        TableDefinition tableDefinition = TableDefinition.builder(TABLE_NAME)
-            .columns(
-                ColumnDefinition.column("EventId", ColumnType.BIGINT),
-                ColumnDefinition.column("UserId", ColumnType.INTEGER),
-                ColumnDefinition.column("TrackId", ColumnType.INTEGER),
-                ColumnDefinition.column("EventType", ColumnType.VARCHAR),
-                ColumnDefinition.column("EventTime", ColumnType.BIGINT),
-                ColumnDefinition.column("Duration", ColumnType.BIGINT),
-                ColumnDefinition.column("PlaylistId", ColumnType.INTEGER)
+        // Create table with columns matching CSV structure using SQL DDL
+        String createSql = """
+            CREATE TABLE %s (
+                EventId BIGINT PRIMARY KEY,
+                UserId INTEGER,
+                TrackId INTEGER,
+                EventType VARCHAR,
+                EventTime BIGINT,
+                Duration BIGINT,
+                PlaylistId INTEGER
             )
-            .primaryKey("EventId")
-            .zone("MusicStore")
-            .build();
+            """.formatted(TABLE_NAME);
         
         try {
-            catalog.createTable(tableDefinition);
+            client.sql().execute(null, createSql);
             System.out.println("<<< Test table created: " + TABLE_NAME);
             Thread.sleep(2000); // Allow table to become available
         } catch (Exception e) {
@@ -461,7 +454,7 @@ public class FileBackpressureStreaming {
     }
     
     /**
-     * Cleans up the test table after demonstrations.
+     * Cleans up the test table after demonstrations using SQL DDL.
      */
     private static void cleanupTestTable(IgniteClient client) {
         System.out.println("\n>>> Cleaning up test table");
@@ -469,8 +462,8 @@ public class FileBackpressureStreaming {
         try {
             Thread.sleep(1000); // Allow operations to complete
             
-            IgniteCatalog catalog = client.catalog();
-            catalog.dropTable(TABLE_NAME);
+            String dropSql = "DROP TABLE IF EXISTS " + TABLE_NAME;
+            client.sql().execute(null, dropSql);
             System.out.println("<<< Test table cleanup completed");
             
         } catch (Exception e) {
