@@ -93,6 +93,7 @@ site/
 # Runtime configuration
 *.properties.local
 config.local.*
+.env
 
 # Output files
 *.html

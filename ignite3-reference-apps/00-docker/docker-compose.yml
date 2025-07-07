@@ -1,7 +1,7 @@
 name: ignite3
 
 x-ignite-def: &ignite-def
-  image: apacheignite/ignite:3.0.0
+  image: apacheignite/ignite:${IGNITE_VERSION:-3.0.0}
   environment:
     JVM_MAX_MEM: "4g"
     JVM_MIN_MEM: "4g"
@@ -48,4 +48,3 @@ configs:
           nodeFinder.netClusterNodes = ["node1:3344", "node2:3344", "node3:3344"]  
         }  
       }
-
