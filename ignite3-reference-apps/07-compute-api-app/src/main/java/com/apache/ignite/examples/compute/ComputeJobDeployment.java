@@ -51,8 +51,8 @@ public class ComputeJobDeployment {
     private static final Logger logger = LoggerFactory.getLogger(ComputeJobDeployment.class);
 
     // Deployment configuration
-    private static final String DEPLOYMENT_UNIT_NAME = "compute-jobs-v2";
-    private static final String DEPLOYMENT_UNIT_VERSION = "1.0.1";
+    private static final String DEPLOYMENT_UNIT_NAME = "compute-jobs";
+    private static final String DEPLOYMENT_UNIT_VERSION = "1.0.0";
     private static final String DEFAULT_REST_HOST = "localhost";
     private static final int DEFAULT_REST_PORT = 10300;
 

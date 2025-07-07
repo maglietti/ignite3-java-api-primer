@@ -108,7 +108,7 @@ public class ProductionComputePatterns {
      */
     private void demonstrateRecommendationEngine(IgniteClient client) {
         System.out.println("\n--- Recommendation Engine Processing");
-        System.out.println(">>> Processing 2.5M user profiles for personalized recommendations");
+        System.out.println(">>> Processing user profiles for personalized recommendations");
         
         try {
             // Simulate large-scale recommendation processing
