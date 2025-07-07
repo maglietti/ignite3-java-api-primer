@@ -163,7 +163,7 @@ public class AdvancedComputeOperations {
      * Compares execution times between colocated and any-node targeting.
      */
     private void demonstrateColocationPerformance(IgniteClient client) {
-        System.out.println("\n    --- Colocation Performance Comparison");
+        System.out.println("\n--- Colocation Performance Comparison");
         
         JobDescriptor<Integer, String> salesJob = JobDescriptor.builder(AdvancedComputeJobs.ArtistSalesAnalysisJob.class)
                 .units(ComputeJobDeployment.getDeploymentUnits())
