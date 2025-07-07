@@ -91,7 +91,7 @@ public class AsyncBasicOperations {
 
     private static void demonstrateSimpleAsync(RecordView<Tuple> artists) 
             throws ExecutionException, InterruptedException {
-        System.out.println("\n    --- Simple Async Operations");
+        System.out.println("\n--- Simple Async Operations");
         System.out.println(">>> Starting non-blocking database operations");
         
         // Create test data
@@ -123,7 +123,7 @@ public class AsyncBasicOperations {
 
     private static void demonstrateAsyncChaining(RecordView<Tuple> artists) 
             throws ExecutionException, InterruptedException {
-        System.out.println("\n    --- Async Chaining");
+        System.out.println("\n--- Async Chaining");
         System.out.println(">>> Chaining operations without blocking threads");
         
         final int artistId = 5009;
@@ -171,7 +171,7 @@ public class AsyncBasicOperations {
 
     private static void demonstrateAsyncErrorHandling(RecordView<Tuple> artists) 
             throws ExecutionException, InterruptedException {
-        System.out.println("\n    --- Async Error Handling");
+        System.out.println("\n--- Async Error Handling");
         System.out.println(">>> Demonstrating error handling in async operations");
         
         // Try to read a non-existent artist

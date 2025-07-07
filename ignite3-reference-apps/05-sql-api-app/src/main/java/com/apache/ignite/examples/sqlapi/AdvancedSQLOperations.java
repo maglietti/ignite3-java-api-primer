@@ -95,7 +95,7 @@ public class AdvancedSQLOperations {
      * Demonstrates JOIN operations with the music store data model.
      */
     private void demonstrateJoinOperations(IgniteSql sql) {
-        System.out.println("\n    --- JOIN Operations");
+        System.out.println("\n--- JOIN Operations");
         System.out.println(">>> Executing queries across related tables");
         
         // Simple JOIN between Artist and Album
@@ -148,7 +148,7 @@ public class AdvancedSQLOperations {
      * Demonstrates aggregation queries and analytical operations.
      */
     private void demonstrateAggregationQueries(IgniteSql sql) {
-        System.out.println("\n    --- Aggregation Queries");
+        System.out.println("\n--- Aggregation Queries");
         System.out.println(">>> Computing statistics and analytics");
         
         // Genre popularity analysis
@@ -193,7 +193,7 @@ public class AdvancedSQLOperations {
      * Demonstrates batch operations for efficient bulk data processing.
      */
     private void demonstrateBatchOperations(IgniteSql sql) {
-        System.out.println("\n    --- Batch Operations");
+        System.out.println("\n--- Batch Operations");
         System.out.println(">>> Performing bulk data operations");
         
         // Create batch arguments for multiple test artists
@@ -234,7 +234,7 @@ public class AdvancedSQLOperations {
      * Demonstrates object mapping for type-safe result processing.
      */
     private void demonstrateObjectMapping(IgniteSql sql) {
-        System.out.println("\n    --- Object Mapping");
+        System.out.println("\n--- Object Mapping");
         System.out.println(">>> Using type-safe object mapping");
         
         // Single-column mapping for artist names

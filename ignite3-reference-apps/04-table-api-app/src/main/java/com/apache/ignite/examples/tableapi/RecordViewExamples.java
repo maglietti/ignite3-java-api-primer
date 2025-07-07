@@ -110,7 +110,7 @@ public class RecordViewExamples {
     }
 
     private static void demonstrateTypedOperations(RecordView<Artist> artists) {
-        System.out.println("\n    --- Reading Existing Artists");
+        System.out.println("\n--- Reading Existing Artists");
         System.out.println(">>> Retrieving sample data using POJO key objects");
         
         // Read some existing artists from the sample data
@@ -127,7 +127,7 @@ public class RecordViewExamples {
     }
 
     private static void demonstrateObjectOperations(RecordView<Artist> artists) {
-        System.out.println("\n    --- Object-Oriented Operations");
+        System.out.println("\n--- Object-Oriented Operations");
         System.out.println(">>> Creating and manipulating POJO objects");
         
         // Create a new artist object

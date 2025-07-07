@@ -88,7 +88,7 @@ public class BasicTransactions {
     }
 
     private static void demonstrateCommitTransaction(IgniteTransactions transactions, RecordView<Tuple> artists) {
-        System.out.println("\n    --- Successful Transaction (Commit)");
+        System.out.println("\n--- Successful Transaction (Commit)");
         
         try {
             transactions.runInTransaction(tx -> {
@@ -125,7 +125,7 @@ public class BasicTransactions {
     }
 
     private static void demonstrateRollbackTransaction(IgniteTransactions transactions, RecordView<Tuple> artists) {
-        System.out.println("\n    --- Failed Transaction (Rollback)");
+        System.out.println("\n--- Failed Transaction (Rollback)");
         
         try {
             transactions.runInTransaction((Consumer<Transaction>) tx -> {
@@ -157,7 +157,7 @@ public class BasicTransactions {
     }
 
     private static void demonstrateErrorHandling(IgniteTransactions transactions, RecordView<Tuple> artists) {
-        System.out.println("\n    --- Transaction Error Handling");
+        System.out.println("\n--- Transaction Error Handling");
         
         // Demonstrate functional transaction pattern
         try {

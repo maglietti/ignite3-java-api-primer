@@ -87,7 +87,7 @@ public class KeyValueExamples {
     }
 
     private static void demonstrateBasicKeyValue(KeyValueView<Integer, String> artistCache) {
-        System.out.println("\n    --- Basic Key-Value Operations");
+        System.out.println("\n--- Basic Key-Value Operations");
         System.out.println(">>> Storing key-value pairs using key-value API");
         
         // PUT: Store key-value pairs
@@ -123,7 +123,7 @@ public class KeyValueExamples {
     }
 
     private static void demonstrateBulkOperations(KeyValueView<Integer, String> artistCache) {
-        System.out.println("\n    --- Bulk Operations");
+        System.out.println("\n--- Bulk Operations");
         System.out.println(">>> Performing batch operations for better performance");
         
         // PUT ALL: Store multiple key-value pairs at once

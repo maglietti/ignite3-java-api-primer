@@ -90,7 +90,7 @@ public class TransactionIsolation {
     }
 
     private static void setupTestData(RecordView<Tuple> artists) {
-        System.out.println("\n    --- Setup Test Data");
+        System.out.println("\n--- Setup Test Data");
         System.out.println(">>> Creating test artist for isolation demonstrations");
         
         Tuple testArtist = Tuple.create()
@@ -102,7 +102,7 @@ public class TransactionIsolation {
     }
 
     private static void demonstrateReadConsistency(IgniteTransactions transactions, RecordView<Tuple> artists) {
-        System.out.println("\n    --- Read Consistency");
+        System.out.println("\n--- Read Consistency");
         System.out.println(">>> Demonstrating transaction read consistency");
         
         // Use functional transaction for automatic lifecycle management
@@ -139,7 +139,7 @@ public class TransactionIsolation {
     }
 
     private static void demonstrateWriteConflicts(IgniteTransactions transactions, RecordView<Tuple> artists) {
-        System.out.println("\n    --- Write Conflict Handling");
+        System.out.println("\n--- Write Conflict Handling");
         System.out.println(">>> Demonstrating concurrent transaction conflict resolution");
         
         Tuple key = Tuple.create().set("ArtistId", 7001);
@@ -178,7 +178,7 @@ public class TransactionIsolation {
     }
 
     private static void demonstrateTransactionCoordination(IgniteTransactions transactions, RecordView<Tuple> artists) {
-        System.out.println("\n    --- Transaction Coordination");
+        System.out.println("\n--- Transaction Coordination");
         System.out.println(">>> Demonstrating coordinated multi-step operations");
         
         // Demonstrate coordinated multi-step operations
@@ -210,7 +210,7 @@ public class TransactionIsolation {
     }
 
     private static void cleanupTestData(RecordView<Tuple> artists) {
-        System.out.println("\n    --- Cleanup Test Data");
+        System.out.println("\n--- Cleanup Test Data");
         System.out.println(">>> Removing test artist");
         
         Tuple key = Tuple.create().set("ArtistId", 7001);

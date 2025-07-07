@@ -97,7 +97,7 @@ public class BasicTableOperations {
     }
 
     private static void createArtist(RecordView<Tuple> artists) {
-        System.out.println("\n    --- CREATE Operation");
+        System.out.println("\n--- CREATE Operation");
         System.out.println(">>> Creating new artist record using Tuple API");
         
         // Create a new artist record using Tuple
@@ -112,7 +112,7 @@ public class BasicTableOperations {
     }
 
     private static void readArtist(RecordView<Tuple> artists) {
-        System.out.println("\n    --- READ Operation");
+        System.out.println("\n--- READ Operation");
         System.out.println(">>> Retrieving artist by primary key");
         
         // Create a key tuple to find the artist
@@ -130,7 +130,7 @@ public class BasicTableOperations {
     }
 
     private static void updateArtist(RecordView<Tuple> artists) {
-        System.out.println("\n    --- UPDATE Operation");
+        System.out.println("\n--- UPDATE Operation");
         System.out.println(">>> Modifying existing artist record");
         
         // First get the current record
@@ -151,7 +151,7 @@ public class BasicTableOperations {
     }
 
     private static void deleteArtist(RecordView<Tuple> artists) {
-        System.out.println("\n    --- DELETE Operation");
+        System.out.println("\n--- DELETE Operation");
         System.out.println(">>> Removing artist record");
         
         // Create key for the artist to delete
@@ -168,7 +168,7 @@ public class BasicTableOperations {
     }
 
     private static void verifyDeletion(RecordView<Tuple> artists) {
-        System.out.println("\n    --- VERIFY Deletion");
+        System.out.println("\n--- VERIFY Deletion");
         System.out.println(">>> Confirming deletion was successful");
         
         // Try to find the deleted artist

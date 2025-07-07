@@ -107,7 +107,7 @@ public class MusicPlatformIntelligence {
      * Demonstrates artist popularity analysis from documentation example.
      */
     private void demonstrateArtistPopularityAnalysis(IgniteClient client) {
-        System.out.println("\n    --- Artist Popularity Analysis");
+        System.out.println("\n--- Artist Popularity Analysis");
         System.out.println(">>> Executing distributed artist analytics");
         
         try {
@@ -135,7 +135,7 @@ public class MusicPlatformIntelligence {
      * Demonstrates user recommendation processing with data locality.
      */
     private void demonstrateUserRecommendationProcessing(IgniteClient client) {
-        System.out.println("\n    --- User Recommendation Processing");
+        System.out.println("\n--- User Recommendation Processing");
         System.out.println(">>> Processing user recommendations with data locality");
         
         try {
@@ -164,7 +164,7 @@ public class MusicPlatformIntelligence {
      * Demonstrates concurrent user processing as shown in documentation.
      */
     private void demonstrateConcurrentUserProcessing(IgniteClient client) {
-        System.out.println("\n    --- Concurrent User Processing");
+        System.out.println("\n--- Concurrent User Processing");
         System.out.println(">>> Processing multiple users concurrently");
         
         try {
@@ -194,7 +194,7 @@ public class MusicPlatformIntelligence {
      * Demonstrates MapReduce trend analysis from documentation.
      */
     private void demonstrateMapReduceTrendAnalysis(IgniteClient client) {
-        System.out.println("\n    --- MapReduce Trend Analysis");
+        System.out.println("\n--- MapReduce Trend Analysis");
         System.out.println(">>> Executing distributed trend detection");
         
         try {
@@ -216,7 +216,7 @@ public class MusicPlatformIntelligence {
      * Demonstrates resilient job processing with retry logic.
      */
     private void demonstrateResilientJobProcessing(IgniteClient client) {
-        System.out.println("\n    --- Resilient Job Processing");
+        System.out.println("\n--- Resilient Job Processing");
         System.out.println(">>> Testing retry logic and error handling");
         
         try {

@@ -95,7 +95,7 @@ public class BasicSQLOperations {
      * Demonstrates simple query execution and IgniteSql interface access.
      */
     private void demonstrateSimpleQueries(IgniteSql sql) {
-        System.out.println("\n    --- Simple Query Execution");
+        System.out.println("\n--- Simple Query Execution");
         System.out.println(">>> Executing basic SELECT queries");
         
         // Simple query without parameters
@@ -121,7 +121,7 @@ public class BasicSQLOperations {
      * Demonstrates parameter binding for secure and type-safe queries.
      */
     private void demonstrateParameterBinding(IgniteSql sql) {
-        System.out.println("\n    --- Parameter Binding");
+        System.out.println("\n--- Parameter Binding");
         System.out.println(">>> Using parameters for security and type safety");
         
         // String parameter binding
@@ -154,7 +154,7 @@ public class BasicSQLOperations {
      * Demonstrates statement configuration and reuse for performance optimization.
      */
     private void demonstrateStatementReuse(IgniteSql sql) {
-        System.out.println("\n    --- Statement Configuration and Reuse");
+        System.out.println("\n--- Statement Configuration and Reuse");
         System.out.println(">>> Creating reusable statements for better performance");
         
         // Create configured statement
@@ -199,7 +199,7 @@ public class BasicSQLOperations {
      * Demonstrates ResultSet processing and data type handling.
      */
     private void demonstrateResultSetProcessing(IgniteSql sql) {
-        System.out.println("\n    --- ResultSet Processing");
+        System.out.println("\n--- ResultSet Processing");
         System.out.println(">>> Extracting different data types from results");
         
         // Query with multiple data types

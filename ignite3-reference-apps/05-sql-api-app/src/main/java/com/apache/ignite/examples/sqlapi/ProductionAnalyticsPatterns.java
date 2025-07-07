@@ -108,7 +108,7 @@ public class ProductionAnalyticsPatterns {
      * Demonstrates memory-efficient streaming result processing for large datasets.
      */
     private void demonstrateStreamingResultProcessing(IgniteSql sql) {
-        System.out.println("\n    --- Streaming Result Processing");
+        System.out.println("\n--- Streaming Result Processing");
         System.out.println(">>> Processing large result sets with controlled memory usage");
         
         // Configure streaming with controlled memory usage
@@ -160,7 +160,7 @@ public class ProductionAnalyticsPatterns {
      * Demonstrates hierarchical data processing with boundary detection.
      */
     private void demonstrateHierarchicalDataProcessing(IgniteSql sql) {
-        System.out.println("\n    --- Hierarchical Data Processing");
+        System.out.println("\n--- Hierarchical Data Processing");
         System.out.println(">>> Processing artist-album-track hierarchy");
         
         // Query that joins across colocated tables for optimal performance
@@ -233,7 +233,7 @@ public class ProductionAnalyticsPatterns {
      * Demonstrates dynamic result processing using metadata.
      */
     private void demonstrateMetadataDrivenProcessing(IgniteSql sql) {
-        System.out.println("\n    --- Metadata-Driven Processing");
+        System.out.println("\n--- Metadata-Driven Processing");
         System.out.println(">>> Analyzing result structure dynamically");
         
         // Query with unknown result structure
@@ -274,7 +274,7 @@ public class ProductionAnalyticsPatterns {
      * Demonstrates production revenue analytics with time-based filtering.
      */
     private void demonstrateRevenueAnalytics(IgniteSql sql) {
-        System.out.println("\n    --- Production Revenue Analytics");
+        System.out.println("\n--- Production Revenue Analytics");
         System.out.println(">>> Generating business intelligence reports");
         
         // Revenue analytics by genre (simulated data since sample DB may not have invoices)
@@ -326,7 +326,7 @@ public class ProductionAnalyticsPatterns {
      * Demonstrates query execution plan analysis for optimization.
      */
     private void demonstrateQueryOptimization(IgniteSql sql) {
-        System.out.println("\n    --- Query Optimization");
+        System.out.println("\n--- Query Optimization");
         System.out.println(">>> Analyzing execution plans for performance");
         
         // Analyze execution plan for complex analytical query
@@ -392,7 +392,7 @@ public class ProductionAnalyticsPatterns {
      * Demonstrates robust error handling for production analytics.
      */
     private void demonstrateRobustErrorHandling(IgniteSql sql) {
-        System.out.println("\n    --- Robust Error Handling");
+        System.out.println("\n--- Robust Error Handling");
         System.out.println(">>> Handling failures and timeouts gracefully");
         
         Optional<String> result = executeRobustAnalytics(sql, "Rock");

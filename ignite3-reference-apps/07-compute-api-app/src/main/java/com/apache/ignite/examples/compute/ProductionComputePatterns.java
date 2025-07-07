@@ -107,7 +107,7 @@ public class ProductionComputePatterns {
      * Demonstrates large-scale recommendation engine processing.
      */
     private void demonstrateRecommendationEngine(IgniteClient client) {
-        System.out.println("\n    --- Recommendation Engine Processing");
+        System.out.println("\n--- Recommendation Engine Processing");
         System.out.println(">>> Processing 2.5M user profiles for personalized recommendations");
         
         try {
@@ -131,7 +131,7 @@ public class ProductionComputePatterns {
      * Demonstrates performance-optimized data colocation patterns.
      */
     private void demonstrateDataColocationPatterns(IgniteClient client) {
-        System.out.println("\n    --- Data Colocation Performance Patterns");
+        System.out.println("\n--- Data Colocation Performance Patterns");
         System.out.println(">>> Optimizing job placement for data locality");
         
         try {
@@ -166,7 +166,7 @@ public class ProductionComputePatterns {
      * Demonstrates advanced MapReduce workflows with custom aggregation.
      */
     private void demonstrateAdvancedMapReduce(IgniteClient client) {
-        System.out.println("\n    --- Advanced MapReduce Workflows");
+        System.out.println("\n--- Advanced MapReduce Workflows");
         System.out.println(">>> Executing distributed map-reduce for genre popularity analysis");
         
         try {
@@ -224,7 +224,7 @@ public class ProductionComputePatterns {
      * Demonstrates circuit breaker patterns for compute resilience.
      */
     private void demonstrateComputeResilience(IgniteClient client) {
-        System.out.println("\n    --- Compute Resilience Patterns");
+        System.out.println("\n--- Compute Resilience Patterns");
         System.out.println(">>> Implementing circuit breaker for job protection");
         
         try {
@@ -258,7 +258,7 @@ public class ProductionComputePatterns {
      * Demonstrates performance monitoring and job lifecycle management.
      */
     private void demonstratePerformanceMonitoring(IgniteClient client) {
-        System.out.println("\n    --- Performance Monitoring");
+        System.out.println("\n--- Performance Monitoring");
         System.out.println(">>> Tracking job execution metrics and resource utilization");
         
         try {

@@ -99,7 +99,7 @@ public class AdvancedComputeOperations {
      * network overhead and maximizing processing efficiency.
      */
     private void demonstrateColocationJobs(IgniteClient client) {
-        System.out.println("\n    --- Data-Colocated Jobs");
+        System.out.println("\n--- Data-Colocated Jobs");
         System.out.println(">>> Running jobs close to data for optimal performance");
         
         // Artist analysis colocated with artist data
@@ -163,7 +163,7 @@ public class AdvancedComputeOperations {
      * Compares execution times between colocated and any-node targeting.
      */
     private void demonstrateColocationPerformance(IgniteClient client) {
-        System.out.println("\n        --- Colocation Performance Comparison");
+        System.out.println("\n    --- Colocation Performance Comparison");
         
         JobDescriptor<Integer, String> salesJob = JobDescriptor.builder(AdvancedComputeJobs.ArtistSalesAnalysisJob.class)
                 .units(ComputeJobDeployment.getDeploymentUnits())
@@ -197,7 +197,7 @@ public class AdvancedComputeOperations {
      * Shows cluster-wide operations for health monitoring and data distribution analysis.
      */
     private void demonstrateBroadcastJobs(IgniteClient client) {
-        System.out.println("\n    --- Broadcast Jobs");
+        System.out.println("\n--- Broadcast Jobs");
         System.out.println(">>> Running jobs across all cluster nodes");
         
         // Cluster health check across all nodes
@@ -261,7 +261,7 @@ public class AdvancedComputeOperations {
      * Shows distributed map-reduce operations with result aggregation.
      */
     private void demonstrateMapReduceJobs(IgniteClient client) {
-        System.out.println("\n    --- MapReduce Patterns");
+        System.out.println("\n--- MapReduce Patterns");
         System.out.println(">>> Implementing distributed map-reduce operations");
         
         // Simplified for educational clarity and serialization compatibility
@@ -273,7 +273,7 @@ public class AdvancedComputeOperations {
      * Shows orchestrating multiple jobs in complex workflows.
      */
     private void demonstrateJobCoordination(IgniteClient client) {
-        System.out.println("\n    --- Job Coordination");
+        System.out.println("\n--- Job Coordination");
         System.out.println(">>> Orchestrating multiple jobs in workflows");
         
         // Simplified workflow for compatibility and educational focus

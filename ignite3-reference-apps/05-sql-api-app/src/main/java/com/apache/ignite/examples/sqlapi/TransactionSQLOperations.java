@@ -95,7 +95,7 @@ public class TransactionSQLOperations {
      * Demonstrates basic transaction lifecycle with SQL operations.
      */
     private void demonstrateBasicTransaction(IgniteClient client, IgniteSql sql) {
-        System.out.println("\n    --- Basic Transaction Lifecycle");
+        System.out.println("\n--- Basic Transaction Lifecycle");
         System.out.println(">>> Creating and committing simple transaction");
         
         Transaction tx = client.transactions().begin();
@@ -134,7 +134,7 @@ public class TransactionSQLOperations {
      * Demonstrates complex multi-table transaction with proper colocation.
      */
     private void demonstrateComplexTransaction(IgniteClient client, IgniteSql sql) {
-        System.out.println("\n    --- Complex Multi-Table Transaction");
+        System.out.println("\n--- Complex Multi-Table Transaction");
         System.out.println(">>> Creating related data across multiple tables");
         
         Transaction tx = client.transactions().begin();
@@ -194,7 +194,7 @@ public class TransactionSQLOperations {
      * Demonstrates error handling and rollback scenarios.
      */
     private void demonstrateErrorHandlingTransaction(IgniteClient client, IgniteSql sql) {
-        System.out.println("\n    --- Error Handling and Rollback");
+        System.out.println("\n--- Error Handling and Rollback");
         System.out.println(">>> Demonstrating transaction rollback on errors");
         
         // Count before transaction
@@ -240,7 +240,7 @@ public class TransactionSQLOperations {
      * Demonstrates performance optimization patterns for transactional SQL.
      */
     private void demonstrateTransactionPerformance(IgniteClient client, IgniteSql sql) {
-        System.out.println("\n    --- Transaction Performance Patterns");
+        System.out.println("\n--- Transaction Performance Patterns");
         System.out.println(">>> Optimizing SQL operations within transactions");
         
         // Prepare reusable statements for better performance

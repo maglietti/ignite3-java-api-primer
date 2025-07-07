@@ -106,7 +106,7 @@ public class BasicComputeOperations {
      * building blocks for distributed processing patterns.
      */
     private void demonstrateSimpleJobs(IgniteClient client) {
-        System.out.println("\n    --- Simple Job Execution");
+        System.out.println("\n--- Simple Job Execution");
         System.out.println(">>> Executing basic jobs on cluster nodes");
         
         try {
@@ -142,7 +142,7 @@ public class BasicComputeOperations {
      * enabling flexible job patterns for various use cases.
      */
     private void demonstrateParameterizedJobs(IgniteClient client) {
-        System.out.println("\n    --- Parameterized Jobs");
+        System.out.println("\n--- Parameterized Jobs");
         System.out.println(">>> Executing jobs with input parameters");
         
         try {
@@ -178,7 +178,7 @@ public class BasicComputeOperations {
      * combining distributed computing with database capabilities.
      */
     private void demonstrateSqlJobs(IgniteClient client) {
-        System.out.println("\n    --- SQL-based Jobs");
+        System.out.println("\n--- SQL-based Jobs");
         System.out.println(">>> Running jobs that execute database queries");
         
         try {
@@ -204,7 +204,7 @@ public class BasicComputeOperations {
      * enabling concurrent processing patterns for better performance.
      */
     private void demonstrateAsyncJobs(IgniteClient client) {
-        System.out.println("\n    --- Asynchronous Job Execution");
+        System.out.println("\n--- Asynchronous Job Execution");
         System.out.println(">>> Running jobs asynchronously without blocking");
         
         try {

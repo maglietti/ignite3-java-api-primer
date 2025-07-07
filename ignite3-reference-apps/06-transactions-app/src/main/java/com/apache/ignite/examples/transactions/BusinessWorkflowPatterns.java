@@ -106,7 +106,7 @@ public class BusinessWorkflowPatterns {
      * Demonstrates complete customer purchase workflow with coordinated updates.
      */
     private void demonstratePurchaseWorkflow(IgniteClient client) {
-        System.out.println("\n    --- Customer Purchase Workflow");
+        System.out.println("\n--- Customer Purchase Workflow");
         System.out.println(">>> Processing multi-table purchase coordination");
         
         List<Integer> sampleTrackIds = List.of(1, 2, 3);
@@ -216,7 +216,7 @@ public class BusinessWorkflowPatterns {
      * Demonstrates different timeout patterns for different operation types.
      */
     private void demonstrateTimeoutPatterns(IgniteClient client) {
-        System.out.println("\n    --- Transaction Timeout Patterns");
+        System.out.println("\n--- Transaction Timeout Patterns");
         System.out.println(">>> Configuring timeouts for different operation types");
         
         // Quick customer update with short timeout
@@ -288,7 +288,7 @@ public class BusinessWorkflowPatterns {
      * Demonstrates explicit transaction lifecycle control.
      */
     private void demonstrateExplicitTransactionControl(IgniteClient client) {
-        System.out.println("\n    --- Explicit Transaction Control");
+        System.out.println("\n--- Explicit Transaction Control");
         System.out.println(">>> Manual transaction lifecycle management");
         
         // Basic explicit pattern
@@ -368,7 +368,7 @@ public class BusinessWorkflowPatterns {
      * Demonstrates resilient transaction processing with retry logic.
      */
     private void demonstrateResilientProcessing(IgniteClient client) {
-        System.out.println("\n    --- Resilient Transaction Processing");
+        System.out.println("\n--- Resilient Transaction Processing");
         System.out.println(">>> Implementing retry logic with exponential backoff");
         
         ResilientTransactionService resilientService = new ResilientTransactionService();
@@ -404,7 +404,7 @@ public class BusinessWorkflowPatterns {
      * Demonstrates circuit breaker pattern for system protection.
      */
     private void demonstrateCircuitBreakerPattern(IgniteClient client) {
-        System.out.println("\n    --- Circuit Breaker Pattern");
+        System.out.println("\n--- Circuit Breaker Pattern");
         System.out.println(">>> Protecting system from cascading failures");
         
         TransactionCircuitBreaker circuitBreaker = new TransactionCircuitBreaker();
