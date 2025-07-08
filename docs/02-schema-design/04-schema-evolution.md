@@ -1,3 +1,9 @@
+<!--
+Licensed under Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+SPDX-License-Identifier: CC-BY-SA-4.0
+For full license text, see LICENSE-CC-BY-SA-4.0
+-->
+
 # Chapter 2.4: Schema Changes
 
 Your production schema change just broke the mobile app because column additions weren't backward compatible and the rolling deployment failed. While your database accepted the ALTER TABLE statement, older application versions couldn't handle the new schema structure, causing cascading failures across your distributed system.

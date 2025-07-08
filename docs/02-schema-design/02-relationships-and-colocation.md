@@ -1,3 +1,9 @@
+<!--
+Licensed under Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+SPDX-License-Identifier: CC-BY-SA-4.0
+For full license text, see LICENSE-CC-BY-SA-4.0
+-->
+
 # Chapter 2.2: Relationships and Colocation Strategies
 
 Your Album queries are slow because Artist data lives on different nodes, forcing expensive network joins for simple relationship navigation. When your application asks "show me The Beatles and all their albums," Ignite executes separate network operations to fetch the artist from node 1 and albums scattered across nodes 2 and 3. Each network hop adds 10-50ms latency, turning simple queries into performance bottlenecks.

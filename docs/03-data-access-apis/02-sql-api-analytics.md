@@ -1,3 +1,9 @@
+<!--
+Licensed under Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+SPDX-License-Identifier: CC-BY-SA-4.0
+For full license text, see LICENSE-CC-BY-SA-4.0
+-->
+
 # Chapter 3.2: SQL API for Analytics and Reporting
 
 Your marketing dashboard queries timeout when analyzing listening behavior because joins across Artist-Album-Track tables hit multiple partitions. Cross-partition joins force Ignite to pull data from multiple nodes, creating network bottlenecks that turn sub-second queries into multi-second failures. The SQL API provides optimization techniques that exploit data colocation and query planning to solve these analytical performance challenges.

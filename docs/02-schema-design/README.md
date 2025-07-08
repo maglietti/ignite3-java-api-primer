@@ -1,3 +1,9 @@
+<!--
+Licensed under Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+SPDX-License-Identifier: CC-BY-SA-4.0
+For full license text, see LICENSE-CC-BY-SA-4.0
+-->
+
 # Module 02: Schema Design
 
 Your music platform has basic storage, but now you need real relationships. Artists release Albums, Albums contain Tracks, and your users expect lightning-fast browsing through these connections.

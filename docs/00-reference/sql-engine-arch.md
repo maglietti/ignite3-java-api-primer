@@ -1,3 +1,9 @@
+<!--
+Licensed under Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+SPDX-License-Identifier: CC-BY-SA-4.0
+For full license text, see LICENSE-CC-BY-SA-4.0
+-->
+
 # Apache Ignite 3 SQL Engine Architecture
 
 ## Understanding Apache Calcite integration and SQL processing in Ignite 3

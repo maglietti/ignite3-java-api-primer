@@ -1,3 +1,9 @@
+<!--
+Licensed under Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+SPDX-License-Identifier: CC-BY-SA-4.0
+For full license text, see LICENSE-CC-BY-SA-4.0
+-->
+
 # Chapter 2.3: Advanced Annotations and Zone Configuration
 
 Your music platform now handles millions of tracks across multiple zones, but complex queries timeout because indexes span multiple partitions and composite keys create hotspots. Artist catalog queries that should execute in milliseconds now take seconds as data fragments across nodes. Junction tables for playlists generate excessive network traffic, and employee hierarchy queries create cascading performance problems.

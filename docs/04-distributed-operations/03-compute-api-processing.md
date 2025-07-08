@@ -1,3 +1,9 @@
+<!--
+Licensed under Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+SPDX-License-Identifier: CC-BY-SA-4.0
+For full license text, see LICENSE-CC-BY-SA-4.0
+-->
+
 # Chapter 4.3: Distributed Computing for Music Intelligence
 
 Your music streaming platform processes recommendations for 2.5 million users nightly. The current approach pulls user profiles, listening histories, and artist data from distributed storage nodes to central processing servers for analysis. This creates a data pipeline nightmare: 12TB of nightly transfers saturate your network, recommendation processing takes 45 minutes instead of the target 5 minutes, and the centralized bottleneck delays marketing campaigns and playlist updates.

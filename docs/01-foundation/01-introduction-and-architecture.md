@@ -1,3 +1,9 @@
+<!--
+Licensed under Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+SPDX-License-Identifier: CC-BY-SA-4.0
+For full license text, see LICENSE-CC-BY-SA-4.0
+-->
+
 # Chapter 1.1: Introduction and Architecture Overview
 
 Your music streaming platform just crashed. Again. This time it was 50,000 concurrent users trying to browse the latest album release. Your PostgreSQL instance maxed out at 100% CPU, connection pools exhausted, and users got timeout errors instead of music.

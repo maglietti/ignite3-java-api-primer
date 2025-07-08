@@ -1,3 +1,9 @@
+<!--
+Licensed under Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+SPDX-License-Identifier: CC-BY-SA-4.0
+For full license text, see LICENSE-CC-BY-SA-4.0
+-->
+
 # Chapter 6: From Learning to Production
 
 Your music streaming platform journey began with timeout errors and database bottlenecks. Through this primer, you've learned how Apache Ignite 3 transforms traditional database limitations into distributed capabilities that scale with your application's growth. You now understand how to architect systems that serve millions of users while maintaining microsecond response times and ACID consistency guarantees.

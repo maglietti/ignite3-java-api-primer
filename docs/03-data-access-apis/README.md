@@ -1,3 +1,9 @@
+<!--
+Licensed under Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+SPDX-License-Identifier: CC-BY-SA-4.0
+For full license text, see LICENSE-CC-BY-SA-4.0
+-->
+
 # Module 03: Data Access APIs
 
 Your music platform has Artists, Albums, and Tracks stored across a distributed cluster with optimized relationships. Now users want to access this music - mobile apps need instant Artist lookups, web browsers want Album details, and analytics dashboards require complex reporting queries.

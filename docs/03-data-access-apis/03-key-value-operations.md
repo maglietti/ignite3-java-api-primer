@@ -1,3 +1,9 @@
+<!--
+Licensed under Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+SPDX-License-Identifier: CC-BY-SA-4.0
+For full license text, see LICENSE-CC-BY-SA-4.0
+-->
+
 # Chapter 3.3: Key-Value Operations for Maximum Performance
 
 Your mobile app needs to handle 50,000 session lookups per second during peak hours, but object deserialization overhead from RecordView operations is creating 5-millisecond response times that compound into user experience problems. When you need specific field access without complex object graphs, full entity operations waste computational resources and memory bandwidth.

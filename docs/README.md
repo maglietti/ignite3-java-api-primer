@@ -1,3 +1,9 @@
+<!--
+Licensed under Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+SPDX-License-Identifier: CC-BY-SA-4.0
+For full license text, see LICENSE-CC-BY-SA-4.0
+-->
+
 # Apache Ignite 3 Java API Primer
 
 Your music streaming platform just hit 10 million users. Your single PostgreSQL instance is buckling under the load. Reads are slow, writes are slower, and your recommendation engine times out trying to analyze listening patterns across millions of tracks.

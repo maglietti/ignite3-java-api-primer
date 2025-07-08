@@ -1,3 +1,9 @@
+<!--
+Licensed under Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+SPDX-License-Identifier: CC-BY-SA-4.0
+For full license text, see LICENSE-CC-BY-SA-4.0
+-->
+
 # Chapter 5.2: Caching Strategies and Performance Optimization
 
 Your popular tracks are being loaded from disk storage repeatedly because cache misses are creating database bottlenecks during peak traffic. Users experience response delays of 500ms+ when browsing the music catalog, while your database servers struggle under read pressure from the same data requests hitting storage systems dozens of times per second.

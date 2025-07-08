@@ -1,3 +1,9 @@
+<!--
+Licensed under Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+SPDX-License-Identifier: CC-BY-SA-4.0
+For full license text, see LICENSE-CC-BY-SA-4.0
+-->
+
 # Chapter 1.3: Distributed Data Fundamentals
 
 Your music streaming platform just hit 50,000 concurrent users, but Artist profile pages are loading in 3 seconds instead of milliseconds. The monitoring dashboard shows the problem: when users browse "The Beatles" discography, your application makes separate network calls to fetch the artist from node 1, albums from node 2, and tracks scattered across nodes 1, 2, and 3. Each network hop adds 20-50ms latency, and the database spends more time moving data between nodes than actually serving queries.

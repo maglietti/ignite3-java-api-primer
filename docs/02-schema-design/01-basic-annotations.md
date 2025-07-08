@@ -1,3 +1,9 @@
+<!--
+Licensed under Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+SPDX-License-Identifier: CC-BY-SA-4.0
+For full license text, see LICENSE-CC-BY-SA-4.0
+-->
+
 # Chapter 2.1: Basic Annotations and Table Creation
 
 Your music platform launched successfully with Chapter 1's distributed foundation, but now you face the schema evolution crisis. Adding new fields like Artist biography and Album release dates requires coordinating SQL migrations across 12 cluster nodes. One missed migration file leaves Node 7 with a different schema version, causing query failures and data corruption. Your DevOps team spends hours manually synchronizing schemas between development, testing, and production environments.

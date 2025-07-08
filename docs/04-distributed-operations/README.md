@@ -1,3 +1,9 @@
+<!--
+Licensed under Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+SPDX-License-Identifier: CC-BY-SA-4.0
+For full license text, see LICENSE-CC-BY-SA-4.0
+-->
+
 # Module 04: Distributed Operations
 
 Your music platform now handles fast lookups and complex queries across distributed storage. But real applications need more than individual operations - they need transactional workflows. When users purchase music, you need to charge their card, update their library, and increment sales analytics atomically. When one step fails, everything must rollback consistently.

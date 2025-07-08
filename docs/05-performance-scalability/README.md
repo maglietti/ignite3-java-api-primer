@@ -1,3 +1,9 @@
+<!--
+Licensed under Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+SPDX-License-Identifier: CC-BY-SA-4.0
+For full license text, see LICENSE-CC-BY-SA-4.0
+-->
+
 # Module 05: Performance and Scalability
 
 Your music platform now handles distributed transactions and compute workloads efficiently. But production traffic is different from development testing. You're seeing 10 million play events per hour, recommendation queries timing out under analytical load, and users complaining about slow track loading during peak traffic.

@@ -1,3 +1,9 @@
+<!--
+Licensed under Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+SPDX-License-Identifier: CC-BY-SA-4.0
+For full license text, see LICENSE-CC-BY-SA-4.0
+-->
+
 # Chapter 4.1: Transaction Fundamentals and Applied Patterns
 
 A customer clicks "Buy Album" for a $12.99 purchase. Your application must create an invoice, add line items for each track, update inventory counts, and add tracks to the customer's library. Without proper transaction management, a failure between any of these steps leaves your data in an inconsistent state.

@@ -1,3 +1,9 @@
+<!--
+Licensed under Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+SPDX-License-Identifier: CC-BY-SA-4.0
+For full license text, see LICENSE-CC-BY-SA-4.0
+-->
+
 # Chapter 3.1: Table API for Object-Oriented Operations
 
 Your mobile app users are experiencing 2-second load times when browsing artists because every lookup requires SQL query parsing and object mapping overhead. A music streaming platform serving 100,000 concurrent users cannot afford this latency penalty.

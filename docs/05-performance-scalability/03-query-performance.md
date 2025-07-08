@@ -1,3 +1,9 @@
+<!--
+Licensed under Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+SPDX-License-Identifier: CC-BY-SA-4.0
+For full license text, see LICENSE-CC-BY-SA-4.0
+-->
+
 # Chapter 5.3: Query Performance and Index Optimization
 
 Your music streaming platform handles 10 million users, but your marketing team can't get basic analytics because genre popularity reports timeout after 30 seconds. Customer searches for "rock albums" return results after 5-10 seconds while Spotify delivers instant responses. Your recommendation engine fails to generate suggestions during peak traffic because cross-table joins overwhelm the cluster with excessive data movement.

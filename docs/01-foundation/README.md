@@ -1,3 +1,9 @@
+<!--
+Licensed under Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+SPDX-License-Identifier: CC-BY-SA-4.0
+For full license text, see LICENSE-CC-BY-SA-4.0
+-->
+
 # Module 01: Foundation
 
 Your music platform's PostgreSQL instance just crashed under the load of 50,000 concurrent connections attempting to browse artists. Read replicas lag 30 seconds behind master writes, cache hit ratios are below acceptable thresholds, and your DBA is proposing horizontal sharding with application-level routing.

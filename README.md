@@ -116,4 +116,26 @@ Data is distributed across two zones:
 
 ## License
 
-Apache License 2.0
+This project is dual-licensed:
+
+- **Documentation** (`docs/` directory): [Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)](LICENSE-CC-BY-SA-4.0)
+- **Code** (`ignite3-reference-apps/` directory): [Apache License 2.0](LICENSE)
+
+### Documentation License
+
+The documentation in the `docs/` directory is licensed under CC BY-SA 4.0, which allows:
+- **Share**: Copy and redistribute the material in any medium or format
+- **Adapt**: Remix, transform, and build upon the material
+- **Attribution**: You must give appropriate credit and indicate if changes were made
+- **ShareAlike**: If you remix or transform the material, you must distribute your contributions under the same license
+
+### Code License
+
+The code examples in the `ignite3-reference-apps/` directory are licensed under Apache License 2.0, which allows:
+- **Use**: Run the code for any purpose
+- **Modify**: Make changes to the code
+- **Distribute**: Share the code with others
+- **Private Use**: Use the code in private projects
+- **Commercial Use**: Use the code in commercial projects
+
+For full license terms, see [LICENSE](LICENSE), [LICENSE-CC-BY-SA-4.0](LICENSE-CC-BY-SA-4.0), or the headers in individual files.
