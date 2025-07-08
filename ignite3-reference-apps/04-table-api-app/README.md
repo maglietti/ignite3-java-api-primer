@@ -108,21 +108,6 @@ Main orchestrator that runs all demonstrations:
 - Individual demo execution
 - Cluster connectivity checks
 
-## Running the Examples
-
-Run complete demo:
-
-**Maven:**
-```bash
-mvn compile exec:java
-```
-
-**Gradle:**
-```bash
-../gradlew run
-```
-
-Run specific demonstrations using the commands shown in Quick Start above.
 
 ## Key Decision Points
 

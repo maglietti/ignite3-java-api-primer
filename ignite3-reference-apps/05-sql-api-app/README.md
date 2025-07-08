@@ -196,21 +196,6 @@ try (Transaction tx = client.transactions().begin()) {
 - Configure appropriate page sizes for large results
 - Use async operations for high throughput
 
-## Running the Examples
-
-Run complete demo:
-
-**Maven:**
-```bash
-mvn compile exec:java
-```
-
-**Gradle:**
-```bash
-../gradlew run
-```
-
-Run specific operations using the commands shown above.
 
 ## Common Issues
 

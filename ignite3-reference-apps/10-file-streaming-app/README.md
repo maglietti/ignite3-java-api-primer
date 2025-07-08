@@ -100,33 +100,6 @@ Scenario Comparison:
 - **`StreamingMetrics`**: Comprehensive performance monitoring and rate tracking
 - **`FileStreamingAPIDemo`**: Orchestrator demonstrating all file streaming patterns
 
-## Usage
-
-Run the complete demonstration:
-
-**Maven:**
-```bash
-mvn compile exec:java
-```
-
-**Gradle:**
-```bash
-../gradlew run
-```
-
-Run individual components:
-
-**FileBackpressureStreaming:**
-
-**Maven:**
-```bash
-mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.filestreaming.FileBackpressureStreaming"
-```
-
-**Gradle:**
-```bash
-# Use Maven command above (custom Gradle task not configured)
-```
 
 ## Expected Output
 

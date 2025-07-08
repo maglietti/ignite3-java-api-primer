@@ -102,19 +102,6 @@ public class Album {
 - **MusicStoreReplicated Zone**: 3 replicas for reference data
 - Colocation keeps related data on same nodes for join performance
 
-## Running the Examples
-
-Run the complete schema demonstration:
-
-**Maven:**
-```bash
-mvn compile exec:java
-```
-
-**Gradle:**
-```bash
-../gradlew run
-```
 
 ## Common Issues
 

@@ -142,27 +142,6 @@ mvn compile exec:java@connection
 - POJOs work across both APIs
 - Use try-with-resources for cleanup
 
-## Running the Examples
-
-Start the cluster first:
-
-```bash
-cd ../00-docker && docker-compose up -d
-```
-
-Run the default demo:
-
-**Maven:**
-```bash
-mvn compile exec:java
-```
-
-**Gradle:**
-```bash
-../gradlew run
-```
-
-Or run specific examples as shown above.
 
 ## Common Issues
 
