@@ -27,6 +27,7 @@ import org.apache.ignite.table.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -171,19 +172,20 @@ public class ProductionComputePatterns {
         
         try {
             // Map phase: Distribute genre analysis across nodes
-            JobDescriptor<Void, Map<String, GenreMetrics>> mapJob = 
-                JobDescriptor.builder(GenreMapJob.class)
+            JobDescriptor<Void, String> mapJob = 
+                JobDescriptor.<Void, String>builder(GenreMapJob.class)
                     .units(ComputeJobDeployment.getDeploymentUnits())
+                    .resultClass(String.class)
                     .build();
             
             Collection<String> nodeNames = client.clusterNodes().stream()
                 .map(node -> node.name())
                 .collect(Collectors.toList());
             
-            Map<String, CompletableFuture<Map<String, GenreMetrics>>> mapResults = new HashMap<>();
+            Map<String, CompletableFuture<String>> mapResults = new HashMap<>();
             
             for (String nodeName : nodeNames) {
-                CompletableFuture<Map<String, GenreMetrics>> future = client.compute()
+                CompletableFuture<String> future = client.compute()
                     .executeAsync(JobTarget.anyNode(client.clusterNodes()), mapJob, null);
                 mapResults.put(nodeName, future);
             }
@@ -191,15 +193,11 @@ public class ProductionComputePatterns {
             // Reduce phase: Aggregate results from all nodes
             Map<String, GenreMetrics> aggregatedMetrics = new HashMap<>();
             
-            for (Map.Entry<String, CompletableFuture<Map<String, GenreMetrics>>> entry : mapResults.entrySet()) {
-                Map<String, GenreMetrics> nodeResults = entry.getValue().get();
+            for (Map.Entry<String, CompletableFuture<String>> entry : mapResults.entrySet()) {
+                String nodeResults = entry.getValue().get();
                 
-                for (Map.Entry<String, GenreMetrics> metricEntry : nodeResults.entrySet()) {
-                    String genre = metricEntry.getKey();
-                    GenreMetrics metrics = metricEntry.getValue();
-                    
-                    aggregatedMetrics.merge(genre, metrics, GenreMetrics::merge);
-                }
+                // Parse JSON and merge results
+                parseAndMergeGenreMetrics(nodeResults, aggregatedMetrics);
             }
             
             System.out.println("<<< MapReduce analysis completed for " + aggregatedMetrics.size() + " genres");
@@ -217,6 +215,51 @@ public class ProductionComputePatterns {
             
         } catch (Exception e) {
             System.err.println("!!! MapReduce processing failed: " + e.getMessage());
+        }
+    }
+    
+    private void parseAndMergeGenreMetrics(String json, Map<String, GenreMetrics> aggregatedMetrics) {
+        // Find genres object
+        int genresStart = json.indexOf("\"genres\":{");
+        if (genresStart < 0) return;
+        
+        int start = genresStart + 11;
+        int end = json.lastIndexOf("}}");
+        if (end < start) return;
+        
+        String genresSection = json.substring(start, end);
+        
+        // Parse each genre
+        int pos = 0;
+        while (pos < genresSection.length()) {
+            // Find genre name
+            int nameStart = genresSection.indexOf("\"", pos);
+            if (nameStart < 0) break;
+            int nameEnd = genresSection.indexOf("\":", nameStart + 1);
+            if (nameEnd < 0) break;
+            
+            String genreName = genresSection.substring(nameStart + 1, nameEnd);
+            
+            // Find track count
+            int trackCountPos = genresSection.indexOf("\"trackCount\":", nameEnd);
+            if (trackCountPos < 0) break;
+            int trackCountStart = trackCountPos + 13;
+            int trackCountEnd = genresSection.indexOf(",", trackCountStart);
+            int trackCount = Integer.parseInt(genresSection.substring(trackCountStart, trackCountEnd).trim());
+            
+            // Find revenue
+            int revenuePos = genresSection.indexOf("\"totalRevenue\":", trackCountEnd);
+            if (revenuePos < 0) break;
+            int revenueStart = revenuePos + 15;
+            int revenueEnd = genresSection.indexOf("}", revenueStart);
+            BigDecimal revenue = new BigDecimal(genresSection.substring(revenueStart, revenueEnd).trim());
+            
+            // Merge into aggregated results
+            GenreMetrics newMetrics = new GenreMetrics(trackCount, revenue);
+            aggregatedMetrics.merge(genreName, newMetrics, GenreMetrics::merge);
+            
+            // Move to next genre
+            pos = revenueEnd + 1;
         }
     }
 
@@ -290,14 +333,55 @@ public class ProductionComputePatterns {
      * Process artist-specific analytics with data colocation.
      */
     private CompletableFuture<ArtistAnalytics> processArtistAnalytics(IgniteClient client, Integer artistId) {
-        JobDescriptor<Integer, ArtistAnalytics> job = JobDescriptor.builder(ArtistAnalyticsJob.class)
+        JobDescriptor<Integer, String> job = JobDescriptor.<Integer, String>builder(ArtistAnalyticsJob.class)
             .units(ComputeJobDeployment.getDeploymentUnits())
+            .resultClass(String.class)
             .build();
         
         // Use colocation to run job where artist data resides
         Tuple artistKey = Tuple.create(Map.of("ArtistId", artistId));
         return client.compute().executeAsync(
-            JobTarget.colocated("Artist", artistKey), job, artistId);
+            JobTarget.colocated("Artist", artistKey), job, artistId)
+            .thenApply(json -> {
+                // Parse JSON back to ArtistAnalytics
+                return parseArtistAnalytics(json);
+            });
+    }
+    
+    private ArtistAnalytics parseArtistAnalytics(String json) {
+        // Simple JSON parsing
+        int artistId = extractIntValue(json, "artistId");
+        String artistName = extractStringValue(json, "artistName");
+        int albumCount = extractIntValue(json, "albumCount");
+        int trackCount = extractIntValue(json, "trackCount");
+        BigDecimal totalRevenue = new BigDecimal(extractDecimalValue(json, "totalRevenue"));
+        
+        return new ArtistAnalytics(artistId, artistName, albumCount, trackCount, totalRevenue);
+    }
+    
+    private int extractIntValue(String json, String key) {
+        int keyPos = json.indexOf("\"" + key + "\":");
+        if (keyPos < 0) return 0;
+        int start = keyPos + key.length() + 3;
+        int end = json.indexOf(",", start);
+        if (end < 0) end = json.indexOf("}", start);
+        return Integer.parseInt(json.substring(start, end).trim());
+    }
+    
+    private String extractStringValue(String json, String key) {
+        int keyPos = json.indexOf("\"" + key + "\":\"");
+        if (keyPos < 0) return "";
+        int start = keyPos + key.length() + 5;
+        int end = json.indexOf("\"", start);
+        return json.substring(start, end);
+    }
+    
+    private String extractDecimalValue(String json, String key) {
+        int keyPos = json.indexOf("\"" + key + "\":");
+        if (keyPos < 0) return "0";
+        int start = keyPos + key.length() + 3;
+        int end = json.indexOf("}", start);
+        return json.substring(start, end).trim();
     }
 
     // Production job implementations
@@ -305,15 +389,19 @@ public class ProductionComputePatterns {
     /**
      * Recommendation processing job for large-scale user analysis.
      */
-    public static class RecommendationEngineJob implements ComputeJob<Integer, UserRecommendations> {
+    public static class RecommendationEngineJob implements ComputeJob<Integer, String> {
         @Override
-        public CompletableFuture<UserRecommendations> executeAsync(JobExecutionContext context, Integer batchSize) {
+        public CompletableFuture<String> executeAsync(JobExecutionContext context, Integer batchSize) {
             return CompletableFuture.supplyAsync(() -> {
                 IgniteSql sql = context.ignite().sql();
                 
-                // Simulate processing user listening patterns
+                // Process user purchasing patterns by joining Invoice and InvoiceLine tables
                 Statement stmt = sql.statementBuilder()
-                    .query("SELECT CustomerId, COUNT(InvoiceLineId) as purchase_count FROM InvoiceLine GROUP BY CustomerId LIMIT ?")
+                    .query("SELECT i.CustomerId, COUNT(il.InvoiceLineId) as purchase_count " +
+                           "FROM InvoiceLine il " +
+                           "JOIN Invoice i ON il.InvoiceId = i.InvoiceId " +
+                           "GROUP BY i.CustomerId " +
+                           "LIMIT ?")
                     .build();
                 
                 List<UserRecommendation> recommendations = new ArrayList<>();
@@ -321,8 +409,8 @@ public class ProductionComputePatterns {
                 try (ResultSet<SqlRow> result = sql.execute(null, stmt, batchSize)) {
                     while (result.hasNext()) {
                         SqlRow row = result.next();
-                        int customerId = row.intValue("CustomerId");
-                        long purchaseCount = row.longValue("purchase_count");
+                        int customerId = row.intValue("CUSTOMERID");
+                        long purchaseCount = row.longValue("PURCHASE_COUNT");
                         
                         // Generate personalized recommendations based on purchase history
                         UserRecommendation recommendation = generateRecommendation(sql, customerId, purchaseCount);
@@ -330,7 +418,21 @@ public class ProductionComputePatterns {
                     }
                 }
                 
-                return new UserRecommendations(recommendations, context.ignite().name());
+                // Convert to JSON-like string for serialization
+                StringBuilder json = new StringBuilder("{\"recommendations\":[");
+                for (int i = 0; i < recommendations.size(); i++) {
+                    if (i > 0) json.append(",");
+                    UserRecommendation rec = recommendations.get(i);
+                    json.append("{\"customerId\":").append(rec.customerId)
+                        .append(",\"genres\":[");
+                    for (int j = 0; j < rec.recommendedGenres.size(); j++) {
+                        if (j > 0) json.append(",");
+                        json.append("\"").append(rec.recommendedGenres.get(j)).append("\"");
+                    }
+                    json.append("],\"purchaseHistory\":").append(rec.purchaseHistory).append("}");
+                }
+                json.append("],\"processingNode\":\"").append(context.ignite().name()).append("\"}");
+                return json.toString();
             });
         }
         
@@ -348,7 +450,7 @@ public class ProductionComputePatterns {
             List<String> preferredGenres = new ArrayList<>();
             try (ResultSet<SqlRow> genreResult = sql.execute(null, genreStmt, customerId)) {
                 while (genreResult.hasNext()) {
-                    preferredGenres.add(genreResult.next().stringValue("Name"));
+                    preferredGenres.add(genreResult.next().stringValue("NAME"));
                 }
             }
             
@@ -359,9 +461,9 @@ public class ProductionComputePatterns {
     /**
      * Artist analytics job with data colocation optimization.
      */
-    public static class ArtistAnalyticsJob implements ComputeJob<Integer, ArtistAnalytics> {
+    public static class ArtistAnalyticsJob implements ComputeJob<Integer, String> {
         @Override
-        public CompletableFuture<ArtistAnalytics> executeAsync(JobExecutionContext context, Integer artistId) {
+        public CompletableFuture<String> executeAsync(JobExecutionContext context, Integer artistId) {
             return CompletableFuture.supplyAsync(() -> {
                 IgniteSql sql = context.ignite().sql();
                 
@@ -384,18 +486,22 @@ public class ProductionComputePatterns {
                 try (ResultSet<SqlRow> result = sql.execute(null, stmt, artistId)) {
                     if (result.hasNext()) {
                         SqlRow row = result.next();
-                        return new ArtistAnalytics(
-                            artistId,
-                            row.stringValue("Name"),
-                            (int) row.longValue("album_count"),
-                            (int) row.longValue("track_count"),
-                            row.decimalValue("total_revenue") != null ? 
-                                row.decimalValue("total_revenue") : BigDecimal.ZERO
-                        );
+                        String name = row.stringValue("NAME");
+                        int albumCount = (int) row.longValue("ALBUM_COUNT");
+                        int trackCount = (int) row.longValue("TRACK_COUNT");
+                        BigDecimal revenue = row.decimalValue("TOTAL_REVENUE") != null ? 
+                            row.decimalValue("TOTAL_REVENUE") : BigDecimal.ZERO;
+                        
+                        // Return JSON string for serialization
+                        return "{\"artistId\":" + artistId + 
+                               ",\"artistName\":\"" + name + "\"" +
+                               ",\"albumCount\":" + albumCount +
+                               ",\"trackCount\":" + trackCount +
+                               ",\"totalRevenue\":" + revenue + "}";
                     }
                 }
                 
-                return new ArtistAnalytics(artistId, "Unknown", 0, 0, BigDecimal.ZERO);
+                return "{\"artistId\":" + artistId + ",\"artistName\":\"Unknown\",\"albumCount\":0,\"trackCount\":0,\"totalRevenue\":0}";
             });
         }
     }
@@ -403,12 +509,12 @@ public class ProductionComputePatterns {
     /**
      * Genre mapping job for MapReduce pattern.
      */
-    public static class GenreMapJob implements ComputeJob<Void, Map<String, GenreMetrics>> {
+    public static class GenreMapJob implements ComputeJob<Void, String> {
         @Override
-        public CompletableFuture<Map<String, GenreMetrics>> executeAsync(JobExecutionContext context, Void arg) {
+        public CompletableFuture<String> executeAsync(JobExecutionContext context, Void arg) {
             return CompletableFuture.supplyAsync(() -> {
                 IgniteSql sql = context.ignite().sql();
-                Map<String, GenreMetrics> genreMetrics = new HashMap<>();
+                StringBuilder json = new StringBuilder("{\"genres\":{");
                 
                 Statement stmt = sql.statementBuilder()
                     .query("SELECT " +
@@ -421,19 +527,27 @@ public class ProductionComputePatterns {
                            "GROUP BY g.GenreId, g.Name")
                     .build();
                 
+                boolean first = true;
                 try (ResultSet<SqlRow> result = sql.execute(null, stmt)) {
                     while (result.hasNext()) {
                         SqlRow row = result.next();
-                        String genreName = row.stringValue("Name");
-                        int trackCount = (int) row.longValue("track_count");
-                        BigDecimal revenue = row.decimalValue("total_revenue") != null ? 
-                            row.decimalValue("total_revenue") : BigDecimal.ZERO;
+                        String genreName = row.stringValue("NAME");
+                        int trackCount = (int) row.longValue("TRACK_COUNT");
+                        BigDecimal revenue = row.decimalValue("TOTAL_REVENUE") != null ? 
+                            row.decimalValue("TOTAL_REVENUE") : BigDecimal.ZERO;
                         
-                        genreMetrics.put(genreName, new GenreMetrics(trackCount, revenue));
+                        if (!first) json.append(",");
+                        first = false;
+                        
+                        json.append("\"").append(genreName).append("\":{");
+                        json.append("\"trackCount\":").append(trackCount);
+                        json.append(",\"totalRevenue\":").append(revenue);
+                        json.append("}");
                     }
                 }
                 
-                return genreMetrics;
+                json.append("}}");
+                return json.toString();
             });
         }
     }
@@ -454,7 +568,7 @@ public class ProductionComputePatterns {
                 
                 try (ResultSet<SqlRow> result = sql.execute(null, stmt)) {
                     if (result.hasNext()) {
-                        long count = result.next().longValue("total_records");
+                        long count = result.next().longValue("TOTAL_RECORDS");
                         return analysisType + " completed: " + count + " artists analyzed";
                     }
                 }
@@ -486,8 +600,8 @@ public class ProductionComputePatterns {
                         long executionTime = System.currentTimeMillis() - startTime;
                         
                         return "Performance test completed in " + executionTime + "ms: " +
-                               row.longValue("track_count") + " tracks, avg price $" +
-                               row.decimalValue("avg_price");
+                               row.longValue("TRACK_COUNT") + " tracks, avg price $" +
+                               row.decimalValue("AVG_PRICE");
                     }
                 }
                 
@@ -505,8 +619,9 @@ public class ProductionComputePatterns {
         public CompletableFuture<RecommendationReport> processRecommendations(IgniteClient client) {
             long startTime = System.currentTimeMillis();
             
-            JobDescriptor<Integer, UserRecommendations> job = JobDescriptor.builder(RecommendationEngineJob.class)
+            JobDescriptor<Integer, String> job = JobDescriptor.<Integer, String>builder(RecommendationEngineJob.class)
                 .units(ComputeJobDeployment.getDeploymentUnits())
+                .resultClass(String.class)
                 .build();
             
             // Distribute processing across cluster nodes
@@ -515,7 +630,7 @@ public class ProductionComputePatterns {
                 .limit(3) // Limit to 3 nodes for demo
                 .collect(Collectors.toList());
             
-            List<CompletableFuture<UserRecommendations>> futures = nodeNames.stream()
+            List<CompletableFuture<String>> futures = nodeNames.stream()
                 .map(nodeName -> client.compute().executeAsync(
                     JobTarget.anyNode(client.clusterNodes()), job, 100))
                 .collect(Collectors.toList());
@@ -525,12 +640,11 @@ public class ProductionComputePatterns {
                     int totalUsers = 0;
                     int totalRecommendations = 0;
                     
-                    for (CompletableFuture<UserRecommendations> future : futures) {
-                        UserRecommendations recommendations = future.join();
-                        totalUsers += recommendations.recommendations.size();
-                        totalRecommendations += recommendations.recommendations.stream()
-                            .mapToInt(r -> r.recommendedGenres.size())
-                            .sum();
+                    for (CompletableFuture<String> future : futures) {
+                        String jsonResult = future.join();
+                        // Parse JSON response
+                        totalUsers += parseUserCount(jsonResult);
+                        totalRecommendations += parseRecommendationCount(jsonResult);
                     }
                     
                     long processingTime = System.currentTimeMillis() - startTime;
@@ -542,6 +656,35 @@ public class ProductionComputePatterns {
                         nodeNames.size()
                     );
                 });
+        }
+        
+        private int parseUserCount(String json) {
+            // Simple JSON parsing for user count
+            int start = json.indexOf("\"recommendations\":[");
+            if (start < 0) return 0;
+            
+            int count = 0;
+            int pos = start;
+            while ((pos = json.indexOf("{\"customerId\":", pos + 1)) > 0) {
+                count++;
+            }
+            return count;
+        }
+        
+        private int parseRecommendationCount(String json) {
+            // Simple JSON parsing for total recommendation count
+            int count = 0;
+            int pos = 0;
+            while ((pos = json.indexOf("\"genres\":[", pos + 1)) > 0) {
+                int genreStart = pos + 11;
+                int genreEnd = json.indexOf("]", genreStart);
+                if (genreEnd > genreStart) {
+                    String genreSection = json.substring(genreStart, genreEnd);
+                    // Count commas + 1 for number of genres
+                    count += genreSection.split(",").length;
+                }
+            }
+            return count;
         }
     }
 
@@ -637,7 +780,8 @@ public class ProductionComputePatterns {
 
     // Data transfer objects
 
-    public static class RecommendationReport {
+    public static class RecommendationReport implements Serializable {
+        private static final long serialVersionUID = 1L;
         public final int usersProcessed;
         public final int recommendationsGenerated;
         public final long processingTimeMs;
@@ -652,7 +796,8 @@ public class ProductionComputePatterns {
         }
     }
 
-    public static class UserRecommendations {
+    public static class UserRecommendations implements Serializable {
+        private static final long serialVersionUID = 1L;
         public final List<UserRecommendation> recommendations;
         public final String processingNode;
         
@@ -662,7 +807,8 @@ public class ProductionComputePatterns {
         }
     }
 
-    public static class UserRecommendation {
+    public static class UserRecommendation implements Serializable {
+        private static final long serialVersionUID = 1L;
         public final int customerId;
         public final List<String> recommendedGenres;
         public final int purchaseHistory;
@@ -674,7 +820,8 @@ public class ProductionComputePatterns {
         }
     }
 
-    public static class ArtistAnalytics {
+    public static class ArtistAnalytics implements Serializable {
+        private static final long serialVersionUID = 1L;
         public final int artistId;
         public final String artistName;
         public final int albumCount;
@@ -691,7 +838,8 @@ public class ProductionComputePatterns {
         }
     }
 
-    public static class GenreMetrics {
+    public static class GenreMetrics implements Serializable {
+        private static final long serialVersionUID = 1L;
         public final int trackCount;
         public final BigDecimal totalRevenue;
         
@@ -708,7 +856,8 @@ public class ProductionComputePatterns {
         }
     }
 
-    public static class JobMetrics {
+    public static class JobMetrics implements Serializable {
+        private static final long serialVersionUID = 1L;
         public final long executionTimeMs;
         public final String targetNode;
         public final long memoryUsageMB;

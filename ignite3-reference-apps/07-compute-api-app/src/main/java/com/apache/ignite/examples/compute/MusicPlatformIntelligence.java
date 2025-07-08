@@ -27,6 +27,7 @@ import org.apache.ignite.table.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Serializable;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -111,17 +112,21 @@ public class MusicPlatformIntelligence {
         System.out.println(">>> Executing distributed artist analytics");
         
         try {
-            JobDescriptor<Void, Map<String, Integer>> job = 
-                JobDescriptor.builder(ArtistPopularityJob.class)
+            JobDescriptor<Void, String> job = 
+                JobDescriptor.<Void, String>builder(ArtistPopularityJob.class)
                     .units(ComputeJobDeployment.getDeploymentUnits())
+                    .resultClass(String.class)
                     .build();
             
-            Map<String, Integer> results = client.compute()
+            String jsonResults = client.compute()
                 .execute(JobTarget.anyNode(client.clusterNodes()), job, null);
+            
+            // System.out.println(">>> Debug: Raw JSON result: " + jsonResults);
+            Map<String, Long> results = parseArtistPopularityJson(jsonResults);
             
             System.out.println("<<< Artist popularity analysis completed:");
             results.entrySet().stream()
-                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
                 .limit(5)
                 .forEach(entry -> 
                     System.out.println("         " + entry.getKey() + ": " + entry.getValue() + " plays"));
@@ -145,15 +150,19 @@ public class MusicPlatformIntelligence {
             Tuple userKey = Tuple.create(Map.of("CustomerId", customerId));
             JobTarget target = JobTarget.colocated("Customer", userKey);
             
-            JobDescriptor<Integer, List<String>> job = 
-                JobDescriptor.builder(UserRecommendationJob.class)
+            JobDescriptor<Integer, String> job = 
+                JobDescriptor.<Integer, String>builder(UserRecommendationJob.class)
                     .units(ComputeJobDeployment.getDeploymentUnits())
+                    .resultClass(String.class)
                     .build();
             
-            List<String> recommendations = client.compute()
+            String jsonRecommendations = client.compute()
                 .execute(target, job, customerId);
             
-            System.out.println("<<< User " + customerId + " recommendations: " + recommendations);
+            // System.out.println(">>> Debug: Raw recommendations JSON: " + jsonRecommendations);
+            List<String> recommendations = parseRecommendationsJson(jsonRecommendations);
+            
+            System.out.println("<<< User " + customerId + " recommendations (" + recommendations.size() + " items): " + String.join(", ", recommendations));
             
         } catch (Exception e) {
             System.err.println("!!! User recommendation processing failed: " + e.getMessage());
@@ -199,7 +208,7 @@ public class MusicPlatformIntelligence {
         
         try {
             MusicTrendMapReduceExample mapReduce = new MusicTrendMapReduceExample();
-            Map<String, Integer> globalTrends = mapReduce.detectGlobalTrends(client);
+            Map<String, Long> globalTrends = mapReduce.detectGlobalTrends(client);
             
             System.out.println("<<< Global trending tracks:");
             globalTrends.entrySet().stream()
@@ -242,9 +251,10 @@ public class MusicPlatformIntelligence {
     /**
      * Artist popularity analysis job as shown in documentation.
      */
-    public static class ArtistPopularityJob implements ComputeJob<Void, Map<String, Integer>> {
+    public static class ArtistPopularityJob implements ComputeJob<Void, String>, Serializable {
+        private static final long serialVersionUID = 1L;
         @Override
-        public CompletableFuture<Map<String, Integer>> executeAsync(JobExecutionContext context, Void input) {
+        public CompletableFuture<String> executeAsync(JobExecutionContext context, Void input) {
             return CompletableFuture.supplyAsync(() -> {
                 // Execute analysis using local data on this node
                 IgniteSql sql = context.ignite().sql();
@@ -256,14 +266,20 @@ public class MusicPlatformIntelligence {
                            "GROUP BY a.ArtistId, a.Name")
                     .build();
                 
-                Map<String, Integer> localPopularity = new HashMap<>();
+                StringBuilder json = new StringBuilder("{");
+                boolean first = true;
                 try (ResultSet<SqlRow> rs = sql.execute(null, stmt)) {
                     while (rs.hasNext()) {
                         SqlRow row = rs.next();
-                        localPopularity.put(row.stringValue("Name"), row.intValue("play_count"));
+                        if (!first) json.append(",");
+                        first = false;
+                        String name = row.stringValue("NAME").replace("\"", "\\\"");
+                        json.append("\"").append(name).append("\":");
+                        json.append(row.longValue("PLAY_COUNT"));
                     }
                 }
-                return localPopularity;
+                json.append("}");
+                return json.toString();
             });
         }
     }
@@ -271,15 +287,16 @@ public class MusicPlatformIntelligence {
     /**
      * User recommendation job with data locality optimization.
      */
-    public static class UserRecommendationJob implements ComputeJob<Integer, List<String>> {
+    public static class UserRecommendationJob implements ComputeJob<Integer, String>, Serializable {
+        private static final long serialVersionUID = 1L;
         @Override
-        public CompletableFuture<List<String>> executeAsync(JobExecutionContext context, Integer customerId) {
+        public CompletableFuture<String> executeAsync(JobExecutionContext context, Integer customerId) {
             return CompletableFuture.supplyAsync(() -> {
                 IgniteSql sql = context.ignite().sql();
                 
                 // Analyze local user listening patterns (no network access required)
                 Statement stmt = sql.statementBuilder()
-                    .query("SELECT DISTINCT g.Name as genre " +
+                    .query("SELECT g.Name as genre, COUNT(*) as play_count " +
                            "FROM Customer c " +
                            "JOIN Invoice i ON c.CustomerId = i.CustomerId " +
                            "JOIN InvoiceLine il ON i.InvoiceId = il.InvoiceId " +
@@ -287,19 +304,28 @@ public class MusicPlatformIntelligence {
                            "JOIN Genre g ON t.GenreId = g.GenreId " +
                            "WHERE c.CustomerId = ? " +
                            "GROUP BY g.GenreId, g.Name " +
-                           "ORDER BY COUNT(*) DESC LIMIT 3")
+                           "ORDER BY play_count DESC LIMIT 3")
                     .build();
                 
-                List<String> preferredGenres = new ArrayList<>();
+                StringBuilder json = new StringBuilder("[");
+                boolean hasResults = false;
                 try (ResultSet<SqlRow> rs = sql.execute(null, stmt, customerId)) {
                     while (rs.hasNext()) {
-                        preferredGenres.add(rs.next().stringValue("genre"));
+                        if (hasResults) json.append(",");
+                        hasResults = true;
+                        SqlRow row = rs.next();
+                        String genre = row.stringValue("GENRE").replace("\"", "\\\"");
+                        json.append("\"").append(genre).append("\"");
                     }
                 }
                 
-                return preferredGenres.isEmpty() ? 
-                    List.of("Rock", "Pop", "Jazz") : // Default recommendations
-                    preferredGenres;
+                if (!hasResults) {
+                    // Default recommendations
+                    json.append("\"Rock\",\"Pop\",\"Jazz\"");
+                }
+                
+                json.append("]");
+                return json.toString();
             });
         }
     }
@@ -307,9 +333,10 @@ public class MusicPlatformIntelligence {
     /**
      * Trend map job for MapReduce pattern.
      */
-    public static class TrendMapJob implements ComputeJob<Void, Map<String, Integer>> {
+    public static class TrendMapJob implements ComputeJob<Void, String>, Serializable {
+        private static final long serialVersionUID = 1L;
         @Override
-        public CompletableFuture<Map<String, Integer>> executeAsync(JobExecutionContext context, Void input) {
+        public CompletableFuture<String> executeAsync(JobExecutionContext context, Void input) {
             return CompletableFuture.supplyAsync(() -> {
                 IgniteSql sql = context.ignite().sql();
                 
@@ -319,19 +346,25 @@ public class MusicPlatformIntelligence {
                            "FROM Track t " +
                            "JOIN InvoiceLine il ON t.TrackId = il.TrackId " +
                            "JOIN Invoice i ON il.InvoiceId = i.InvoiceId " +
-                           "WHERE i.InvoiceDate >= CURRENT_DATE - 7 " +
+                           "WHERE i.InvoiceDate >= CURRENT_DATE - INTERVAL '7' DAY " +
                            "GROUP BY t.TrackId, t.Name " +
                            "HAVING COUNT(*) > 5")  // Filter noise
                     .build();
                 
-                Map<String, Integer> localTrends = new HashMap<>();
+                StringBuilder json = new StringBuilder("{");
+                boolean first = true;
                 try (ResultSet<SqlRow> rs = sql.execute(null, stmt)) {
                     while (rs.hasNext()) {
                         SqlRow row = rs.next();
-                        localTrends.put(row.stringValue("Name"), row.intValue("plays"));
+                        if (!first) json.append(",");
+                        first = false;
+                        String name = row.stringValue("NAME").replace("\"", "\\\"");
+                        json.append("\"").append(name).append("\":");
+                        json.append(row.longValue("PLAYS"));
                     }
                 }
-                return localTrends;
+                json.append("}");
+                return json.toString();
             });
         }
     }
@@ -339,7 +372,8 @@ public class MusicPlatformIntelligence {
     /**
      * Simple recommendation analysis job for resilience testing.
      */
-    public static class RecommendationAnalysisJob implements ComputeJob<String, String> {
+    public static class RecommendationAnalysisJob implements ComputeJob<String, String>, Serializable {
+        private static final long serialVersionUID = 1L;
         @Override
         public CompletableFuture<String> executeAsync(JobExecutionContext context, String analysisType) {
             return CompletableFuture.supplyAsync(() -> {
@@ -351,7 +385,7 @@ public class MusicPlatformIntelligence {
                 
                 try (ResultSet<SqlRow> rs = sql.execute(null, stmt)) {
                     if (rs.hasNext()) {
-                        long count = rs.next().longValue("total_genres");
+                        long count = rs.next().longValue("TOTAL_GENRES");
                         return analysisType + " completed: " + count + " genres analyzed";
                     }
                 }
@@ -402,10 +436,14 @@ public class MusicPlatformIntelligence {
             // Execute recommendation job asynchronously
             return client.compute()
                 .executeAsync(target, 
-                    JobDescriptor.builder(UserRecommendationJob.class)
+                    JobDescriptor.<Integer, String>builder(UserRecommendationJob.class)
                         .units(ComputeJobDeployment.getDeploymentUnits())
+                        .resultClass(String.class)
                         .build(), userId)
-                .thenApply(recommendations -> new Pair<>(userId, recommendations));
+                .thenApply(jsonRecommendations -> {
+                    List<String> recommendations = MusicPlatformIntelligence.parseRecommendationsJson(jsonRecommendations);
+                    return new Pair<>(userId, recommendations);
+                });
         }
     }
 
@@ -415,30 +453,33 @@ public class MusicPlatformIntelligence {
     public static class MusicTrendMapReduceExample {
         
         // Orchestrate MapReduce workflow
-        public Map<String, Integer> detectGlobalTrends(IgniteClient client) {
+        public Map<String, Long> detectGlobalTrends(IgniteClient client) {
             // Map Phase: Execute trend analysis on all nodes
-            JobDescriptor<Void, Map<String, Integer>> mapJob = 
-                JobDescriptor.builder(TrendMapJob.class)
+            JobDescriptor<Void, String> mapJob = 
+                JobDescriptor.<Void, String>builder(TrendMapJob.class)
                     .units(ComputeJobDeployment.getDeploymentUnits())
+                    .resultClass(String.class)
                     .build();
             
             // Execute job on any node for simplicity (would normally use broadcast)
-            Map<String, Integer> singleNodeResult = 
+            String jsonResult = 
                 client.compute().execute(JobTarget.anyNode(client.clusterNodes()), mapJob, null);
             
+            Map<String, Long> singleNodeResult = parseTrendJson(jsonResult);
+            
             // In a real implementation, this would aggregate results from multiple nodes
-            Collection<Map<String, Integer>> mapResults = List.of(singleNodeResult);
+            Collection<Map<String, Long>> mapResults = List.of(singleNodeResult);
             
             // Reduce Phase: Aggregate all node results
-            Map<String, Integer> globalTrends = new HashMap<>();
-            for (Map<String, Integer> nodeResult : mapResults) {
+            Map<String, Long> globalTrends = new HashMap<>();
+            for (Map<String, Long> nodeResult : mapResults) {
                 nodeResult.forEach((trackName, localPlays) -> 
-                    globalTrends.merge(trackName, localPlays, Integer::sum));
+                    globalTrends.merge(trackName, localPlays, Long::sum));
             }
             
             // Return top trending tracks globally
             return globalTrends.entrySet().stream()
-                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
                 .limit(50)  // Top 50 trending tracks
                 .collect(Collectors.toMap(
                     Map.Entry::getKey,
@@ -504,7 +545,7 @@ public class MusicPlatformIntelligence {
     /**
      * Simple pair class for internal use.
      */
-    public static class Pair<K, V> {
+    public static class Pair<K, V> implements Serializable {
         private final K key;
         private final V value;
         
@@ -515,5 +556,128 @@ public class MusicPlatformIntelligence {
         
         public K getKey() { return key; }
         public V getValue() { return value; }
+    }
+    
+    // JSON parsing helper methods
+    
+    private Map<String, Long> parseArtistPopularityJson(String json) {
+        Map<String, Long> result = new HashMap<>();
+        if (json.equals("{}")) return result;
+        
+        try {
+            // Remove outer braces
+            String content = json.substring(1, json.length() - 1);
+            if (content.isEmpty()) return result;
+            
+            // Split by comma but not within quotes
+            int start = 0;
+            boolean inQuotes = false;
+            for (int i = 0; i < content.length(); i++) {
+                char c = content.charAt(i);
+                if (c == '"' && (i == 0 || content.charAt(i-1) != '\\')) {
+                    inQuotes = !inQuotes;
+                } else if (c == ',' && !inQuotes) {
+                    parseEntry(content.substring(start, i), result);
+                    start = i + 1;
+                }
+            }
+            // Parse last entry
+            if (start < content.length()) {
+                parseEntry(content.substring(start), result);
+            }
+        } catch (Exception e) {
+            logger.warn("Failed to parse artist popularity JSON: " + json, e);
+        }
+        
+        return result;
+    }
+    
+    private void parseEntry(String entry, Map<String, Long> result) {
+        int colonPos = entry.lastIndexOf(":");
+        if (colonPos > 0) {
+            String artist = entry.substring(1, colonPos - 1);
+            long plays = Long.parseLong(entry.substring(colonPos + 1).trim());
+            result.put(artist, plays);
+        }
+    }
+    
+    private static List<String> parseRecommendationsJson(String json) {
+        List<String> result = new ArrayList<>();
+        if (json.equals("[]")) return result;
+        
+        try {
+            // Remove outer brackets
+            String content = json.substring(1, json.length() - 1).trim();
+            if (content.isEmpty()) return result;
+            
+            // Handle quoted strings with commas
+            int start = 0;
+            boolean inQuotes = false;
+            for (int i = 0; i < content.length(); i++) {
+                char c = content.charAt(i);
+                if (c == '"' && (i == 0 || content.charAt(i-1) != '\\')) {
+                    if (!inQuotes) {
+                        start = i + 1;
+                        inQuotes = true;
+                    } else {
+                        result.add(content.substring(start, i));
+                        inQuotes = false;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Fallback to simple parsing
+            try {
+                String content = json.substring(1, json.length() - 1);
+                String[] items = content.split(",");
+                for (String item : items) {
+                    result.add(item.substring(1, item.length() - 1));
+                }
+            } catch (Exception ex) {
+                // Return empty list on parse failure
+            }
+        }
+        
+        return result;
+    }
+    
+    private static Map<String, Long> parseTrendJson(String json) {
+        Map<String, Long> result = new HashMap<>();
+        if (json.equals("{}")) return result;
+        
+        try {
+            // Use the same parsing logic as artist popularity
+            String content = json.substring(1, json.length() - 1);
+            if (content.isEmpty()) return result;
+            
+            int start = 0;
+            boolean inQuotes = false;
+            for (int i = 0; i < content.length(); i++) {
+                char c = content.charAt(i);
+                if (c == '"' && (i == 0 || content.charAt(i-1) != '\\')) {
+                    inQuotes = !inQuotes;
+                } else if (c == ',' && !inQuotes) {
+                    parseTrendEntry(content.substring(start, i), result);
+                    start = i + 1;
+                }
+            }
+            // Parse last entry
+            if (start < content.length()) {
+                parseTrendEntry(content.substring(start), result);
+            }
+        } catch (Exception e) {
+            // Return empty map on parse failure
+        }
+        
+        return result;
+    }
+    
+    private static void parseTrendEntry(String entry, Map<String, Long> result) {
+        int colonPos = entry.lastIndexOf(":");
+        if (colonPos > 0) {
+            String track = entry.substring(1, colonPos - 1);
+            long plays = Long.parseLong(entry.substring(colonPos + 1).trim());
+            result.put(track, plays);
+        }
     }
 }

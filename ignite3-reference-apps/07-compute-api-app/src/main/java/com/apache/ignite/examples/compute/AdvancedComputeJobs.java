@@ -52,7 +52,7 @@ public class AdvancedComputeJobs {
                 
                 if (result.hasNext()) {
                     SqlRow row = result.next();
-                    return CompletableFuture.completedFuture(row.stringValue("Name") + " has " + row.longValue("track_count") + " tracks");
+                    return CompletableFuture.completedFuture(row.stringValue("NAME") + " has " + row.longValue("TRACK_COUNT") + " tracks");
                 }
                 return CompletableFuture.completedFuture("Artist not found");
             }
@@ -171,9 +171,9 @@ public class AdvancedComputeJobs {
                 
                 while (result.hasNext()) {
                     SqlRow row = result.next();
-                    csvResult.append(row.stringValue("Name"))
+                    csvResult.append(row.stringValue("NAME"))
                              .append(",")
-                             .append(row.longValue("track_count"))
+                             .append(row.longValue("TRACK_COUNT"))
                              .append("\n");
                 }
             }

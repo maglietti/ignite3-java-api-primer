@@ -295,7 +295,7 @@ public class BasicComputeOperations {
                 
                 try (ResultSet<SqlRow> result = sql.execute(null, "SELECT COUNT(*) as track_count FROM Track")) {
                     if (result.hasNext()) {
-                        return (int) result.next().longValue("track_count");
+                        return (int) result.next().longValue("TRACK_COUNT");
                     }
                     return 0;
                 }
@@ -321,8 +321,8 @@ public class BasicComputeOperations {
                     
                     if (result.hasNext()) {
                         SqlRow row = result.next();
-                        return "Most popular genre: " + row.stringValue("Name") + 
-                               " (" + row.longValue("track_count") + " tracks)";
+                        return "Most popular genre: " + row.stringValue("NAME") + 
+                               " (" + row.longValue("TRACK_COUNT") + " tracks)";
                     }
                     return "No genre data found";
                 }
