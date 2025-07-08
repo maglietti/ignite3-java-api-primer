@@ -113,17 +113,18 @@ curl http://localhost:10300/management/v1/cluster/state
 
 ```text
 ignite3-reference-apps/
-├── 00-docker/                      # Docker cluster setup (start here!)
-├── 01-sample-data-setup/           # Foundation module with sample data
-├── 02-getting-started-app/         # QUICK START - just the key concepts
-├── 03-schema-annotations-app/      # Schema-as-code examples
-├── 04-table-api-app/               # Object-oriented data access
-├── 05-sql-api-app/                 # SQL operations and queries
-├── 06-transactions-app/            # Transaction patterns
-├── 07-compute-api-app/             # Distributed computing
-├── 08-data-streaming-app/          # High-throughput data loading
-├── 09-caching-patterns-app/        # Caching strategies
-└── 10-file-streaming-app/          # File-based streaming with backpressure
+├── 00-docker/                         # Docker cluster setup (start here!)
+├── 01-sample-data-setup/              # Foundation module with sample data
+├── 02-getting-started-app/            # QUICK START - just the key concepts
+├── 03-schema-annotations-app/         # Schema-as-code examples
+├── 04-table-api-app/                  # Object-oriented data access
+├── 05-sql-api-app/                    # SQL operations and queries
+├── 06-transactions-app/               # Transaction patterns
+├── 07-compute-api-app/                # Distributed computing
+├── 08-data-streaming-app/             # High-throughput data loading
+├── 09-caching-patterns-app/           # Caching strategies
+├── 10-file-streaming-app/             # File-based streaming with backpressure
+└── 11-performance-optimization-app/   # Performance tuning and optimization
 ```
 
 ## Sample Dataset
@@ -244,6 +245,7 @@ This series of reference applications builds expertise progressively, from basic
 8. **data-streaming-app** - High-throughput operations
 9. **caching-patterns-app** - Caching strategies and patterns
 10. **file-streaming-app** - Optional file-based reactive streaming with backpressure
+11. **performance-optimization-app** - Performance tuning and optimization techniques
 
 ### Sample Data Setup
 
@@ -381,13 +383,27 @@ Process large CSV files using reactive streams with end-to-end backpressure prop
 - **Performance monitoring**: Real-time metrics and system health
 - **Resource management**: Handle large files without memory exhaustion
 
-*Prerequisites*: Caching patterns | *Completes*: Full API mastery  
+*Prerequisites*: Caching patterns | *Builds toward*: Performance optimization  
 [`10-file-streaming-app`](10-file-streaming-app/) | [Data Streaming](../docs/05-performance-scalability/01-data-streaming.md)
+
+### Performance Optimization
+
+**What you'll build**: High-performance application with advanced tuning techniques
+
+Master performance optimization strategies for Apache Ignite 3. Learn query optimization, data model tuning, memory management, and cluster configuration for maximum throughput. Implement benchmarking and performance monitoring.
+
+- **Query optimization**: Index strategies and SQL execution plan analysis
+- **Data model tuning**: Colocation optimization and partition strategies
+- **Memory management**: Off-heap configuration and memory policies
+- **Monitoring and metrics**: Performance tracking and bottleneck identification
+
+*Prerequisites*: File streaming | *Completes*: Full performance mastery  
+[`11-performance-optimization-app`](11-performance-optimization-app/) | [Performance Optimization](../docs/05-performance-scalability/03-query-performance.md)
 
 ---
 
 **Each app runs independently**: See Building and Running section below  
-**Complete sequence**: Follow 1→10 for comprehensive Ignite 3 expertise
+**Complete sequence**: Follow 1→11 for comprehensive Ignite 3 expertise
 
 ## Building and Running
 
