@@ -71,7 +71,7 @@ mvn compile exec:java
 
 **Gradle:**
 ```bash
-./gradlew :11-performance-optimization-app:run
+../gradlew run
 ```
 
 Run individual demonstrations:
@@ -85,7 +85,7 @@ mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.performance.QueryTimi
 
 **Gradle:**
 ```bash
-./gradlew :11-performance-optimization-app:runClass -PmainClass=com.apache.ignite.examples.performance.QueryTimingAnalysis
+# Use Maven command above (custom Gradle task not configured)
 ```
 
 **QueryExecutionPlanAnalysis:**
@@ -97,7 +97,7 @@ mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.performance.QueryExec
 
 **Gradle:**
 ```bash
-./gradlew :11-performance-optimization-app:runClass -PmainClass=com.apache.ignite.examples.performance.QueryExecutionPlanAnalysis
+# Use Maven command above (custom Gradle task not configured)
 ```
 
 **IndexOptimizationStrategies:**
@@ -109,7 +109,7 @@ mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.performance.IndexOpti
 
 **Gradle:**
 ```bash
-./gradlew :11-performance-optimization-app:runClass -PmainClass=com.apache.ignite.examples.performance.IndexOptimizationStrategies
+# Use Maven command above (custom Gradle task not configured)
 ```
 
 **OptimizedJoinStrategies:**
@@ -121,7 +121,7 @@ mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.performance.Optimized
 
 **Gradle:**
 ```bash
-./gradlew :11-performance-optimization-app:runClass -PmainClass=com.apache.ignite.examples.performance.OptimizedJoinStrategies
+# Use Maven command above (custom Gradle task not configured)
 ```
 
 **CacheAsideOptimization:**
@@ -133,7 +133,7 @@ mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.performance.CacheAsid
 
 **Gradle:**
 ```bash
-./gradlew :11-performance-optimization-app:runClass -PmainClass=com.apache.ignite.examples.performance.CacheAsideOptimization
+# Use Maven command above (custom Gradle task not configured)
 ```
 
 ## Performance Targets

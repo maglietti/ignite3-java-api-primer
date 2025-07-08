@@ -84,7 +84,7 @@ mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.transactions.
 
 **Gradle:**
 ```bash
-./gradlew :06-transactions-app:run
+../gradlew run
 ```
 
 ### Run Individual Examples
@@ -98,7 +98,7 @@ mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.transactions.
 
 **Gradle:**
 ```bash
-./gradlew :06-transactions-app:BasicTransactions
+# Use Maven command above (custom Gradle task not configured)
 ```
 
 **Async transaction patterns:**
@@ -110,7 +110,7 @@ mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.transactions.
 
 **Gradle:**
 ```bash
-./gradlew :06-transactions-app:AsyncTransactions
+# Use Maven command above (custom Gradle task not configured)
 ```
 
 **Business workflow patterns:**
@@ -122,7 +122,7 @@ mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.transactions.
 
 **Gradle:**
 ```bash
-./gradlew :06-transactions-app:BusinessWorkflowPatterns
+# Use Maven command above (custom Gradle task not configured)
 ```
 
 ## API Patterns Covered

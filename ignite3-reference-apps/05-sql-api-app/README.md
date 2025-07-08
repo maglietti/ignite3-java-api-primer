@@ -39,7 +39,7 @@ mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.SQLAPI
 
 **Gradle:**
 ```bash
-./gradlew :05-sql-api-app:run
+../gradlew run
 ```
 
 **Key concepts:**
@@ -62,7 +62,7 @@ mvn compile exec:java@basic
 
 **Gradle:**
 ```bash
-./gradlew :05-sql-api-app:BasicSQLOperations
+# Use Maven command above (custom Gradle task not configured)
 ```
 
 **Key concepts:**
@@ -83,7 +83,7 @@ mvn compile exec:java@advanced
 
 **Gradle:**
 ```bash
-./gradlew :05-sql-api-app:AdvancedSQLOperations
+# Use Maven command above (custom Gradle task not configured)
 ```
 
 **Key concepts:**
@@ -105,7 +105,7 @@ mvn compile exec:java@transactions
 
 **Gradle:**
 ```bash
-./gradlew :05-sql-api-app:TransactionSQLOperations
+# Use Maven command above (custom Gradle task not configured)
 ```
 
 **Key concepts:**
@@ -127,7 +127,7 @@ mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.Produc
 
 **Gradle:**
 ```bash
-./gradlew :05-sql-api-app:ProductionAnalyticsPatterns
+# Use Maven command above (custom Gradle task not configured)
 ```
 
 **Key concepts:**
@@ -207,7 +207,7 @@ mvn compile exec:java
 
 **Gradle:**
 ```bash
-./gradlew :05-sql-api-app:run
+../gradlew run
 ```
 
 Run specific operations using the commands shown above.

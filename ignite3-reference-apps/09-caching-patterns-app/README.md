@@ -76,7 +76,7 @@ mvn compile exec:java
 
 **Gradle:**
 ```bash
-./gradlew :09-caching-patterns-app:run
+../gradlew run
 ```
 
 ### Individual Pattern Demonstrations
@@ -90,7 +90,7 @@ mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.caching.CacheAsidePat
 
 **Gradle:**
 ```bash
-./gradlew :09-caching-patterns-app:runClass -PmainClass=com.apache.ignite.examples.caching.CacheAsidePatterns
+# Use Maven command above (custom Gradle task not configured)
 ```
 
 **Write-Through Pattern**:
@@ -102,7 +102,7 @@ mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.caching.WriteThroughP
 
 **Gradle:**
 ```bash
-./gradlew :09-caching-patterns-app:runClass -PmainClass=com.apache.ignite.examples.caching.WriteThroughPatterns
+# Use Maven command above (custom Gradle task not configured)
 ```
 
 **Write-Behind Pattern**:
@@ -114,7 +114,7 @@ mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.caching.WriteBehindPa
 
 **Gradle:**
 ```bash
-./gradlew :09-caching-patterns-app:runClass -PmainClass=com.apache.ignite.examples.caching.WriteBehindPatterns
+# Use Maven command above (custom Gradle task not configured)
 ```
 
 ### Custom Cluster Address
@@ -126,7 +126,7 @@ mvn compile exec:java -Dexec.args="192.168.1.100:10800"
 
 **Gradle:**
 ```bash
-./gradlew :09-caching-patterns-app:run --args="192.168.1.100:10800"
+../gradlew run --args="192.168.1.100:10800"
 ```
 
 ## Key Implementation Patterns

@@ -42,12 +42,12 @@ Connects to Ignite cluster and demonstrates basic operations:
 
 **Maven:**
 ```bash
-mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.gettingstarted.HelloWorldApp"
+mvn compile exec:java@hello
 ```
 
 **Gradle:**
 ```bash
-./gradlew :02-getting-started-app:HelloWorldApp
+../gradlew runHelloWorld
 ```
 
 **Expected Output:**
@@ -74,12 +74,12 @@ Creates related tables and demonstrates transactions:
 
 **Maven:**
 ```bash
-mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.gettingstarted.BasicSetupDemo"
+mvn compile exec:java@setup
 ```
 
 **Gradle:**
 ```bash
-./gradlew :02-getting-started-app:BasicSetupDemo
+# Use Maven command above (custom Gradle task not configured)
 ```
 
 **Expected Output:**
@@ -105,12 +105,12 @@ Demonstrates various client connection configurations:
 
 **Maven:**
 ```bash
-mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.gettingstarted.ConnectionExamples"
+mvn compile exec:java@connection
 ```
 
 **Gradle:**
 ```bash
-./gradlew :02-getting-started-app:ConnectionExamples
+# Use Maven command above (custom Gradle task not configured)
 ```
 
 **Expected Output:**
@@ -159,7 +159,7 @@ mvn compile exec:java
 
 **Gradle:**
 ```bash
-./gradlew :02-getting-started-app:run
+../gradlew run
 ```
 
 Or run specific examples as shown above.
@@ -177,5 +177,5 @@ mvn clean compile
 
 **Gradle:**
 ```bash
-./gradlew :02-getting-started-app:clean :02-getting-started-app:build
+../gradlew clean build
 ```

@@ -111,7 +111,7 @@ mvn compile exec:java
 
 **Gradle:**
 ```bash
-./gradlew :10-file-streaming-app:run
+../gradlew run
 ```
 
 Run individual components:
@@ -125,7 +125,7 @@ mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.filestreaming.FileBac
 
 **Gradle:**
 ```bash
-./gradlew :10-file-streaming-app:runClass -PmainClass=com.apache.ignite.examples.filestreaming.FileBackpressureStreaming
+# Use Maven command above (custom Gradle task not configured)
 ```
 
 ## Expected Output

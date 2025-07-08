@@ -33,10 +33,10 @@ mvn exec:java -Dexec.args="192.168.1.100:10800"
 ./gradlew :07-compute-api-app:build
 
 # Run the complete demo
-./gradlew :07-compute-api-app:run
+../gradlew run
 
 # Or run with custom cluster address
-./gradlew :07-compute-api-app:run --args="192.168.1.100:10800"
+../gradlew run --args="192.168.1.100:10800"
 ```
 
 ## Architecture
@@ -158,7 +158,7 @@ mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.compute.BasicComputeO
 
 **Gradle:**
 ```bash
-./gradlew :07-compute-api-app:BasicComputeOperations
+# Use Maven command above (custom Gradle task not configured)
 ```
 
 **AdvancedComputeOperations:**
@@ -170,7 +170,7 @@ mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.compute.AdvancedCompu
 
 **Gradle:**
 ```bash
-./gradlew :07-compute-api-app:AdvancedComputeOperations
+# Use Maven command above (custom Gradle task not configured)
 ```
 
 **Other modules:**

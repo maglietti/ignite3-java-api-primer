@@ -37,7 +37,7 @@ mvn compile exec:java
 
 **Gradle:**
 ```bash
-./gradlew :03-schema-annotations-app:run
+../gradlew run
 ```
 
 ### Individual Demonstrations
@@ -113,7 +113,7 @@ mvn compile exec:java
 
 **Gradle:**
 ```bash
-./gradlew :03-schema-annotations-app:run
+../gradlew run
 ```
 
 ## Common Issues

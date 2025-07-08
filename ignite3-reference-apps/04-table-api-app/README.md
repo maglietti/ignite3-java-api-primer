@@ -26,7 +26,7 @@ mvn compile exec:java
 
 **Gradle:**
 ```bash
-./gradlew :04-table-api-app:run
+../gradlew run
 ```
 
 ### Run Individual Demonstrations
@@ -40,7 +40,7 @@ mvn compile exec:java@recordview
 
 **Gradle:**
 ```bash
-./gradlew :04-table-api-app:RecordViewExamples
+# Use Maven command above (custom Gradle task not configured)
 ```
 
 **KeyValueView Operations** (Cache-like patterns):
@@ -52,7 +52,7 @@ mvn compile exec:java@keyvalue
 
 **Gradle:**
 ```bash
-./gradlew :04-table-api-app:KeyValueExamples
+# Use Maven command above (custom Gradle task not configured)
 ```
 
 **Advanced Async Operations** (Production patterns):
@@ -64,7 +64,7 @@ mvn compile exec:java@async
 
 **Gradle:**
 ```bash
-./gradlew :04-table-api-app:AsyncBasicOperations
+# Use Maven command above (custom Gradle task not configured)
 ```
 
 ## Applications
@@ -119,7 +119,7 @@ mvn compile exec:java
 
 **Gradle:**
 ```bash
-./gradlew :04-table-api-app:run
+../gradlew run
 ```
 
 Run specific demonstrations using the commands shown in Quick Start above.

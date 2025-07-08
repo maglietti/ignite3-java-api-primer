@@ -84,9 +84,21 @@
                 </configuration>
                 <executions>
                     <execution>
-                        <id>default</id>
+                        <id>hello</id>
                         <configuration>
                             <mainClass>com.apache.ignite.examples.gettingstarted.HelloWorldApp</mainClass>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>connection</id>
+                        <configuration>
+                            <mainClass>com.apache.ignite.examples.gettingstarted.ConnectionExamples</mainClass>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>setup</id>
+                        <configuration>
+                            <mainClass>com.apache.ignite.examples.gettingstarted.BasicSetupDemo</mainClass>
                         </configuration>
                     </execution>
                 </executions>

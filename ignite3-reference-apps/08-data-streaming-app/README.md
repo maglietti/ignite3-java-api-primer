@@ -53,7 +53,7 @@ mvn compile exec:java
 
 **Gradle:**
 ```bash
-./gradlew :08-data-streaming-app:run
+../gradlew run
 ```
 
 Run individual demonstrations:
@@ -67,7 +67,7 @@ mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.streaming.BasicDataSt
 
 **Gradle:**
 ```bash
-./gradlew :08-data-streaming-app:runClass -PmainClass=com.apache.ignite.examples.streaming.BasicDataStreamerDemo
+# Use Maven command above (custom Gradle task not configured)
 ```
 
 **BulkDataIngestion:**
@@ -79,7 +79,7 @@ mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.streaming.BulkDataIng
 
 **Gradle:**
 ```bash
-./gradlew :08-data-streaming-app:runClass -PmainClass=com.apache.ignite.examples.streaming.BulkDataIngestion
+# Use Maven command above (custom Gradle task not configured)
 ```
 
 **BackpressureHandling:**
@@ -91,7 +91,7 @@ mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.streaming.Backpressur
 
 **Gradle:**
 ```bash
-./gradlew :08-data-streaming-app:runClass -PmainClass=com.apache.ignite.examples.streaming.BackpressureHandling
+# Use Maven command above (custom Gradle task not configured)
 ```
 
 ## Performance Characteristics
