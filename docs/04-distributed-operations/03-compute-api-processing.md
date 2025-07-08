@@ -40,6 +40,7 @@ The **`07-compute-api-app`** demonstrates how to transform centralized batch pro
 
 ```bash
 cd ignite3-reference-apps/07-compute-api-app
+mvn package
 mvn compile exec:java
 ```
 
@@ -216,35 +217,45 @@ The real power of distributed computing emerges when you eliminate network hops 
 Traditional systems pull user profiles across the network for centralized analysis. The Compute API processes recommendations locally on nodes containing user data:
 
 ```java
-public class UserRecommendationJob implements ComputeJob<Integer, List<String>> {
+public static class UserRecommendationJob implements ComputeJob<Integer, String>, Serializable {
+    private static final long serialVersionUID = 1L;
     @Override
-    public CompletableFuture<List<String>> executeAsync(JobExecutionContext context, Integer customerId) {
+    public CompletableFuture<String> executeAsync(JobExecutionContext context, Integer customerId) {
         return CompletableFuture.supplyAsync(() -> {
             IgniteSql sql = context.ignite().sql();
             
             // Analyze local user listening patterns (no network access required)
             Statement stmt = sql.statementBuilder()
-                .query("SELECT DISTINCT g.Name as genre " +
-                       "FROM Customer c " +
-                       "JOIN Invoice i ON c.CustomerId = i.CustomerId " +
-                       "JOIN InvoiceLine il ON i.InvoiceId = il.InvoiceId " +
-                       "JOIN Track t ON il.TrackId = t.TrackId " +
-                       "JOIN Genre g ON t.GenreId = g.GenreId " +
-                       "WHERE c.CustomerId = ? " +
-                       "GROUP BY g.GenreId, g.Name " +
-                       "ORDER BY COUNT(*) DESC LIMIT 3")
+                .query("SELECT g.Name as genre, COUNT(*) as play_count " +
+                        "FROM Customer c " +
+                        "JOIN Invoice i ON c.CustomerId = i.CustomerId " +
+                        "JOIN InvoiceLine il ON i.InvoiceId = il.InvoiceId " +
+                        "JOIN Track t ON il.TrackId = t.TrackId " +
+                        "JOIN Genre g ON t.GenreId = g.GenreId " +
+                        "WHERE c.CustomerId = ? " +
+                        "GROUP BY g.GenreId, g.Name " +
+                        "ORDER BY play_count DESC LIMIT 3")
                 .build();
             
-            List<String> preferredGenres = new ArrayList<>();
+            StringBuilder json = new StringBuilder("[");
+            boolean hasResults = false;
             try (ResultSet<SqlRow> rs = sql.execute(null, stmt, customerId)) {
                 while (rs.hasNext()) {
-                    preferredGenres.add(rs.next().stringValue("genre"));
+                    if (hasResults) json.append(",");
+                    hasResults = true;
+                    SqlRow row = rs.next();
+                    String genre = row.stringValue("GENRE").replace("\"", "\\\"");
+                    json.append("\"").append(genre).append("\"");
                 }
             }
             
-            return preferredGenres.isEmpty() ? 
-                List.of("Rock", "Pop", "Jazz") : // Default recommendations
-                preferredGenres;
+            if (!hasResults) {
+                // Default recommendations
+                json.append("\"Rock\",\"Pop\",\"Jazz\"");
+            }
+            
+            json.append("]");
+            return json.toString();
         });
     }
 }
@@ -253,8 +264,7 @@ public class UserRecommendationJob implements ComputeJob<Integer, List<String>> 
 Tuple userKey = Tuple.create(Map.of("CustomerId", customerId));
 JobTarget target = JobTarget.colocated("Customer", userKey);
 
-List<String> recommendations = client.compute().execute(target, 
-    JobDescriptor.builder(UserRecommendationJob.class).build(), customerId);
+List<String> recommendations = parseRecommendationsJson(jsonRecommendations);
 ```
 
 **Data Locality Benefits:**
