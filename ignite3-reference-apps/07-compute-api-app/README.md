@@ -11,10 +11,11 @@ This application demonstrates Apache Ignite 3's Compute API through practical ex
 - Apache Ignite 3 cluster running (see [00-docker setup](../00-docker/README.md))
 - Sample data setup completed ([01-sample-data-setup](../01-sample-data-setup/))
 - Java 17 or higher
-- Maven 3.8+
+- Maven 3.8+ or Gradle (via wrapper)
 
 ## Quick Start
 
+**Maven:**
 ```bash
 # Build the application
 mvn clean package
@@ -24,6 +25,18 @@ mvn exec:java
 
 # Or run with custom cluster address
 mvn exec:java -Dexec.args="192.168.1.100:10800"
+```
+
+**Gradle:**
+```bash
+# Build the application
+./gradlew :07-compute-api-app:build
+
+# Run the complete demo
+./gradlew :07-compute-api-app:run
+
+# Or run with custom cluster address
+./gradlew :07-compute-api-app:run --args="192.168.1.100:10800"
 ```
 
 ## Architecture
@@ -136,20 +149,36 @@ Statement stmt = sql.statementBuilder()
 
 ## Running Individual Modules
 
-Each module can be run independently:
+**BasicComputeOperations:**
 
+**Maven:**
 ```bash
-# Run specific module
-java -cp target/07-compute-api-app-1.0.0.jar:... \
-    com.apache.ignite.examples.compute.BasicComputeOperations
-
-# Available main classes:
-# - BasicComputeOperations
-# - AdvancedComputeOperations
-# - ComputeJobWorkflows
-# - ProductionComputePatterns
-# - MusicPlatformIntelligence
+mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.compute.BasicComputeOperations"
 ```
+
+**Gradle:**
+```bash
+./gradlew :07-compute-api-app:BasicComputeOperations
+```
+
+**AdvancedComputeOperations:**
+
+**Maven:**
+```bash
+mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.compute.AdvancedComputeOperations"
+```
+
+**Gradle:**
+```bash
+./gradlew :07-compute-api-app:AdvancedComputeOperations
+```
+
+**Other modules:**
+- ComputeJobWorkflows
+- ProductionComputePatterns
+- MusicPlatformIntelligence
+
+Follow the same pattern with the appropriate class name.
 
 ## Performance Considerations
 

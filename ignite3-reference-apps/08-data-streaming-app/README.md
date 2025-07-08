@@ -20,7 +20,7 @@ Demonstrates reactive streams-based data streaming for music platform event inge
 - Apache Ignite 3 cluster running (see [00-docker setup](../00-docker/README.md))
 - Sample data setup completed ([01-sample-data-setup](../01-sample-data-setup/))
 - Java 17 or higher
-- Maven 3.8+
+- Maven 3.8+ or Gradle (via wrapper)
 
 ## Demonstrations
 
@@ -46,16 +46,52 @@ Demonstrates reactive streams-based data streaming for music platform event inge
 
 Run the orchestrator to see all patterns:
 
+**Maven:**
 ```bash
 mvn compile exec:java
 ```
 
+**Gradle:**
+```bash
+./gradlew :08-data-streaming-app:run
+```
+
 Run individual demonstrations:
 
+**BasicDataStreamerDemo:**
+
+**Maven:**
 ```bash
 mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.streaming.BasicDataStreamerDemo"
-mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.streaming.BulkDataIngestion"  
+```
+
+**Gradle:**
+```bash
+./gradlew :08-data-streaming-app:runClass -PmainClass=com.apache.ignite.examples.streaming.BasicDataStreamerDemo
+```
+
+**BulkDataIngestion:**
+
+**Maven:**
+```bash
+mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.streaming.BulkDataIngestion"
+```
+
+**Gradle:**
+```bash
+./gradlew :08-data-streaming-app:runClass -PmainClass=com.apache.ignite.examples.streaming.BulkDataIngestion
+```
+
+**BackpressureHandling:**
+
+**Maven:**
+```bash
 mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.streaming.BackpressureHandling"
+```
+
+**Gradle:**
+```bash
+./gradlew :08-data-streaming-app:runClass -PmainClass=com.apache.ignite.examples.streaming.BackpressureHandling
 ```
 
 ## Performance Characteristics

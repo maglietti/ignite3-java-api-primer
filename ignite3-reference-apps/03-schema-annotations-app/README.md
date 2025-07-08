@@ -22,54 +22,47 @@ Demonstrates defining database schemas in Java code using annotations. Shows how
 - Apache Ignite 3 cluster running (see [00-docker setup](../00-docker/README.md))
 - Sample data setup completed ([01-sample-data-setup](../01-sample-data-setup/))
 - Java 17 or higher
-- Maven 3.8+
+- Maven 3.8+ or Gradle (via wrapper)
 
 ## Applications
 
-### 1. AnnotatedEntitiesDemo
+### Main Demo (SchemaAPIDemo)
 
-Demonstrates annotation patterns across different entity types:
+Run all schema demonstrations:
 
+**Maven:**
 ```bash
-mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.schema.AnnotatedEntitiesDemo"
+mvn compile exec:java
 ```
 
-**Key concepts:**
-
-- Simple entities with single primary keys
-- Composite keys for relationship tables
-- Reference data with high replication
-- CRUD operations on annotated entities
-
-### 2. ColocationExamples
-
-Shows data colocation strategies for distributed performance:
-
+**Gradle:**
 ```bash
-mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.schema.ColocationExamples"
+./gradlew :03-schema-annotations-app:run
 ```
 
-**Key concepts:**
+### Individual Demonstrations
 
-- Artist → Album → Track hierarchy colocated by ArtistId
-- Customer → Invoice → InvoiceLine hierarchy colocated by CustomerId
-- Colocated query performance benefits
-- Validation of colocation rules
+Note: The individual classes shown below don't have main methods. They are demonstrated through SchemaAPIDemo.
 
-### 3. SchemaEvolutionDemo
+The SchemaAPIDemo demonstrates:
 
-Demonstrates schema changes and DDL generation:
+1. **AnnotatedEntitiesDemo**
+   - Simple entities with single primary keys
+   - Composite keys for relationship tables
+   - Reference data with high replication
+   - CRUD operations on annotated entities
 
-```bash
-mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.schema.SchemaEvolutionDemo"
-```
+2. **ColocationExamples**
+   - Artist → Album → Track hierarchy colocated by ArtistId
+   - Customer → Invoice → InvoiceLine hierarchy colocated by CustomerId
+   - Colocated query performance benefits
+   - Validation of colocation rules
 
-**Key concepts:**
-
-- DDL generation from annotations
-- Schema validation
-- Entity version migration (V1 → V2)
-- Complex schema creation
+3. **SchemaEvolutionDemo**
+   - DDL generation from annotations
+   - Schema validation
+   - Entity version migration (V1 → V2)
+   - Complex schema creation
 
 ## Key Annotation Patterns
 
@@ -111,16 +104,16 @@ public class Album {
 
 ## Running the Examples
 
-Start with the annotated entities demo:
+Run the complete schema demonstration:
 
+**Maven:**
 ```bash
-mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.schema.AnnotatedEntitiesDemo"
+mvn compile exec:java
 ```
 
-Then explore colocation patterns:
-
+**Gradle:**
 ```bash
-mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.schema.ColocationExamples"
+./gradlew :03-schema-annotations-app:run
 ```
 
 ## Common Issues

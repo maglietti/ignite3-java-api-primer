@@ -24,7 +24,7 @@ Demonstrates Apache Ignite 3's SQL API for relational data access. Shows how to 
 - Apache Ignite 3 cluster running (see [00-docker setup](../00-docker/README.md))
 - Sample data setup completed ([01-sample-data-setup](../01-sample-data-setup/))
 - Java 17 or higher
-- Maven 3.8+
+- Maven 3.8+ or Gradle (via wrapper)
 
 ## Applications
 
@@ -32,8 +32,14 @@ Demonstrates Apache Ignite 3's SQL API for relational data access. Shows how to 
 
 Main demonstration of SQL API concepts:
 
+**Maven:**
 ```bash
 mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.SQLAPIDemo"
+```
+
+**Gradle:**
+```bash
+./gradlew :05-sql-api-app:run
 ```
 
 **Key concepts:**
@@ -45,59 +51,83 @@ mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.SQLAPI
 - Object mapping
 - Error handling patterns
 
-### 2. DDLOperations
+### 2. BasicSQLOperations
 
-Schema management operations:
+Basic SQL operations:
 
+**Maven:**
 ```bash
-mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.DDLOperations"
+mvn compile exec:java@basic
+```
+
+**Gradle:**
+```bash
+./gradlew :05-sql-api-app:BasicSQLOperations
 ```
 
 **Key concepts:**
 
-- Zone creation and configuration
-- Table creation with colocation
-- Index management
-- Schema introspection
+- Simple SELECT queries
+- INSERT, UPDATE, DELETE operations
+- Basic JOINs
+- Query result processing
 
-### 3. DMLOperations
+### 3. AdvancedSQLOperations
 
-Data manipulation patterns:
+Advanced SQL patterns:
 
+**Maven:**
 ```bash
-mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.DMLOperations"
+mvn compile exec:java@advanced
+```
+
+**Gradle:**
+```bash
+./gradlew :05-sql-api-app:AdvancedSQLOperations
 ```
 
 **Key concepts:**
 
-- INSERT with parameter binding
-- UPDATE with conditions
-- DELETE operations
-- MERGE/UPSERT patterns
-- Batch DML operations
+- Complex multi-table JOINs
+- Aggregate functions
+- Window functions
+- Subqueries and CTEs
+- Performance optimization
 
-### 4. QueryOperations
+### 4. TransactionSQLOperations
 
-Complex query patterns:
+SQL with transactions:
 
+**Maven:**
 ```bash
-mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.QueryOperations"
+mvn compile exec:java@transactions
+```
+
+**Gradle:**
+```bash
+./gradlew :05-sql-api-app:TransactionSQLOperations
 ```
 
 **Key concepts:**
 
-- Multi-table JOINs
-- Aggregate queries
-- Subqueries
-- Async execution
-- Result pagination
+- SQL within transactions
+- ACID guarantees
+- Rollback handling
+- Multi-statement transactions
+- Isolation levels
 
 ### 5. ProductionAnalyticsPatterns
 
 Production-scale analytics:
 
+**Maven:**
 ```bash
 mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.ProductionAnalyticsPatterns"
+```
+
+**Gradle:**
+```bash
+./gradlew :05-sql-api-app:ProductionAnalyticsPatterns
 ```
 
 **Key concepts:**
@@ -170,16 +200,17 @@ try (Transaction tx = client.transactions().begin()) {
 
 Run complete demo:
 
+**Maven:**
 ```bash
-mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.SQLAPIDemo"
+mvn compile exec:java
 ```
 
-Run specific operations:
-
+**Gradle:**
 ```bash
-mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.QueryOperations"
-mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.ProductionAnalyticsPatterns"
+./gradlew :05-sql-api-app:run
 ```
+
+Run specific operations using the commands shown above.
 
 ## Common Issues
 

@@ -71,30 +71,58 @@ Main demonstration application that runs all examples in sequence.
 - Apache Ignite 3 cluster running (see [00-docker setup](../00-docker/README.md))
 - Sample data setup completed ([01-sample-data-setup](../01-sample-data-setup/))
 - Java 17 or higher
-- Maven 3.8+
+- Maven 3.8+ or Gradle (via wrapper)
 
 ## Running the Examples
 
 ### Run All Examples
 
+**Maven:**
 ```bash
 mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.transactions.TransactionAPIDemo"
 ```
 
+**Gradle:**
+```bash
+./gradlew :06-transactions-app:run
+```
+
 ### Run Individual Examples
 
+**Basic transaction patterns:**
+
+**Maven:**
 ```bash
-# Basic transaction patterns
-mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.transactions.BasicTransactionDemo"
+mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.transactions.BasicTransactions"
+```
 
-# Async transaction patterns
-mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.transactions.AsyncTransactionDemo"
+**Gradle:**
+```bash
+./gradlew :06-transactions-app:BasicTransactions
+```
 
-# Advanced transaction patterns
-mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.transactions.TransactionPatterns"
+**Async transaction patterns:**
 
-# Production business workflow patterns
+**Maven:**
+```bash
+mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.transactions.AsyncTransactions"
+```
+
+**Gradle:**
+```bash
+./gradlew :06-transactions-app:AsyncTransactions
+```
+
+**Business workflow patterns:**
+
+**Maven:**
+```bash
 mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.transactions.BusinessWorkflowPatterns"
+```
+
+**Gradle:**
+```bash
+./gradlew :06-transactions-app:BusinessWorkflowPatterns
 ```
 
 ## API Patterns Covered

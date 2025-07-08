@@ -83,7 +83,7 @@ Scenario Comparison:
 - Apache Ignite 3 cluster running (see [00-docker setup](../00-docker/README.md))
 - Sample data setup completed ([01-sample-data-setup](../01-sample-data-setup/))
 - Java 17 or higher
-- Maven 3.8+
+- Maven 3.8+ or Gradle (via wrapper)
 
 ## Demonstrations
 
@@ -104,14 +104,28 @@ Scenario Comparison:
 
 Run the complete demonstration:
 
+**Maven:**
 ```bash
 mvn compile exec:java
 ```
 
+**Gradle:**
+```bash
+./gradlew :10-file-streaming-app:run
+```
+
 Run individual components:
 
+**FileBackpressureStreaming:**
+
+**Maven:**
 ```bash
 mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.filestreaming.FileBackpressureStreaming"
+```
+
+**Gradle:**
+```bash
+./gradlew :10-file-streaming-app:runClass -PmainClass=com.apache.ignite.examples.filestreaming.FileBackpressureStreaming
 ```
 
 ## Expected Output

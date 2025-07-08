@@ -13,34 +13,58 @@ Demonstrates Apache Ignite 3's Table API for type-safe data access. Shows Record
 - Apache Ignite 3 cluster running (see [00-docker setup](../00-docker/README.md))
 - Sample data setup completed ([01-sample-data-setup](../01-sample-data-setup/))
 - Java 17 or higher
-- Maven 3.8+
+- Maven 3.8+ or Gradle (via wrapper)
 
 ## Quick Start
 
 ### Run Complete Demo
 
+**Maven:**
 ```bash
 mvn compile exec:java
+```
+
+**Gradle:**
+```bash
+./gradlew :04-table-api-app:run
 ```
 
 ### Run Individual Demonstrations
 
 **RecordView Operations** (Object-oriented CRUD):
 
+**Maven:**
 ```bash
 mvn compile exec:java@recordview
 ```
 
+**Gradle:**
+```bash
+./gradlew :04-table-api-app:RecordViewExamples
+```
+
 **KeyValueView Operations** (Cache-like patterns):
 
+**Maven:**
 ```bash
 mvn compile exec:java@keyvalue
 ```
 
+**Gradle:**
+```bash
+./gradlew :04-table-api-app:KeyValueExamples
+```
+
 **Advanced Async Operations** (Production patterns):
 
+**Maven:**
 ```bash
 mvn compile exec:java@async
+```
+
+**Gradle:**
+```bash
+./gradlew :04-table-api-app:AsyncBasicOperations
 ```
 
 ## Applications
@@ -88,17 +112,17 @@ Main orchestrator that runs all demonstrations:
 
 Run complete demo:
 
+**Maven:**
 ```bash
 mvn compile exec:java
 ```
 
-Run individual demonstrations:
-
+**Gradle:**
 ```bash
-mvn compile exec:java@recordview    # RecordView operations
-mvn compile exec:java@keyvalue      # KeyValueView operations
-mvn compile exec:java@async         # Async operations
+./gradlew :04-table-api-app:run
 ```
+
+Run specific demonstrations using the commands shown in Quick Start above.
 
 ## Key Decision Points
 

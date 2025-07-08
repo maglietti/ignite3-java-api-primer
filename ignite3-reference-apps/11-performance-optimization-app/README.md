@@ -21,7 +21,7 @@ Demonstrates systematic performance optimization for music streaming platform qu
 - Apache Ignite 3 cluster running (see [00-docker setup](../00-docker/README.md))
 - Sample data setup completed ([01-sample-data-setup](../01-sample-data-setup/))
 - Java 17 or higher
-- Maven 3.8+
+- Maven 3.8+ or Gradle (via wrapper)
 
 ## Demonstrations
 
@@ -64,18 +64,76 @@ Demonstrates systematic performance optimization for music streaming platform qu
 
 Run the orchestrator to see all optimization patterns:
 
+**Maven:**
 ```bash
 mvn compile exec:java
 ```
 
+**Gradle:**
+```bash
+./gradlew :11-performance-optimization-app:run
+```
+
 Run individual demonstrations:
 
+**QueryTimingAnalysis:**
+
+**Maven:**
 ```bash
 mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.performance.QueryTimingAnalysis"
+```
+
+**Gradle:**
+```bash
+./gradlew :11-performance-optimization-app:runClass -PmainClass=com.apache.ignite.examples.performance.QueryTimingAnalysis
+```
+
+**QueryExecutionPlanAnalysis:**
+
+**Maven:**
+```bash
 mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.performance.QueryExecutionPlanAnalysis"
-mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.performance.IndexOptimizationStrategies"  
+```
+
+**Gradle:**
+```bash
+./gradlew :11-performance-optimization-app:runClass -PmainClass=com.apache.ignite.examples.performance.QueryExecutionPlanAnalysis
+```
+
+**IndexOptimizationStrategies:**
+
+**Maven:**
+```bash
+mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.performance.IndexOptimizationStrategies"
+```
+
+**Gradle:**
+```bash
+./gradlew :11-performance-optimization-app:runClass -PmainClass=com.apache.ignite.examples.performance.IndexOptimizationStrategies
+```
+
+**OptimizedJoinStrategies:**
+
+**Maven:**
+```bash
 mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.performance.OptimizedJoinStrategies"
+```
+
+**Gradle:**
+```bash
+./gradlew :11-performance-optimization-app:runClass -PmainClass=com.apache.ignite.examples.performance.OptimizedJoinStrategies
+```
+
+**CacheAsideOptimization:**
+
+**Maven:**
+```bash
 mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.performance.CacheAsideOptimization"
+```
+
+**Gradle:**
+```bash
+./gradlew :11-performance-optimization-app:runClass -PmainClass=com.apache.ignite.examples.performance.CacheAsideOptimization
 ```
 
 ## Performance Targets

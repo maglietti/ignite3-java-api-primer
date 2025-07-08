@@ -22,7 +22,7 @@ Demonstrates caching patterns for performance optimization in distributed system
 - Apache Ignite 3 cluster running (see [00-docker setup](../00-docker/README.md))
 - Sample data setup completed ([01-sample-data-setup](../01-sample-data-setup/))
 - Java 17 or higher
-- Maven 3.8+
+- Maven 3.8+ or Gradle (via wrapper)
 
 ## Reference Applications
 
@@ -68,35 +68,65 @@ Complete orchestrator demonstrating all patterns:
 
 ### Quick Start - Run All Patterns
 
+**Maven:**
 ```bash
 cd 09-caching-patterns-app
 mvn compile exec:java
+```
+
+**Gradle:**
+```bash
+./gradlew :09-caching-patterns-app:run
 ```
 
 ### Individual Pattern Demonstrations
 
 **Cache-Aside Pattern**:
 
+**Maven:**
 ```bash
 mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.caching.CacheAsidePatterns"
 ```
 
+**Gradle:**
+```bash
+./gradlew :09-caching-patterns-app:runClass -PmainClass=com.apache.ignite.examples.caching.CacheAsidePatterns
+```
+
 **Write-Through Pattern**:
 
+**Maven:**
 ```bash
 mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.caching.WriteThroughPatterns"
 ```
 
+**Gradle:**
+```bash
+./gradlew :09-caching-patterns-app:runClass -PmainClass=com.apache.ignite.examples.caching.WriteThroughPatterns
+```
+
 **Write-Behind Pattern**:
 
+**Maven:**
 ```bash
 mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.caching.WriteBehindPatterns"
 ```
 
+**Gradle:**
+```bash
+./gradlew :09-caching-patterns-app:runClass -PmainClass=com.apache.ignite.examples.caching.WriteBehindPatterns
+```
+
 ### Custom Cluster Address
 
+**Maven:**
 ```bash
 mvn compile exec:java -Dexec.args="192.168.1.100:10800"
+```
+
+**Gradle:**
+```bash
+./gradlew :09-caching-patterns-app:run --args="192.168.1.100:10800"
 ```
 
 ## Key Implementation Patterns

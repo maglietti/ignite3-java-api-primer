@@ -21,7 +21,7 @@ Demonstrates fundamental Apache Ignite 3 operations: connecting to a cluster, cr
 
 - Apache Ignite 3 cluster running (see [00-docker setup](../00-docker/README.md))
 - Java 17 or higher
-- Maven 3.8+
+- Maven 3.8+ or Gradle (via wrapper)
 
 ```bash
 # Start cluster first
@@ -40,8 +40,14 @@ Connects to Ignite cluster and demonstrates basic operations:
 4. SQL queries on the same data
 5. Proper resource cleanup
 
+**Maven:**
 ```bash
 mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.gettingstarted.HelloWorldApp"
+```
+
+**Gradle:**
+```bash
+./gradlew :02-getting-started-app:HelloWorldApp
 ```
 
 **Expected Output:**
@@ -66,8 +72,14 @@ Creates related tables and demonstrates transactions:
 - Transaction to insert related records
 - JOIN query to combine data
 
+**Maven:**
 ```bash
 mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.gettingstarted.BasicSetupDemo"
+```
+
+**Gradle:**
+```bash
+./gradlew :02-getting-started-app:BasicSetupDemo
 ```
 
 **Expected Output:**
@@ -91,8 +103,14 @@ Demonstrates various client connection configurations:
 - Multi-node connection (production failover)
 - Connection with custom timeouts
 
+**Maven:**
 ```bash
 mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.gettingstarted.ConnectionExamples"
+```
+
+**Gradle:**
+```bash
+./gradlew :02-getting-started-app:ConnectionExamples
 ```
 
 **Expected Output:**
@@ -132,20 +150,32 @@ Start the cluster first:
 cd ../00-docker && docker-compose up -d
 ```
 
-Run any example:
+Run the default demo:
 
+**Maven:**
 ```bash
-mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.gettingstarted.HelloWorldApp"
+mvn compile exec:java
 ```
+
+**Gradle:**
+```bash
+./gradlew :02-getting-started-app:run
+```
+
+Or run specific examples as shown above.
 
 ## Common Issues
 
 **Connection refused**: Ensure Docker cluster is running
 **Tables already exist**: Normal - applications handle existing tables
-**ClassNotFoundException**: Remove stray .class files from source directories:
+**ClassNotFoundException**: Clean and rebuild:
 
+**Maven:**
 ```bash
-# Remove any .class files from source directories
-find src -name "*.class" -delete
 mvn clean compile
+```
+
+**Gradle:**
+```bash
+./gradlew :02-getting-started-app:clean :02-getting-started-app:build
 ```
