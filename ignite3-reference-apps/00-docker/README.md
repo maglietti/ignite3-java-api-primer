@@ -178,4 +178,4 @@ For environments where Docker is not available or preferred, see [standalone-set
 
 ---
 
-**⚠️ Important**: Keep this cluster running while working with any reference applications in modules 01-10.
+**⚠️ Important**: Keep this cluster running while working with any reference applications in modules 01-11.

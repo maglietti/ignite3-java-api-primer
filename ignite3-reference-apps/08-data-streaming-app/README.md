@@ -1,6 +1,8 @@
-# Data Streaming App
+# Apache Ignite 3 Data Streaming Application
 
 High-throughput data ingestion patterns using Apache Ignite 3's DataStreamer API.
+
+**Related Documentation**: [Data Streaming](../../docs/05-performance-scalability/01-data-streaming.md)
 
 ## Overview
 
@@ -15,9 +17,10 @@ Demonstrates reactive streams-based data streaming for music platform event inge
 
 ## Prerequisites
 
-- Apache Ignite 3 cluster running on localhost:10800
-- Java 17+
-- Maven 3.6+
+- Apache Ignite 3 cluster running (see [00-docker setup](../00-docker/README.md))
+- Sample data setup completed ([01-sample-data-setup](../01-sample-data-setup/))
+- Java 17 or higher
+- Maven 3.8+
 
 ## Demonstrations
 
@@ -46,6 +49,8 @@ Run the orchestrator to see all patterns:
 ```bash
 mvn compile exec:java
 ```
+
+Run individual demonstrations:
 
 ```bash
 mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.streaming.BasicDataStreamerDemo"

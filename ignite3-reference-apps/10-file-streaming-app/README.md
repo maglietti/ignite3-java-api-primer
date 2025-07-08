@@ -1,6 +1,8 @@
-# File Streaming App
+# Apache Ignite 3 File Streaming Application
 
 File-based backpressure streaming using Apache Ignite 3's reactive DataStreamer API.
+
+**Related Documentation**: [Data Streaming](../../docs/05-performance-scalability/01-data-streaming.md)
 
 ## Overview
 
@@ -78,10 +80,10 @@ Scenario Comparison:
 
 ## Prerequisites
 
-- Apache Ignite 3 cluster running on localhost:10800
-- Java 17+
-- Maven 3.6+
-- Sample data setup completed (see `01-sample-data-setup`)
+- Apache Ignite 3 cluster running (see [00-docker setup](../00-docker/README.md))
+- Sample data setup completed ([01-sample-data-setup](../01-sample-data-setup/))
+- Java 17 or higher
+- Maven 3.8+
 
 ## Demonstrations
 
@@ -97,15 +99,6 @@ Scenario Comparison:
 - **`FileStreamingPublisher`**: Custom Flow.Publisher with demand-driven file reading
 - **`StreamingMetrics`**: Comprehensive performance monitoring and rate tracking
 - **`FileStreamingAPIDemo`**: Orchestrator demonstrating all file streaming patterns
-
-## Educational Value
-
-This module builds on the concepts from `08-data-streaming-app` by showing how backpressure naturally propagates to actual file I/O operations. Key learning outcomes:
-
-- **Real-world scenarios**: File processing is a common high-volume use case
-- **System coordination**: Multiple components working together via reactive streams
-- **Memory management**: How Flow API prevents out-of-memory conditions
-- **Performance adaptation**: Automatic rate adjustment based on cluster capacity
 
 ## Usage
 
@@ -137,12 +130,6 @@ Lines: 500,000 | Published: 485,000 | File Rate: 125,000 lines/sec |
 Publish Rate: 118,000 events/sec | Memory: 245.6 MB | CPU: 45.2% | 
 Phase: NORMAL | Backpressure Events: 15
 ```
-
-## Integration with Other Modules
-
-- **Builds on**: `08-data-streaming-app` (basic streaming patterns)
-- **Complements**: `05-sql-api-app` (data querying), `06-transactions-app` (data consistency)
-- **Prepares for**: Advanced performance optimization and monitoring patterns
 
 ## File Management
 

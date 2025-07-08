@@ -1,30 +1,27 @@
-# Getting Started App - Apache Ignite 3 Reference
+# Apache Ignite 3 Getting Started Application
 
-**Essential Ignite 3 operations and connection patterns**
+Basic connection patterns and operations using Apache Ignite 3's Java API.
 
 **Related Documentation**: [Getting Started Guide](../../docs/01-foundation/02-getting-started.md)
 
 ## Overview
 
-This module teaches Apache Ignite 3 fundamentals through focused examples. Each application demonstrates one key concept using minimal code.
+Demonstrates fundamental Apache Ignite 3 operations: connecting to a cluster, creating tables, and performing basic CRUD operations using both Table and SQL APIs.
 
 ## What You'll Learn
 
-- **Client Connection Management**: Connect to all cluster nodes for optimal performance  
-- **Default Zone Usage**: Apply Chapter 1.1 concepts using the default zone for development
-- **Table Creation**: Define tables using POJO annotations with automatic zone assignment
-- **CRUD Operations**: Insert, read, update, and delete data efficiently using type-safe APIs
-- **SQL Integration**: Query data using standard SQL with the same data model
-- **Multi-modal APIs**: Use both Table and SQL APIs on the same underlying data
-- **Error Handling**: Handle common connection and operation errors
-- **Resource Management**: Properly manage client resources and cleanup
+- Client connection patterns with multi-node clusters
+- Table creation using POJO annotations
+- CRUD operations with Table API
+- SQL queries on the same data model
+- Transaction basics for related data
+- Error handling and resource management
 
 ## Prerequisites
 
-- **⚠️ Required**: Apache Ignite 3 cluster running (see [00-docker setup](../00-docker/README.md))
-- **Optional**: [01-sample-data-setup](../01-sample-data-setup/) for music store examples
-
-> **Cluster Requirement**: The 3-node Ignite cluster from `00-docker` must be running before executing applications.
+- Apache Ignite 3 cluster running (see [00-docker setup](../00-docker/README.md))
+- Java 17 or higher
+- Maven 3.8+
 
 ```bash
 # Start cluster first
@@ -35,15 +32,13 @@ cd ../00-docker && docker-compose up -d
 
 ### 1. HelloWorldApp
 
-**Default zone pattern and multi-modal API usage**
+Connects to Ignite cluster and demonstrates basic operations:
 
-Demonstrates the essential Ignite 3 patterns from Chapter 1.2:
-
-1. **Multi-node Connection**: Connect to all cluster nodes for partition awareness
-2. **Default Zone Usage**: Zero-configuration development pattern from Chapter 1.1
-3. **Table API Operations**: Type-safe CRUD operations with automatic schema creation
-4. **SQL API Integration**: Query the same data using standard SQL
-5. **Resource Management**: Proper connection and cleanup patterns
+1. Multi-node connection for partition awareness
+2. Table creation in default zone
+3. Type-safe CRUD operations with Table API
+4. SQL queries on the same data
+5. Proper resource cleanup
 
 ```bash
 mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.gettingstarted.HelloWorldApp"
@@ -60,14 +55,12 @@ mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.gettingstarte
 >>> All books via SQL:
     1: 1984 by George Orwell
     2: Brave New World by Aldous Huxley
->>> Success! Default zone pattern working perfectly.
+>>> Demo completed successfully
 ```
 
 ### 2. BasicSetupDemo
 
-**Tables with relationships**
-
-Shows related data patterns:
+Creates related tables and demonstrates transactions:
 
 - Two tables (Author and Book)
 - Transaction to insert related records
@@ -92,9 +85,7 @@ Success!
 
 ### 3. ConnectionExamples
 
-**Different connection patterns**
-
-Shows connection options:
+Demonstrates various client connection configurations:
 
 - Basic connection (development)
 - Multi-node connection (production failover)
@@ -126,12 +117,12 @@ mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.gettingstarte
 
 ## Key Patterns
 
-- **Connection**: Always specify all cluster node addresses for optimal performance and partition awareness
-- **Default Zone**: Perfect for development and learning - zero configuration required
-- **Table API**: Type-safe operations for known-key scenarios with compile-time validation
-- **SQL API**: Flexible queries and analytics using standard ANSI SQL syntax  
-- **Unified Model**: Same POJO classes work across Table API and SQL API seamlessly
-- **Resource Management**: Use try-with-resources for automatic cleanup and connection management
+- Specify all cluster node addresses for partition awareness
+- Default zone requires zero configuration
+- Table API provides type-safe operations
+- SQL API enables flexible queries
+- POJOs work across both APIs
+- Use try-with-resources for cleanup
 
 ## Running the Examples
 
@@ -149,9 +140,9 @@ mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.gettingstarte
 
 ## Common Issues
 
-**Connection refused**: Make sure the Docker cluster is running
-**Tables already exist**: This is normal - applications handle existing tables gracefully
-**ClassNotFoundException after build success**: If you see compilation success but ClassNotFoundException, check for stray .class files in source directories:
+**Connection refused**: Ensure Docker cluster is running
+**Tables already exist**: Normal - applications handle existing tables
+**ClassNotFoundException**: Remove stray .class files from source directories:
 
 ```bash
 # Remove any .class files from source directories

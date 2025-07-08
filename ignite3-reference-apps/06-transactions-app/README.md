@@ -1,12 +1,12 @@
-# Module 06: Transactions App
+# Apache Ignite 3 Transactions Application
 
-This module demonstrates Apache Ignite 3 Transaction API patterns using music store sample data.
+Transaction patterns and ACID guarantees using Apache Ignite 3's Transaction API.
 
-📖 **Related Documentation**: [Transactions](../../docs/04-distributed-operations/01-transaction-fundamentals.md)
+**Related Documentation**: [Transaction Fundamentals](../../docs/04-distributed-operations/01-transaction-fundamentals.md)
 
 ## Overview
 
-The Transaction API provides ACID guarantees for operations across multiple tables and nodes. This module shows practical patterns for transaction management including synchronous and asynchronous operations, error handling, and performance optimization.
+Demonstrates Apache Ignite 3's Transaction API for ACID operations across distributed data. Shows transaction lifecycle management, API integration, async patterns, and error handling strategies.
 
 ## Applications
 
@@ -42,14 +42,14 @@ Advanced real-world scenarios:
 
 ### 4. BusinessWorkflowPatterns
 
-Production-ready transaction patterns for complex business scenarios:
+Production transaction patterns:
 
-- Multi-table purchase workflow coordination
-- Transaction timeout configuration for different operation types
-- Explicit transaction lifecycle management
-- Resilient transaction processing with retry logic
-- Circuit breaker patterns for system protection
-- Customer purchase workflows with validation
+- Multi-table purchase workflows
+- Transaction timeout configuration
+- Lifecycle management
+- Retry logic implementation
+- Circuit breaker patterns
+- Customer purchase validation
 
 ### 5. TransactionAPIDemo
 
@@ -57,30 +57,21 @@ Main demonstration application that runs all examples in sequence.
 
 ## Key Concepts Demonstrated
 
-- **Transaction Interface**: Begin, commit, rollback operations
-- **IgniteTransactions**: Transaction manager and factory
-- **TransactionOptions**: Timeout, read-only configuration
-- **Closure-based Transactions**: Automatic commit/rollback management
-- **API Integration**: Using transactions with Table API and SQL API
-- **Error Handling**: Exception types and rollback scenarios
-- **Async Patterns**: CompletableFuture composition with transactions
-- **Performance**: Read-only transactions and batch operations
+- Transaction lifecycle: begin, commit, rollback
+- IgniteTransactions manager interface
+- TransactionOptions configuration
+- Closure-based transaction patterns
+- Table API and SQL API integration
+- Exception handling and rollback
+- Async transaction patterns
+- Performance optimization
 
 ## Prerequisites
 
-1. **Ignite Cluster**: Start the cluster using the docker module:
-
-   ```bash
-   cd ../00-docker
-   docker-compose up -d
-   ```
-
-2. **Sample Data**: Set up the music store schema and data:
-
-   ```bash
-   cd ../01-sample-data-setup
-   mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.setup.app.ProjectInitializationApp"
-   ```
+- Apache Ignite 3 cluster running (see [00-docker setup](../00-docker/README.md))
+- Sample data setup completed ([01-sample-data-setup](../01-sample-data-setup/))
+- Java 17 or higher
+- Maven 3.8+
 
 ## Running the Examples
 
@@ -198,13 +189,10 @@ client.transactions().runInTransaction(tx -> {
 });
 ```
 
-## Learning Outcomes
+## Common Issues
 
-After running these examples, you will understand:
+**Transaction timeout**: Configure appropriate timeout in TransactionOptions
 
-1. **Transaction Basics**: How to begin, commit, and rollback transactions
-2. **API Integration**: Using transactions with both Table API and SQL API
-3. **Async Patterns**: Managing asynchronous transaction workflows
-4. **Error Handling**: Proper exception handling and rollback scenarios
-5. **Performance**: When to use read-only transactions and batch operations
-6. **Real-world Patterns**: Complex business workflows with multiple entities
+**Deadlocks**: Order operations consistently across transactions
+
+**Connection lost**: Transactions automatically rollback on connection failure

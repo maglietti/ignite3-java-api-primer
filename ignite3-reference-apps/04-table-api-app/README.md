@@ -1,33 +1,19 @@
-# Table API - Object-Oriented Data Access
+# Apache Ignite 3 Table API Application
 
-This module demonstrates Apache Ignite 3's Table API for object-oriented data access patterns using the music store dataset.
+Object-oriented data access patterns using Apache Ignite 3's Table API.
 
-📖 **Related Documentation**: [Table API - Object-Oriented Data Access](../../docs/03-data-access-apis/01-table-api-operations.md)
+**Related Documentation**: [Table API Operations](../../docs/03-data-access-apis/01-table-api-operations.md)
 
 ## Overview
 
-The Table API provides a native object-oriented interface to Ignite data, eliminating the impedance mismatch between Java objects and database operations. This module showcases:
-
-- **RecordView**: Complete object operations with POJOs
-- **KeyValueView**: Cache-like key-value operations
-- **Async Programming**: High-performance non-blocking patterns
-- **Error Handling**: Production-ready resilience patterns
+Demonstrates Apache Ignite 3's Table API for type-safe data access. Shows RecordView for object operations, KeyValueView for cache patterns, and async programming for non-blocking execution.
 
 ## Prerequisites
 
-1. **Ignite Cluster**: Ensure a 3-node cluster is running
-
-   ```bash
-   cd ../00-docker
-   ./init-cluster.sh
-   ```
-
-2. **Sample Data**: Load the music store schema and data
-
-   ```bash
-   cd ../01-sample-data-setup
-   mvn compile exec:java
-   ```
+- Apache Ignite 3 cluster running (see [00-docker setup](../00-docker/README.md))
+- Sample data setup completed ([01-sample-data-setup](../01-sample-data-setup/))
+- Java 17 or higher
+- Maven 3.8+
 
 ## Quick Start
 
@@ -57,143 +43,83 @@ mvn compile exec:java@keyvalue
 mvn compile exec:java@async
 ```
 
-## Reference Applications
+## Applications
 
-### 1. RecordViewOperations.java
+### 1. RecordViewOperations
 
-Demonstrates complete object-oriented data access patterns:
+Object-oriented CRUD operations with POJOs:
 
-- **Basic CRUD**: Create, read, update, delete with POJOs
-- **Complex Entities**: Composite keys and relationships
-- **Bulk Operations**: High-performance batch processing
-- **Transactions**: ACID guarantees across operations
-- **Async Operations**: Non-blocking execution patterns
-
-**Key Concepts**:
-
-- Automatic POJO-to-tuple mapping
-- Type safety and compile-time validation
-- Colocation benefits with related data
-- Transaction integration
-
-### 2. KeyValueOperations.java
-
-Showcases cache-like key-value access patterns:
-
-- **Simple Operations**: Direct key-value access
-- **Null Handling**: Explicit null value management
-- **Conditional Operations**: putIfAbsent, replace patterns
-- **Atomic Operations**: get-and-modify transactions
-- **Tuple Operations**: Flexible schema handling
-
-**Key Concepts**:
-
-- Separation of keys and values
-- NullableValue for explicit null handling
-- Conditional and atomic updates
+- Basic CRUD operations
+- Composite key handling
 - Bulk operations for performance
+- Transaction integration
+- Async operation patterns
 
-### 3. AsyncTableOperations.java
+### 2. KeyValueOperations
 
-Advanced async programming patterns for production:
+Cache-like access patterns:
 
-- **Operation Chaining**: Complex async workflows
-- **Parallel Execution**: Maximum resource utilization
-- **Error Handling**: Comprehensive recovery strategies
-- **Circuit Breaker**: Prevent cascade failures
-- **Retry Logic**: Exponential backoff patterns
-- **Performance Optimization**: Monitoring and tuning
+- Direct key-value operations
+- Explicit null value handling
+- Conditional updates (putIfAbsent, replace)
+- Atomic operations
+- Tuple-based flexible access
 
-**Key Concepts**:
+### 3. AsyncTableOperations
 
-- CompletableFuture composition
-- Error classification and recovery
-- Resilience patterns
+Async programming patterns:
+
+- CompletableFuture chains
+- Parallel execution
+- Error handling strategies
+- Circuit breaker implementation
+- Retry with exponential backoff
 - Performance monitoring
 
-### 4. TableAPIDemo.java
+### 4. TableAPIDemo
 
-Main demonstration application that orchestrates all patterns:
+Main orchestrator that runs all demonstrations:
 
-- **Guided Tour**: Step-by-step demonstration
-- **Individual Demos**: Run specific demonstrations
-- **Connectivity Verification**: Cluster health checks
-- **Learning Summary**: Key takeaways and next steps
+- Complete Table API tour
+- Individual demo execution
+- Cluster connectivity checks
 
-## Learning Path
+## Running the Examples
 
-### Beginner
+Run complete demo:
 
-1. Start with **RecordViewOperations** to understand object-oriented data access
-2. Practice basic CRUD operations with the Artist entity
-3. Explore composite keys with Album and Track entities
+```bash
+mvn compile exec:java
+```
 
-### Intermediate
+Run individual demonstrations:
 
-1. Move to **KeyValueOperations** for cache-like patterns
-2. Learn null value handling strategies
-3. Practice conditional and atomic operations
-
-### Advanced
-
-1. Master **AsyncTableOperations** for production patterns
-2. Implement error handling and resilience
-3. Optimize performance with monitoring
+```bash
+mvn compile exec:java@recordview    # RecordView operations
+mvn compile exec:java@keyvalue      # KeyValueView operations
+mvn compile exec:java@async         # Async operations
+```
 
 ## Key Decision Points
 
-### When to Use Table API vs SQL API vs Key-Value API
+### When to Use Table API
 
-✅ **Table API Excels For**:
+**Table API (RecordView)**: Known primary keys, POJO operations, type safety
 
-- Known primary keys with complete records
-- Single record operations with POJOs
-- Type safety requirements
-- Object-oriented domain models
-- Complex entity relationships
-- High-performance point operations
+**KeyValueView**: Cache patterns, partial data, explicit null handling
 
-✅ **Key-Value API Excels For**:
+**SQL API**: Complex queries, aggregations, analytics, dynamic queries
 
-- Simple cache-like operations
-- High-frequency get/put patterns
-- Minimal overhead operations
-- Working with partial data
-- Explicit null value handling
-- Direct key-value access without object mapping
+**RecordView**: Complete entities, POJO mapping, object relationships
 
-⚠️ **Consider SQL API For**:
+**KeyValueView**: Cache patterns, simple operations, partial data
 
-- Complex JOINs across tables
-- Aggregate functions (COUNT, SUM, AVG)
-- Range queries with WHERE clauses
-- Dynamic queries at runtime
-- Analytical operations
-- Ad-hoc queries and reporting
+## Performance Patterns
 
-### RecordView vs KeyValueView
-
-**Use RecordView When**:
-
-- Working with complete entities
-- Need full object mapping
-- POJO-based development
-- Complex entity relationships
-
-**Use KeyValueView When**:
-
-- Cache-like access patterns
-- Simple key-value operations
-- Working with partial data
-- Need explicit null handling
-
-## Performance Tips
-
-1. **Batch Operations**: Use `upsertAll()`, `getAll()`, `deleteAll()` for multiple records
-2. **Async Patterns**: Leverage async operations for concurrent workloads
-3. **Colocation**: Ensure related data is colocated for optimal performance
-4. **Connection Pooling**: Configure appropriate connection pool sizes
-5. **Error Handling**: Implement circuit breakers and retry logic
+- Use batch operations (`upsertAll`, `getAll`) for multiple records
+- Leverage async operations for concurrent workloads
+- Ensure data colocation for related entities
+- Implement circuit breakers for resilience
 
 ## Common Patterns
 
@@ -234,21 +160,6 @@ try {
 }
 ```
 
-## Testing
-
-Run the test suite:
-
-```bash
-mvn test
-```
-
-The tests demonstrate:
-
-- Unit testing patterns for Table API operations
-- Integration testing with embedded Ignite
-- Performance testing and benchmarking
-- Error condition testing
-
 ## Troubleshooting
 
 ### Common Issues
@@ -257,19 +168,3 @@ The tests demonstrate:
 2. **Table Not Found**: Run sample-data-setup to create schema
 3. **Schema Mismatch**: Verify POJO annotations match table schema
 4. **Null Value Errors**: Use `getNullable()` for nullable columns
-
-### Debug Mode
-
-Enable debug logging:
-
-```bash
-mvn compile exec:java -Dlog4j.configurationFile=debug-log4j2.xml
-```
-
-## Resources
-
-- **Documentation**: `../../docs/03-data-access-apis/01-table-api-operations.md`
-- **Model Classes**: `../01-sample-data-setup/src/main/java/.../model/`
-- **Apache Ignite 3 Docs**: [Official Documentation](https://ignite.apache.org/docs/latest/)
-
-The Table API provides the foundation for building robust, high-performance distributed applications with Apache Ignite 3. Master these patterns and you'll be well-equipped for most data access scenarios!

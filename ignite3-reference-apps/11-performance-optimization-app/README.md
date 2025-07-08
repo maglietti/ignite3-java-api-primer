@@ -1,6 +1,8 @@
-# Performance Optimization App
+# Apache Ignite 3 Performance Optimization Application
 
 Query tuning and scalability optimization techniques using Apache Ignite 3's distributed SQL engine.
+
+**Related Documentation**: [Query Performance](../../docs/05-performance-scalability/03-query-performance.md)
 
 ## Overview
 
@@ -16,10 +18,10 @@ Demonstrates systematic performance optimization for music streaming platform qu
 
 ## Prerequisites
 
-- Apache Ignite 3 cluster running on localhost:10800
-- Java 17+
-- Maven 3.6+
-- Sample music data loaded (from sample-data-setup module)
+- Apache Ignite 3 cluster running (see [00-docker setup](../00-docker/README.md))
+- Sample data setup completed ([01-sample-data-setup](../01-sample-data-setup/))
+- Java 17 or higher
+- Maven 3.8+
 
 ## Demonstrations
 
@@ -76,12 +78,6 @@ mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.performance.Optimized
 mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.performance.CacheAsideOptimization"
 ```
 
-Using Gradle:
-
-```bash
-./gradlew run
-```
-
 ## Performance Targets
 
 Optimization goals for music streaming platform:
@@ -93,7 +89,7 @@ Optimization goals for music streaming platform:
 
 ## Data Model
 
-Uses Chinook music dataset:
+Uses music store sample dataset:
 
 - **Artist**: Music artists with name-based searching
 - **Album**: Albums with artist relationships and title browsing
@@ -138,14 +134,13 @@ Uses Chinook music dataset:
 - **Async operation timing**: Non-blocking cache population
 - **Memory utilization**: Cache size and eviction patterns
 
-## Business Context
+## Common Issues
 
-Music streaming platform scenarios:
+**Slow queries**: Check execution plans and add appropriate indexes
 
-- **Real-time search**: Instant artist and track discovery
-- **Analytics dashboards**: Genre popularity and revenue reporting
-- **Recommendation engines**: Collaborative filtering algorithms
-- **Customer insights**: Purchase history and behavioral analysis
+**High memory usage**: Monitor cache size and implement eviction policies
+
+**Timeout errors**: Optimize queries or increase timeout values
 
 ## Error Handling
 

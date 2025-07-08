@@ -8,9 +8,10 @@ This application demonstrates Apache Ignite 3's Compute API through practical ex
 
 ## Prerequisites
 
-- Java 11 or higher
-- Apache Ignite 3 cluster running locally
-- Sample music store data loaded (see main project README)
+- Apache Ignite 3 cluster running (see [00-docker setup](../00-docker/README.md))
+- Sample data setup completed ([01-sample-data-setup](../01-sample-data-setup/))
+- Java 17 or higher
+- Maven 3.8+
 
 ## Quick Start
 
@@ -27,33 +28,38 @@ mvn exec:java -Dexec.args="192.168.1.100:10800"
 
 ## Architecture
 
-The application consists of five progressive modules:
+The application consists of five modules:
 
 ### 1. Basic Compute Operations (`BasicComputeOperations.java`)
+
 - Simple job execution patterns
 - Parameterized job inputs
 - SQL-based distributed queries
 - Asynchronous job execution
 
 ### 2. Advanced Compute Operations (`AdvancedComputeOperations.java`)
+
 - Data-colocated job execution
 - Broadcast patterns across all nodes
 - Performance comparison of colocation strategies
 - MapReduce coordination patterns
 
 ### 3. Compute Job Workflows (`ComputeJobWorkflows.java`)
+
 - Multi-step business process automation
 - Customer analytics pipelines
 - Music recommendation workflows
 - Revenue optimization analysis
 
 ### 4. Production Compute Patterns (`ProductionComputePatterns.java`)
+
 - Large-scale recommendation engine processing
 - Hierarchical data colocation strategies
 - Circuit breaker patterns for resilience
 - Performance monitoring and metrics
 
 ### 5. Music Platform Intelligence (`MusicPlatformIntelligence.java`)
+
 - Artist popularity analysis
 - User recommendation processing with data locality
 - Concurrent user processing patterns
@@ -62,27 +68,34 @@ The application consists of five progressive modules:
 ## Key Concepts Demonstrated
 
 ### Data Locality and Colocation
+
 Jobs execute on nodes where data resides, minimizing network overhead:
+
 ```java
 JobTarget colocatedTarget = JobTarget.colocated("Artist", 
     Tuple.create(Map.of("ArtistId", 1)));
 ```
 
 ### Distributed MapReduce
+
 Parallel processing across cluster nodes with result aggregation:
+
 ```java
 // Map phase executes on each node
 // Reduce phase aggregates results
 ```
 
 ### Resilient Job Execution
+
 Circuit breaker patterns and retry logic for production reliability:
+
 ```java
 // Exponential backoff retry
 // Failure isolation and recovery
 ```
 
 ### Performance Optimization
+
 - JSON serialization for cross-node compatibility
 - Batch processing for large datasets
 - Async execution patterns
@@ -90,6 +103,7 @@ Circuit breaker patterns and retry logic for production reliability:
 ## Data Model
 
 The application uses music store sample data:
+
 - **Artists** → Albums → Tracks (hierarchical relationship)
 - **Customers** → Invoices → Invoice Lines (transactional data)
 - **Genres** and **Media Types** (reference data)
@@ -99,20 +113,21 @@ All data is colocated by primary keys (ArtistId, CustomerId) for optimal perform
 ## Technical Implementation
 
 ### Job Deployment
-Jobs are packaged and deployed to the cluster via REST API:
-```bash
-# Automatic deployment on startup
-# Manual deployment: curl -X POST http://localhost:10300/management/v1/deployment/units/...
-```
+
+Jobs are packaged and deployed to the cluster via REST API. Deployment happens automatically on startup or can be done manually via the management API.
 
 ### Serialization Strategy
+
 Complex types are serialized as JSON strings to ensure cross-node compatibility:
+
 - POJOs → JSON strings
 - Maps → JSON objects
 - Lists → JSON arrays
 
 ### SQL Integration
+
 All queries use Ignite's SQL API with prepared statements:
+
 ```java
 Statement stmt = sql.statementBuilder()
     .query("SELECT ... WHERE ArtistId = ?")
@@ -122,6 +137,7 @@ Statement stmt = sql.statementBuilder()
 ## Running Individual Modules
 
 Each module can be run independently:
+
 ```bash
 # Run specific module
 java -cp target/07-compute-api-app-1.0.0.jar:... \
@@ -145,24 +161,26 @@ java -cp target/07-compute-api-app-1.0.0.jar:... \
 ## Troubleshooting
 
 ### ClassNotFoundException
+
 Ensure JAR is deployed to cluster:
+
 ```bash
 mvn clean package
 # Check deployment status in logs
 ```
 
 ### Column Not Found
+
 Ignite 3 normalizes all SQL metadata to uppercase:
+
 - Use `row.stringValue("NAME")` not `row.stringValue("name")`
 - Column aliases are also uppercased
 
 ### Marshalling Exceptions
+
 Complex types use JSON serialization:
+
 - Jobs return String instead of POJOs
 - Parse JSON in result processors
 
-## Further Reading
-
-- [Apache Ignite 3 Documentation](https://ignite.apache.org/docs/3.0.0/)
-- [Compute API Guide](https://ignite.apache.org/docs/3.0.0/compute/compute)
-- [SQL Reference](https://ignite.apache.org/docs/3.0.0/sql-reference/ddl)
+**Related Documentation**: [Compute API Processing](../../docs/04-distributed-operations/03-compute-api-processing.md)

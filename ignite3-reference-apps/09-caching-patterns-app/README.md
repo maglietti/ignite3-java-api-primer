@@ -1,12 +1,12 @@
-# Caching Patterns - Apache Ignite 3 Reference
+# Apache Ignite 3 Caching Patterns Application
 
-**Performance optimization with cache-aside, write-through, and write-behind patterns**
+Cache-aside, write-through, and write-behind patterns using Apache Ignite 3.
 
-📖 **Related Documentation**: [Caching Patterns](../../docs/05-performance-scalability/02-caching-strategies.md)
+**Related Documentation**: [Caching Strategies](../../docs/05-performance-scalability/02-caching-strategies.md)
 
 ## Overview
 
-Master performance optimization for music streaming platforms using Ignite 3's caching pattern implementations. Learn how to coordinate multiple data access patterns while maintaining consistency and optimal performance across distributed systems.
+Demonstrates caching patterns for performance optimization in distributed systems. Shows cache-aside for read-heavy workloads, write-through for consistency, and write-behind for high-throughput scenarios.
 
 ## What You'll Learn
 
@@ -19,7 +19,10 @@ Master performance optimization for music streaming platforms using Ignite 3's c
 
 ## Prerequisites
 
-**Required**: Complete [sample-data-setup](../01-sample-data-setup/) to understand the data model and ensure tables exist.
+- Apache Ignite 3 cluster running (see [00-docker setup](../00-docker/README.md))
+- Sample data setup completed ([01-sample-data-setup](../01-sample-data-setup/))
+- Java 17 or higher
+- Maven 3.8+
 
 ## Reference Applications
 
@@ -27,55 +30,39 @@ This module contains caching pattern demonstrations:
 
 ### 1. CacheAsidePatterns
 
-**Application-controlled catalog caching**
+Application-controlled catalog caching:
 
-Demonstrates cache-aside pattern for music catalog data with manual cache management, batch operations, and cache warming strategies.
-
-**Key Features**:
-
-- Manual cache management for artist catalog browsing
-- Batch operations for efficient data loading
-- Cache warming strategies for improved performance
+- Manual cache management for catalog browsing
+- Batch operations for data loading
+- Cache warming strategies
 - Async patterns for non-blocking operations
 
 ### 2. WriteThroughPatterns
 
-**Synchronous customer data updates**
+Synchronous customer data updates:
 
-Shows write-through pattern for customer profile management with transaction guarantees and consistency across systems.
-
-**Key Features**:
-
-- Customer profile synchronization across cache and data store
-- Transaction management for data consistency
-- Error handling with rollback capabilities
-- Consistency guarantees for critical business data
+- Profile synchronization across cache and data store
+- Transaction management
+- Error handling with rollback
+- Consistency guarantees
 
 ### 3. WriteBehindPatterns
 
-**High-throughput analytics event recording**
+High-throughput analytics event recording:
 
-Implements write-behind pattern for analytics data with background processing and high-throughput event recording.
-
-**Key Features**:
-
-- Analytics data buffering for performance optimization
-- Background processing with configurable flush intervals
-- High-throughput event recording for user activity tracking
+- Analytics data buffering
+- Background processing with flush intervals
+- High-throughput event recording
 - Buffer management and overflow handling
 
 ### 4. CachingAPIDemo
 
-**Complete orchestrator demonstrating combined patterns**
+Complete orchestrator demonstrating all patterns:
 
-Runs all caching pattern demonstrations with realistic music streaming scenarios showing how patterns work together.
-
-**Key Features**:
-
-- Combined pattern usage in realistic scenarios
-- Progress reporting and concept explanations
-- Performance monitoring and metrics collection
-- Integration of all three caching patterns
+- Combined pattern usage
+- Progress reporting
+- Performance monitoring
+- Integration of all caching patterns
 
 ## Running the Examples
 
@@ -110,14 +97,6 @@ mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.caching.WriteBehindPa
 
 ```bash
 mvn compile exec:java -Dexec.args="192.168.1.100:10800"
-```
-
-### Complete Workflow
-
-For a clean build and execution:
-
-```bash
-mvn clean compile exec:java
 ```
 
 ## Key Implementation Patterns
@@ -156,35 +135,16 @@ if (eventBuffer.size() >= batchSize) {
 
 ## Performance Characteristics
 
-### Cache-Aside Pattern
+**Cache-Aside**: Read-heavy workloads, eventual consistency, high read performance
 
-- **Best For**: Read-heavy workloads (catalog browsing, search results)
-- **Consistency**: Eventual consistency with manual invalidation
-- **Performance**: High read performance, controlled by application logic
+**Write-Through**: Consistency-critical data, strong consistency, synchronous writes
 
-### Write-Through Pattern  
+**Write-Behind**: High-throughput writes, eventual consistency, minimal write latency
 
-- **Best For**: Consistency-critical data (customer profiles, transactions)
-- **Consistency**: Strong consistency with immediate synchronization
-- **Performance**: Write latency includes both cache and data store operations
+## Common Issues
 
-### Write-Behind Pattern
+**Cache misses**: Implement cache warming for frequently accessed data
 
-- **Best For**: High-throughput writes (analytics events, metrics)
-- **Consistency**: Eventual consistency with asynchronous updates
-- **Performance**: High write throughput with minimal write latency
+**Write-behind overflow**: Monitor buffer sizes and adjust flush intervals
 
-## Production Considerations
-
-- **Pattern Selection**: Choose based on consistency requirements vs. performance needs
-- **Cache Eviction**: Implement appropriate TTL and memory management strategies
-- **Error Handling**: Design graceful degradation when cache operations fail
-- **Monitoring**: Track cache hit ratios, write-behind buffer sizes, and flush latencies
-- **Consistency**: Understand the trade-offs between consistency and performance for each pattern
-
-## Related Examples
-
-- [Table API](../04-table-api-app/) - Object-oriented data access foundations
-- [SQL API](../05-sql-api-app/) - Relational operations used in caching patterns
-- [Transactions](../06-transactions-app/) - ACID guarantees for write-through pattern
-- [Data Streaming](../08-data-streaming-app/) - High-throughput patterns complementing write-behind
+**Consistency issues**: Choose appropriate pattern based on data requirements

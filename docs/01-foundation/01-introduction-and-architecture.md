@@ -59,11 +59,11 @@ graph TB
 
 Your application now needs to:
 
-- **Store catalogs**: 50M+ tracks across multiple regions, accessible in milliseconds
-- **Process purchases**: Handle 10K concurrent transactions with full ACID guarantees  
-- **Generate recommendations**: Analyze listening behavior across petabytes of data in real-time
-- **Ingest events**: Process millions of play events per hour without dropping data
-- **Scale operations**: Handle traffic spikes during album releases and viral content
+* **Store catalogs**: 50M+ tracks across multiple regions, accessible in milliseconds
+* **Process purchases**: Handle 10K concurrent transactions with full ACID guarantees  
+* **Generate recommendations**: Analyze listening behavior across petabytes of data in real-time
+* **Ingest events**: Process millions of play events per hour without dropping data
+* **Scale operations**: Handle traffic spikes during album releases and viral content
 
 Traditional databases hit walls. You need a distributed computing platform built for these demands.
 
@@ -181,16 +181,16 @@ IgniteClient client = IgniteClient.builder()
 
 **Optimal for:**
 
-- Microservices (each service connects independently)
-- Containers and Kubernetes deployments
-- Development and testing
-- When you want to scale apps and storage separately
+* Microservices (each service connects independently)
+* Containers and Kubernetes deployments
+* Development and testing
+* When you want to scale apps and storage separately
 
 **Implementation benefits:**
 
-- Deploy new app versions without touching storage
-- Scale applications based on traffic, storage based on data
-- Simple operational model
+* Deploy new app versions without touching storage
+* Scale applications based on traffic, storage based on data
+* Simple operational model
 
 ### Embedded Node Pattern
 
@@ -220,15 +220,15 @@ IgniteServer server = IgniteServer.start("myApp", configPath, workDir);
 
 **Apply when:**
 
-- Data locality is critical (compute runs where data lives)
-- Legacy systems that can't be easily separated
-- Single-deployment scenarios
+* Data locality is critical (compute runs where data lives)
+* Legacy systems that can't be easily separated
+* Single-deployment scenarios
 
 **Implementation trade-offs:**
 
-- App restarts affect cluster membership
-- More complex deployment coordination
-- Higher memory requirements
+* App restarts affect cluster membership
+* More complex deployment coordination
+* Higher memory requirements
 
 ### Unified Programming Model
 
@@ -340,11 +340,11 @@ Ignite 3 manages data placement and replication through distribution zones - con
 
 Distribution zones specify three critical aspects of data management:
 
-- **Partition Count** determines how many logical pieces your data splits into. More partitions enable better parallelism for large datasets, while fewer partitions reduce coordination overhead for smaller datasets.
+* **Partition Count** determines how many logical pieces your data splits into. More partitions enable better parallelism for large datasets, while fewer partitions reduce coordination overhead for smaller datasets.
 
-- **Replica Count** controls how many copies of each data partition exist across different nodes. More replicas improve fault tolerance and read performance, but require more storage and network bandwidth.
+* **Replica Count** controls how many copies of each data partition exist across different nodes. More replicas improve fault tolerance and read performance, but require more storage and network bandwidth.
 
-- **Node Assignment** specifies which cluster nodes store your data. You can include all nodes for maximum distribution, or restrict data to specific node sets for workload isolation.
+* **Node Assignment** specifies which cluster nodes store your data. You can include all nodes for maximum distribution, or restrict data to specific node sets for workload isolation.
 
 ### Default Zone Implementation
 
@@ -360,16 +360,16 @@ public class Artist {
 
 **Configuration details:**
 
-- **1 replica** (no backups)
-- **25 partitions** (good for small to medium datasets)
-- **All nodes included** (uses entire cluster)
-- **Ready immediately** (no setup required)
+* **1 replica** (no backups)
+* **25 partitions** (good for small to medium datasets)
+* **All nodes included** (uses entire cluster)
+* **Ready immediately** (no setup required)
 
 **Optimal for:**
 
-- Development and learning
-- Proof-of-concept projects
-- Getting started quickly
+* Development and learning
+* Proof-of-concept projects
+* Getting started quickly
 
 **Production consideration:** The default zone provides no fault tolerance. If a node fails, you lose data. For production workloads, you'll want custom zones with multiple replicas.
 
@@ -387,11 +387,11 @@ Your application connects to the Ignite cluster through the client library, whic
 
 Ignite 3's distributed architecture addresses traditional database scaling problems through three key design decisions that shape how you build applications:
 
-- **Unified Platform Approach** - Instead of managing separate cache, database, and compute systems, your application connects to one platform that provides all capabilities. This eliminates the operational complexity of coordinating multiple systems while providing better performance through data locality.
+* **Unified Platform Approach** - Instead of managing separate cache, database, and compute systems, your application connects to one platform that provides all capabilities. This eliminates the operational complexity of coordinating multiple systems while providing better performance through data locality.
 
-- **Multi-API Flexibility** - The same distributed data is accessible through Table API for object operations, SQL API for complex queries, and Key-Value API for high-performance access. This means you can optimize each operation type without architectural compromises.
+* **Multi-API Flexibility** - The same distributed data is accessible through Table API for object operations, SQL API for complex queries, and Key-Value API for high-performance access. This means you can optimize each operation type without architectural compromises.
 
-- **Transparent Distribution** - Data spreads across cluster nodes automatically through distribution zones, while your application code remains unaware of the underlying data placement. Adding nodes increases capacity without application changes.
+* **Transparent Distribution** - Data spreads across cluster nodes automatically through distribution zones, while your application code remains unaware of the underlying data placement. Adding nodes increases capacity without application changes.
 
 These design decisions create a development experience where distributed systems complexity is handled by the platform, allowing your application logic to focus on business requirements rather than infrastructure concerns.
 
@@ -399,24 +399,24 @@ These design decisions create a development experience where distributed systems
 
 **Required software stack:**
 
-- **Java 17+**: Modern JDK
-- **Maven 3.8+**: Build and dependency management
-- **Docker**: Version 20.10.0 or newer (12GB RAM recommended)
-- **Docker Compose**: Version 2.23.1 or newer
+* **Java 17+**: Modern JDK
+* **Maven 3.8+**: Build and dependency management
+* **Docker**: Version 20.10.0 or newer (12GB RAM recommended)
+* **Docker Compose**: Version 2.23.1 or newer
 
 **Installation approach:**
 
 > [!NOTE]
 > Docker installation is preferred but not required.
 
-- **For Unix-based systems (Linux, macOS)** - Use the Docker setup instructions at [Apache Ignite 3 Docker Installation Guide](https://ignite.apache.org/docs/ignite3/latest/installation/installing-using-docker).
+* **For Unix-based systems (Linux, macOS)** - Use the Docker setup instructions at [Apache Ignite 3 Docker Installation Guide](https://ignite.apache.org/docs/ignite3/latest/installation/installing-using-docker).
 
-- **For Windows and other systems** - Follow the installation instructions at [https://ignite.apache.org/docs/ignite3/latest/installation/](https://ignite.apache.org/docs/ignite3/latest/installation/) which covers all supported platforms and installation methods.
+* **For Windows and other systems** - Follow the installation instructions at [https://ignite.apache.org/docs/ignite3/latest/installation/](https://ignite.apache.org/docs/ignite3/latest/installation/) which covers all supported platforms and installation methods.
 
 Alternative installation methods are available for environments where Docker is not suitable.
 
 **Required knowledge base:**
 
-- Java fundamentals (collections, generics, streams)
-- Basic SQL concepts (SELECT, JOIN, GROUP BY)
-- General understanding of web application architecture
+* Java fundamentals (collections, generics, streams)
+* Basic SQL concepts (SELECT, JOIN, GROUP BY)
+* General understanding of web application architecture
