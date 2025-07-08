@@ -1,462 +1,168 @@
-# Compute API - Apache Ignite 3 Reference
+# Apache Ignite 3 Compute API Application
 
-**Distributed processing and job execution**
-
-📖 **Related Documentation**: [Compute API - Distributed Processing](../../docs/04-distributed-operations/03-compute-api-processing.md)
+Distributed job execution patterns for Apache Ignite 3, demonstrating how to build scalable compute workflows in a music streaming platform context.
 
 ## Overview
 
-Harness Ignite 3's distributed computing capabilities to process data where it lives. Learn job execution, data colocation, and distributed algorithms using the music store dataset.
-
-## What You'll Learn
-
-- **Compute Jobs**: Execute code on cluster nodes
-- **Data Colocation**: Process data where it's stored for performance
-- **Job Targeting**: Control where jobs execute
-- **Distributed Algorithms**: Implement MapReduce patterns
-- **Error Handling**: Deal with node failures and retries
-- **Performance Optimization**: Maximize throughput with parallel processing
+This application demonstrates Apache Ignite 3's Compute API through practical examples ranging from basic job submission to production-scale distributed processing patterns. Each module focuses on specific distributed computing concepts using real music store data.
 
 ## Prerequisites
 
-**Required**: Complete [sample-data-setup](../01-sample-data-setup/) for data and understanding of colocation.
-
-## Reference Applications
-
-This module provides compute demonstrations:
-
-### 1. BasicComputeOperations - Job Submission Fundamentals (314 lines)
-
-Core compute patterns:
-
-- **HelloWorldJob**: Simple distributed job execution
-- **NodeInfoJob**: Execution context access and node information
-- **ArtistSearchJob**: Parameterized jobs with SQL queries
-- **TrackCountJob**: Data aggregation across cluster
-- **GenreAnalysisJob**: Complex multi-table analysis
-- **Key Concepts**: Job creation, targeting strategies, async execution
-
-### 2. AdvancedComputeOperations - Data Locality Patterns (264 lines)
-
-Distributed performance optimization:
-
-- **Data Colocation**: Jobs execute where data resides for optimal performance
-- **Broadcast Execution**: Cluster-wide operations for health monitoring
-- **Performance Comparison**: Timing colocated vs any-node execution
-- **Job Coordination**: Orchestrating multiple distributed jobs
-- **Key Concepts**: Data locality, broadcast patterns, performance optimization
-
-### 3. AdvancedComputeJobs - Job Implementations (223 lines)
-
-Job implementations for data locality patterns:
-
-- **ArtistAnalysisJob**: Colocated artist data analysis
-- **CustomerAnalysisJob**: Customer data processing with data locality
-- **ArtistSalesAnalysisJob**: Revenue analysis for performance comparison
-- **ClusterHealthJob**: Node health reporting for broadcast patterns
-- **LocalDataCountJob**: Data distribution analysis
-- **GenreMapJob**: MapReduce-style genre statistics
-
-### 4. ComputeJobWorkflows - Business Process Automation (129 lines)
-
-Multi-step workflow demonstrations:
-
-- **CustomerAnalyticsWorkflow**: Customer segmentation analysis
-- **String-based Serialization**: Compatible data exchange patterns
-- **Key Concepts**: Job coordination, workflow orchestration
-
-### 5. ComputeJobDeployment - Deployment Utilities (189 lines)
-
-Deployment utilities for cluster management:
-
-- **REST API Integration**: Automated JAR deployment via HTTP
-- **Error Handling**: Comprehensive fallback options
-- **Development Support**: Automatic deployment detection
-- **Production Patterns**: Deployment unit management
-
-### 6. ProductionComputePatterns - Production-Scale Patterns (650+ lines)
-
-Production-ready compute patterns for real-world music streaming platforms:
-
-- **Large-scale Recommendation Processing**: Handle millions of user profiles with distributed algorithms
-- **Performance-optimized Data Colocation**: Artist-specific analytics with optimized job placement
-- **Advanced MapReduce Workflows**: Complex analytics with custom aggregation patterns
-- **Circuit Breaker Patterns**: Protect system resources from cascading failures
-- **Performance Monitoring**: Track job execution metrics and resource utilization
-- **Cross-node Result Coordination**: Merge and aggregate results from distributed processing
-- **Key Concepts**: Production resilience, scalability patterns, real-world scenarios
-
-### 7. MusicPlatformIntelligence - Documentation-Aligned Examples (500+ lines)
-
-Code examples that directly match the enhanced documentation patterns:
-
-- **ArtistPopularityJob**: Artist analytics demonstrating data movement to computation movement
-- **UserRecommendationJob**: User-specific recommendations with data locality optimization
-- **DistributedRecommendationProcessor**: Concurrent user processing with async patterns
-- **MusicTrendMapReduceExample**: Platform-wide MapReduce analytics for trend detection
-- **ResilientMusicJobProcessor**: Production error handling with exponential backoff retry
-- **Key Concepts**: Documentation alignment, music platform narrative, real-world intelligence
-
-### 8. ComputeAPIDemo - Complete Demonstration (130+ lines)
-
-Main orchestrator that runs all compute patterns in educational progression with detailed output formatting.
-
-### Music Store Use Cases
-
-- **Artist Analysis**: Calculate statistics for artist catalogs
-- **Genre Analytics**: Process tracks by genre across the cluster
-- **Sales Reporting**: Distributed revenue calculations
-- **Recommendation Engine**: Collaborative filtering algorithms
-- **Data Aggregation**: Roll up statistics from partitioned data
-
-### Implementation Features
-
-- **Modular Design**: Job implementations organized by functionality
-- **Data Locality**: Colocated job execution for performance optimization
-- **Broadcast Patterns**: Cluster-wide operations for monitoring and analysis
-- **Workflow Orchestration**: Multi-step business process automation
-
-### Technical Patterns
-
-- **SQL Compliance**: Proper alias usage in Ignite 3 SQL queries
-- **Resource Management**: Try-with-resources patterns for connection handling
-- **Error Handling**: Meaningful error messages with recovery suggestions
-- **Documentation**: JavaDoc explaining distributed systems concepts
-
-## Deployment Script Reference
-
-This module includes `deploy-jar.sh`, a reference script for deploying JAR files to Ignite clusters via REST API.
-
-### Script Features
-
-- **REST API Integration**: Automatically deploys JARs using Ignite 3 management API
-- **Error Handling**: Graceful handling of connection and deployment errors
-- **Status Validation**: Check deployment progress and final status
-- **Fallback Options**: Provides CLI alternatives when REST API fails
-- **Cluster Configuration**: Support for different hosts, ports, and deployment modes
-- **User-Friendly Output**: Colored output with clear progress indication
-
-### Usage Examples
-
-```bash
-# Basic deployment
-./deploy-jar.sh my-jobs 1.0.0 target/my-jobs.jar
-
-# Deploy with all options
-./deploy-jar.sh \
-  --host 192.168.1.100 \
-  --port 10300 \
-  --mode ALL \
-  --check \
-  --remove \
-  --verbose \
-  data-processors 2.1.0 processors.jar
-
-# Status check only
-./deploy-jar.sh --check my-jobs 1.0.0 ""
-```
-
-### Script Options
-
-| Option | Description | Default |
-|--------|-------------|---------|
-| `-h, --host` | Cluster hostname | localhost |
-| `-p, --port` | REST API port | 10300 |
-| `-m, --mode` | Deploy mode (MAJORITY/ALL) | MAJORITY |
-| `-c, --check` | Check deployment status | false |
-| `-r, --remove` | Remove existing before deploy | false |
-| `-v, --verbose` | Enable detailed output | false |
-| `--validate` | Validate cluster state pre-deployment | false |
-| `--monitor` | Monitor compute jobs post-deployment | false |
-| `--metrics` | Enable compute metrics | false |
-| `--help` | Show complete usage | - |
-
-### Advanced Features
-
-**Cluster Validation (`--validate`):**
-
-- Verifies cluster initialization status
-- Checks CMG (Cluster Management Group) nodes
-- Validates cluster topology and node availability
-- Prevents deployment to unhealthy clusters
-
-**Enhanced Status Checking (`--check`):**
-
-- Cluster-wide deployment status verification
-- Per-node deployment verification
-- Version-specific status tracking
-- Deployment consistency validation
-
-**Compute Job Monitoring (`--monitor`):**
-
-- Lists all active compute jobs
-- Shows job status, ID, and creation time
-- Monitors job execution after deployment
-- Helps troubleshoot job execution issues
-
-**Metrics Enablement (`--metrics`):**
-
-- Enables compute-specific cluster metrics
-- Supports performance monitoring and diagnostics
-- Prepares cluster for job execution monitoring
-- Facilitates troubleshooting and optimization
-
-**Complete Workflow Example:**
-
-```bash
-# Full deployment with all features
-./deploy-jar.sh \
-  --validate \
-  --metrics \
-  --check \
-  --monitor \
-  --verbose \
-  compute-jobs 1.0.0 target/app.jar
-
-# Development workflow with validation
-./deploy-jar.sh --validate --check my-jobs 1.0.0 target/jobs.jar && mvn exec:java
-
-# Production deployment with monitoring
-./deploy-jar.sh -h prod-cluster.company.com --validate --metrics --monitor production-jobs 2.0.0 app.jar
-```
-
-### Integration Patterns
-
-The script can be integrated into various workflows:
-
-**Development Workflow:**
-
-```bash
-mvn package && ./deploy-jar.sh compute-jobs 1.0.0 target/app.jar
-```
-
-**CI/CD Pipeline:**
-
-```bash
-./deploy-jar.sh -h $CLUSTER_HOST -c production-jobs $BUILD_VERSION $JAR_PATH
-```
-
-**Multi-Environment Deployment:**
-
-```bash
-for env in dev staging prod; do
-  ./deploy-jar.sh -h ${env}-cluster.company.com my-jobs 1.0.0 app.jar
-done
-```
+- Java 11 or higher
+- Apache Ignite 3 cluster running locally
+- Sample music store data loaded (see main project README)
 
 ## Quick Start
 
-**Build and run all demos:**
-
 ```bash
-# Build JAR and deploy to cluster
-mvn package
-./deploy-jar.sh compute-jobs 1.0.0 target/07-compute-api-app-1.0.0.jar
+# Build the application
+mvn clean package
 
-# Run demos
-mvn compile exec:java
+# Run the complete demo
+mvn exec:java
+
+# Or run with custom cluster address
+mvn exec:java -Dexec.args="192.168.1.100:10800"
 ```
 
-**Alternative - automatic deployment:**
+## Architecture
 
+The application consists of five progressive modules:
+
+### 1. Basic Compute Operations (`BasicComputeOperations.java`)
+- Simple job execution patterns
+- Parameterized job inputs
+- SQL-based distributed queries
+- Asynchronous job execution
+
+### 2. Advanced Compute Operations (`AdvancedComputeOperations.java`)
+- Data-colocated job execution
+- Broadcast patterns across all nodes
+- Performance comparison of colocation strategies
+- MapReduce coordination patterns
+
+### 3. Compute Job Workflows (`ComputeJobWorkflows.java`)
+- Multi-step business process automation
+- Customer analytics pipelines
+- Music recommendation workflows
+- Revenue optimization analysis
+
+### 4. Production Compute Patterns (`ProductionComputePatterns.java`)
+- Large-scale recommendation engine processing
+- Hierarchical data colocation strategies
+- Circuit breaker patterns for resilience
+- Performance monitoring and metrics
+
+### 5. Music Platform Intelligence (`MusicPlatformIntelligence.java`)
+- Artist popularity analysis
+- User recommendation processing with data locality
+- Concurrent user processing patterns
+- MapReduce trend detection
+
+## Key Concepts Demonstrated
+
+### Data Locality and Colocation
+Jobs execute on nodes where data resides, minimizing network overhead:
+```java
+JobTarget colocatedTarget = JobTarget.colocated("Artist", 
+    Tuple.create(Map.of("ArtistId", 1)));
+```
+
+### Distributed MapReduce
+Parallel processing across cluster nodes with result aggregation:
+```java
+// Map phase executes on each node
+// Reduce phase aggregates results
+```
+
+### Resilient Job Execution
+Circuit breaker patterns and retry logic for production reliability:
+```java
+// Exponential backoff retry
+// Failure isolation and recovery
+```
+
+### Performance Optimization
+- JSON serialization for cross-node compatibility
+- Batch processing for large datasets
+- Async execution patterns
+
+## Data Model
+
+The application uses music store sample data:
+- **Artists** → Albums → Tracks (hierarchical relationship)
+- **Customers** → Invoices → Invoice Lines (transactional data)
+- **Genres** and **Media Types** (reference data)
+
+All data is colocated by primary keys (ArtistId, CustomerId) for optimal performance.
+
+## Technical Implementation
+
+### Job Deployment
+Jobs are packaged and deployed to the cluster via REST API:
 ```bash
-# Build and run (application attempts automatic deployment)
-mvn package
-mvn compile exec:java
+# Automatic deployment on startup
+# Manual deployment: curl -X POST http://localhost:10300/management/v1/deployment/units/...
 ```
 
-## Job Deployment Requirements
+### Serialization Strategy
+Complex types are serialized as JSON strings to ensure cross-node compatibility:
+- POJOs → JSON strings
+- Maps → JSON objects
+- Lists → JSON arrays
 
-For standalone Ignite clusters, job classes must be deployed before execution. If you encounter "Deployment units list is empty" errors:
+### SQL Integration
+All queries use Ignite's SQL API with prepared statements:
+```java
+Statement stmt = sql.statementBuilder()
+    .query("SELECT ... WHERE ArtistId = ?")
+    .build();
+```
 
-### 1. Build JAR with Job Classes
+## Running Individual Modules
 
+Each module can be run independently:
 ```bash
-mvn package
+# Run specific module
+java -cp target/07-compute-api-app-1.0.0.jar:... \
+    com.apache.ignite.examples.compute.BasicComputeOperations
+
+# Available main classes:
+# - BasicComputeOperations
+# - AdvancedComputeOperations
+# - ComputeJobWorkflows
+# - ProductionComputePatterns
+# - MusicPlatformIntelligence
 ```
 
-This creates `target/07-compute-api-app-1.0.0.jar` containing all job implementations.
+## Performance Considerations
 
-### 2. Deploy JAR to Cluster
+1. **Data Colocation**: Jobs execute where data resides
+2. **Batch Processing**: Process multiple records per job
+3. **Connection Pooling**: Reuse SQL connections within jobs
+4. **Result Aggregation**: Minimize data transfer between nodes
 
-**Using Deployment Script (Recommended):**
+## Troubleshooting
 
-This module includes a deployment script that handles REST API deployment with fallback options:
-
+### ClassNotFoundException
+Ensure JAR is deployed to cluster:
 ```bash
-# Deploy compute jobs JAR (automatic REST API deployment)
-./deploy-jar.sh compute-jobs 1.0.0 target/07-compute-api-app-1.0.0.jar
-
-# Deploy with status check
-./deploy-jar.sh -c compute-jobs 1.0.0 target/07-compute-api-app-1.0.0.jar
-
-# Deploy to specific cluster
-./deploy-jar.sh -h 192.168.1.100 -p 10300 compute-jobs 1.0.0 target/07-compute-api-app-1.0.0.jar
-
-# Replace existing deployment
-./deploy-jar.sh -r compute-jobs 1.0.0 target/07-compute-api-app-1.0.0.jar
-
-# Check deployment status only
-./deploy-jar.sh -c compute-jobs 1.0.0 ""
-
-# Show all options
-./deploy-jar.sh --help
+mvn clean package
+# Check deployment status in logs
 ```
 
-**Script Features:**
+### Column Not Found
+Ignite 3 normalizes all SQL metadata to uppercase:
+- Use `row.stringValue("NAME")` not `row.stringValue("name")`
+- Column aliases are also uppercased
 
-- **Automatic REST API deployment** with comprehensive error handling
-- **Cluster validation** with topology verification and health checks
-- **Enhanced status checking** with per-node deployment verification
-- **Compute job monitoring** to track job execution after deployment
-- **Metrics enablement** for performance monitoring and diagnostics
-- **Colored output** with clear progress indication and feedback
-- **Fallback instructions** when deployment fails or API is unavailable
-- **Multi-cluster support** for different hosts, ports, and configurations
-- **Development-friendly** verbose mode for troubleshooting
+### Marshalling Exceptions
+Complex types use JSON serialization:
+- Jobs return String instead of POJOs
+- Parse JSON in result processors
 
-**Manual REST API (Alternative):**
+## Further Reading
 
-```bash
-# Deploy via HTTP REST API (port 10300)
-curl -X POST \
-  "http://localhost:10300/management/v1/deployment/units/compute-jobs/1.0.0?deployMode=MAJORITY" \
-  -H "Content-Type: multipart/form-data" \
-  -F "unitContent=@target/07-compute-api-app-1.0.0.jar"
-```
-
-**Using Docker CLI (Fallback):**
-
-```bash
-# Start containerized Ignite CLI
-docker run --rm -it --network=host -e LANG=C.UTF-8 -e LC_ALL=C.UTF-8 apacheignite/ignite:3.0.0 cli
-
-# Deploy job classes (inside container)
-cluster unit deploy compute-jobs /path/to/target/07-compute-api-app-1.0.0.jar
-```
-
-**Using Local CLI (Fallback):**
-
-```bash
-# Deploy using local Ignite CLI installation
-ignite cluster unit deploy compute-jobs target/07-compute-api-app-1.0.0.jar
-```
-
-### 3. Run Application
-
-```bash
-mvn compile exec:java
-```
-
-**Note**: The application uses the `ComputeJobDeployment` utility class for automatic deployment. Development environments may work with empty deployment units if the cluster has classpath access to job classes.
-
-## Key Technical Notes
-
-### SQL Reserved Words
-
-Ignite 3 does not accept SQL reserved words in AS clauses. All queries use proper aliases:
-
-```sql
--- ✅ Correct
-SELECT COUNT(*) as track_count FROM Track
-
--- ❌ Incorrect (causes parsing errors)
-SELECT COUNT(*) as count FROM Track
-```
-
-### Serialization Patterns
-
-String-based serialization for distributed job results:
-
-- **MapReduce Results**: CSV string format for `Map<String, Integer>` data
-- **Job Coordination**: Newline-separated strings for `List<String>` data  
-- **Workflow Data**: String-based data exchange for distributed processing
-
-### Class Organization
-
-Organized for educational progression:
-
-- **BasicComputeOperations**: Core patterns (314 lines)
-- **AdvancedComputeOperations**: Data locality focus (264 lines)
-- **Utility Classes**: Deployment and job implementations
-- **Learning Path**: Basic → Advanced → Workflows
-
-## Java Version Compatibility
-
-If you encounter **"unsupported class file version"** errors:
-
-```text
-!!! Job execution failed: com/apache/ignite/examples/compute/BasicComputeOperations$NodeInfoJob 
-    has been compiled by a more recent version of the Java Runtime 
-    (class file version 61.0), this version of the Java Runtime only recognizes 
-    class file versions up to 55.0
-```
-
-This indicates a Java version mismatch between your application and cluster:
-
-### Quick Solutions
-
-**Option 1: Upgrade Cluster to Java 17** (Recommended)
-
-```bash
-# Ensure cluster runs on Java 17
-export JAVA_HOME=/path/to/java-17
-./ignite node start
-
-# Or use Java 17 Docker image
-docker run -p 10800:10800 -p 10300:10300 apacheignite/ignite:3.0.0-jdk17
-```
-
-**Option 2: Compile Application for Java 11**
-
-```xml
-<!-- In pom.xml -->
-<properties>
-    <maven.compiler.source>11</maven.compiler.source>
-    <maven.compiler.target>11</maven.compiler.target>
-</properties>
-```
-
-**Option 3: Use Maven Release Flag**
-
-```xml
-<plugin>
-    <groupId>org.apache.maven.plugins</groupId>
-    <artifactId>maven-compiler-plugin</artifactId>
-    <configuration>
-        <release>11</release>
-    </configuration>
-</plugin>
-```
-
-### Automatic Detection
-
-The deployment script can detect version mismatches:
-
-```bash
-# Use --validate to check Java compatibility
-./deploy-jar.sh --validate compute-jobs 1.0.0 target/07-compute-api-app-1.0.0.jar
-```
-
-**Run individual demos:**
-
-```bash
-# Basic patterns
-mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.compute.BasicComputeOperations"
-
-# Advanced patterns with data locality
-mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.compute.AdvancedComputeOperations"
-
-# Multi-step workflows
-mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.compute.ComputeJobWorkflows"
-
-# Production-scale patterns
-mvn exec:java -Dexec.mainClass="com.apache.ignite.examples.compute.ProductionComputePatterns"
-```
-
-## Related Modules
-
-- **Prerequisites**: [sample-data-setup](../sample-data-setup/) - Understanding colocation
-- **Foundation**: [table-api-app](../table-api-app/) - Data access patterns
-- **Integration**: [transactions-app](../transactions-app/) - Transactional compute
-- **Advanced**: [data-streaming-app](../data-streaming-app/) - Stream processing
+- [Apache Ignite 3 Documentation](https://ignite.apache.org/docs/3.0.0/)
+- [Compute API Guide](https://ignite.apache.org/docs/3.0.0/compute/compute)
+- [SQL Reference](https://ignite.apache.org/docs/3.0.0/sql-reference/ddl)
