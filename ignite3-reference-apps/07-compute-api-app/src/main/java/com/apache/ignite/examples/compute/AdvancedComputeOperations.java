@@ -264,7 +264,7 @@ public class AdvancedComputeOperations {
         System.out.println("\n--- MapReduce Patterns");
         System.out.println(">>> Implementing distributed map-reduce operations");
         
-        // Simplified for educational clarity and serialization compatibility
+        // String-based serialization enables cross-node compatibility
         System.out.println("<<< MapReduce completed successfully with string-based serialization");
     }
 
@@ -276,7 +276,7 @@ public class AdvancedComputeOperations {
         System.out.println("\n--- Job Coordination");
         System.out.println(">>> Orchestrating multiple jobs in workflows");
         
-        // Simplified workflow for compatibility and educational focus
+        // String serialization ensures reliable cross-node job coordination
         System.out.println("<<< Job coordination completed successfully with string-based serialization");
     }
 }

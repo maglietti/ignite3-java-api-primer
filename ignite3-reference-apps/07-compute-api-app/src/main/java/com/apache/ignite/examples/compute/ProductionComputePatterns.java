@@ -37,9 +37,9 @@ import java.util.stream.Collectors;
 /**
  * Demonstrates production-scale compute patterns using Apache Ignite 3.
  * 
- * Implements comprehensive distributed computing patterns for real-world
- * music streaming platform scenarios including recommendation algorithms,
- * analytics workflows, and performance optimization strategies.
+ * Implements distributed computing patterns for music streaming platform
+ * scenarios including recommendation algorithms, analytics workflows, and
+ * performance optimization strategies.
  * 
  * Key patterns demonstrated:
  * - Large-scale recommendation engine processing
