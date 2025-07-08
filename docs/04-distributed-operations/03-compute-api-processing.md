@@ -44,12 +44,15 @@ mvn package
 mvn compile exec:java
 ```
 
+The reference application automatically deploys job classes to the cluster using REST API. If automatic deployment fails, fallback instructions are provided for manual deployment via CLI or Docker.
+
 The reference application showcases the complete journey from basic job execution to production-scale recommendation processing:
 
 - **BasicComputeOperations** - Foundation patterns for distributed job execution and parameterized processing
-- **AdvancedComputeOperations** - Data locality optimization and cluster-wide broadcast operations  
-- **ComputeJobWorkflows** - Multi-step recommendation pipelines and business process automation
-- **ProductionComputePatterns** - Large-scale user analysis, resilience patterns, and performance monitoring
+- **AdvancedComputeOperations** - Data locality optimization and complex patterns  
+- **ComputeJobWorkflows** - Multi-step business process automation
+- **ProductionComputePatterns** - Production-scale distributed computing
+- **MusicPlatformIntelligence** - Documentation-aligned compute patterns
 
 The reference app integrates with the transaction patterns from [Chapter 4.1](01-transaction-fundamentals.md) to ensure data consistency during distributed processing workflows.
 
@@ -151,11 +154,21 @@ Map<String, Integer> popularity = analyzePopularity(allArtists);
 ```java
 import org.apache.ignite.client.IgniteClient;
 import org.apache.ignite.compute.*;
+import org.apache.ignite.deployment.DeploymentUnit;
+import org.apache.ignite.sql.IgniteSql;
+import org.apache.ignite.sql.ResultSet;
+import org.apache.ignite.sql.SqlRow;
+import org.apache.ignite.sql.Statement;
+import java.io.Serializable;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 // Step 1: Create your analysis as a distributed job
-public class ArtistPopularityJob implements ComputeJob<Void, Map<String, Integer>> {
+public class ArtistPopularityJob implements ComputeJob<Void, String>, Serializable {
+    private static final long serialVersionUID = 1L; // Required for distributed class loading
     @Override
-    public CompletableFuture<Map<String, Integer>> executeAsync(JobExecutionContext context, Void input) {
+    public CompletableFuture<String> executeAsync(JobExecutionContext context, Void input) {
         return CompletableFuture.supplyAsync(() -> {
             // Execute analysis using local data on this node
             IgniteSql sql = context.ignite().sql();
@@ -167,14 +180,21 @@ public class ArtistPopularityJob implements ComputeJob<Void, Map<String, Integer
                        "GROUP BY a.ArtistId, a.Name")
                 .build();
             
-            Map<String, Integer> localPopularity = new HashMap<>();
+            // Return results as JSON for network efficiency
+            StringBuilder json = new StringBuilder("{");
+            boolean first = true;
             try (ResultSet<SqlRow> rs = sql.execute(null, stmt)) {
                 while (rs.hasNext()) {
                     SqlRow row = rs.next();
-                    localPopularity.put(row.stringValue("Name"), row.intValue("play_count"));
+                    if (!first) json.append(",");
+                    first = false;
+                    String name = row.stringValue("NAME").replace("\"", "\\\"");
+                    json.append("\"").append(name).append("\":");
+                    json.append(row.longValue("PLAY_COUNT"));
                 }
             }
-            return localPopularity;
+            json.append("}");
+            return json.toString();
         });
     }
 }
@@ -185,16 +205,22 @@ try (IgniteClient client = IgniteClient.builder()
         .build()) {
     
     // Deploy your algorithm to any available node
-    JobDescriptor<Void, Map<String, Integer>> job = 
-        JobDescriptor.builder(ArtistPopularityJob.class).build();
+    List<DeploymentUnit> units = List.of(
+        new DeploymentUnit("compute-jobs", "1.0.0")); // Specifies job class location
+    JobDescriptor<Void, String> job = 
+        JobDescriptor.<Void, String>builder(ArtistPopularityJob.class)
+            .units(units)
+            .resultClass(String.class)
+            .build();
     JobTarget target = JobTarget.anyNode(client.clusterNodes());
     
     // Execute analysis where data lives
-    Map<String, Integer> results = client.compute().execute(target, job, null);
+    String jsonResults = client.compute().execute(target, job, null);
     
-    // Process results
+    // Parse and process results
+    Map<String, Long> results = parseArtistPopularityJson(jsonResults);
     results.entrySet().stream()
-        .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+        .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
         .limit(10)
         .forEach(entry -> 
             System.out.println(entry.getKey() + ": " + entry.getValue() + " plays"));
@@ -217,6 +243,8 @@ The real power of distributed computing emerges when you eliminate network hops 
 Traditional systems pull user profiles across the network for centralized analysis. The Compute API processes recommendations locally on nodes containing user data:
 
 ```java
+import org.apache.ignite.table.Tuple;
+
 public static class UserRecommendationJob implements ComputeJob<Integer, String>, Serializable {
     private static final long serialVersionUID = 1L;
     @Override
@@ -264,6 +292,13 @@ public static class UserRecommendationJob implements ComputeJob<Integer, String>
 Tuple userKey = Tuple.create(Map.of("CustomerId", customerId));
 JobTarget target = JobTarget.colocated("Customer", userKey);
 
+JobDescriptor<Integer, String> job = 
+    JobDescriptor.<Integer, String>builder(UserRecommendationJob.class)
+        .units(List.of(new DeploymentUnit("compute-jobs", "1.0.0")))
+        .resultClass(String.class)
+        .build();
+
+String jsonRecommendations = client.compute().execute(target, job, customerId);
 List<String> recommendations = parseRecommendationsJson(jsonRecommendations);
 ```
 
@@ -283,7 +318,8 @@ Your music platform requires three distinct job targeting strategies, each optim
 When your algorithm doesn't depend on specific data location, distribute work across available cluster resources for optimal load balancing:
 
 ```java
-public class PlaylistGenerationJob implements ComputeJob<String, List<String>> {
+public class PlaylistGenerationJob implements ComputeJob<String, List<String>>, Serializable {
+    private static final long serialVersionUID = 1L;
     @Override
     public CompletableFuture<List<String>> executeAsync(JobExecutionContext context, String genre) {
         return CompletableFuture.supplyAsync(() -> {
@@ -295,8 +331,11 @@ public class PlaylistGenerationJob implements ComputeJob<String, List<String>> {
 
 // Let Ignite choose the best available node
 JobTarget target = JobTarget.anyNode(client.clusterNodes());
-List<String> playlist = client.compute().execute(target, 
-    JobDescriptor.builder(PlaylistGenerationJob.class).build(), "Rock");
+JobDescriptor<String, List<String>> job = 
+    JobDescriptor.<String, List<String>>builder(PlaylistGenerationJob.class)
+        .units(List.of(new DeploymentUnit("compute-jobs", "1.0.0")))
+        .build();
+List<String> playlist = client.compute().execute(target, job, "Rock");
 ```
 
 **Use Case:** Playlist generation, content ranking algorithms, format conversions
@@ -310,6 +349,12 @@ When algorithms must access specific data, target jobs to nodes containing that 
 Tuple artistKey = Tuple.create(Map.of("ArtistId", artistId));
 JobTarget target = JobTarget.colocated("Artist", artistKey);
 
+JobDescriptor<Integer, String> artistAnalysisJob = 
+    JobDescriptor.<Integer, String>builder(ArtistAnalysisJob.class)
+        .units(List.of(new DeploymentUnit("compute-jobs", "1.0.0")))
+        .resultClass(String.class)
+        .build();
+
 // Analysis executes locally without network data access
 String insights = client.compute().execute(target, artistAnalysisJob, artistId);
 ```
@@ -321,9 +366,10 @@ String insights = client.compute().execute(target, artistAnalysisJob, artistId);
 When you need comprehensive platform insights, execute the same analysis across all nodes:
 
 ```java
-public class GlobalTrendAnalysisJob implements ComputeJob<Void, Map<String, Integer>> {
+public class GlobalTrendAnalysisJob implements ComputeJob<Void, String>, Serializable {
+    private static final long serialVersionUID = 1L;
     @Override
-    public CompletableFuture<Map<String, Integer>> executeAsync(JobExecutionContext context, Void input) {
+    public CompletableFuture<String> executeAsync(JobExecutionContext context, Void input) {
         return CompletableFuture.supplyAsync(() -> {
             // Analyze trends using local data on this node
             IgniteSql sql = context.ignite().sql();
@@ -331,18 +377,24 @@ public class GlobalTrendAnalysisJob implements ComputeJob<Void, Map<String, Inte
                 .query("SELECT g.Name, COUNT(*) as local_plays " +
                        "FROM Genre g JOIN Track t ON g.GenreId = t.GenreId " +
                        "JOIN InvoiceLine il ON t.TrackId = il.TrackId " +
-                       "WHERE il.InvoiceDate >= CURRENT_DATE - 7 " +
+                       "WHERE il.InvoiceDate >= CURRENT_DATE - INTERVAL '7' DAY " +
                        "GROUP BY g.GenreId, g.Name")
                 .build();
             
-            Map<String, Integer> localTrends = new HashMap<>();
+            StringBuilder json = new StringBuilder("{");
+            boolean first = true;
             try (ResultSet<SqlRow> rs = sql.execute(null, stmt)) {
                 while (rs.hasNext()) {
                     SqlRow row = rs.next();
-                    localTrends.put(row.stringValue("Name"), row.intValue("local_plays"));
+                    if (!first) json.append(",");
+                    first = false;
+                    String name = row.stringValue("NAME").replace("\"", "\\\"");
+                    json.append("\"").append(name).append("\":");
+                    json.append(row.longValue("LOCAL_PLAYS"));
                 }
             }
-            return localTrends;
+            json.append("}");
+            return json.toString();
         });
     }
 }
@@ -351,16 +403,22 @@ public class GlobalTrendAnalysisJob implements ComputeJob<Void, Map<String, Inte
 Collection<ClusterNode> allNodes = client.clusterNodes();
 JobTarget broadcastTarget = JobTarget.nodes(allNodes);
 
+JobDescriptor<Void, String> job = 
+    JobDescriptor.<Void, String>builder(GlobalTrendAnalysisJob.class)
+        .units(List.of(new DeploymentUnit("compute-jobs", "1.0.0")))
+        .resultClass(String.class)
+        .build();
+
 // Aggregate results from all nodes
-Map<String, Integer> globalTrends = new HashMap<>();
-Collection<Map<String, Integer>> nodeResults = client.compute()
-    .execute(broadcastTarget, 
-        JobDescriptor.builder(GlobalTrendAnalysisJob.class).build(), null);
+Map<String, Long> globalTrends = new HashMap<>();
+Collection<String> nodeJsonResults = client.compute()
+    .execute(broadcastTarget, job, null);
 
 // Combine trends from all nodes
-for (Map<String, Integer> nodeResult : nodeResults) {
+for (String jsonResult : nodeJsonResults) {
+    Map<String, Long> nodeResult = parseTrendJson(jsonResult);
     nodeResult.forEach((genre, count) -> 
-        globalTrends.merge(genre, count, Integer::sum));
+        globalTrends.merge(genre, count, Long::sum));
 }
 ```
 
@@ -488,17 +546,22 @@ public class AdvancedMusicAnalytics {
 
 ## Advanced Pattern: Platform-Wide MapReduce Analytics
 
-Your music platform's most sophisticated intelligence challenge involves analyzing listening patterns across all users to detect emerging trends, viral content, and market shifts. This requires coordinating analysis across every cluster node and aggregating results into actionable insights.
+Your music platform analyzes listening patterns across all users to detect emerging trends, viral content, and market shifts. This requires coordinating analysis across every cluster node and aggregating results into actionable insights.
 
 ### Music Trend Detection with Distributed MapReduce
 
 ```java
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
+
 public class MusicTrendMapReduceExample {
     
     // Map Phase: Each node analyzes its local data
-    public static class TrendMapJob implements ComputeJob<Void, Map<String, Integer>> {
+    public static class TrendMapJob implements ComputeJob<Void, String>, Serializable {
+        private static final long serialVersionUID = 1L;
         @Override
-        public CompletableFuture<Map<String, Integer>> executeAsync(
+        public CompletableFuture<String> executeAsync(
                 JobExecutionContext context, Void input) {
             return CompletableFuture.supplyAsync(() -> {
                 IgniteSql sql = context.ignite().sql();
@@ -509,44 +572,54 @@ public class MusicTrendMapReduceExample {
                            "FROM Track t " +
                            "JOIN InvoiceLine il ON t.TrackId = il.TrackId " +
                            "JOIN Invoice i ON il.InvoiceId = i.InvoiceId " +
-                           "WHERE i.InvoiceDate >= CURRENT_DATE - 7 " +
+                           "WHERE i.InvoiceDate >= CURRENT_DATE - INTERVAL '7' DAY " +
                            "GROUP BY t.TrackId, t.Name " +
                            "HAVING COUNT(*) > 5")  // Filter noise
                     .build();
                 
-                Map<String, Integer> localTrends = new HashMap<>();
+                StringBuilder json = new StringBuilder("{");
+                boolean first = true;
                 try (ResultSet<SqlRow> rs = sql.execute(null, stmt)) {
                     while (rs.hasNext()) {
                         SqlRow row = rs.next();
-                        localTrends.put(row.stringValue("Name"), row.intValue("plays"));
+                        if (!first) json.append(",");
+                        first = false;
+                        String name = row.stringValue("NAME").replace("\"", "\\\"");
+                        json.append("\"").append(name).append("\":");
+                        json.append(row.longValue("PLAYS"));
                     }
                 }
-                return localTrends;
+                json.append("}");
+                return json.toString();
             });
         }
     }
     
     // Orchestrate MapReduce workflow
-    public Map<String, Integer> detectGlobalTrends(IgniteClient client) {
+    public Map<String, Long> detectGlobalTrends(IgniteClient client) {
         // Map Phase: Execute trend analysis on all nodes
         Collection<ClusterNode> allNodes = client.clusterNodes();
         JobTarget broadcastTarget = JobTarget.nodes(allNodes);
-        JobDescriptor<Void, Map<String, Integer>> mapJob = 
-            JobDescriptor.builder(TrendMapJob.class).build();
+        JobDescriptor<Void, String> mapJob = 
+            JobDescriptor.<Void, String>builder(TrendMapJob.class)
+                .units(List.of(new DeploymentUnit("compute-jobs", "1.0.0")))
+                .resultClass(String.class)
+                .build();
         
-        Collection<Map<String, Integer>> mapResults = 
+        Collection<String> mapResults = 
             client.compute().execute(broadcastTarget, mapJob, null);
         
         // Reduce Phase: Aggregate all node results
-        Map<String, Integer> globalTrends = new HashMap<>();
-        for (Map<String, Integer> nodeResult : mapResults) {
+        Map<String, Long> globalTrends = new HashMap<>();
+        for (String jsonResult : mapResults) {
+            Map<String, Long> nodeResult = parseTrendJson(jsonResult);
             nodeResult.forEach((trackName, localPlays) -> 
-                globalTrends.merge(trackName, localPlays, Integer::sum));
+                globalTrends.merge(trackName, localPlays, Long::sum));
         }
         
         // Return top trending tracks globally
         return globalTrends.entrySet().stream()
-            .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+            .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
             .limit(50)  // Top 50 trending tracks
             .collect(Collectors.toMap(
                 Map.Entry::getKey,
@@ -567,9 +640,12 @@ public class MusicTrendMapReduceExample {
 
 ## Production-Ready Resilience Patterns
 
-Your music platform operates under demanding SLAs where failed recommendation jobs directly impact user experience. Production deployments require sophisticated error handling and retry logic:
+Your music platform operates under demanding SLAs where failed recommendation jobs directly impact user experience. Production deployments require error handling and retry logic:
 
 ```java
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
+
 public class ResilientMusicJobProcessor {
     private final IgniteClient client;
     private final int maxRetryAttempts = 3;
@@ -621,15 +697,15 @@ public class ResilientMusicJobProcessor {
 
 ## Production Architecture Summary
 
-The reference application in **`07-compute-api-app`** demonstrates the complete production-ready implementation including:
+The reference application in **`07-compute-api-app`** demonstrates production-ready implementations including:
 
-- **Large-scale User Processing** - Handle millions of recommendation requests with optimal resource utilization
-- **Circuit Breaker Integration** - Protect cluster resources from cascading failures during traffic spikes
-- **Performance Monitoring** - Track job execution metrics, resource consumption, and SLA compliance
-- **Advanced Error Recovery** - Sophisticated retry logic with backoff strategies and failure classification
-- **Resource Optimization** - Dynamic job placement based on cluster load and data locality
+- **Job Deployment** - Automated JAR deployment via REST API with fallback options
+- **Distributed Processing** - Concurrent job execution across cluster nodes
+- **Data Locality** - Colocated execution for user-specific processing
+- **MapReduce Patterns** - Platform-wide analytics with result aggregation
+- **Resilient Execution** - Retry logic with exponential backoff for transient failures
 
-These patterns transform your music platform from a centralized analytics bottleneck into a distributed intelligence system that scales elastically with user growth.
+These patterns transform your music platform from a centralized analytics bottleneck into a distributed intelligence system that scales with your data growth.
 
 ## The Distributed Intelligence Transformation
 
