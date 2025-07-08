@@ -1,10 +1,18 @@
 DUAL LICENSING NOTICE
 =====================
 
-This project is dual-licensed:
+This project is dual-licensed as follows:
 
-1. Documentation (docs/ directory): Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
-    See LICENSE-CC-BY-SA-4.0 file for details.
+1. Documentation (`docs/` directory):
 
-2. Code (ignite3-reference-apps/ directory): Apache License 2.0
-    See LICENSE file for details.
+   - License: Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)
+   - Summary: You may copy, share, and adapt the documentation for non-commercial purposes, as long as you give proper attribution and license any derivatives under the same terms.
+   - See `LICENSE-CC-BY-NC-SA-4.0` for full terms.
+
+2. Code (`ignite3-reference-apps/` directory):
+
+   - License: Apache License 2.0
+   - Summary: You may use, modify, and distribute the code, including for commercial purposes, under the terms of the Apache 2.0 License.
+   - See `LICENSE` for full terms.
+
+For any commercial use of the documentation (e.g., publishing in books, paid courses, or proprietary platforms), you must contact the author to request a separate commercial license.

@@ -118,7 +118,7 @@ Data is distributed across two zones:
 
 This project is dual-licensed:
 
-- **Documentation** (`docs/` directory): [Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)](LICENSE-CC-BY-SA-4.0)
+- **Documentation** (`docs/` directory): [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)](LICENSE-CC-BY-NC-SA-4.0)
 - **Code** (`ignite3-reference-apps/` directory): [Apache License 2.0](LICENSE)
 
 ### Documentation License
@@ -138,4 +138,4 @@ The code examples in the `ignite3-reference-apps/` directory are licensed under 
 - **Private Use**: Use the code in private projects
 - **Commercial Use**: Use the code in commercial projects
 
-For full license terms, see [LICENSE](LICENSE), [LICENSE-CC-BY-SA-4.0](LICENSE-CC-BY-SA-4.0), or the headers in individual files.
+For full license terms, see [LICENSE](LICENSE), [LICENSE-CC-BY-NC-SA-4.0](LICENSE-CC-BY-NC-SA-4.0), or the headers in individual files.

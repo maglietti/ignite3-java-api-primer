@@ -1,7 +1,7 @@
 <!--
-Licensed under Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
-SPDX-License-Identifier: CC-BY-SA-4.0
-For full license text, see LICENSE-CC-BY-SA-4.0
+Licensed under Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)
+SPDX-License-Identifier: CC-BY-NC-SA-4.0
+For full license text, see LICENSE-CC-BY-NC-SA-4.0
 -->
 
 # Chapter 1.2: Your First Ignite 3 Application
