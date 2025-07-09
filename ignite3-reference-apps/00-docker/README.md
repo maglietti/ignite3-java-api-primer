@@ -51,7 +51,7 @@
 
    ```bash
    # Check cluster status (should show "started" state)
-   curl http://localhost:10300/management/v1/cluster/status
+   curl http://localhost:10300/management/v1/cluster/state
    ```
 
 4. **View logs** (optional):
