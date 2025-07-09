@@ -1,16 +1,26 @@
 # IDE Setup Guide
 
-Reference applications run from the command line using Maven. IDE configuration enables code completion, debugging, and integrated build tools.
+Reference applications run from the command line using Maven or Gradle. IDE configuration enables code completion, debugging, and integrated build tools.
 
 ## IntelliJ IDEA
 
 ### Import Project
 
-1. File → New → Select project root directory
-2. Choose "Import project from external model" → Maven
-3. Accept default Maven settings and wait for indexing
+**Important**: The project root is the `ignite3-reference-apps` directory, not the parent directory.
 
-Optionally, you can import from version control: New → Project From Version Control
+#### Option 1: Direct Import (Recommended)
+1. File → Open → Navigate to `ignite3-reference-apps` directory
+2. Select the directory and click OK
+3. IntelliJ will detect both Maven and Gradle configurations
+4. Choose your preferred build system when prompted (Maven or Gradle)
+5. Wait for indexing to complete
+
+#### Option 2: Import from Parent Directory
+1. File → Open → Select the `ignite3-java-api-primer` directory
+2. Navigate to `ignite3-reference-apps` in the Project view
+3. Right-click on `pom.xml` → Add as Maven Project
+   OR
+   Right-click on `build.gradle` → Import Gradle Project
 
 ### Configure JDK
 
@@ -69,9 +79,28 @@ Use integrated terminal: `mvn compile exec:java`
 
 All applications run without IDE configuration:
 
+### Maven
 ```bash
 cd ignite3-reference-apps/[app-name]
 mvn compile exec:java
 ```
 
+### Gradle
+```bash
+cd ignite3-reference-apps/[app-name]
+../gradlew run
+```
+
 IDE configuration provides code completion, debugging, and integrated build tools.
+
+## Troubleshooting
+
+### Module Not Recognized in IDE
+If IntelliJ doesn't recognize all modules after import:
+1. File → Invalidate Caches and Restart
+2. After restart, reimport the project
+3. Ensure all modules appear in Project Structure → Modules
+
+### Maven/Gradle Sync Issues
+- For Maven: View → Tool Windows → Maven → Reimport All Maven Projects
+- For Gradle: View → Tool Windows → Gradle → Refresh All Gradle Projects
