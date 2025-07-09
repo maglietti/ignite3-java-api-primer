@@ -51,6 +51,7 @@
         <module>08-data-streaming-app</module>
         <module>09-caching-patterns-app</module>
         <module>10-file-streaming-app</module>
+        <module>11-performance-optimization-app</module>
     </modules>
 
     <dependencyManagement>
@@ -211,6 +212,17 @@
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-maven-plugin</artifactId>
                     <version>${spring.boot.maven.plugin.version}</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>exec-maven-plugin</artifactId>
+                    <version>3.4.1</version>
+                    <configuration>
+                        <includeProjectDependencies>true</includeProjectDependencies>
+                        <includePluginDependencies>false</includePluginDependencies>
+                        <commandlineArgs>127.0.0.1:10800</commandlineArgs>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>

@@ -17,6 +17,7 @@
     <name>Compute API App</name>
     <description>Apache Ignite 3 compute API distributed processing reference application</description>
 
+    <!-- Java 11 required to match Docker image from DockerHub -->
     <properties>
       <maven.compiler.source>11</maven.compiler.source>
       <maven.compiler.target>11</maven.compiler.target>
