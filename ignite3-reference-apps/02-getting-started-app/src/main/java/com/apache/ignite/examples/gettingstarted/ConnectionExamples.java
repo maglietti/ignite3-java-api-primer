@@ -20,12 +20,22 @@ package com.apache.ignite.examples.gettingstarted;
 import org.apache.ignite.client.IgniteClient;
 
 /**
- * Simple connection examples for different scenarios.
+ * Demonstrates Apache Ignite 3 client connection patterns for different deployment scenarios.
  * 
- * Shows:
- * - Basic connection
- * - Multi-node connection (for production)
- * - Performance testing
+ * This class showcases three essential connection patterns:
+ * - Single-node connection for development environments</li>
+ * - Multi-node connection with automatic failover for production deployments</li>
+ * - Connection timing and basic performance validation</li>
+ * 
+ * Ignite 3 Concepts Demonstrated:
+ *
+ * - Client builder pattern with address configuration</li>
+ * - Automatic connection failover and load balancing</li>
+ * - Cluster topology discovery</li>
+ * - Basic SQL operations for connectivity validation</li>
+ * 
+ * Usage: Run this class to see connection examples in action.
+ * Expected warnings for ports 10801/10802 demonstrate failover behavior.
  */
 public class ConnectionExamples {
     
@@ -64,24 +74,24 @@ public class ConnectionExamples {
     
     private static void multiNodeConnection() {
         System.out.println("\n2. Multi-Node Connection:");
+        System.out.println("  Note: Connection warnings for ports 10801/10802 are expected");
+        System.out.println("  This demonstrates failover behavior in production clusters");
         
         try (IgniteClient client = IgniteClient.builder()
                 .addresses(
-                    "localhost:10800",  // First node
-                    "localhost:10801",  // Second node  
-                    "localhost:10802"   // Third node
+                    "localhost:10800",  // Primary node (running)
+                    "localhost:10801",  // Backup node (not running - shows failover)
+                    "localhost:10802"   // Backup node (not running - shows failover)
                 )
                 .build()) {
             
             System.out.println("  Connected with failover support");
             System.out.println("  Active connections: " + client.connections());
             
-            // Check cluster size
-            var result = client.clusterNodes();
-            System.out.println("  Cluster size: " + result.size() + " nodes");
+            var clusterNodes = client.clusterNodes();
+            System.out.println("  Cluster size: " + clusterNodes.size() + " nodes");
             
-            // Process each node using streams
-            result.forEach(node -> {
+            clusterNodes.forEach(node -> {
                 System.out.println("  Node: " + node.name() + " (" + node.address() + ")");
             });
             
@@ -100,15 +110,13 @@ public class ConnectionExamples {
             
             System.out.println("  Connected for performance testing");
             
-            // Test operation timing
             long start = System.currentTimeMillis();
-            var result = client.sql().execute(null, "SELECT CURRENT_TIMESTAMP");
+            var resultSet = client.sql().execute(null, "SELECT CURRENT_TIMESTAMP as server_time");
             long end = System.currentTimeMillis();
             
-            // Use hasRowSet() and next() directly on ResultSet
-            if (result.hasRowSet()) {
-                var row = result.next();
-                System.out.println("  Server time: " + row.value("CURRENT_TIMESTAMP"));
+            while (resultSet.hasNext()) {
+                var row = resultSet.next();
+                System.out.println("  Server time: " + row.value("server_time"));
                 System.out.println("  Response time: " + (end - start) + "ms");
             }
             
@@ -116,7 +124,7 @@ public class ConnectionExamples {
             if (e.getMessage().contains("Handshake error")) {
                 System.err.println("  Some backup connections failed (normal in multi-node setup)");
             } else {
-                System.err.println("  Timeout connection failed: " + e.getMessage());
+                System.err.println("  Performance test failed: " + e.getMessage());
             }
         }
     }
