@@ -26,7 +26,9 @@ Demonstrates defining database schemas in Java code using annotations. Shows how
 
 ## Application
 
-**SchemaAPIDemo** - Demonstrates Apache Ignite 3's schema annotation capabilities for mapping POJOs to distributed tables. Shows basic annotation patterns, data colocation strategies for performance optimization, and schema validation features within a music streaming platform context.
+| Application | Description | Run Command |
+|-------------|-------------|-------------|
+| SchemaAPIDemo | Demonstrates Apache Ignite 3's schema annotation capabilities for mapping POJOs to distributed tables. Shows basic annotation patterns, data colocation strategies for performance optimization, and schema validation features within a music streaming platform context. | `../gradlew runSchemaAPIDemo` |
 
 ### Running the Application
 

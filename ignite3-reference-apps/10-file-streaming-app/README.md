@@ -87,9 +87,10 @@ Scenario Comparison:
 
 ## Applications
 
-**FileStreamingAPIDemo** - Main orchestrator that coordinates file streaming demonstrations and provides cluster connectivity verification with educational guidance.
-
-**FileBackpressureStreaming** - Demonstrates file-to-cluster streaming with end-to-end backpressure propagation, showing how reactive streams control upstream file I/O based on downstream cluster capacity.
+| Application | Description | Run Command |
+|-------------|-------------|-------------|
+| FileStreamingAPIDemo | Main orchestrator that coordinates file streaming demonstrations and provides cluster connectivity verification with educational guidance. | `../gradlew runFileStreamingAPIDemo` |
+| FileBackpressureStreaming | Demonstrates file-to-cluster streaming with end-to-end backpressure propagation, showing how reactive streams control upstream file I/O based on downstream cluster capacity. | `../gradlew runFileBackpressureStreaming` |
 
 ### Running the Applications
 

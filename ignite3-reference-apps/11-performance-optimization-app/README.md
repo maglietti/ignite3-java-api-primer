@@ -25,17 +25,14 @@ Demonstrates systematic performance optimization for music streaming platform qu
 
 ## Applications
 
-**PerformanceOptimizationAPIDemo** - Orchestrator that runs all performance optimization demonstrations providing a complete toolkit for optimizing Apache Ignite 3 queries.
-
-**QueryTimingAnalysis** - Demonstrates systematic performance measurement techniques with nanosecond precision timing and filter strategy comparisons.
-
-**QueryExecutionPlanAnalysis** - Shows execution plan analysis using EXPLAIN PLAN FOR syntax with optimization workflow for systematic query improvement.
-
-**IndexOptimizationStrategies** - Focuses on index optimization strategies for distributed query performance including single vs composite indexes and selectivity analysis.
-
-**OptimizedJoinStrategies** - Demonstrates join optimization and data colocation strategies leveraging data locality for optimal join performance.
-
-**CacheAsideOptimization** - Shows cache-aside optimization strategies for read-heavy workloads including cache warming and lazy loading patterns.
+| Application | Description | Run Command |
+|-------------|-------------|-------------|
+| PerformanceOptimizationAPIDemo | Orchestrator that runs all performance optimization demonstrations providing a complete toolkit for optimizing Apache Ignite 3 queries. | `../gradlew runPerformanceOptimizationAPIDemo` |
+| QueryTimingAnalysis | Demonstrates systematic performance measurement techniques with nanosecond precision timing and filter strategy comparisons. | `../gradlew runQueryTimingAnalysis` |
+| QueryExecutionPlanAnalysis | Shows execution plan analysis using EXPLAIN PLAN FOR syntax with optimization workflow for systematic query improvement. | `../gradlew runQueryExecutionPlanAnalysis` |
+| IndexOptimizationStrategies | Focuses on index optimization strategies for distributed query performance including single vs composite indexes and selectivity analysis. | `../gradlew runIndexOptimizationStrategies` |
+| OptimizedJoinStrategies | Demonstrates join optimization and data colocation strategies leveraging data locality for optimal join performance. | `../gradlew runOptimizedJoinStrategies` |
+| CacheAsideOptimization | Shows cache-aside optimization strategies for read-heavy workloads including cache warming and lazy loading patterns. | `../gradlew runCacheAsideOptimization` |
 
 ### Running the Applications
 

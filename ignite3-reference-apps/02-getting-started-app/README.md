@@ -30,11 +30,11 @@ cd ../00-docker && docker-compose up -d
 
 ## Applications
 
-**HelloWorldApp** - The simplest introduction to Apache Ignite 3. Creates a Book table, performs CRUD operations using the RecordView API, and demonstrates SQL queries. Uses multi-node connection for partition awareness.
-
-**BasicSetupDemo** - Demonstrates working with related tables (Author and Book) using foreign key relationships. Shows zone creation, transactional inserts, and JOIN queries for retrieving related data.
-
-**ConnectionExamples** - Showcases different client connection patterns including single-node development connections, multi-node production configurations with failover, and performance testing of SQL queries.
+| Application | Description | Run Command |
+|-------------|-------------|-------------|
+| HelloWorldApp | The simplest introduction to Apache Ignite 3. Creates a Book table, performs CRUD operations using the RecordView API, and demonstrates SQL queries. Uses multi-node connection for partition awareness. | `../gradlew runHelloWorld` |
+| BasicSetupDemo | Demonstrates working with related tables (Author and Book) using foreign key relationships. Shows zone creation, transactional inserts, and JOIN queries for retrieving related data. | `../gradlew runBasicSetupDemo` |
+| ConnectionExamples | Showcases different client connection patterns including single-node development connections, multi-node production configurations with failover, and performance testing of SQL queries. | `../gradlew runConnectionExamples` |
 
 ### Running the Applications
 

@@ -10,7 +10,9 @@ This module provides the foundation for all Apache Ignite 3 reference applicatio
 
 ## Application
 
-**MusicStoreSetup** - Initializes the music store database schema and populates it with sample data. This application creates 11 tables across 2 distribution zones and loads a complete dataset with 15,000+ records by default, or core sample data when using --core flag. It supports schema reset, custom cluster addresses, and provides detailed progress tracking throughout the setup process.
+| Application | Description | Run Command |
+|-------------|-------------|-------------|
+| MusicStoreSetup | Initializes the music store database schema and populates it with sample data. This application creates 11 tables across 2 distribution zones and loads a complete dataset with 15,000+ records by default, or core sample data when using --core flag. It supports schema reset, custom cluster addresses, and provides detailed progress tracking throughout the setup process. | `../gradlew runMusicStoreSetup` |
 
 ## What You'll Learn
 

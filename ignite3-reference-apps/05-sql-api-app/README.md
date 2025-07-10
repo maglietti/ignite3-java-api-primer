@@ -28,15 +28,13 @@ Demonstrates Apache Ignite 3's SQL API for relational data access. Shows how to 
 
 ## Applications
 
-**SQLAPIDemo** - Orchestrator that runs all SQL demonstrations in a learning progression from basic queries through advanced analytics and production patterns.
-
-**BasicSQLOperations** - Demonstrates fundamental SQL API usage including query execution, parameter binding, statement configuration, and ResultSet processing.
-
-**AdvancedSQLOperations** - Shows complex query patterns including JOINs, aggregations, batch operations, and object mapping with type safety.
-
-**TransactionSQLOperations** - Integrates SQL operations with ACID transactions demonstrating lifecycle management and error recovery.
-
-**ProductionAnalyticsPatterns** - Implements production-scale analytics with memory-efficient streaming, hierarchical data processing, and query optimization.
+| Application | Description | Run Command |
+|-------------|-------------|-------------|
+| SQLAPIDemo | Orchestrator that runs all SQL demonstrations in a learning progression from basic queries through advanced analytics and production patterns. | `../gradlew runSQLAPIDemo` |
+| BasicSQLOperations | Demonstrates fundamental SQL API usage including query execution, parameter binding, statement configuration, and ResultSet processing. | `../gradlew runBasicSQLOperations` |
+| AdvancedSQLOperations | Shows complex query patterns including JOINs, aggregations, batch operations, and object mapping with type safety. | `../gradlew runAdvancedSQLOperations` |
+| TransactionSQLOperations | Integrates SQL operations with ACID transactions demonstrating lifecycle management and error recovery. | `../gradlew runTransactionSQLOperations` |
+| ProductionAnalyticsPatterns | Implements production-scale analytics with memory-efficient streaming, hierarchical data processing, and query optimization. | `../gradlew runProductionAnalyticsPatterns` |
 
 ### Running the Applications
 

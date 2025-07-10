@@ -10,17 +10,14 @@ Demonstrates Apache Ignite 3's Transaction API for ACID operations across distri
 
 ## Applications
 
-**TransactionAPIDemo** - Orchestrator that runs all transaction demonstrations in educational progression from basic ACID operations through advanced business workflow patterns.
-
-**BasicTransactions** - Demonstrates fundamental transaction lifecycle including explicit and functional transaction patterns with proper error handling and rollback scenarios.
-
-**AsyncTransactions** - Shows asynchronous transaction patterns using CompletableFuture for non-blocking operations with proper error handling and recovery.
-
-**BatchTransactions** - Focuses on bulk operations within transactions including batch inserts, updates, and error handling for partial failures.
-
-**TransactionIsolation** - Demonstrates transaction isolation concepts, concurrent behavior, and write conflict scenarios between concurrent transactions.
-
-**BusinessWorkflowPatterns** - Implements production-ready patterns including customer purchase workflows, timeout patterns, retry logic, and circuit breaker implementations.
+| Application | Description | Run Command |
+|-------------|-------------|-------------|
+| TransactionAPIDemo | Orchestrator that runs all transaction demonstrations in educational progression from basic ACID operations through advanced business workflow patterns. | `../gradlew runTransactionAPIDemo` |
+| BasicTransactions | Demonstrates fundamental transaction lifecycle including explicit and functional transaction patterns with proper error handling and rollback scenarios. | `../gradlew runBasicTransactions` |
+| AsyncTransactions | Shows asynchronous transaction patterns using CompletableFuture for non-blocking operations with proper error handling and recovery. | `../gradlew runAsyncTransactions` |
+| BatchTransactions | Focuses on bulk operations within transactions including batch inserts, updates, and error handling for partial failures. | `../gradlew runBatchTransactions` |
+| TransactionIsolation | Demonstrates transaction isolation concepts, concurrent behavior, and write conflict scenarios between concurrent transactions. | `../gradlew runTransactionIsolation` |
+| BusinessWorkflowPatterns | Implements production-ready patterns including customer purchase workflows, timeout patterns, retry logic, and circuit breaker implementations. | `../gradlew runBusinessWorkflowPatterns` |
 
 ### Running the Applications
 

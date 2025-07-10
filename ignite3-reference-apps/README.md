@@ -123,34 +123,40 @@ curl http://localhost:10300/management/v1/cluster/state
 
 ### 3. Run Examples
 
-**From root directory** (convenient for trying different examples):
+## Quick Start Applications
+
+| Module | Application | Description | Run Command |
+|--------|-------------|-------------|-------------|
+| 01-sample-data-setup | MusicStoreSetup | Initialize database schema and sample data | `./gradlew setupData` |
+| 02-getting-started-app | HelloWorldApp | Basic CRUD operations introduction | `./gradlew helloWorld` |
+| 02-getting-started-app | BasicSetupDemo | Related tables and transactions | `./gradlew basicSetup` |
+| 02-getting-started-app | ConnectionExamples | Connection pattern examples | `./gradlew connectionExamples` |
+
+## API Demonstrations
+
+| Module | Application | Description | Run Command |
+|--------|-------------|-------------|-------------|
+| 03-schema-annotations-app | SchemaAPIDemo | Schema annotations and design patterns | `./gradlew schemaDemo` |
+| 04-table-api-app | TableAPIDemo | Table API operations and patterns | `./gradlew tableDemo` |
+| 05-sql-api-app | SQLAPIDemo | SQL API operations and analytics | `./gradlew sqlDemo` |
+| 06-transactions-app | TransactionAPIDemo | Transaction patterns and ACID guarantees | `./gradlew transactionDemo` |
+| 07-compute-api-app | ComputeAPIDemo | Compute API distributed processing | `./gradlew computeDemo` |
+| 08-data-streaming-app | DataStreamingAPIDemo | Data streaming and bulk operations | `./gradlew streamingDemo` |
+| 09-caching-patterns-app | CachingAPIDemo | Caching patterns and strategies | `./gradlew cachingDemo` |
+| 10-file-streaming-app | FileStreamingAPIDemo | File streaming with backpressure | `./gradlew fileStreamingDemo` |
+| 11-performance-optimization-app | PerformanceOptimizationAPIDemo | Performance optimization techniques | `./gradlew performanceDemo` |
+
+## Convenience Commands
 
 ```bash
-# Initialize sample data
-./gradlew setupData
-
-# Quick start examples
-./gradlew helloWorld             # Basic operations
-./gradlew basicSetup             # Related tables demo
-./gradlew connectionExamples     # Connection patterns
-
-# API demonstrations
-./gradlew schemaDemo             # Schema annotations
-./gradlew tableDemo              # Table API operations
-./gradlew sqlDemo                # SQL API analytics
-./gradlew transactionDemo        # Transaction patterns
-./gradlew computeDemo            # Distributed processing
-./gradlew streamingDemo          # Data streaming
-./gradlew cachingDemo            # Caching patterns
-./gradlew fileStreamingDemo      # File streaming
-./gradlew performanceDemo        # Performance optimization
-
-# Run all demos in sequence (full tour)
+# Run all main demos in sequence (full tour)
 ./gradlew runAllDemos
 
 # Get help with available examples
 ./gradlew listExamples
 ```
+
+> **💡 Tip**: Each module contains multiple applications. The commands above run the main orchestrator for each module. See individual module README files for detailed application lists and specific examples.
 
 **From individual subproject directories** (for specific examples):
 

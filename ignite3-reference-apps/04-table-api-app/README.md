@@ -69,15 +69,13 @@ mvn compile exec:java@async
 
 ## Applications
 
-**TableAPIDemo** - Main orchestrator that demonstrates all Table API capabilities including CRUD operations with Tuples, type-safe POJO operations, key-value access patterns, and asynchronous programming patterns.
-
-**BasicTableOperations** - Shows fundamental CRUD operations using the Tuple API for type-flexible database operations on the Artist table.
-
-**RecordViewExamples** - Demonstrates type-safe POJO-based operations using a custom Artist class for strongly-typed object operations.
-
-**KeyValueExamples** - Shows high-performance cache-like operations using KeyValueView including bulk operations and working with non-existent keys.
-
-**AsyncBasicOperations** - Demonstrates asynchronous patterns using CompletableFuture for non-blocking operations, error handling, and recovery strategies.
+| Application | Description | Run Command |
+|-------------|-------------|-------------|
+| TableAPIDemo | Main orchestrator that demonstrates all Table API capabilities including CRUD operations with Tuples, type-safe POJO operations, key-value access patterns, and asynchronous programming patterns. | `../gradlew runTableAPIDemo` |
+| BasicTableOperations | Shows fundamental CRUD operations using the Tuple API for type-flexible database operations on the Artist table. | `../gradlew runBasicTableOperations` |
+| RecordViewExamples | Demonstrates type-safe POJO-based operations using a custom Artist class for strongly-typed object operations. | `../gradlew runRecordViewExamples` |
+| KeyValueExamples | Shows high-performance cache-like operations using KeyValueView including bulk operations and working with non-existent keys. | `../gradlew runKeyValueExamples` |
+| AsyncBasicOperations | Demonstrates asynchronous patterns using CompletableFuture for non-blocking operations, error handling, and recovery strategies. | `../gradlew runAsyncBasicOperations` |
 
 ### Running the Applications
 

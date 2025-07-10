@@ -24,13 +24,12 @@ Demonstrates reactive streams-based data streaming for music platform event inge
 
 ## Applications
 
-**DataStreamingAPIDemo** - Main orchestrator that runs all streaming demonstrations showcasing the complete range of capabilities from basic operations to advanced backpressure handling.
-
-**BasicDataStreamerDemo** - Demonstrates fundamental streaming operations with DataStreamerItem, configuration options, and mixed PUT/REMOVE operations for real-time event ingestion.
-
-**BulkDataIngestion** - Focuses on high-volume bulk loading with optimized performance settings, memory-efficient file processing, and adaptive batch sizing.
-
-**BackpressureHandling** - Shows advanced flow control with custom Flow.Publisher, adaptive rate limiting, and buffer management during system overload scenarios.
+| Application | Description | Run Command |
+|-------------|-------------|-------------|
+| DataStreamingAPIDemo | Main orchestrator that runs all streaming demonstrations showcasing the complete range of capabilities from basic operations to advanced backpressure handling. | `../gradlew runDataStreamingAPIDemo` |
+| BasicDataStreamerDemo | Demonstrates fundamental streaming operations with DataStreamerItem, configuration options, and mixed PUT/REMOVE operations for real-time event ingestion. | `../gradlew runBasicDataStreamerDemo` |
+| BulkDataIngestion | Focuses on high-volume bulk loading with optimized performance settings, memory-efficient file processing, and adaptive batch sizing. | `../gradlew runBulkDataIngestion` |
+| BackpressureHandling | Shows advanced flow control with custom Flow.Publisher, adaptive rate limiting, and buffer management during system overload scenarios. | `../gradlew runBackpressureHandling` |
 
 ### Running the Applications
 

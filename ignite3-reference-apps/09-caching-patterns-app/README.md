@@ -26,13 +26,12 @@ Demonstrates caching patterns for performance optimization in distributed system
 
 ## Applications
 
-**CachingAPIDemo** - Orchestrator that runs all caching pattern demonstrations in sequence, showing cache-aside, write-through, and write-behind patterns with different use cases.
-
-**CacheAsidePatterns** - Demonstrates the cache-aside pattern for read-heavy catalog operations including cache miss handling, batch loading optimization, and async operations.
-
-**WriteThroughPatterns** - Shows the write-through pattern for consistency-critical customer data operations with synchronous updates and ACID guarantees.
-
-**WriteBehindPatterns** - Implements the write-behind pattern for high-throughput analytics event recording with immediate cache writes and background processing.
+| Application | Description | Run Command |
+|-------------|-------------|-------------|
+| CachingAPIDemo | Orchestrator that runs all caching pattern demonstrations in sequence, showing cache-aside, write-through, and write-behind patterns with different use cases. | `../gradlew runCachingAPIDemo` |
+| CacheAsidePatterns | Demonstrates the cache-aside pattern for read-heavy catalog operations including cache miss handling, batch loading optimization, and async operations. | `../gradlew runCacheAsidePatterns` |
+| WriteThroughPatterns | Shows the write-through pattern for consistency-critical customer data operations with synchronous updates and ACID guarantees. | `../gradlew runWriteThroughPatterns` |
+| WriteBehindPatterns | Implements the write-behind pattern for high-throughput analytics event recording with immediate cache writes and background processing. | `../gradlew runWriteBehindPatterns` |
 
 ### Running the Applications
 

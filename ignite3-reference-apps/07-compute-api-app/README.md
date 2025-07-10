@@ -48,17 +48,14 @@ mvn exec:java -Dexec.args="192.168.1.100:10800"
 
 ## Applications
 
-**ComputeAPIDemo** - Main orchestrator that runs all compute examples in educational progression from basic job execution to production-scale distributed processing patterns.
-
-**BasicComputeOperations** - Demonstrates fundamental job execution including simple jobs, parameterized jobs, SQL-based processing, and asynchronous execution patterns.
-
-**AdvancedComputeOperations** - Shows advanced patterns including data colocation optimization, broadcast execution, MapReduce patterns, and performance comparisons.
-
-**ComputeJobWorkflows** - Demonstrates complex job coordination and business workflow patterns including customer analytics and music recommendation workflows.
-
-**ProductionComputePatterns** - Implements production-scale patterns including large-scale recommendation engines, circuit breaker patterns, and performance monitoring.
-
-**MusicPlatformIntelligence** - Shows documentation-aligned compute patterns for music streaming platforms with artist analytics and MapReduce trend analysis.
+| Application | Description | Run Command |
+|-------------|-------------|-------------|
+| ComputeAPIDemo | Main orchestrator that runs all compute examples in educational progression from basic job execution to production-scale distributed processing patterns. | `../gradlew runComputeAPIDemo` |
+| BasicComputeOperations | Demonstrates fundamental job execution including simple jobs, parameterized jobs, SQL-based processing, and asynchronous execution patterns. | `../gradlew runBasicComputeOperations` |
+| AdvancedComputeOperations | Shows advanced patterns including data colocation optimization, broadcast execution, MapReduce patterns, and performance comparisons. | `../gradlew runAdvancedComputeOperations` |
+| ComputeJobWorkflows | Demonstrates complex job coordination and business workflow patterns including customer analytics and music recommendation workflows. | `../gradlew runComputeJobWorkflows` |
+| ProductionComputePatterns | Implements production-scale patterns including large-scale recommendation engines, circuit breaker patterns, and performance monitoring. | `../gradlew runProductionComputePatterns` |
+| MusicPlatformIntelligence | Shows documentation-aligned compute patterns for music streaming platforms with artist analytics and MapReduce trend analysis. | `../gradlew runMusicPlatformIntelligence` |
 
 ## Architecture
 
