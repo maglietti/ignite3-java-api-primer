@@ -33,15 +33,36 @@ mvn exec:java -Dexec.args="192.168.1.100:10800"
 ./gradlew :07-compute-api-app:build
 
 # Run the complete demo
-../gradlew run
+../gradlew runComputeAPIDemo
+
+# Run individual demonstrations
+../gradlew runBasicComputeOperations
+../gradlew runAdvancedComputeOperations
+../gradlew runComputeJobWorkflows
+../gradlew runProductionComputePatterns
+../gradlew runMusicPlatformIntelligence
 
 # Or run with custom cluster address
-../gradlew run --args="192.168.1.100:10800"
+../gradlew runComputeAPIDemo --args="192.168.1.100:10800"
 ```
+
+## Applications
+
+**ComputeAPIDemo** - Main orchestrator that runs all compute examples in educational progression from basic job execution to production-scale distributed processing patterns.
+
+**BasicComputeOperations** - Demonstrates fundamental job execution including simple jobs, parameterized jobs, SQL-based processing, and asynchronous execution patterns.
+
+**AdvancedComputeOperations** - Shows advanced patterns including data colocation optimization, broadcast execution, MapReduce patterns, and performance comparisons.
+
+**ComputeJobWorkflows** - Demonstrates complex job coordination and business workflow patterns including customer analytics and music recommendation workflows.
+
+**ProductionComputePatterns** - Implements production-scale patterns including large-scale recommendation engines, circuit breaker patterns, and performance monitoring.
+
+**MusicPlatformIntelligence** - Shows documentation-aligned compute patterns for music streaming platforms with artist analytics and MapReduce trend analysis.
 
 ## Architecture
 
-The application consists of five modules:
+The application consists of six modules:
 
 ### 1. Basic Compute Operations (`BasicComputeOperations.java`)
 

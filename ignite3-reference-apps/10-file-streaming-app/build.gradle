@@ -15,3 +15,17 @@ application {
         '-Dio.netty.tryReflectionSetAccessible=true'
     ]
 }
+
+tasks.register('runFileStreamingAPIDemo', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.apache.ignite.examples.filestreaming.FileStreamingAPIDemo'
+    args = ['127.0.0.1:10800']
+    jvmArgs = application.applicationDefaultJvmArgs
+}
+
+tasks.register('runFileBackpressureStreaming', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.apache.ignite.examples.filestreaming.FileBackpressureStreaming'
+    args = ['127.0.0.1:10800']
+    jvmArgs = application.applicationDefaultJvmArgs
+}

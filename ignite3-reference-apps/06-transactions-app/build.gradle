@@ -15,3 +15,45 @@ application {
         '-Dio.netty.tryReflectionSetAccessible=true'
     ]
 }
+
+tasks.register('runTransactionAPIDemo', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.apache.ignite.examples.transactions.TransactionAPIDemo'
+    args = ['127.0.0.1:10800']
+    jvmArgs = application.applicationDefaultJvmArgs
+}
+
+tasks.register('runBasicTransactions', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.apache.ignite.examples.transactions.BasicTransactions'
+    args = ['127.0.0.1:10800']
+    jvmArgs = application.applicationDefaultJvmArgs
+}
+
+tasks.register('runAsyncTransactions', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.apache.ignite.examples.transactions.AsyncTransactions'
+    args = ['127.0.0.1:10800']
+    jvmArgs = application.applicationDefaultJvmArgs
+}
+
+tasks.register('runBatchTransactions', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.apache.ignite.examples.transactions.BatchTransactions'
+    args = ['127.0.0.1:10800']
+    jvmArgs = application.applicationDefaultJvmArgs
+}
+
+tasks.register('runTransactionIsolation', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.apache.ignite.examples.transactions.TransactionIsolation'
+    args = ['127.0.0.1:10800']
+    jvmArgs = application.applicationDefaultJvmArgs
+}
+
+tasks.register('runBusinessWorkflowPatterns', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.apache.ignite.examples.transactions.BusinessWorkflowPatterns'
+    args = ['127.0.0.1:10800']
+    jvmArgs = application.applicationDefaultJvmArgs
+}

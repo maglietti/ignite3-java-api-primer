@@ -22,7 +22,34 @@ Demonstrates reactive streams-based data streaming for music platform event inge
 - Java 17 or higher
 - Maven 3.8+ or Gradle (via wrapper)
 
-## Demonstrations
+## Applications
+
+**DataStreamingAPIDemo** - Main orchestrator that runs all streaming demonstrations showcasing the complete range of capabilities from basic operations to advanced backpressure handling.
+
+**BasicDataStreamerDemo** - Demonstrates fundamental streaming operations with DataStreamerItem, configuration options, and mixed PUT/REMOVE operations for real-time event ingestion.
+
+**BulkDataIngestion** - Focuses on high-volume bulk loading with optimized performance settings, memory-efficient file processing, and adaptive batch sizing.
+
+**BackpressureHandling** - Shows advanced flow control with custom Flow.Publisher, adaptive rate limiting, and buffer management during system overload scenarios.
+
+### Running the Applications
+
+From this directory, use Gradle to run each application:
+
+```bash
+# Run complete Data Streaming API demo (all examples)
+../gradlew runDataStreamingAPIDemo
+
+# Run individual demonstrations
+../gradlew runBasicDataStreamerDemo
+../gradlew runBulkDataIngestion
+../gradlew runBackpressureHandling
+
+# Custom cluster address
+../gradlew runDataStreamingAPIDemo --args="192.168.1.100:10800"
+```
+
+## Application Details
 
 ### Basic Data Streaming (`BasicDataStreamerDemo`)
 

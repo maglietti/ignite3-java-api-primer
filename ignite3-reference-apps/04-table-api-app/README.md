@@ -40,7 +40,7 @@ mvn compile exec:java@recordview
 
 **Gradle:**
 ```bash
-# Use Maven command above (custom Gradle task not configured)
+../gradlew runRecordViewExamples
 ```
 
 **KeyValueView Operations** (Cache-like patterns):
@@ -52,7 +52,7 @@ mvn compile exec:java@keyvalue
 
 **Gradle:**
 ```bash
-# Use Maven command above (custom Gradle task not configured)
+../gradlew runKeyValueExamples
 ```
 
 **Advanced Async Operations** (Production patterns):
@@ -64,10 +64,40 @@ mvn compile exec:java@async
 
 **Gradle:**
 ```bash
-# Use Maven command above (custom Gradle task not configured)
+../gradlew runAsyncBasicOperations
 ```
 
 ## Applications
+
+**TableAPIDemo** - Main orchestrator that demonstrates all Table API capabilities including CRUD operations with Tuples, type-safe POJO operations, key-value access patterns, and asynchronous programming patterns.
+
+**BasicTableOperations** - Shows fundamental CRUD operations using the Tuple API for type-flexible database operations on the Artist table.
+
+**RecordViewExamples** - Demonstrates type-safe POJO-based operations using a custom Artist class for strongly-typed object operations.
+
+**KeyValueExamples** - Shows high-performance cache-like operations using KeyValueView including bulk operations and working with non-existent keys.
+
+**AsyncBasicOperations** - Demonstrates asynchronous patterns using CompletableFuture for non-blocking operations, error handling, and recovery strategies.
+
+### Running the Applications
+
+From this directory, use Gradle to run each application:
+
+```bash
+# Run complete Table API demo (all examples)
+../gradlew runTableAPIDemo
+
+# Run individual demonstrations
+../gradlew runBasicTableOperations
+../gradlew runRecordViewExamples  
+../gradlew runKeyValueExamples
+../gradlew runAsyncBasicOperations
+
+# Custom cluster address
+../gradlew runTableAPIDemo --args="192.168.1.100:10800"
+```
+
+## Application Details
 
 ### 1. RecordViewOperations
 

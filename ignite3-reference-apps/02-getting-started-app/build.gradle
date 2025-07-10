@@ -22,3 +22,17 @@ tasks.register('runHelloWorld', JavaExec) {
     args = ['127.0.0.1:10800']
     jvmArgs = application.applicationDefaultJvmArgs
 }
+
+tasks.register('runBasicSetupDemo', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.apache.ignite.examples.gettingstarted.BasicSetupDemo'
+    args = ['127.0.0.1:10800']
+    jvmArgs = application.applicationDefaultJvmArgs
+}
+
+tasks.register('runConnectionExamples', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.apache.ignite.examples.gettingstarted.ConnectionExamples'
+    args = ['127.0.0.1:10800']
+    jvmArgs = application.applicationDefaultJvmArgs
+}

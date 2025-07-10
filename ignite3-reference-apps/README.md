@@ -57,6 +57,18 @@ cd 00-docker
 docker-compose up -d  # or: docker compose up -d
 ```
 
+Initialize the cluster:
+
+```bash
+curl -s -X POST http://localhost:10300/management/v1/cluster/init \
+-H "Content-Type: application/json" \
+-d '{
+  "metaStorageNodes": ["node1", "node2", "node3"],
+  "cmgNodes": ["node1", "node2", "node3"],
+  "clusterName": "ignite3-reference-cluster"
+}'
+```
+
 Verify cluster is initialized and ready:
 
 ```bash
@@ -66,7 +78,7 @@ curl http://localhost:10300/management/v1/cluster/state
 
 ### 2. Setup Sample Data
 
-1. **Start with complete initialization** (recommended for first-time users):
+**Start with complete initialization** (recommended for first-time users):
 
    **Maven:**
 
@@ -78,17 +90,14 @@ curl http://localhost:10300/management/v1/cluster/state
    **Gradle:**
 
    ```bash
-   ./gradlew :01-sample-data-setup:run
+   ./gradlew setupData
    ```
 
-2. **Or run with options**:
+**Or run with options**:
 
    **Maven:**
 
    ```bash
-   # Include extended dataset
-   mvn compile exec:java -Dexec.args="--extended"
-   
    # Reset existing schema and recreate
    mvn compile exec:java -Dexec.args="--reset"
    
@@ -99,15 +108,58 @@ curl http://localhost:10300/management/v1/cluster/state
    **Gradle:**
 
    ```bash
-   # Include extended dataset
-   ./gradlew :01-sample-data-setup:run --args="--extended"
-   
    # Reset existing schema and recreate
-   ./gradlew :01-sample-data-setup:run --args="--reset"
+   ./gradlew setupData --args="--reset"
+   
+   # Load core dataset only
+   ./gradlew setupData --args="--core"
    
    # Custom cluster address
-   ./gradlew :01-sample-data-setup:run --args="192.168.1.100:10800"
+   ./gradlew setupData --args="192.168.1.100:10800"
+   
+   # Combine options
+   ./gradlew setupData --args="--reset --core"
    ```
+
+### 3. Run Examples
+
+**From root directory** (convenient for trying different examples):
+
+```bash
+# Initialize sample data
+./gradlew setupData
+
+# Quick start examples
+./gradlew helloWorld             # Basic operations
+./gradlew basicSetup             # Related tables demo
+./gradlew connectionExamples     # Connection patterns
+
+# API demonstrations
+./gradlew schemaDemo             # Schema annotations
+./gradlew tableDemo              # Table API operations
+./gradlew sqlDemo                # SQL API analytics
+./gradlew transactionDemo        # Transaction patterns
+./gradlew computeDemo            # Distributed processing
+./gradlew streamingDemo          # Data streaming
+./gradlew cachingDemo            # Caching patterns
+./gradlew fileStreamingDemo      # File streaming
+./gradlew performanceDemo        # Performance optimization
+
+# Run all demos in sequence (full tour)
+./gradlew runAllDemos
+
+# Get help with available examples
+./gradlew listExamples
+```
+
+**From individual subproject directories** (for specific examples):
+
+```bash
+cd 04-table-api-app
+../gradlew runBasicTableOperations
+../gradlew runRecordViewExamples
+../gradlew runKeyValueExamples
+```
 
 ### Project Structure
 
@@ -229,248 +281,7 @@ erDiagram
 - **MusicStore Zone** (2 replicas): Primary business data colocated by ArtistId/CustomerId for join performance
 - **MusicStoreReplicated Zone** (3 replicas): Reference/lookup data replicated for high availability
 
-## Learning Apache Ignite 3 Java API with reference apps
-
-This series of reference applications builds expertise progressively, from basic connections to distributed processing patterns. Each app teaches specific concepts while building on previous knowledge.
-
-**Learning order for Ignite 3:**
-
-1. **sample-data-setup** - Understanding the dataset and basic setup
-2. **getting-started-app** - Basic operations and connections  
-3. **schema-annotations-app** - Schema definition and table creation
-4. **table-api-app** - Object-oriented data access
-5. **sql-api-app** - SQL operations and queries
-6. **transactions-app** - ACID transactions and consistency
-7. **compute-api-app** - Distributed processing
-8. **data-streaming-app** - High-throughput operations
-9. **caching-patterns-app** - Caching strategies and patterns
-10. **file-streaming-app** - Optional file-based reactive streaming with backpressure
-11. **performance-optimization-app** - Performance tuning and optimization techniques
-
-### Sample Data Setup
-
-**What you'll build**: A complete music store database with optimal data distribution
-
-Create tables, zones, and load sample data for a music streaming platform. Learn how data placement affects performance by colocating related records (artists with their albums) on the same nodes. This foundation supports all subsequent learning exercises.
-
-- **Setup zones**: Configure data distribution with replication policies
-- **Create schema**: Use POJOs to define tables with proper indexing
-- **Load data**: Insert 200+ artists, 500+ albums, and 3000+ tracks transactionally
-- **Verify deployment**: Confirm data is distributed correctly across nodes
-
-*Start here*: [`01-sample-data-setup`](01-sample-data-setup/) | [Getting Started Guide](../docs/01-foundation/02-getting-started.md)
-
-### Getting Started
-
-**What you'll build**: Your first Ignite 3 applications using Table and SQL APIs
-
-Master the essential patterns every Ignite developer needs. Connect to clusters with partition awareness, perform basic CRUD operations, and run simple SQL queries. Learn the default zone pattern for rapid development.
-
-- **Connect reliably**: Multi-node connections with automatic failover
-- **Store objects**: Use POJOs with automatic schema creation
-- **Query data**: Execute SQL on the same data model
-- **Handle errors**: Production-ready error handling and resource management
-
-*Prerequisites*: Sample data setup | *Builds toward*: Schema design patterns  
-[`02-getting-started-app`](02-getting-started-app/) | [Introduction and Architecture](../docs/01-foundation/01-introduction-and-architecture.md)
-
-### Schema Annotations  
-
-**What you'll build**: Advanced data models with optimal distribution strategies
-
-Move beyond basic tables to design schemas for distributed performance. Use annotations to control data placement, define relationships, and ensure queries execute efficiently. Learn colocation strategies that minimize network overhead.
-
-- **Colocation design**: Keep related data on the same nodes
-- **Zone configuration**: Separate reference data from transactional data
-- **Validation patterns**: Ensure schema consistency across environments
-- **Performance optimization**: Design for both storage and query efficiency
-
-*Prerequisites*: Getting started | *Builds toward*: Object-oriented data access  
-[`03-schema-annotations-app`](03-schema-annotations-app/) | [Basic Annotations](../docs/02-schema-design/01-basic-annotations.md)
-
-### Table API
-
-**What you'll build**: Type-safe, high-performance data access layer
-
-Master object-oriented data access through RecordView and KeyValueView APIs. Learn when to use each approach, implement bulk operations, and use async patterns for maximum throughput. Compare with cache-like access patterns.
-
-- **RecordView operations**: Complete object lifecycle with POJOs
-- **KeyValueView patterns**: Cache-like access with explicit null handling
-- **Async programming**: Non-blocking operations with CompletableFuture
-- **Performance optimization**: Bulk operations and error handling
-
-*Prerequisites*: Schema annotations | *Builds toward*: SQL analytics  
-[`04-table-api-app`](04-table-api-app/) | [Table API Operations](../docs/03-data-access-apis/01-table-api-operations.md)
-
-### SQL API
-
-**What you'll build**: Analytics and reporting system using SQL
-
-Implement complex queries, aggregations, and analytics using standard SQL. Learn when SQL excels over Table API, implement parameterized queries, and process large result sets efficiently. Build music streaming analytics.
-
-- **Complex queries**: JOINs across multiple distributed tables  
-- **Analytics functions**: COUNT, SUM, AVG with GROUP BY
-- **Parameterized queries**: Safe, reusable query patterns
-- **Result processing**: Efficient handling of large data sets
-
-*Prerequisites*: Table API | *Builds toward*: Transactional workflows  
-[`05-sql-api-app`](05-sql-api-app/) | [SQL API Analytics](../docs/03-data-access-apis/02-sql-api-analytics.md)
-
-### Transactions
-
-**What you'll build**: ACID workflows for business operations
-
-Implement multi-table transactions for critical business workflows. Learn explicit transaction management, handle errors gracefully, and use async patterns for better performance. Build customer order processing workflows.
-
-- **ACID guarantees**: Consistent updates across multiple tables and nodes
-- **Error handling**: Rollback strategies and exception management  
-- **Async transactions**: High-performance non-blocking patterns
-- **Business workflows**: Invoice creation with line items
-
-*Prerequisites*: SQL API | *Builds toward*: Distributed processing  
-[`06-transactions-app`](06-transactions-app/) | [Transaction Fundamentals](../docs/04-distributed-operations/01-transaction-fundamentals.md)
-
-### Compute API
-
-**What you'll build**: Distributed analytics processing system
-
-Execute code near your data for optimal performance. Learn job deployment, leverage data colocation, and orchestrate complex workflows. Build music recommendation analytics that processes data in-place.
-
-- **Data colocation**: Execute jobs where data resides
-- **Job deployment**: Distribute processing logic across cluster
-- **Workflow orchestration**: Coordinate multi-step analytics pipelines
-- **Performance patterns**: Minimize data movement and network overhead
-
-*Prerequisites*: Transactions | *Builds toward*: High-throughput ingestion  
-[`07-compute-api-app`](07-compute-api-app/) | [Compute API Processing](../docs/04-distributed-operations/03-compute-api-processing.md)
-
-### Data Streaming
-
-**What you'll build**: High-throughput event ingestion system
-
-Handle millions of music streaming events efficiently using the DataStreamer API. Learn backpressure handling, optimize batch sizes, and implement flow control. Achieve 200K+ events per second throughput.
-
-- **Reactive streaming**: Flow control with Java Flow API
-- **Batch optimization**: Tune batch sizes for maximum throughput
-- **Memory management**: Handle high-volume data without memory bloat
-- **Error resilience**: Retry logic and graceful degradation
-
-*Prerequisites*: Compute API | *Builds toward*: Caching strategies  
-[`08-data-streaming-app`](08-data-streaming-app/) | [Data Streaming](../docs/05-performance-scalability/01-data-streaming.md)
-
-### Caching Patterns
-
-**What you'll build**: Multi-tier caching system with external data sources
-
-Implement cache-aside, write-through, and write-behind patterns using Ignite 3 as a high-performance cache layer. Integrate with external databases and handle cache consistency challenges.
-
-- **Cache-aside**: Lazy loading with application-controlled caching
-- **Write-through**: Immediate consistency with external systems
-- **Write-behind**: High-performance deferred persistence
-- **Integration patterns**: Connect with external databases and APIs
-
-*Prerequisites*: Data streaming | *Builds toward*: File processing  
-[`09-caching-patterns-app`](09-caching-patterns-app/) | [Caching Strategies](../docs/05-performance-scalability/02-caching-strategies.md)
-
-### File Streaming
-
-**What you'll build**: File processing system with reactive backpressure
-
-Process large CSV files using reactive streams with end-to-end backpressure propagation. Learn demand-driven I/O, implement performance monitoring, and handle memory pressure gracefully.
-
-- **Reactive file I/O**: Demand-driven CSV processing
-- **Backpressure propagation**: Flow control from file reading to cluster ingestion
-- **Performance monitoring**: Real-time metrics and system health
-- **Resource management**: Handle large files without memory exhaustion
-
-*Prerequisites*: Caching patterns | *Builds toward*: Performance optimization  
-[`10-file-streaming-app`](10-file-streaming-app/) | [Data Streaming](../docs/05-performance-scalability/01-data-streaming.md)
-
-### Performance Optimization
-
-**What you'll build**: High-performance application with advanced tuning techniques
-
-Master performance optimization strategies for Apache Ignite 3. Learn query optimization, data model tuning, memory management, and cluster configuration for maximum throughput. Implement benchmarking and performance monitoring.
-
-- **Query optimization**: Index strategies and SQL execution plan analysis
-- **Data model tuning**: Colocation optimization and partition strategies
-- **Memory management**: Off-heap configuration and memory policies
-- **Monitoring and metrics**: Performance tracking and bottleneck identification
-
-*Prerequisites*: File streaming | *Completes*: Full performance mastery  
-[`11-performance-optimization-app`](11-performance-optimization-app/) | [Performance Optimization](../docs/05-performance-scalability/03-query-performance.md)
-
 ---
-
-**Each app runs independently**: See Building and Running section below  
-**Complete sequence**: Follow 1→11 for comprehensive Ignite 3 expertise
-
-## Building and Running
-
-### Build All Modules
-
-**Maven:**
-
-```bash
-mvn clean compile
-```
-
-**Gradle:**
-
-```bash
-./gradlew build
-```
-
-### Run Specific Application
-
-**Maven:**
-
-```bash
-cd [module-name]
-mvn compile exec:java
-```
-
-**Gradle:**
-
-```bash
-./gradlew :[module-name]:run
-```
-
-**Examples:**
-
-- `./gradlew :02-getting-started-app:run`
-- `./gradlew :04-table-api-app:run`
-- `./gradlew :06-transactions-app:run`
-
-### Run with Custom Cluster Address
-
-**Maven:**
-
-```bash
-mvn compile exec:java -Dexec.args="192.168.1.100:10800"
-```
-
-**Gradle:**
-
-```bash
-./gradlew :[module-name]:run --args="192.168.1.100:10800"
-```
-
-## Configuration
-
-### Default Settings
-
-- **Cluster Addresses**: `127.0.0.1:10800`, `127.0.0.1:10801`, `127.0.0.1:10802` (all nodes recommended)
-- **Connection Timeout**: 30 seconds
-- **Zone Replicas**: 2 (MusicStore), 3 (MusicStoreReplicated)
-- **Partitions**: 25 per zone
-
-### Customization
-
-Edit configuration in:
-
-- `sample-data-setup/src/main/java/com/apache/ignite/examples/setup/config/`
-- Individual module application properties
 
 ## Documentation
 

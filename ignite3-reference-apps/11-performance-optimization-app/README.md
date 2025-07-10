@@ -23,7 +23,40 @@ Demonstrates systematic performance optimization for music streaming platform qu
 - Java 17 or higher
 - Maven 3.8+ or Gradle (via wrapper)
 
-## Demonstrations
+## Applications
+
+**PerformanceOptimizationAPIDemo** - Orchestrator that runs all performance optimization demonstrations providing a complete toolkit for optimizing Apache Ignite 3 queries.
+
+**QueryTimingAnalysis** - Demonstrates systematic performance measurement techniques with nanosecond precision timing and filter strategy comparisons.
+
+**QueryExecutionPlanAnalysis** - Shows execution plan analysis using EXPLAIN PLAN FOR syntax with optimization workflow for systematic query improvement.
+
+**IndexOptimizationStrategies** - Focuses on index optimization strategies for distributed query performance including single vs composite indexes and selectivity analysis.
+
+**OptimizedJoinStrategies** - Demonstrates join optimization and data colocation strategies leveraging data locality for optimal join performance.
+
+**CacheAsideOptimization** - Shows cache-aside optimization strategies for read-heavy workloads including cache warming and lazy loading patterns.
+
+### Running the Applications
+
+From this directory, use Gradle to run each application:
+
+```bash
+# Run complete Performance Optimization API demo (all optimizations)
+../gradlew runPerformanceOptimizationAPIDemo
+
+# Run individual demonstrations
+../gradlew runQueryTimingAnalysis
+../gradlew runQueryExecutionPlanAnalysis
+../gradlew runIndexOptimizationStrategies
+../gradlew runOptimizedJoinStrategies
+../gradlew runCacheAsideOptimization
+
+# Custom cluster address
+../gradlew runPerformanceOptimizationAPIDemo --args="192.168.1.100:10800"
+```
+
+## Application Details
 
 ### Query Timing Analysis (`QueryTimingAnalysis`)
 

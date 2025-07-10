@@ -24,9 +24,34 @@ Demonstrates caching patterns for performance optimization in distributed system
 - Java 17 or higher
 - Maven 3.8+ or Gradle (via wrapper)
 
-## Reference Applications
+## Applications
 
-This module contains caching pattern demonstrations:
+**CachingAPIDemo** - Orchestrator that runs all caching pattern demonstrations in sequence, showing cache-aside, write-through, and write-behind patterns with different use cases.
+
+**CacheAsidePatterns** - Demonstrates the cache-aside pattern for read-heavy catalog operations including cache miss handling, batch loading optimization, and async operations.
+
+**WriteThroughPatterns** - Shows the write-through pattern for consistency-critical customer data operations with synchronous updates and ACID guarantees.
+
+**WriteBehindPatterns** - Implements the write-behind pattern for high-throughput analytics event recording with immediate cache writes and background processing.
+
+### Running the Applications
+
+From this directory, use Gradle to run each application:
+
+```bash
+# Run complete Caching API demo (all patterns)
+../gradlew runCachingAPIDemo
+
+# Run individual demonstrations
+../gradlew runCacheAsidePatterns
+../gradlew runWriteThroughPatterns
+../gradlew runWriteBehindPatterns
+
+# Custom cluster address
+../gradlew runCachingAPIDemo --args="192.168.1.100:10800"
+```
+
+## Application Details
 
 ### 1. CacheAsidePatterns
 

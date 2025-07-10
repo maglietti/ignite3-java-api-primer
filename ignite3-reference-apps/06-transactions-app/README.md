@@ -10,6 +10,39 @@ Demonstrates Apache Ignite 3's Transaction API for ACID operations across distri
 
 ## Applications
 
+**TransactionAPIDemo** - Orchestrator that runs all transaction demonstrations in educational progression from basic ACID operations through advanced business workflow patterns.
+
+**BasicTransactions** - Demonstrates fundamental transaction lifecycle including explicit and functional transaction patterns with proper error handling and rollback scenarios.
+
+**AsyncTransactions** - Shows asynchronous transaction patterns using CompletableFuture for non-blocking operations with proper error handling and recovery.
+
+**BatchTransactions** - Focuses on bulk operations within transactions including batch inserts, updates, and error handling for partial failures.
+
+**TransactionIsolation** - Demonstrates transaction isolation concepts, concurrent behavior, and write conflict scenarios between concurrent transactions.
+
+**BusinessWorkflowPatterns** - Implements production-ready patterns including customer purchase workflows, timeout patterns, retry logic, and circuit breaker implementations.
+
+### Running the Applications
+
+From this directory, use Gradle to run each application:
+
+```bash
+# Run complete Transaction API demo (all examples)
+../gradlew runTransactionAPIDemo
+
+# Run individual demonstrations
+../gradlew runBasicTransactions
+../gradlew runAsyncTransactions
+../gradlew runBatchTransactions
+../gradlew runTransactionIsolation
+../gradlew runBusinessWorkflowPatterns
+
+# Custom cluster address
+../gradlew runTransactionAPIDemo --args="192.168.1.100:10800"
+```
+
+## Application Details
+
 ### 1. BasicTransactionDemo
 
 Demonstrates fundamental transaction patterns:

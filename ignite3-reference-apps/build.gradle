@@ -49,3 +49,165 @@ subprojects {
         ]
     }
 }
+
+// Convenience tasks to run examples from root directory
+// 01-sample-data-setup
+task setupData(type: JavaExec) {
+    group = 'apache-ignite-examples'
+    description = 'Initialize sample music store data'
+    classpath = project(':01-sample-data-setup').sourceSets.main.runtimeClasspath
+    mainClass = 'com.apache.ignite.examples.setup.MusicStoreSetup'
+    jvmArgs = [
+        '--add-opens=java.base/java.lang=ALL-UNNAMED',
+        '--add-opens=java.base/java.lang.invoke=ALL-UNNAMED',
+        '--add-opens=java.base/java.nio=ALL-UNNAMED',
+        '--add-opens=java.base/sun.nio.ch=ALL-UNNAMED',
+        '-Dio.netty.tryReflectionSetAccessible=true'
+    ]
+    standardInput = System.in
+    
+    // Set default args - will be overridden if --args is provided
+    args = ['127.0.0.1:10800']
+}
+
+// 02-getting-started-app
+task helloWorld {
+    group = 'apache-ignite-examples'
+    description = 'Run Hello World example'
+    dependsOn ':02-getting-started-app:runHelloWorld'
+}
+
+task basicSetup {
+    group = 'apache-ignite-examples'
+    description = 'Run basic setup demo'
+    dependsOn ':02-getting-started-app:runBasicSetupDemo'
+}
+
+task connectionExamples {
+    group = 'apache-ignite-examples'
+    description = 'Run connection examples'
+    dependsOn ':02-getting-started-app:runConnectionExamples'
+}
+
+// 03-schema-annotations-app
+task schemaDemo {
+    group = 'apache-ignite-examples'
+    description = 'Run schema annotations demo'
+    dependsOn ':03-schema-annotations-app:runSchemaAPIDemo'
+}
+
+// 04-table-api-app
+task tableDemo {
+    group = 'apache-ignite-examples'
+    description = 'Run complete Table API demo'
+    dependsOn ':04-table-api-app:runTableAPIDemo'
+}
+
+// 05-sql-api-app
+task sqlDemo {
+    group = 'apache-ignite-examples'
+    description = 'Run complete SQL API demo'
+    dependsOn ':05-sql-api-app:runSQLAPIDemo'
+}
+
+// 06-transactions-app
+task transactionDemo {
+    group = 'apache-ignite-examples'
+    description = 'Run complete Transaction API demo'
+    dependsOn ':06-transactions-app:runTransactionAPIDemo'
+}
+
+// 07-compute-api-app
+task computeDemo {
+    group = 'apache-ignite-examples'
+    description = 'Run complete Compute API demo'
+    dependsOn ':07-compute-api-app:runComputeAPIDemo'
+}
+
+// 08-data-streaming-app
+task streamingDemo {
+    group = 'apache-ignite-examples'
+    description = 'Run complete Data Streaming API demo'
+    dependsOn ':08-data-streaming-app:runDataStreamingAPIDemo'
+}
+
+// 09-caching-patterns-app
+task cachingDemo {
+    group = 'apache-ignite-examples'
+    description = 'Run complete Caching Patterns demo'
+    dependsOn ':09-caching-patterns-app:runCachingAPIDemo'
+}
+
+// 10-file-streaming-app
+task fileStreamingDemo {
+    group = 'apache-ignite-examples'
+    description = 'Run complete File Streaming demo'
+    dependsOn ':10-file-streaming-app:runFileStreamingAPIDemo'
+}
+
+// 11-performance-optimization-app
+task performanceDemo {
+    group = 'apache-ignite-examples'
+    description = 'Run complete Performance Optimization demo'
+    dependsOn ':11-performance-optimization-app:runPerformanceOptimizationAPIDemo'
+}
+
+// Convenience task to run all main demos in sequence
+task runAllDemos {
+    group = 'apache-ignite-examples'
+    description = 'Run all main demonstration applications in sequence'
+    dependsOn setupData, helloWorld, schemaDemo, tableDemo, sqlDemo, transactionDemo, computeDemo, streamingDemo, cachingDemo, fileStreamingDemo, performanceDemo
+    
+    // Ensure proper execution order
+    helloWorld.mustRunAfter setupData
+    schemaDemo.mustRunAfter helloWorld
+    tableDemo.mustRunAfter schemaDemo
+    sqlDemo.mustRunAfter tableDemo
+    transactionDemo.mustRunAfter sqlDemo
+    computeDemo.mustRunAfter transactionDemo
+    streamingDemo.mustRunAfter computeDemo
+    cachingDemo.mustRunAfter streamingDemo
+    fileStreamingDemo.mustRunAfter cachingDemo
+    performanceDemo.mustRunAfter fileStreamingDemo
+}
+
+// Help task to show available examples
+task listExamples {
+    group = 'apache-ignite-examples'
+    description = 'List all available example applications'
+    doLast {
+        println """
+Apache Ignite 3 Reference Applications
+
+Main Demo Tasks (run from root directory):
+./gradlew setupData              - Initialize sample music store data
+  Options: --args="--reset" (clean slate), --args="--core" (minimal data)
+  Custom cluster: --args="192.168.1.100:10800"
+./gradlew helloWorld             - Hello World example (basic operations)
+./gradlew basicSetup             - Basic setup with related tables
+./gradlew connectionExamples     - Connection patterns and configurations
+./gradlew schemaDemo             - Schema annotations and design patterns
+./gradlew tableDemo              - Table API operations and patterns
+./gradlew sqlDemo                - SQL API operations and analytics
+./gradlew transactionDemo        - Transaction patterns and ACID guarantees
+./gradlew computeDemo            - Compute API distributed processing
+./gradlew streamingDemo          - Data streaming and bulk operations
+./gradlew cachingDemo            - Caching patterns and strategies
+./gradlew fileStreamingDemo      - File streaming with backpressure
+./gradlew performanceDemo        - Performance optimization techniques
+
+Special Tasks:
+./gradlew runAllDemos            - Run all main demos in sequence
+
+Individual Applications:
+Each subproject contains multiple applications. Navigate to the subproject 
+directory and run ../gradlew tasks to see all available tasks, or check
+the README.md file in each subproject for detailed instructions.
+
+Example:
+cd 04-table-api-app
+../gradlew runBasicTableOperations
+../gradlew runRecordViewExamples
+"""
+    }
+}

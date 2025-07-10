@@ -30,6 +30,32 @@ cd ../00-docker && docker-compose up -d
 
 ## Applications
 
+**HelloWorldApp** - The simplest introduction to Apache Ignite 3. Creates a Book table, performs CRUD operations using the RecordView API, and demonstrates SQL queries. Uses multi-node connection for partition awareness.
+
+**BasicSetupDemo** - Demonstrates working with related tables (Author and Book) using foreign key relationships. Shows zone creation, transactional inserts, and JOIN queries for retrieving related data.
+
+**ConnectionExamples** - Showcases different client connection patterns including single-node development connections, multi-node production configurations with failover, and performance testing of SQL queries.
+
+### Running the Applications
+
+From this directory, use Gradle to run each application:
+
+```bash
+# Hello World - Basic CRUD operations
+../gradlew runHelloWorld
+
+# Basic Setup - Related tables and transactions  
+../gradlew runBasicSetupDemo
+
+# Connection Examples - Various connection patterns
+../gradlew runConnectionExamples
+
+# Custom cluster address
+../gradlew runHelloWorld --args="192.168.1.100:10800"
+```
+
+## Application Details
+
 ### 1. HelloWorldApp
 
 Connects to Ignite cluster and demonstrates basic operations:
@@ -79,7 +105,7 @@ mvn compile exec:java@setup
 
 **Gradle:**
 ```bash
-# Use Maven command above (custom Gradle task not configured)
+../gradlew runBasicSetupDemo
 ```
 
 **Expected Output:**
@@ -110,7 +136,7 @@ mvn compile exec:java@connection
 
 **Gradle:**
 ```bash
-# Use Maven command above (custom Gradle task not configured)
+../gradlew runConnectionExamples
 ```
 
 **Expected Output:**

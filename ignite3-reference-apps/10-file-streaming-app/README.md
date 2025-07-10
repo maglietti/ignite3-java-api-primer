@@ -85,7 +85,28 @@ Scenario Comparison:
 - Java 17 or higher
 - Maven 3.8+ or Gradle (via wrapper)
 
-## Demonstrations
+## Applications
+
+**FileStreamingAPIDemo** - Main orchestrator that coordinates file streaming demonstrations and provides cluster connectivity verification with educational guidance.
+
+**FileBackpressureStreaming** - Demonstrates file-to-cluster streaming with end-to-end backpressure propagation, showing how reactive streams control upstream file I/O based on downstream cluster capacity.
+
+### Running the Applications
+
+From this directory, use Gradle to run each application:
+
+```bash
+# Run complete File Streaming API demo
+../gradlew runFileStreamingAPIDemo
+
+# Run individual demonstrations
+../gradlew runFileBackpressureStreaming
+
+# Custom cluster address
+../gradlew runFileStreamingAPIDemo --args="192.168.1.100:10800"
+```
+
+## Application Details
 
 ### File Backpressure Streaming (`FileBackpressureStreaming`)
 

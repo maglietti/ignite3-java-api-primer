@@ -8,6 +8,10 @@
 
 This module provides the foundation for all Apache Ignite 3 reference applications by creating a complete music store sample dataset. It demonstrates fundamental Ignite 3 concepts and provides a realistic data model for learning distributed systems patterns.
 
+## Application
+
+**MusicStoreSetup** - Initializes the music store database schema and populates it with sample data. This application creates 11 tables across 2 distribution zones and loads either core sample data (default) or a complete dataset with 15,000+ records. It supports schema reset, custom cluster addresses, and provides detailed progress tracking throughout the setup process.
+
 ## What You'll Learn
 
 - **Schema-as-Code**: Define tables using Java annotations
@@ -75,6 +79,27 @@ mvn compile exec:java -Dexec.args="--reset"
 # Complete clean slate with full dataset
 # Recommended for complete learning environment
 mvn compile exec:java -Dexec.args="--reset --extended"
+```
+
+### Gradle Commands
+
+Run the application using Gradle from this directory:
+
+```bash
+# Basic setup with core dataset
+../gradlew runMusicStoreSetup
+
+# Extended setup with complete dataset
+../gradlew runMusicStoreSetup --args="--extended"
+
+# Reset and reload core data
+../gradlew runMusicStoreSetup --args="--reset"
+
+# Reset and load complete dataset
+../gradlew runMusicStoreSetup --args="--reset --extended"
+
+# Custom cluster address
+../gradlew runMusicStoreSetup --args="192.168.1.100:10800"
 ```
 
 ### Custom Cluster Address

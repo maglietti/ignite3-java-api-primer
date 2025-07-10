@@ -15,3 +15,45 @@ application {
         '-Dio.netty.tryReflectionSetAccessible=true'
     ]
 }
+
+tasks.register('runComputeAPIDemo', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.apache.ignite.examples.compute.ComputeAPIDemo'
+    args = ['127.0.0.1:10800']
+    jvmArgs = application.applicationDefaultJvmArgs
+}
+
+tasks.register('runBasicComputeOperations', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.apache.ignite.examples.compute.BasicComputeOperations'
+    args = ['127.0.0.1:10800']
+    jvmArgs = application.applicationDefaultJvmArgs
+}
+
+tasks.register('runAdvancedComputeOperations', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.apache.ignite.examples.compute.AdvancedComputeOperations'
+    args = ['127.0.0.1:10800']
+    jvmArgs = application.applicationDefaultJvmArgs
+}
+
+tasks.register('runComputeJobWorkflows', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.apache.ignite.examples.compute.ComputeJobWorkflows'
+    args = ['127.0.0.1:10800']
+    jvmArgs = application.applicationDefaultJvmArgs
+}
+
+tasks.register('runProductionComputePatterns', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.apache.ignite.examples.compute.ProductionComputePatterns'
+    args = ['127.0.0.1:10800']
+    jvmArgs = application.applicationDefaultJvmArgs
+}
+
+tasks.register('runMusicPlatformIntelligence', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.apache.ignite.examples.compute.MusicPlatformIntelligence'
+    args = ['127.0.0.1:10800']
+    jvmArgs = application.applicationDefaultJvmArgs
+}

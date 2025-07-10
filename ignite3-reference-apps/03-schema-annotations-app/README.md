@@ -24,7 +24,23 @@ Demonstrates defining database schemas in Java code using annotations. Shows how
 - Java 17 or higher
 - Maven 3.8+ or Gradle (via wrapper)
 
-## Applications
+## Application
+
+**SchemaAPIDemo** - Demonstrates Apache Ignite 3's schema annotation capabilities for mapping POJOs to distributed tables. Shows basic annotation patterns, data colocation strategies for performance optimization, and schema validation features within a music streaming platform context.
+
+### Running the Application
+
+From this directory, use Gradle to run:
+
+```bash
+# Run the complete schema annotations demo
+../gradlew runSchemaAPIDemo
+
+# Custom cluster address
+../gradlew runSchemaAPIDemo --args="192.168.1.100:10800"
+```
+
+## Demo Components
 
 ### Main Demo (SchemaAPIDemo)
 

@@ -28,6 +28,36 @@ Demonstrates Apache Ignite 3's SQL API for relational data access. Shows how to 
 
 ## Applications
 
+**SQLAPIDemo** - Orchestrator that runs all SQL demonstrations in a learning progression from basic queries through advanced analytics and production patterns.
+
+**BasicSQLOperations** - Demonstrates fundamental SQL API usage including query execution, parameter binding, statement configuration, and ResultSet processing.
+
+**AdvancedSQLOperations** - Shows complex query patterns including JOINs, aggregations, batch operations, and object mapping with type safety.
+
+**TransactionSQLOperations** - Integrates SQL operations with ACID transactions demonstrating lifecycle management and error recovery.
+
+**ProductionAnalyticsPatterns** - Implements production-scale analytics with memory-efficient streaming, hierarchical data processing, and query optimization.
+
+### Running the Applications
+
+From this directory, use Gradle to run each application:
+
+```bash
+# Run complete SQL API demo (all examples)
+../gradlew runSQLAPIDemo
+
+# Run individual demonstrations
+../gradlew runBasicSQLOperations
+../gradlew runAdvancedSQLOperations
+../gradlew runTransactionSQLOperations
+../gradlew runProductionAnalyticsPatterns
+
+# Custom cluster address
+../gradlew runSQLAPIDemo --args="192.168.1.100:10800"
+```
+
+## Application Details
+
 ### 1. SQLAPIDemo
 
 Main demonstration of SQL API concepts:
@@ -62,7 +92,7 @@ mvn compile exec:java@basic
 
 **Gradle:**
 ```bash
-# Use Maven command above (custom Gradle task not configured)
+../gradlew runBasicSQLOperations
 ```
 
 **Key concepts:**
@@ -83,7 +113,7 @@ mvn compile exec:java@advanced
 
 **Gradle:**
 ```bash
-# Use Maven command above (custom Gradle task not configured)
+../gradlew runAdvancedSQLOperations
 ```
 
 **Key concepts:**
@@ -105,7 +135,7 @@ mvn compile exec:java@transactions
 
 **Gradle:**
 ```bash
-# Use Maven command above (custom Gradle task not configured)
+../gradlew runTransactionSQLOperations
 ```
 
 **Key concepts:**
@@ -127,7 +157,7 @@ mvn compile exec:java -Dexec.mainClass="com.apache.ignite.examples.sqlapi.Produc
 
 **Gradle:**
 ```bash
-# Use Maven command above (custom Gradle task not configured)
+../gradlew runProductionAnalyticsPatterns
 ```
 
 **Key concepts:**

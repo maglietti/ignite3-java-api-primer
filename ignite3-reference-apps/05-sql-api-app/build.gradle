@@ -15,3 +15,38 @@ application {
         '-Dio.netty.tryReflectionSetAccessible=true'
     ]
 }
+
+tasks.register('runSQLAPIDemo', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.apache.ignite.examples.sqlapi.SQLAPIDemo'
+    args = ['127.0.0.1:10800']
+    jvmArgs = application.applicationDefaultJvmArgs
+}
+
+tasks.register('runBasicSQLOperations', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.apache.ignite.examples.sqlapi.BasicSQLOperations'
+    args = ['127.0.0.1:10800']
+    jvmArgs = application.applicationDefaultJvmArgs
+}
+
+tasks.register('runAdvancedSQLOperations', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.apache.ignite.examples.sqlapi.AdvancedSQLOperations'
+    args = ['127.0.0.1:10800']
+    jvmArgs = application.applicationDefaultJvmArgs
+}
+
+tasks.register('runTransactionSQLOperations', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.apache.ignite.examples.sqlapi.TransactionSQLOperations'
+    args = ['127.0.0.1:10800']
+    jvmArgs = application.applicationDefaultJvmArgs
+}
+
+tasks.register('runProductionAnalyticsPatterns', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.apache.ignite.examples.sqlapi.ProductionAnalyticsPatterns'
+    args = ['127.0.0.1:10800']
+    jvmArgs = application.applicationDefaultJvmArgs
+}
