@@ -46,7 +46,8 @@ MusicStore Zone (2 replicas)          MusicStoreReplicated Zone (3 replicas)
 
 ## Quick Start
 
-> [!warning] **Cluster Requirement**: All reference applications require the 3-node Ignite cluster from `00-docker` to be running. Start it with `docker-compose up -d` before proceeding.
+> [!TIP]
+> **Cluster Requirement**: All reference applications require the 3-node Ignite cluster from `00-docker` to be running. Start it with `docker-compose up -d` before proceeding.
 
 ### Complete Dataset Setup (Default)
 
