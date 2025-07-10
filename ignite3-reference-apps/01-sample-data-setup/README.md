@@ -149,6 +149,7 @@ The application provides detailed progress tracking and status updates:
 
 ## Sample Dataset
 
+> [!NOTE]
 > **Data Loading Logic**: The application loads **complete dataset by default** (15,000+ records). Use `--core` flag for minimal sample data during development and testing.
 
 ### Complete Dataset (Default)
