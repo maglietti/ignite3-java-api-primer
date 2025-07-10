@@ -60,7 +60,8 @@ mvn compile exec:java
 
 ### Individual Demonstrations
 
-Note: The individual classes shown below don't have main methods. They are demonstrated through SchemaAPIDemo.
+> [!NOTE]
+> The individual classes shown below don't have main methods. They are demonstrated through SchemaAPIDemo.
 
 The SchemaAPIDemo demonstrates:
 

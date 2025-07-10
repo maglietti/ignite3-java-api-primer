@@ -156,7 +156,8 @@ curl http://localhost:10300/management/v1/cluster/state
 ./gradlew listExamples
 ```
 
-> **💡 Tip**: Each module contains multiple applications. The commands above run the main orchestrator for each module. See individual module README files for detailed application lists and specific examples.
+> [!TIP]
+> Each module contains multiple applications. The commands above run the main orchestrator for each module. See individual module README files for detailed application lists and specific examples.
 
 **From individual subproject directories** (for specific examples):
 

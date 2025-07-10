@@ -4,6 +4,9 @@
 
 ## Prerequisites
 
+> [!IMPORTANT]
+> Ensure the Ignite 3 cluster is running and initialized before executing any reference applications in modules 01-10.
+
 - Java 11 or newer
 - Download access to Apache Ignite 3 releases
 
@@ -249,7 +252,3 @@ curl http://localhost:10300/management/v1/cluster/status
 # Test client connection
 ignite3 connect http://127.0.0.1:10300
 ```
-
----
-
-**⚠️ Important**: Ensure the Ignite 3 cluster is running and initialized before executing any reference applications in modules 01-10.

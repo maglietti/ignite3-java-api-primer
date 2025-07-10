@@ -84,7 +84,8 @@ This setup provides a **3-node Apache Ignite cluster** with the following config
 
 ## Usage with Reference Applications
 
-**Prerequisites**: The cluster must be running before executing any reference applications.
+> [!IMPORTANT]
+> The cluster must be running before executing any reference applications.
 
 ### Recommended Connection Pattern
 
@@ -178,4 +179,5 @@ For environments where Docker is not available or preferred, see [standalone-set
 
 ---
 
-**⚠️ Important**: Keep this cluster running while working with any reference applications in modules 01-11.
+> [!IMPORTANT]
+> Keep this cluster running while working with any reference applications in modules 01-11.

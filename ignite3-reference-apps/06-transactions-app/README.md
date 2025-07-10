@@ -195,11 +195,3 @@ client.transactions().runInTransaction(tx -> {
     return true;
 });
 ```
-
-## Common Issues
-
-**Transaction timeout**: Configure appropriate timeout in TransactionOptions
-
-**Deadlocks**: Order operations consistently across transactions
-
-**Connection lost**: Transactions automatically rollback on connection failure

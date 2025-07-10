@@ -8,6 +8,14 @@
 
 This module provides the foundation for all Apache Ignite 3 reference applications by creating a complete music store sample dataset. It demonstrates fundamental Ignite 3 concepts and provides a realistic data model for learning distributed systems patterns.
 
+## Prerequisites
+
+- Java 17+
+- Maven 3.8+
+
+> [!WARNING]
+> Apache Ignite 3 cluster must be running (see [00-docker setup](../00-docker/README.md))
+
 ## Application
 
 | Application | Description | Run Command |
@@ -235,9 +243,3 @@ try (IgniteClient client = ConnectionUtils.connectToCluster()) {
     // Work with pre-loaded sample data
 }
 ```
-
-## Prerequisites
-
-- Java 17+
-- Maven 3.8+
-- **⚠️ Required**: Apache Ignite 3 cluster running (see [00-docker setup](../00-docker/README.md))
