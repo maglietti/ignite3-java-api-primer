@@ -38,12 +38,24 @@ import com.apache.ignite.examples.setup.util.DataLoader;
  * - Realistic sample data for development and testing
  * 
  * Usage:
+ * 
+ * Maven:
  *   mvn exec:java                                    # Default complete dataset
  *   mvn exec:java -Dexec.args="--core"              # Load minimal sample data only
  *   mvn exec:java -Dexec.args="--reset"             # Drop existing schema and recreate
  *   mvn exec:java -Dexec.args="--reset --core"      # Reset with minimal data
  *   mvn exec:java -Dexec.args="192.168.1.100:10800" # Custom cluster address
  *   mvn exec:java -Dexec.args="192.168.1.100:10800 --core" # Both options
+ *   mvn exec:java -Dexec.args="--help"              # Show help information
+ * 
+ * Gradle:
+ *   ./gradlew setupData                              # Default complete dataset
+ *   ./gradlew setupData --args="--core"             # Load minimal sample data only
+ *   ./gradlew setupData --args="--reset"            # Drop existing schema and recreate
+ *   ./gradlew setupData --args="--reset --core"     # Reset with minimal data
+ *   ./gradlew setupData --args="192.168.1.100:10800" # Custom cluster address
+ *   ./gradlew setupData --args="192.168.1.100:10800 --core" # Both options
+ *   ./gradlew setupData --args="--help"             # Show help information
  */
 public class MusicStoreSetup {
     
@@ -55,7 +67,10 @@ public class MusicStoreSetup {
         boolean resetSchema = false;
         
         for (String arg : args) {
-            if (arg.equals("--core")) {
+            if (arg.equals("--help")) {
+                displayHelp();
+                return;
+            } else if (arg.equals("--core")) {
                 loadExtended = false;
             } else if (arg.equals("--reset")) {
                 resetSchema = true;
@@ -172,5 +187,78 @@ public class MusicStoreSetup {
             case "PlaylistTrack": return extended ? "(playlist associations)" : "(sample playlist items)";
             default: return "";
         }
+    }
+    
+    /**
+     * Displays comprehensive help information for both Maven and Gradle usage.
+     */
+    private static void displayHelp() {
+        System.out.println();
+        System.out.println("═══════════════════════════════════════════════════════════════════════════════");
+        System.out.println("  Apache Ignite 3 Music Store Sample Data Setup");
+        System.out.println("═══════════════════════════════════════════════════════════════════════════════");
+        System.out.println();
+        System.out.println("Creates and populates a complete music store database for learning Apache Ignite 3.");
+        System.out.println("Demonstrates schema-as-code, distribution zones, and transactional data loading.");
+        System.out.println();
+        
+        System.out.println("PREREQUISITES:");
+        System.out.println("  • Apache Ignite 3 cluster running (start with: cd 00-docker && ./init-cluster.sh)");
+        System.out.println("  • Java 17 or higher");
+        System.out.println("  • Maven 3.8+ OR Gradle (wrapper included)");
+        System.out.println();
+        
+        System.out.println("MAVEN USAGE:");
+        System.out.println("  mvn exec:java                                    # Default: complete dataset (15,000+ records)");
+        System.out.println("  mvn exec:java -Dexec.args=\"--core\"              # Load minimal sample data only");
+        System.out.println("  mvn exec:java -Dexec.args=\"--reset\"             # Drop existing schema and recreate");
+        System.out.println("  mvn exec:java -Dexec.args=\"--reset --core\"      # Reset with minimal data");
+        System.out.println("  mvn exec:java -Dexec.args=\"192.168.1.100:10800\" # Custom cluster address");
+        System.out.println("  mvn exec:java -Dexec.args=\"192.168.1.100:10800 --core\" # Custom address + core data");
+        System.out.println("  mvn exec:java -Dexec.args=\"--help\"              # Show this help");
+        System.out.println();
+        
+        System.out.println("GRADLE USAGE:");
+        System.out.println("  ./gradlew setupData                              # Default: complete dataset (15,000+ records)");
+        System.out.println("  ./gradlew setupData --args=\"--core\"             # Load minimal sample data only");
+        System.out.println("  ./gradlew setupData --args=\"--reset\"            # Drop existing schema and recreate");
+        System.out.println("  ./gradlew setupData --args=\"--reset --core\"     # Reset with minimal data");
+        System.out.println("  ./gradlew setupData --args=\"192.168.1.100:10800\" # Custom cluster address");
+        System.out.println("  ./gradlew setupData --args=\"192.168.1.100:10800 --core\" # Custom address + core data");
+        System.out.println("  ./gradlew setupData --args=\"--help\"             # Show this help");
+        System.out.println();
+        
+        System.out.println("OPTIONS:");
+        System.out.println("  --core     Load minimal sample data (5 artists, 5 albums, 5 tracks, etc.)");
+        System.out.println("             Fast setup for basic testing and development");
+        System.out.println();
+        System.out.println("  --reset    Drop existing schema and recreate from scratch");
+        System.out.println("             Recommended for clean development environments");
+        System.out.println();
+        System.out.println("  <address>  Custom cluster address (host:port format)");
+        System.out.println("             Default: 127.0.0.1:10800");
+        System.out.println();
+        
+        System.out.println("WHAT THIS CREATES:");
+        System.out.println("  • 2 Distribution Zones (MusicStore, MusicStoreReplicated)");
+        System.out.println("  • 11 Tables (Artist, Album, Track, Customer, Invoice, etc.)");
+        System.out.println("  • Sample Data: 5-25 records (--core) OR 15,000+ records (default)");
+        System.out.println("  • Optimized colocation for join performance");
+        System.out.println();
+        
+        System.out.println("EXAMPLES:");
+        System.out.println("  # Quick setup for development");
+        System.out.println("  ./gradlew setupData --args=\"--reset --core\"");
+        System.out.println();
+        System.out.println("  # Production-like dataset");
+        System.out.println("  ./gradlew setupData --args=\"--reset\"");
+        System.out.println();
+        System.out.println("  # Connect to remote cluster");
+        System.out.println("  ./gradlew setupData --args=\"192.168.1.100:10800 --reset\"");
+        System.out.println();
+        
+        System.out.println("Need help? Check the README.md or visit:");
+        System.out.println("https://ignite.apache.org/docs/ignite3/latest/");
+        System.out.println();
     }
 }

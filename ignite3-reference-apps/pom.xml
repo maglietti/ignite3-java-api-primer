@@ -221,7 +221,6 @@
                     <configuration>
                         <includeProjectDependencies>true</includeProjectDependencies>
                         <includePluginDependencies>false</includePluginDependencies>
-                        <commandlineArgs>127.0.0.1:10800</commandlineArgs>
                     </configuration>
                 </plugin>
             </plugins>
