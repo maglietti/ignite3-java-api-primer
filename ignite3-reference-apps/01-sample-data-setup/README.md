@@ -10,7 +10,7 @@ This module provides the foundation for all Apache Ignite 3 reference applicatio
 
 ## Application
 
-**MusicStoreSetup** - Initializes the music store database schema and populates it with sample data. This application creates 11 tables across 2 distribution zones and loads either core sample data (default) or a complete dataset with 15,000+ records. It supports schema reset, custom cluster addresses, and provides detailed progress tracking throughout the setup process.
+**MusicStoreSetup** - Initializes the music store database schema and populates it with sample data. This application creates 11 tables across 2 distribution zones and loads a complete dataset with 15,000+ records by default, or core sample data when using --core flag. It supports schema reset, custom cluster addresses, and provides detailed progress tracking throughout the setup process.
 
 ## What You'll Learn
 
@@ -46,39 +46,37 @@ MusicStore Zone (2 replicas)          MusicStoreReplicated Zone (3 replicas)
 
 ## Quick Start
 
-> **Cluster Requirement**: All reference applications require the 3-node Ignite cluster from `00-docker` to be running. Start it with `docker-compose up -d` before proceeding.
+> [!warning] **Cluster Requirement**: All reference applications require the 3-node Ignite cluster from `00-docker` to be running. Start it with `docker-compose up -d` before proceeding.
 
-### Basic Setup (Core Dataset)
+### Complete Dataset Setup (Default)
 
 ```bash
 # Interactive setup with progress tracking
 # Creates schema with 11 tables and 2 distribution zones
-# Loads core sample data (5 artists, 5 albums, 5 tracks)
-# If schema exists, presents friendly options menu
+# Loads complete dataset (15,000+ records)
+# If schema exists, presents an options menu
 mvn compile exec:java
 ```
 
-### Extended Setup (Complete Dataset)
+### Core Dataset Setup (Minimal Data)
 
 ```bash
-# Complete music store catalog setup
-# Skips core sample data and loads complete 15,866-line SQL script instead
-# Includes 275+ artists, 3,500+ tracks - everything you need
-# Uses optimized batch processing for performance
-# Takes 2-3 minutes with detailed progress reporting
-mvn compile exec:java -Dexec.args="--extended"
+# Minimal sample data for quick testing
+# Loads core sample data only (5 artists, 5 albums, 5 tracks)
+# Perfect for development and basic testing
+mvn compile exec:java -Dexec.args="--core"
 ```
 
 ### Reset Setup (Clean Slate)
 
 ```bash
-# Drops existing schema and recreates with core data
+# Drops existing schema and recreates with complete dataset
 # Perfect for clean development environment
 mvn compile exec:java -Dexec.args="--reset"
 
-# Complete clean slate with full dataset
-# Recommended for complete learning environment
-mvn compile exec:java -Dexec.args="--reset --extended"
+# Complete clean slate with minimal data
+# Fastest setup for basic testing
+mvn compile exec:java -Dexec.args="--reset --core"
 ```
 
 ### Gradle Commands
@@ -86,28 +84,45 @@ mvn compile exec:java -Dexec.args="--reset --extended"
 Run the application using Gradle from this directory:
 
 ```bash
-# Basic setup with core dataset
+# Complete dataset setup (default)
 ../gradlew runMusicStoreSetup
 
-# Extended setup with complete dataset
-../gradlew runMusicStoreSetup --args="--extended"
+# Core dataset setup (minimal data)
+../gradlew runMusicStoreSetup --args="--core"
 
-# Reset and reload core data
+# Reset and reload complete dataset
 ../gradlew runMusicStoreSetup --args="--reset"
 
-# Reset and load complete dataset
-../gradlew runMusicStoreSetup --args="--reset --extended"
+# Reset and load minimal data
+../gradlew runMusicStoreSetup --args="--reset --core"
 
-# Custom cluster address
+# Custom cluster address with complete dataset
 ../gradlew runMusicStoreSetup --args="192.168.1.100:10800"
+
+# Custom cluster address with minimal data
+../gradlew runMusicStoreSetup --args="192.168.1.100:10800 --core"
+
+# Show help with all options
+../gradlew runMusicStoreSetup --args="--help"
 ```
 
 ### Custom Cluster Address
 
 ```bash
+# Custom cluster with complete dataset (default)
 mvn compile exec:java -Dexec.args="192.168.1.100:10800"
-mvn compile exec:java -Dexec.args="192.168.1.100:10800 --extended"
+
+# Custom cluster with minimal data
+mvn compile exec:java -Dexec.args="192.168.1.100:10800 --core"
+
+# Custom cluster with reset and complete dataset
 mvn compile exec:java -Dexec.args="192.168.1.100:10800 --reset"
+
+# Custom cluster with reset and minimal data
+mvn compile exec:java -Dexec.args="192.168.1.100:10800 --reset --core"
+
+# Show help with all available options
+mvn compile exec:java -Dexec.args="--help"
 ```
 
 ### What You'll See
@@ -118,7 +133,7 @@ The application provides detailed progress tracking and status updates:
 - **Connection Status**: Clear connection feedback and troubleshooting tips
 - **Schema Progress**: Step-by-step table creation with descriptions
 - **Data Loading**: Transactional batch operations with progress indicators
-- **Bulk Loading**: Real-time progress for extended dataset processing
+- **Bulk Loading**: Real-time progress for complete dataset processing
 - **Verification**: Complete data validation with record counts
 - **Success Summary**: Final status with next steps and available tables
 
@@ -133,25 +148,9 @@ The application provides detailed progress tracking and status updates:
 
 ## Sample Dataset
 
-> **Data Loading Logic**: The application uses **exclusive data loading** - either core sample data OR complete dataset, never both. The `--extended` flag replaces the sample data with the complete catalog.
+> **Data Loading Logic**: The application loads **complete dataset by default** (15,000+ records). Use `--core` flag for minimal sample data during development and testing.
 
-### Core Data (Default)
-
-**Music Entities**:
-
-- **5 Artists**: AC/DC, Accept, Aerosmith, Black Sabbath, Led Zeppelin
-- **5 Albums**: Representative albums from various artists
-- **5 Tracks**: Individual songs with metadata (duration, composer, price)
-- **5 Genres**: Rock, Jazz, Metal, Alternative & Punk, Blues
-- **3 Media Types**: MPEG, AAC, MPEG-4 video
-
-**Business Entities**:
-
-- **3 Customers**: International customer base
-- **3 Employees**: Hierarchical organization structure
-- **2 Invoices**: Purchase transactions with line items
-
-### Complete Dataset (--extended)
+### Complete Dataset (Default)
 
 **Full Music Store Dataset**:
 
@@ -166,6 +165,22 @@ The application provides detailed progress tracking and status updates:
 - **2,240+ Invoice Lines**: Detailed purchase records
 - **18 Playlists**: User-generated playlists
 - **8,715+ Playlist Tracks**: Complete playlist associations
+
+### Core Dataset (--core)
+
+**Music Entities**:
+
+- **5 Artists**: AC/DC, Accept, Aerosmith, Black Sabbath, Led Zeppelin
+- **5 Albums**: Representative albums from various artists
+- **5 Tracks**: Individual songs with metadata (duration, composer, price)
+- **5 Genres**: Rock, Jazz, Metal, Alternative & Punk, Blues
+- **3 Media Types**: MPEG, AAC, MPEG-4 video
+
+**Business Entities**:
+
+- **3 Customers**: International customer base
+- **3 Employees**: Hierarchical organization structure
+- **2 Invoices**: Purchase transactions with line items
 
 ## Key Concepts Demonstrated
 
