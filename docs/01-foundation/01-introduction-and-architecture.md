@@ -130,9 +130,25 @@ IgniteClient ignite = IgniteClient.builder()
     .build();
 
 // All capabilities through one connection
-Table<Artist> artists = ignite.tables().table("Artist").recordView(Artist.class);
-SqlStatement analytics = ignite.sql().statementBuilder().query("SELECT...");
-JobExecution<String> recommendation = ignite.compute().submit(nodes, job, args);
+
+// RecordView for entity-based operations
+Table<Artist> artists = ignite.tables()
+    .table("Artist")
+    .recordView(Artist.class);
+
+// KeyValueView for cache-like operations  
+KeyValueView<Long, Album> albums = ignite.tables()
+    .table("Album")
+    .keyValueView(Long.class, Album.class);
+
+// SQL analytics - declarative queries
+SqlStatement analytics = ignite.sql()
+    .statementBuilder()
+    .query("SELECT...");
+
+// Distributed compute - collocated processing
+JobExecution<String> recommendation = ignite.compute()
+    .submit(nodes, job, args);
 ```
 
 ### How Ignite's Core Capabilities Address Scale Challenges
