@@ -1,7 +1,7 @@
 name: ignite3
 
 x-ignite-def: &ignite-def
-  image: apacheignite/ignite:${IGNITE_VERSION:-3.0.0}
+  image: apacheignite/ignite:${IGNITE_VERSION:-3.1.0}
   environment:
     JVM_MAX_MEM: "4g"
     JVM_MIN_MEM: "4g"
@@ -38,6 +38,16 @@ services:
     depends_on:
       - node1
       - node2
+
+  cli:
+    image: apacheignite/ignite-cli:${IGNITE_VERSION:-3.1.0}
+    container_name: ignite3-cli
+    stdin_open: true
+    tty: true
+    profiles:
+      - cli
+    depends_on:
+      - node1
 
 configs:
   node_config:

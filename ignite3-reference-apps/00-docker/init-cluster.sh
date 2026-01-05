@@ -128,8 +128,8 @@ if echo "$status_response" | grep -q '"cmgNodes"'; then
     echo "Cluster successfully initialized and ready!"
     echo ""
     echo "Next steps:"
-    echo "1. cd ../01-sample-data-setup"
-    echo "2. mvn compile exec:java"
+    echo "  Run reference apps:  cd ../01-sample-data-setup && mvn compile exec:java"
+    echo "  Start Ignite CLI:    $COMPOSE_CMD run --rm cli connect http://node1:10300"
     echo ""
     echo "To stop cluster: $COMPOSE_CMD down"
 else

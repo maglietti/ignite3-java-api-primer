@@ -173,6 +173,47 @@ docker-compose down -v  # Remove volumes
 docker-compose up -d    # Start fresh
 ```
 
+## Using the Ignite CLI
+
+The Ignite CLI is available as a Docker container for cluster management and SQL operations.
+
+### Run CLI Interactively
+
+```bash
+docker-compose run --rm cli connect http://node1:10300
+```
+
+This starts the CLI and connects to the cluster. From here you can run SQL queries, manage tables, and administer the cluster.
+
+### Start CLI with the Cluster
+
+To start the CLI alongside the cluster nodes:
+
+```bash
+docker-compose --profile cli up -d
+docker attach ignite3-cli
+```
+
+To detach from the CLI without stopping it, press `Ctrl+P` followed by `Ctrl+Q`.
+
+### CLI Examples
+
+Once connected, you can run commands like:
+
+```sql
+-- Check cluster topology
+cluster topology physical
+
+-- Create a table
+CREATE TABLE person (id INT PRIMARY KEY, name VARCHAR);
+
+-- Insert data
+INSERT INTO person VALUES (1, 'Alice'), (2, 'Bob');
+
+-- Query data
+SELECT * FROM person;
+```
+
 ## Alternative Installation
 
 For environments where Docker is not available or preferred, see [standalone-setup.md](standalone-setup.md) for instructions on installing and running Apache Ignite 3 natively using ZIP archives, DEB/RPM packages, or building from source.
