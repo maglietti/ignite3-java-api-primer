@@ -294,7 +294,7 @@ erDiagram
 
 - [Apache Ignite 3 Documentation](https://ignite.apache.org/docs/ignite3/latest/)
 - [Java API Reference](https://ignite.apache.org/docs/ignite3/latest/developers-guide/clients/java)
-- [SQL Reference](https://ignite.apache.org/docs/3.0.0/sql-reference/ddl)
+- [SQL Reference](https://ignite.apache.org/docs/ignite3/latest/sql-reference/ddl)
 
 ## Contributing
 
