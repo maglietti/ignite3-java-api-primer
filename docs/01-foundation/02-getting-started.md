@@ -46,6 +46,124 @@ dependencies {
 
 This single dependency provides the complete client API for connections, schema operations, and data access.
 
+### Logging Configuration
+
+The Ignite 3 client uses Java Platform Logging (the System.Logger API introduced in Java 9). By default, System.Logger routes to java.util.logging (JUL), which logs to console at INFO level without additional configuration.
+
+**Default Behavior (No Configuration Required)**
+
+With just the `ignite-client` dependency, logging works out of the box:
+
+- Client operations log to console via java.util.logging
+- INFO level messages appear by default
+- No additional dependencies required
+
+To adjust JUL log levels, create `logging.properties` in your classpath:
+
+```properties
+# src/main/resources/logging.properties
+handlers=java.util.logging.ConsoleHandler
+java.util.logging.ConsoleHandler.level=ALL
+
+# Ignite client logging
+org.apache.ignite.level=INFO
+org.apache.ignite.internal.client.level=WARNING
+```
+
+Set the system property when running your application:
+
+```bash
+java -Djava.util.logging.config.file=src/main/resources/logging.properties -jar your-app.jar
+```
+
+**SLF4J with Log4j2 (Optional)**
+
+Applications that prefer SLF4J for their own logging can add these dependencies. This configuration provides structured logging for your application code:
+
+```xml
+<!-- Maven pom.xml -->
+<dependencies>
+    <!-- Ignite 3 client -->
+    <dependency>
+        <groupId>org.apache.ignite</groupId>
+        <artifactId>ignite-client</artifactId>
+        <version>3.0.0</version>
+    </dependency>
+
+    <!-- Application logging: SLF4J API + Log4j2 implementation -->
+    <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>2.0.17</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.logging.log4j</groupId>
+        <artifactId>log4j-slf4j2-impl</artifactId>
+        <version>2.24.3</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.logging.log4j</groupId>
+        <artifactId>log4j-core</artifactId>
+        <version>2.24.3</version>
+    </dependency>
+    <!-- Bridge JUL to Log4j2 for unified logging -->
+    <dependency>
+        <groupId>org.apache.logging.log4j</groupId>
+        <artifactId>log4j-jul</artifactId>
+        <version>2.24.3</version>
+    </dependency>
+</dependencies>
+```
+
+```gradle
+// Gradle build.gradle
+dependencies {
+    implementation 'org.apache.ignite:ignite-client:3.0.0'
+
+    // Application logging: SLF4J API + Log4j2 implementation
+    implementation 'org.slf4j:slf4j-api:2.0.17'
+    implementation 'org.apache.logging.log4j:log4j-slf4j2-impl:2.24.3'
+    implementation 'org.apache.logging.log4j:log4j-core:2.24.3'
+    // Bridge JUL to Log4j2 for unified logging
+    implementation 'org.apache.logging.log4j:log4j-jul:2.24.3'
+}
+```
+
+Create `src/main/resources/log4j2.xml` to configure logging levels:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{HH:mm:ss} %-5level %logger{36} - %msg%n"/>
+        </Console>
+    </Appenders>
+
+    <Loggers>
+        <!-- Ignite client operations (routed via JUL bridge) -->
+        <Logger name="org.apache.ignite" level="INFO"/>
+
+        <!-- Reduce network noise during development -->
+        <Logger name="io.netty" level="WARN"/>
+        <Logger name="org.apache.ignite.internal.client" level="WARN"/>
+
+        <Root level="INFO">
+            <AppenderRef ref="Console"/>
+        </Root>
+    </Loggers>
+</Configuration>
+```
+
+To route JUL output through Log4j2, set this system property:
+
+```bash
+java -Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager -jar your-app.jar
+```
+
+> [!TIP]
+> The reference applications in this primer use SLF4J + Log4j2 for application logging. See `01-sample-data-setup/src/main/resources/log4j2.xml` for a production-ready configuration.
+
 ### Cluster Bootstrap Process
 
 Ignite 3 requires an initialized cluster before applications can connect. Unlike traditional databases that run as single instances, Ignite operates as a distributed system where multiple nodes work together to store and process data. The bootstrap process creates this initial cluster topology and prepares it to accept client connections.
