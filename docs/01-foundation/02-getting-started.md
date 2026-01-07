@@ -78,7 +78,7 @@ java -Djava.util.logging.config.file=src/main/resources/logging.properties -jar 
 
 **SLF4J with Log4j2 (Optional)**
 
-Applications that prefer SLF4J for their own logging can add these dependencies. This configuration provides structured logging for your application code:
+Applications that prefer SLF4J for their own logging can add these dependencies. This configuration provides structured logging for your application code while Ignite client logs continue through JUL to console:
 
 ```xml
 <!-- Maven pom.xml -->
@@ -106,12 +106,6 @@ Applications that prefer SLF4J for their own logging can add these dependencies.
         <artifactId>log4j-core</artifactId>
         <version>2.24.3</version>
     </dependency>
-    <!-- Bridge JUL to Log4j2 for unified logging -->
-    <dependency>
-        <groupId>org.apache.logging.log4j</groupId>
-        <artifactId>log4j-jul</artifactId>
-        <version>2.24.3</version>
-    </dependency>
 </dependencies>
 ```
 
@@ -124,12 +118,10 @@ dependencies {
     implementation 'org.slf4j:slf4j-api:2.0.17'
     implementation 'org.apache.logging.log4j:log4j-slf4j2-impl:2.24.3'
     implementation 'org.apache.logging.log4j:log4j-core:2.24.3'
-    // Bridge JUL to Log4j2 for unified logging
-    implementation 'org.apache.logging.log4j:log4j-jul:2.24.3'
 }
 ```
 
-Create `src/main/resources/log4j2.xml` to configure logging levels:
+Create `src/main/resources/log4j2.xml` to configure application logging:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -141,12 +133,8 @@ Create `src/main/resources/log4j2.xml` to configure logging levels:
     </Appenders>
 
     <Loggers>
-        <!-- Ignite client operations (routed via JUL bridge) -->
-        <Logger name="org.apache.ignite" level="INFO"/>
-
-        <!-- Reduce network noise during development -->
+        <!-- Reduce Netty network noise -->
         <Logger name="io.netty" level="WARN"/>
-        <Logger name="org.apache.ignite.internal.client" level="WARN"/>
 
         <Root level="INFO">
             <AppenderRef ref="Console"/>
@@ -155,14 +143,23 @@ Create `src/main/resources/log4j2.xml` to configure logging levels:
 </Configuration>
 ```
 
-To route JUL output through Log4j2, set this system property:
+Use SLF4J in your application code:
 
-```bash
-java -Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager -jar your-app.jar
+```java
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class MyApplication {
+    private static final Logger logger = LoggerFactory.getLogger(MyApplication.class);
+
+    public void process() {
+        logger.info("Processing data...");
+    }
+}
 ```
 
 > [!TIP]
-> The reference applications in this primer use SLF4J + Log4j2 for application logging. See `01-sample-data-setup/src/main/resources/log4j2.xml` for a production-ready configuration.
+> The reference applications in this primer use SLF4J + Log4j2. See `01-sample-data-setup/src/main/resources/log4j2.xml` for a complete configuration example.
 
 ### Cluster Bootstrap Process
 
