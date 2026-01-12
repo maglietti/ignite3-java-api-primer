@@ -1,9 +1,15 @@
 -- Apache Ignite 3 Music Store Sample Database Schema
 -- Distribution Zones and Table Definitions
+--
+-- Note: The Java application (MusicStoreZoneConfiguration) handles zone creation
+-- with automatic verification and correction of settings. These SQL statements
+-- are provided for reference and manual setup scenarios.
 
 -- Create Distribution Zones
-CREATE ZONE MusicStore WITH REPLICAS=2, PARTITIONS=25, STORAGE_PROFILES='default';
-CREATE ZONE MusicStoreReplicated WITH REPLICAS=3, PARTITIONS=25, STORAGE_PROFILES='default';
+-- MusicStore: Primary zone for transactional data (2 replicas for HA)
+-- MusicStoreReplicated: Reference data zone (3 replicas for high availability)
+CREATE ZONE IF NOT EXISTS MusicStore WITH REPLICAS=2, PARTITIONS=25, STORAGE_PROFILES='default';
+CREATE ZONE IF NOT EXISTS MusicStoreReplicated WITH REPLICAS=3, PARTITIONS=25, STORAGE_PROFILES='default';
 
 -- Reference Data Tables (MusicStoreReplicated Zone)
 
