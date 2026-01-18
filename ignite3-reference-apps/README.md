@@ -149,12 +149,20 @@ curl http://localhost:10300/management/v1/cluster/state
 ## Convenience Commands
 
 ```bash
-# Run all main demos in sequence (full tour)
+# Run all main demos in sequence (non-interactive, full tour)
 ./gradlew runAllDemos
+
+# Non-interactive setup (uses --reset --core)
+./gradlew setupDataAuto
 
 # Get help with available examples
 ./gradlew listExamples
 ```
+
+The `runAllDemos` task runs all demonstrations in sequence with:
+- Non-interactive setup using `--reset --core` (minimal dataset)
+- Progress banners showing current demo (e.g., `[04/11] Table API`)
+- Automatic completion without requiring user input
 
 > [!TIP]
 > Each module contains multiple applications. The commands above run the main orchestrator for each module. See individual module README files for detailed application lists and specific examples.

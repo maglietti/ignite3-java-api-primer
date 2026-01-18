@@ -20,7 +20,10 @@ This module provides the foundation for all Apache Ignite 3 reference applicatio
 
 | Application | Description | Run Command |
 |-------------|-------------|-------------|
-| MusicStoreSetup | Initializes the music store database schema and populates it with sample data. This application creates 11 tables across 2 distribution zones and loads a complete dataset with 15,000+ records by default, or core sample data when using --core flag. It supports schema reset, custom cluster addresses, and provides detailed progress tracking throughout the setup process. | `../gradlew runMusicStoreSetup` |
+| MusicStoreSetup | Initializes the music store database schema and populates it with sample data. This application creates 11 tables across 2 distribution zones and loads a complete dataset with 15,000+ records by default, or core sample data when using --core flag. It supports schema reset, custom cluster addresses, and provides detailed progress tracking throughout the setup process. | `./gradlew setupData` |
+
+> [!NOTE]
+> For automation and CI/CD, use `./gradlew setupDataAuto` which runs non-interactively with `--reset --core` flags.
 
 ## What You'll Learn
 
@@ -92,7 +95,22 @@ mvn compile exec:java -Dexec.args="--reset --core"
 
 ### Gradle Commands
 
-Run the application using Gradle from this directory:
+**From the root `ignite3-reference-apps` directory** (recommended):
+
+```bash
+# Interactive setup with complete dataset (default)
+./gradlew setupData
+
+# Interactive setup with options
+./gradlew setupData --args="--reset"
+./gradlew setupData --args="--core"
+./gradlew setupData --args="--reset --core"
+
+# Non-interactive setup (uses --reset --core, no prompts)
+./gradlew setupDataAuto
+```
+
+**From this directory** (`01-sample-data-setup`):
 
 ```bash
 # Complete dataset setup (default)
@@ -116,6 +134,9 @@ Run the application using Gradle from this directory:
 # Show help with all options
 ../gradlew runMusicStoreSetup --args="--help"
 ```
+
+> [!TIP]
+> Use `setupDataAuto` for automation and CI/CD pipelines. It runs non-interactively with `--reset --core` flags, avoiding any prompts that could cause hangs.
 
 ### Custom Cluster Address
 
