@@ -57,36 +57,55 @@ public class CacheAsideOptimization {
     public CacheAsideOptimization(IgniteClient client) {
         this.client = client;
         this.sql = client.sql();
-        
-        // Create cache table if it doesn't exist
-        createCacheTableIfNotExists();
-        
-        Table cacheTable = client.tables().table("ArtistCache");
+
+        // Create cache table if it doesn't exist and wait for availability
+        Table cacheTable = getOrCreateCacheTable();
+        if (cacheTable == null) {
+            throw new RuntimeException("Failed to create or access ArtistCache table");
+        }
         this.artistCache = cacheTable.keyValueView();
     }
-    
-    private void createCacheTableIfNotExists() {
+
+    private Table getOrCreateCacheTable() {
+        Table table = client.tables().table("ArtistCache");
+        if (table != null) {
+            return table;
+        }
+
+        // Table doesn't exist, create it with the MusicStoreReplicated zone
         try {
-            // Try to access the table first
-            client.tables().table("ArtistCache");
+            Statement createTable = sql.statementBuilder()
+                .query("CREATE TABLE IF NOT EXISTS ArtistCache (" +
+                       "ArtistId INT PRIMARY KEY, " +
+                       "Name VARCHAR(120), " +
+                       "TrackCount INT, " +
+                       "CachedAt BIGINT, " +
+                       "Source VARCHAR(50)" +
+                       ") WITH PRIMARY_ZONE='MusicStoreReplicated'")
+                .build();
+            sql.execute(null, createTable);
+            System.out.println(">>> Created ArtistCache table for demonstration");
         } catch (Exception e) {
-            // Table doesn't exist, create it
+            System.err.println("Failed to create ArtistCache table: " + e.getMessage());
+            return null;
+        }
+
+        // Wait for table to become available via Table API (may take a moment after SQL creation)
+        for (int i = 0; i < 10; i++) {
+            table = client.tables().table("ArtistCache");
+            if (table != null) {
+                return table;
+            }
             try {
-                Statement createTable = sql.statementBuilder()
-                    .query("CREATE TABLE IF NOT EXISTS ArtistCache (" +
-                           "ArtistId INT PRIMARY KEY, " +
-                           "Name VARCHAR(120), " +
-                           "TrackCount INT, " +
-                           "CachedAt BIGINT, " +
-                           "Source VARCHAR(50))")
-                    .build();
-                sql.execute(null, createTable);
-                
-                System.out.println(">>> Created ArtistCache table for demonstration");
-            } catch (Exception createException) {
-                System.err.println("Failed to create ArtistCache table: " + createException.getMessage());
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return null;
             }
         }
+
+        System.err.println("!!! ArtistCache table not available after creation");
+        return null;
     }
     
     public static void main(String[] args) {
