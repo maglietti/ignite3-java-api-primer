@@ -14,8 +14,6 @@ buildNumber.properties
 build/
 .gradle/
 gradle-app.setting
-!gradle-wrapper.jar
-!gradle-wrapper.properties
 .gradletasknamecache
 
 # Compiled class files
@@ -33,6 +31,9 @@ logs/
 *.zip
 *.tar.gz
 *.rar
+
+# Keep gradle wrapper
+!gradle-wrapper.jar
 
 # IDE specific files
 .idea/
