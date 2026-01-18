@@ -48,6 +48,13 @@ subprojects {
             '-Dio.netty.tryReflectionSetAccessible=true'
         ]
     }
+
+    // Make custom run tasks visible in task listing
+    afterEvaluate {
+        tasks.withType(JavaExec).matching { it.name.startsWith('run') && it.name != 'run' }.configureEach {
+            group = 'apache-ignite-examples'
+        }
+    }
 }
 
 // Convenience tasks to run examples from root directory
@@ -65,9 +72,26 @@ task setupData(type: JavaExec) {
         '-Dio.netty.tryReflectionSetAccessible=true'
     ]
     standardInput = System.in
-    
+
     // Set default args - will be overridden if --args is provided
     args = ['127.0.0.1:10800']
+}
+
+// Non-interactive setup for automation (used by runAllDemos)
+task setupDataAuto(type: JavaExec) {
+    group = 'apache-ignite-examples'
+    description = 'Initialize sample music store data (non-interactive, uses --reset --core)'
+    classpath = project(':01-sample-data-setup').sourceSets.main.runtimeClasspath
+    mainClass = 'com.apache.ignite.examples.setup.MusicStoreSetup'
+    jvmArgs = [
+        '--add-opens=java.base/java.lang=ALL-UNNAMED',
+        '--add-opens=java.base/java.lang.invoke=ALL-UNNAMED',
+        '--add-opens=java.base/java.nio=ALL-UNNAMED',
+        '--add-opens=java.base/sun.nio.ch=ALL-UNNAMED',
+        '-Dio.netty.tryReflectionSetAccessible=true'
+    ]
+    // Non-interactive: reset schema and use core dataset
+    args = ['127.0.0.1:10800', '--reset', '--core']
 }
 
 // 02-getting-started-app
@@ -75,6 +99,7 @@ task helloWorld {
     group = 'apache-ignite-examples'
     description = 'Run Hello World example'
     dependsOn ':02-getting-started-app:runHelloWorld'
+    doFirst { printDemoBanner('02', 'Hello World', 'Getting Started') }
 }
 
 task basicSetup {
@@ -94,6 +119,7 @@ task schemaDemo {
     group = 'apache-ignite-examples'
     description = 'Run schema annotations demo'
     dependsOn ':03-schema-annotations-app:runSchemaAPIDemo'
+    doFirst { printDemoBanner('03', 'Schema Annotations', 'Schema Design Patterns') }
 }
 
 // 04-table-api-app
@@ -101,6 +127,7 @@ task tableDemo {
     group = 'apache-ignite-examples'
     description = 'Run complete Table API demo'
     dependsOn ':04-table-api-app:runTableAPIDemo'
+    doFirst { printDemoBanner('04', 'Table API', 'Key-Value Operations') }
 }
 
 // 05-sql-api-app
@@ -108,6 +135,7 @@ task sqlDemo {
     group = 'apache-ignite-examples'
     description = 'Run complete SQL API demo'
     dependsOn ':05-sql-api-app:runSQLAPIDemo'
+    doFirst { printDemoBanner('05', 'SQL API', 'SQL Operations & Analytics') }
 }
 
 // 06-transactions-app
@@ -115,6 +143,7 @@ task transactionDemo {
     group = 'apache-ignite-examples'
     description = 'Run complete Transaction API demo'
     dependsOn ':06-transactions-app:runTransactionAPIDemo'
+    doFirst { printDemoBanner('06', 'Transactions', 'ACID Guarantees') }
 }
 
 // 07-compute-api-app
@@ -122,6 +151,7 @@ task computeDemo {
     group = 'apache-ignite-examples'
     description = 'Run complete Compute API demo'
     dependsOn ':07-compute-api-app:runComputeAPIDemo'
+    doFirst { printDemoBanner('07', 'Compute API', 'Distributed Processing') }
 }
 
 // 08-data-streaming-app
@@ -129,6 +159,7 @@ task streamingDemo {
     group = 'apache-ignite-examples'
     description = 'Run complete Data Streaming API demo'
     dependsOn ':08-data-streaming-app:runDataStreamingAPIDemo'
+    doFirst { printDemoBanner('08', 'Data Streaming', 'Bulk Data Operations') }
 }
 
 // 09-caching-patterns-app
@@ -136,6 +167,7 @@ task cachingDemo {
     group = 'apache-ignite-examples'
     description = 'Run complete Caching Patterns demo'
     dependsOn ':09-caching-patterns-app:runCachingAPIDemo'
+    doFirst { printDemoBanner('09', 'Caching Patterns', 'Cache Strategies') }
 }
 
 // 10-file-streaming-app
@@ -143,6 +175,7 @@ task fileStreamingDemo {
     group = 'apache-ignite-examples'
     description = 'Run complete File Streaming demo'
     dependsOn ':10-file-streaming-app:runFileStreamingAPIDemo'
+    doFirst { printDemoBanner('10', 'File Streaming', 'File-based Data Loading') }
 }
 
 // 11-performance-optimization-app
@@ -150,16 +183,47 @@ task performanceDemo {
     group = 'apache-ignite-examples'
     description = 'Run complete Performance Optimization demo'
     dependsOn ':11-performance-optimization-app:runPerformanceOptimizationAPIDemo'
+    doFirst { printDemoBanner('11', 'Performance', 'Optimization Techniques') }
+}
+
+// Helper method to print demo banners
+def printDemoBanner(String number, String name, String subtitle) {
+    println ''
+    println '=' * 70
+    println "  [${number}/11] ${name}"
+    println "  ${subtitle}"
+    println '=' * 70
+    println ''
 }
 
 // Convenience task to run all main demos in sequence
 task runAllDemos {
     group = 'apache-ignite-examples'
-    description = 'Run all main demonstration applications in sequence'
-    dependsOn setupData, helloWorld, schemaDemo, tableDemo, sqlDemo, transactionDemo, computeDemo, streamingDemo, cachingDemo, fileStreamingDemo, performanceDemo
-    
-    // Ensure proper execution order
-    helloWorld.mustRunAfter setupData
+    description = 'Run all main demonstration applications in sequence (non-interactive)'
+    dependsOn setupDataAuto, helloWorld, schemaDemo, tableDemo, sqlDemo, transactionDemo, computeDemo, streamingDemo, cachingDemo, fileStreamingDemo, performanceDemo
+
+    doFirst {
+        println ''
+        println '=' * 70
+        println '  Apache Ignite 3 Reference Applications'
+        println '  Running all demos in sequence (non-interactive mode)'
+        println '=' * 70
+        println ''
+        println '  [01/11] Sample Data Setup (--reset --core)'
+        println '  Creating schema and loading core dataset...'
+        println ''
+    }
+
+    doLast {
+        println ''
+        println '=' * 70
+        println '  All demos completed successfully!'
+        println '=' * 70
+        println ''
+    }
+
+    // Ensure proper execution order for wrapper tasks
+    helloWorld.mustRunAfter setupDataAuto
     schemaDemo.mustRunAfter helloWorld
     tableDemo.mustRunAfter schemaDemo
     sqlDemo.mustRunAfter tableDemo
@@ -171,6 +235,41 @@ task runAllDemos {
     performanceDemo.mustRunAfter fileStreamingDemo
 }
 
+// Configure sequential execution for actual subproject tasks
+// This ensures the underlying JavaExec tasks run in order, not just the wrapper tasks
+gradle.projectsEvaluated {
+    def setupTask = tasks.findByName('setupDataAuto')
+
+    // Define the execution order for subproject demo tasks
+    def demoTaskOrder = [
+        ':02-getting-started-app:runHelloWorld',
+        ':03-schema-annotations-app:runSchemaAPIDemo',
+        ':04-table-api-app:runTableAPIDemo',
+        ':05-sql-api-app:runSQLAPIDemo',
+        ':06-transactions-app:runTransactionAPIDemo',
+        ':07-compute-api-app:runComputeAPIDemo',
+        ':08-data-streaming-app:runDataStreamingAPIDemo',
+        ':09-caching-patterns-app:runCachingAPIDemo',
+        ':10-file-streaming-app:runFileStreamingAPIDemo',
+        ':11-performance-optimization-app:runPerformanceOptimizationAPIDemo'
+    ]
+
+    // Make first demo task run after setup
+    def firstDemoTask = tasks.findByPath(demoTaskOrder[0])
+    if (firstDemoTask && setupTask) {
+        firstDemoTask.mustRunAfter setupTask
+    }
+
+    // Chain each demo task to run after the previous one
+    for (int i = 1; i < demoTaskOrder.size(); i++) {
+        def currentTask = tasks.findByPath(demoTaskOrder[i])
+        def previousTask = tasks.findByPath(demoTaskOrder[i - 1])
+        if (currentTask && previousTask) {
+            currentTask.mustRunAfter previousTask
+        }
+    }
+}
+
 // Help task to show available examples
 task listExamples {
     group = 'apache-ignite-examples'
@@ -179,10 +278,13 @@ task listExamples {
         println """
 Apache Ignite 3 Reference Applications
 
-Main Demo Tasks (run from root directory):
-./gradlew setupData              - Initialize sample music store data
+Data Setup Tasks:
+./gradlew setupData              - Initialize sample music store data (interactive)
   Options: --args="--reset" (clean slate), --args="--core" (minimal data)
   Custom cluster: --args="192.168.1.100:10800"
+./gradlew setupDataAuto          - Non-interactive setup (--reset --core)
+
+Demo Tasks (run from root directory):
 ./gradlew helloWorld             - Hello World example (basic operations)
 ./gradlew basicSetup             - Basic setup with related tables
 ./gradlew connectionExamples     - Connection patterns and configurations
@@ -196,11 +298,13 @@ Main Demo Tasks (run from root directory):
 ./gradlew fileStreamingDemo      - File streaming with backpressure
 ./gradlew performanceDemo        - Performance optimization techniques
 
-Special Tasks:
-./gradlew runAllDemos            - Run all main demos in sequence
+Automation Tasks:
+./gradlew runAllDemos            - Run all demos in sequence (non-interactive)
+                                   Uses setupDataAuto with --reset --core
+                                   Shows progress banners between demos
 
 Individual Applications:
-Each subproject contains multiple applications. Navigate to the subproject 
+Each subproject contains multiple applications. Navigate to the subproject
 directory and run ../gradlew tasks to see all available tasks, or check
 the README.md file in each subproject for detailed instructions.
 
