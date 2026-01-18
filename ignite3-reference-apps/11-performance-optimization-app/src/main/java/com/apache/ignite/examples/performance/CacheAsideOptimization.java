@@ -81,7 +81,7 @@ public class CacheAsideOptimization {
                        "TrackCount INT, " +
                        "CachedAt BIGINT, " +
                        "Source VARCHAR(50)" +
-                       ") WITH PRIMARY_ZONE='MusicStoreReplicated'")
+                       ") ZONE MusicStoreReplicated")
                 .build();
             sql.execute(null, createTable);
             System.out.println(">>> Created ArtistCache table for demonstration");
@@ -151,17 +151,18 @@ public class CacheAsideOptimization {
                 SqlRow row = results.next();
                 
                 Tuple key = Tuple.create().set("ArtistId", row.intValue("ArtistId"));
+                long trackCount = row.longValue("track_count");
                 Tuple value = Tuple.create()
                     .set("Name", row.stringValue("Name"))
-                    .set("TrackCount", row.intValue("track_count"))
+                    .set("TrackCount", (int) trackCount)
                     .set("CachedAt", System.currentTimeMillis());
-                
+
                 artistCache.put(null, key, value);
                 cachedCount++;
-                
+
                 if (cachedCount <= 3) {
                     System.out.printf(">>> Cached artist: %s (%d tracks)%n",
-                        row.stringValue("Name"), row.intValue("track_count"));
+                        row.stringValue("Name"), trackCount);
                 }
             }
         }
